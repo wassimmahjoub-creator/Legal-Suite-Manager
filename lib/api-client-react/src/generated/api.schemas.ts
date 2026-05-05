@@ -216,6 +216,28 @@ export interface CreateDocumentBody {
   url?: string | null;
 }
 
+export interface VoiceTranscribeBody {
+  /** Base64-encoded audio data */
+  audio: string;
+  /** Audio MIME type (e.g. audio/webm) */
+  mimeType?: string;
+}
+
+export interface VoiceTranscribeResponse {
+  transcript: string;
+}
+
+export interface VoiceEnhanceBody {
+  /** Raw transcribed text to enhance */
+  text: string;
+  /** Type of legal document to produce */
+  documentType: string;
+}
+
+export interface VoiceEnhanceResponse {
+  enhanced: string;
+}
+
 export type ListClientsParams = {
   search?: string;
 };

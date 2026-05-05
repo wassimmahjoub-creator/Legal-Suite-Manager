@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   Menu, X, Briefcase, Calendar as CalendarIcon,
   Users, FileText, Settings as SettingsIcon, CreditCard,
-  LayoutDashboard, Scale, Timer, Receipt, BarChart3, TrendingDown
+  LayoutDashboard, Scale, Timer, BarChart3, TrendingDown, Mic
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ const navGroups = [
   {
     label: "أخرى",
     items: [
+      { href: "/voice-dictation", label: "الإملاء", icon: Mic },
       { href: "/documents", label: "الوثائق", icon: FileText },
       { href: "/settings", label: "الإعدادات", icon: SettingsIcon },
     ],

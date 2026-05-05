@@ -17,6 +17,7 @@ import Settings from "@/pages/Settings";
 import TimeTracking from "@/pages/TimeTracking";
 import Expenses from "@/pages/Expenses";
 import Reports from "@/pages/Reports";
+import VoiceDictation from "@/pages/VoiceDictation";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function Router() {
         <Route path="/time-tracking" component={TimeTracking} />
         <Route path="/expenses" component={Expenses} />
         <Route path="/reports" component={Reports} />
+        <Route path="/voice-dictation" component={VoiceDictation} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

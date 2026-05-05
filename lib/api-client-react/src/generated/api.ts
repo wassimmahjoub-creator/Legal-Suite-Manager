@@ -39,6 +39,10 @@ import type {
   ListTasksParams,
   Task,
   TodayOverview,
+  VoiceEnhanceBody,
+  VoiceEnhanceResponse,
+  VoiceTranscribeBody,
+  VoiceTranscribeResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -49,6 +53,178 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Transcribe audio to text using AI
+ */
+export const getVoiceTranscribeUrl = () => {
+  return `/api/voice-dictation/transcribe`;
+};
+
+export const voiceTranscribe = async (
+  voiceTranscribeBody: VoiceTranscribeBody,
+  options?: RequestInit,
+): Promise<VoiceTranscribeResponse> => {
+  return customFetch<VoiceTranscribeResponse>(getVoiceTranscribeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(voiceTranscribeBody),
+  });
+};
+
+export const getVoiceTranscribeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voiceTranscribe>>,
+    TError,
+    { data: BodyType<VoiceTranscribeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof voiceTranscribe>>,
+  TError,
+  { data: BodyType<VoiceTranscribeBody> },
+  TContext
+> => {
+  const mutationKey = ["voiceTranscribe"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof voiceTranscribe>>,
+    { data: BodyType<VoiceTranscribeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return voiceTranscribe(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VoiceTranscribeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof voiceTranscribe>>
+>;
+export type VoiceTranscribeMutationBody = BodyType<VoiceTranscribeBody>;
+export type VoiceTranscribeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Transcribe audio to text using AI
+ */
+export const useVoiceTranscribe = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voiceTranscribe>>,
+    TError,
+    { data: BodyType<VoiceTranscribeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof voiceTranscribe>>,
+  TError,
+  { data: BodyType<VoiceTranscribeBody> },
+  TContext
+> => {
+  return useMutation(getVoiceTranscribeMutationOptions(options));
+};
+
+/**
+ * @summary Enhance transcribed text into a structured legal document using AI
+ */
+export const getVoiceEnhanceUrl = () => {
+  return `/api/voice-dictation/enhance`;
+};
+
+export const voiceEnhance = async (
+  voiceEnhanceBody: VoiceEnhanceBody,
+  options?: RequestInit,
+): Promise<VoiceEnhanceResponse> => {
+  return customFetch<VoiceEnhanceResponse>(getVoiceEnhanceUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(voiceEnhanceBody),
+  });
+};
+
+export const getVoiceEnhanceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voiceEnhance>>,
+    TError,
+    { data: BodyType<VoiceEnhanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof voiceEnhance>>,
+  TError,
+  { data: BodyType<VoiceEnhanceBody> },
+  TContext
+> => {
+  const mutationKey = ["voiceEnhance"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof voiceEnhance>>,
+    { data: BodyType<VoiceEnhanceBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return voiceEnhance(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VoiceEnhanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof voiceEnhance>>
+>;
+export type VoiceEnhanceMutationBody = BodyType<VoiceEnhanceBody>;
+export type VoiceEnhanceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Enhance transcribed text into a structured legal document using AI
+ */
+export const useVoiceEnhance = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof voiceEnhance>>,
+    TError,
+    { data: BodyType<VoiceEnhanceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof voiceEnhance>>,
+  TError,
+  { data: BodyType<VoiceEnhanceBody> },
+  TContext
+> => {
+  return useMutation(getVoiceEnhanceMutationOptions(options));
+};
 
 /**
  * @summary Health check

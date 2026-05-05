@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: voice-dictation
+    description: Voice dictation and AI document enhancement
   - name: clients
     description: Client operations
   - name: cases
@@ -26,6 +28,42 @@ tags:
     description: Dashboard summary operations
 
 paths:
+  /voice-dictation/transcribe:
+    post:
+      operationId: voiceTranscribe
+      tags: [voice-dictation]
+      summary: Transcribe audio to text using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoiceTranscribeBody"
+      responses:
+        "200":
+          description: Transcription result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceTranscribeResponse"
+  /voice-dictation/enhance:
+    post:
+      operationId: voiceEnhance
+      tags: [voice-dictation]
+      summary: Enhance transcribed text into a structured legal document using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoiceEnhanceBody"
+      responses:
+        "200":
+          description: Enhanced legal document text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoiceEnhanceResponse"
   /healthz:
     get:
       operationId: healthCheck
@@ -952,3 +990,40 @@ components:
           type: string
           nullable: true
       required: [name]
+    VoiceTranscribeBody:
+      type: object
+      properties:
+        audio:
+          type: string
+          description: Base64-encoded audio data
+        mimeType:
+          type: string
+          description: Audio MIME type (e.g. audio/webm)
+      required:
+        - audio
+    VoiceTranscribeResponse:
+      type: object
+      properties:
+        transcript:
+          type: string
+      required:
+        - transcript
+    VoiceEnhanceBody:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Raw transcribed text to enhance
+        documentType:
+          type: string
+          description: Type of legal document to produce
+      required:
+        - text
+        - documentType
+    VoiceEnhanceResponse:
+      type: object
+      properties:
+        enhanced:
+          type: string
+      required:
+        - enhanced

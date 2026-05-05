@@ -8,6 +8,33 @@
 import * as zod from "zod";
 
 /**
+ * @summary Transcribe audio to text using AI
+ */
+export const VoiceTranscribeBody = zod.object({
+  audio: zod.string().describe("Base64-encoded audio data"),
+  mimeType: zod
+    .string()
+    .optional()
+    .describe("Audio MIME type (e.g. audio\/webm)"),
+});
+
+export const VoiceTranscribeResponse = zod.object({
+  transcript: zod.string(),
+});
+
+/**
+ * @summary Enhance transcribed text into a structured legal document using AI
+ */
+export const VoiceEnhanceBody = zod.object({
+  text: zod.string().describe("Raw transcribed text to enhance"),
+  documentType: zod.string().describe("Type of legal document to produce"),
+});
+
+export const VoiceEnhanceResponse = zod.object({
+  enhanced: zod.string(),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

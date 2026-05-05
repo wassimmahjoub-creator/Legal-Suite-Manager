@@ -7,6 +7,7 @@ import tasksRouter from "./tasks";
 import eventsRouter from "./events";
 import documentsRouter from "./documents";
 import dashboardRouter from "./dashboard";
+import voiceDictationRouter from "./voice-dictation";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(invoicesRouter);
 router.use(tasksRouter);
 router.use(eventsRouter);
 router.use(documentsRouter);
+router.use(voiceDictationRouter);
 
 export default router;
