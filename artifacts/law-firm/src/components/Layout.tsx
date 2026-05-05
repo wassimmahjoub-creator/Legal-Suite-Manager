@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Search, Menu, Briefcase, Calendar as CalendarIcon, Users, FileText, Settings as SettingsIcon, CreditCard, LayoutDashboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { cn } from "@/lib/utils";
 
@@ -30,17 +29,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 const Icon = item.icon;
                 const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant={isActive ? "secondary" : "ghost"}
-                      className={cn(
-                        "text-sm gap-2 transition-all duration-200 rounded-full px-4",
-                        isActive ? "bg-primary/10 text-primary hover:bg-primary/20 font-semibold" : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </Button>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "inline-flex items-center gap-2 text-sm transition-all duration-200 rounded-full px-4 py-2 cursor-pointer",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
                   </Link>
                 );
               })}
@@ -48,9 +48,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             
             {/* Mobile Menu */}
             <div className="lg:hidden flex items-center">
-              <Button variant="ghost" size="icon">
+              <button className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50">
                 <Menu className="h-5 w-5" />
-              </Button>
+              </button>
             </div>
           </div>
 
