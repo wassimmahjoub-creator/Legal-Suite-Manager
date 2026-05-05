@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts,
+  useUpdateTask, getGetDashboardTodayQueryKey,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import {
   Briefcase, CreditCard, Clock, AlertTriangle, CheckCircle2,
-  Calendar, Plus, Timer, TrendingUp, Scale, Users, ArrowLeft
+  Calendar, Plus, Timer, TrendingUp, Scale, Users, ArrowLeft,
+  Circle, CalendarClock
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -32,6 +37,22 @@ export default function Dashboard() {
   const { data: alerts, isLoading: loadingAlerts } = useGetDashboardAlerts();
   const [modal, setModal] = useState<QuickModal>(null);
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const updateTask = useUpdateTask();
+
+  function toggleTask(taskId: number, currentDone: boolean) {
+    setTogglingIds(prev => new Set(prev).add(taskId));
+    updateTask.mutate(
+      { id: taskId, data: { done: !currentDone } },
+      {
+        onSettled: () => {
+          setTogglingIds(prev => { const s = new Set(prev); s.delete(taskId); return s; });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardTodayQueryKey() });
+        },
+      }
+    );
+  }
 
   const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
@@ -164,29 +185,47 @@ export default function Dashboard() {
                   </div>
                 ) : null}
                 {today?.sessions?.map(s => (
-                  <div key={`s-${s.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors">
+                  <div
+                    key={`s-${s.id}`}
+                    className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
+                    onClick={() => s.caseId ? navigate(`/cases/${s.caseId}`) : navigate("/calendar")}
+                  >
                     <div className="bg-primary/10 text-primary p-2.5 rounded-lg shrink-0">
-                      <Briefcase className="h-4 w-4" />
+                      <CalendarClock className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{s.title}</p>
-                      <p className="text-xs text-muted-foreground">{s.caseName} • {s.time || "وقت غير محدد"}</p>
+                      <p className="text-xs text-muted-foreground">{s.caseName ?? "—"} • {s.time || "وقت غير محدد"}</p>
                     </div>
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md shrink-0">جلسة</span>
                   </div>
                 ))}
-                {today?.tasks?.map(t => (
-                  <div key={`t-${t.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors">
-                    <div className="bg-orange-500/10 text-orange-400 p-2.5 rounded-lg shrink-0">
-                      <CheckCircle2 className="h-4 w-4" />
+                {today?.tasks?.map(t => {
+                  const toggling = togglingIds.has(t.id);
+                  return (
+                    <div key={`t-${t.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors">
+                      <button
+                        className={`shrink-0 rounded-full transition-colors focus:outline-none ${toggling ? "opacity-50" : "hover:opacity-80"}`}
+                        onClick={() => toggleTask(t.id, t.done ?? false)}
+                        disabled={toggling}
+                        title="تحديد كمنجز"
+                      >
+                        {t.done
+                          ? <CheckCircle2 className="h-6 w-6 text-green-400" />
+                          : <Circle className="h-6 w-6 text-orange-400" />
+                        }
+                      </button>
+                      <div
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => t.caseId ? navigate(`/cases/${t.caseId}`) : undefined}
+                      >
+                        <p className={`font-semibold text-sm truncate ${t.done ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
+                        <p className="text-xs text-muted-foreground">{t.caseName ?? "—"}</p>
+                      </div>
+                      <span className="text-xs bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md shrink-0">مهمة</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{t.title}</p>
-                      <p className="text-xs text-muted-foreground">{t.caseName}</p>
-                    </div>
-                    <span className="text-xs bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md shrink-0">مهمة</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -213,7 +252,11 @@ export default function Dashboard() {
                     لا توجد تنبيهات
                   </div>
                 ) : alerts?.map(a => (
-                  <div key={a.id} className="px-4 py-3 hover:bg-muted/20 transition-colors">
+                  <div
+                    key={a.id}
+                    className="px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
+                    onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
+                  >
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
