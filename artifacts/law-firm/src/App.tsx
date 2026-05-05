@@ -14,6 +14,9 @@ import Billing from "@/pages/Billing";
 import CalendarView from "@/pages/Calendar";
 import Documents from "@/pages/Documents";
 import Settings from "@/pages/Settings";
+import TimeTracking from "@/pages/TimeTracking";
+import Expenses from "@/pages/Expenses";
+import Reports from "@/pages/Reports";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ function Router() {
         <Route path="/billing" component={Billing} />
         <Route path="/calendar" component={CalendarView} />
         <Route path="/documents" component={Documents} />
+        <Route path="/time-tracking" component={TimeTracking} />
+        <Route path="/expenses" component={Expenses} />
+        <Route path="/reports" component={Reports} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
