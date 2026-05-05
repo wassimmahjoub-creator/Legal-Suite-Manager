@@ -1,0 +1,116 @@
+Build a modern web application (SaaS) for managing a law firm.
+
+CRITICAL REQUIREMENTS:
+
+1) LANGUAGE & LOCALE:
+- The entire interface MUST be in Tunisian Arabic (Darija), NOT standard Arabic.
+- Use simple, commonly used Tunisian words (e.g. "الحريف", "القضايا", "زيد", "بحث").
+- All labels, buttons, menus, placeholders must be in Arabic.
+- The UI must be Right-To-Left (RTL).
+- Align all text to the right.
+
+2) DESIGN DIRECTION:
+- Clean, minimal, modern SaaS UI (inspired by Notion, Stripe, Linear).
+- Very simple layout, avoid clutter.
+- Use cards, tables, and clear spacing.
+- Maximum usability: no more than 3 clicks for key actions.
+
+3) NAVIGATION (TOP BAR):
+Right-aligned navigation menu in Arabic:
+- لوحة القيادة
+- القضايا
+- الرزنامة
+- الحرفاء
+- الفوترة
+- الوثائق
+- الإعدادات
+
+Add a global search bar labeled: "بحث"
+
+4) CORE PAGE: DASHBOARD
+Include:
+- Cards:
+  - القضايا النشطة
+  - المداخيل هذا الشهر
+  - الفواتير المعلقة
+  - آجال قريبة
+- Section "اليوم":
+  - الجلسات
+  - المهام
+- Section "تنبيهات"
+
+5) CASES PAGE (القضايا):
+- Button: "+ قضية جديدة"
+- Filters:
+  - الحالة
+  - المحكمة
+  - المحامي
+  - التاريخ
+- Table columns:
+  - اسم القضية
+  - الحريف
+  - الحالة
+  - الجلسة الجاية
+  - المحامي
+  - إجراءات
+
+6) CASE DETAIL PAGE:
+Tabs (RTL):
+- نظرة عامة
+- وثائق
+- مهام
+- رزنامة
+- فوترة
+- ملاحظات
+
+Quick actions:
+- زيد وثيقة
+- زيد مهمة
+- زيد ملاحظة
+
+7) NUMERIC KEYPAD (CRITICAL FEATURE):
+- Add a floating numeric keypad fixed to the RIGHT side of the screen.
+- It must always stay visible (position: fixed; right: 0; vertically centered).
+- Design it like a mobile keypad.
+
+Keys layout:
+[ 1 ] [ 2 ] [ 3 ]
+[ 4 ] [ 5 ] [ 6 ]
+[ 7 ] [ 8 ] [ 9 ]
+[ 0 ] [ . ] [ ← ]
+
+- Arabic-friendly UX.
+- Used for entering amounts (facturation, payments).
+- Highlight active input fields when keypad is used.
+
+8) FACTURATION PAGE:
+- Button: "+ فاتورة جديدة"
+- Table:
+  - الحريف
+  - المبلغ
+  - الحالة
+  - التاريخ
+
+- When clicking on amount field:
+  → open numeric keypad interaction
+
+9) RESPONSIVENESS:
+- Mobile-first design
+- On mobile:
+  → keypad becomes bottom sheet instead of right-side panel
+
+10) TECH STACK:
+- Use React + Tailwind CSS
+- Enable RTL support properly (dir="rtl")
+- Use modern component structure
+
+11) UX RULES:
+- No complex forms
+- No unnecessary fields
+- Focus on speed and clarity
+- Use Darija tone (friendly, simple)
+
+OUTPUT:
+- Build full UI components
+- Include layout, navigation, and main pages
+- Include numeric keypad component fully functional
