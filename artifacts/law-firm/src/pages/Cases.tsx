@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useListCases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,20 @@ import { Plus, Search, Eye, Filter } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function Cases() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [, navigate] = useLocation();
 
   const { data: cases, isLoading } = useListCases();
 
@@ -29,10 +39,55 @@ export default function Cases() {
           <h1 className="text-3xl font-bold tracking-tight">القضايا</h1>
           <p className="text-muted-foreground mt-1">إدارة وتتبع جميع قضايا المكتب</p>
         </div>
-        <Button className="rounded-full px-6 shadow-md hover:shadow-lg transition-shadow">
-          <Plus className="ml-2 h-4 w-4" />
-          قضية جديدة
-        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-full px-6 shadow-md hover:shadow-lg transition-shadow">
+              <Plus className="ml-2 h-4 w-4" />
+              قضية جديدة
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[480px]" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>قضية جديدة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="case-title">عنوان القضية</Label>
+                <Input id="case-title" placeholder="مثال: قضية ميراث عائلة..." className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="case-client">الحريف</Label>
+                <Input id="case-client" placeholder="اسم الحريف" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="case-court">المحكمة</Label>
+                <Input id="case-court" placeholder="مثال: محكمة تونس الابتدائية" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="case-status">الحالة</Label>
+                <select id="case-status" className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                  <option value="active">نشط</option>
+                  <option value="pending">في الانتظار</option>
+                  <option value="suspended">موقوفة</option>
+                  <option value="closed">مغلقة</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="case-desc">وصف القضية</Label>
+                <textarea
+                  id="case-desc"
+                  rows={3}
+                  placeholder="وصف مختصر للقضية..."
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                />
+              </div>
+              <Button className="w-full h-11" onClick={() => setIsDialogOpen(false)}>
+                احفظ القضية
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="border-none shadow-md">
@@ -94,7 +149,11 @@ export default function Cases() {
                   </TableRow>
                 ) : (
                   filteredCases?.map((c) => (
-                    <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow
+                      key={c.id}
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/cases/${c.id}`)}
+                    >
                       <TableCell className="font-medium py-4">{c.title}</TableCell>
                       <TableCell className="py-4">{c.clientName}</TableCell>
                       <TableCell className="py-4 text-muted-foreground">{c.court || "—"}</TableCell>
@@ -104,11 +163,12 @@ export default function Cases() {
                       <TableCell className="py-4">{c.nextHearing ? new Date(c.nextHearing).toLocaleDateString('ar-TN') : "—"}</TableCell>
                       <TableCell className="py-4">{c.lawyer || "—"}</TableCell>
                       <TableCell className="text-center py-4">
-                        <Link href={`/cases/${c.id}`}>
-                          <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary rounded-full">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/cases/${c.id}`); }}
+                          className="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                       </TableCell>
                     </TableRow>
                   ))

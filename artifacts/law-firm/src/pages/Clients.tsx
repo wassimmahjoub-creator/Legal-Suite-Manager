@@ -5,12 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, Phone, Mail, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function Clients() {
   const [search, setSearch] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: clients, isLoading } = useListClients();
 
-  const filteredClients = clients?.filter(c => 
+  const filteredClients = clients?.filter(c =>
     !search || c.name.includes(search) || (c.phone && c.phone.includes(search))
   );
 
@@ -21,10 +30,41 @@ export default function Clients() {
           <h1 className="text-3xl font-bold tracking-tight">الحرفاء</h1>
           <p className="text-muted-foreground mt-1">إدارة معلومات وبيانات الحرفاء</p>
         </div>
-        <Button className="rounded-full px-6 shadow-md hover:shadow-lg transition-shadow">
-          <Plus className="ml-2 h-4 w-4" />
-          حريف جديد
-        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-full px-6 shadow-md hover:shadow-lg transition-shadow">
+              <Plus className="ml-2 h-4 w-4" />
+              حريف جديد
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[440px]" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>حريف جديد</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="client-name">الاسم الكامل</Label>
+                <Input id="client-name" placeholder="مثال: محمد بن علي" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client-phone">رقم الهاتف</Label>
+                <Input id="client-phone" placeholder="مثال: 22 123 456" className="h-11" dir="ltr" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client-email">البريد الإلكتروني</Label>
+                <Input id="client-email" type="email" placeholder="example@email.com" className="h-11" dir="ltr" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client-address">العنوان</Label>
+                <Input id="client-address" placeholder="مثال: شارع الحبيب بورقيبة، تونس" className="h-11" />
+              </div>
+              <Button className="w-full h-11" onClick={() => setIsDialogOpen(false)}>
+                احفظ الحريف
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="relative max-w-md">
@@ -59,7 +99,7 @@ export default function Clients() {
                     <h3 className="font-bold text-lg leading-tight">{client.name}</h3>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 text-sm text-muted-foreground">
                   {client.phone && (
                     <div className="flex items-center gap-3">
