@@ -1,0 +1,399 @@
+```text id="replit-patch-prompt-winavocat"
+IMPORTANT:
+This is NOT a redesign.
+This is NOT a rebuild.
+
+You must KEEP the current architecture, pages, components, routing, database structure and UI already generated.
+
+Your task is ONLY to EXTEND the existing legal SaaS application by integrating the missing advanced legal-business logic inspired by legacy legal practice management systems like WinAvocat.
+
+DO NOT:
+- recreate pages
+- duplicate entities
+- regenerate layouts
+- change design system
+- break RTL
+- replace existing structure
+
+ONLY:
+- extend existing modules
+- add missing fields
+- add missing tables
+- add missing workflows
+- add missing relationships
+- improve legal logic depth
+
+====================================================
+1) LEGAL RELATIONAL SYSTEM
+====================================================
+
+Extend case relationships.
+
+Add:
+العلاقات بين القضايا
+
+Allow:
+- linked cases
+- linked clients
+- linked opponents
+- linked contracts
+- linked properties
+
+Database:
+Create relational junction tables.
+
+UI:
+Inside case details add:
+القضايا المرتبطة
+
+====================================================
+2) LEGAL PROCEDURAL WORKFLOW
+====================================================
+
+Add procedural lifecycle tracking.
+
+New module inside cases:
+الإجراءات القانونية
+
+Stages:
+- ابتدائي
+- استئناف
+- تعقيب
+- تنفيذ
+- ختم
+
+Each stage must contain:
+- status
+- dates
+- related documents
+- events
+- notes
+
+Add procedural timeline visualization.
+
+====================================================
+3) ADVANCED EVENT STRUCTURE
+====================================================
+
+Extend existing events module.
+
+Add fields:
+- الهدف
+- النتيجة
+- الحالة القانونية
+- التأجيل
+- التاريخ الجديد
+- المحكمة
+- الدائرة
+
+Example:
+جلسة
+→ الهدف: طلب تأخير
+→ النتيجة: تأجيل
+
+Allow predefined configurable event templates.
+
+====================================================
+4) AUTOMATIC DEADLINE CALCULATION
+====================================================
+
+Add intelligent legal deadline engine.
+
+Feature:
+حساب الآجال آلياً
+
+Examples:
+- appeal deadlines
+- execution deadlines
+- response deadlines
+
+When creating legal actions:
+→ auto-calculate next legal deadlines.
+
+Store:
+- due date
+- reminder date
+- urgency level
+
+====================================================
+5) ADVANCED LEGAL CONFIGURATION
+====================================================
+
+Create new admin module:
+الإعدادات القانونية
+
+Manage:
+- أنواع القضايا
+- أنواع الأحكام
+- أنواع الجلسات
+- أنواع الوثائق
+- أنواع الأتعاب
+- أنواع المصاريف
+- أنواع الإجراءات
+
+These must be dynamic configurable tables.
+
+====================================================
+6) INTELLIGENT CASE NUMBERING
+====================================================
+
+Extend case numbering system.
+
+Add:
+ترقيم أوتوماتيكي
+
+Configurable by:
+- year
+- tribunal
+- case type
+- branch
+
+Support:
+- auto numbering
+- manual override
+
+====================================================
+7) ARCHIVE SYSTEM
+====================================================
+
+Add complete archive management.
+
+Statuses:
+- نشطة
+- مغلقة
+- مؤرشفة
+
+Features:
+- archive case
+- restore archived case
+- archive filters
+
+====================================================
+8) TRASH / RESTORE SYSTEM
+====================================================
+
+Add:
+سلة المحذوفات
+
+Features:
+- soft delete
+- restore
+- permanent delete (admin only)
+
+Apply to:
+- cases
+- clients
+- documents
+- invoices
+- events
+
+====================================================
+9) ADVANCED AUDIT LOGS
+====================================================
+
+Extend existing audit logs.
+
+Track:
+- old value
+- new value
+- modified by
+- modified date
+- IP address
+
+Add UI:
+سجل التعديلات
+
+Allow filtering by:
+- user
+- entity
+- date
+
+====================================================
+10) INTERNAL CONFIDENTIAL NOTES
+====================================================
+
+Add:
+ملاحظات داخلية
+
+Features:
+- visible only internally
+- hidden from client portal
+
+Allow:
+- lawyer notes
+- strategy notes
+- confidential comments
+
+====================================================
+11) MULTI-LAWYER CASE TEAMS
+====================================================
+
+Extend case assignment.
+
+Add:
+فريق القضية
+
+Support:
+- multiple lawyers
+- assistants
+- trainees
+
+Roles inside case:
+- مسؤول رئيسي
+- مساعد
+- متربص
+
+====================================================
+12) ADVANCED COMMUNICATION LOG
+====================================================
+
+Add:
+سجل الاتصالات
+
+Track:
+- phone calls
+- meetings
+- emails
+- SMS
+- WhatsApp notes
+
+Fields:
+- date
+- type
+- summary
+- related case
+- related client
+
+====================================================
+13) COURTS & CHAMBERS MODULE
+====================================================
+
+Create:
+المحاكم
+
+Fields:
+- المحكمة
+- الدائرة
+- المدينة
+- العنوان
+- ملاحظات
+
+Link courts to:
+- cases
+- events
+- hearings
+
+====================================================
+14) INSURANCE COMPANIES
+====================================================
+
+Create:
+شركات التأمين
+
+Fields:
+- الاسم
+- الهاتف
+- البريد
+- العنوان
+- المسؤول
+
+Link to clients and cases.
+
+====================================================
+15) BANK ACCOUNTS
+====================================================
+
+Extend accounting.
+
+Add:
+الحسابات البنكية
+
+Features:
+- multiple accounts
+- account balances
+- linked payments
+
+====================================================
+16) ADVANCED LEGAL PRINTING
+====================================================
+
+Create professional legal print/export system.
+
+Add:
+الطباعة القانونية
+
+Support:
+- official print layouts
+- PDF export
+- Word export
+- Arabic RTL printing
+
+====================================================
+17) ADVANCED SEARCH ENGINE
+====================================================
+
+Extend global search.
+
+Add:
+- partial search
+- wildcard search
+- legal filters
+- smart suggestions
+
+Search by:
+- case number
+- client
+- opponent
+- court
+- dates
+- lawyer
+- judgment
+
+====================================================
+18) LEGAL VALIDATION WORKFLOW
+====================================================
+
+Add:
+المراجعة القانونية
+
+Workflow:
+- draft
+- under review
+- approved
+- sent
+
+Support approval by senior lawyers.
+
+====================================================
+19) RELATIONAL LEGAL HISTORY
+====================================================
+
+Create complete legal history view.
+
+Timeline must include:
+- events
+- documents
+- procedures
+- invoices
+- communications
+- edits
+- payments
+
+====================================================
+20) DO NOT BREAK CURRENT APP
+====================================================
+
+CRITICAL:
+- Keep existing architecture
+- Keep existing UI
+- Keep existing routes
+- Keep RTL
+- Keep Arabic interface
+- Extend only
+
+NO DUPLICATION.
+NO REBUILD.
+NO RANDOM REFACTORING.
+
+ONLY CLEAN EXTENSIONS.
+```
