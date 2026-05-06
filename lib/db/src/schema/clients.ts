@@ -9,6 +9,7 @@ export const clientsTable = pgTable("clients", {
   email: text("email"),
   address: text("address"),
   notes: text("notes"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

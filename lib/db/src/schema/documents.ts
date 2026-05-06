@@ -9,6 +9,7 @@ export const documentsTable = pgTable("documents", {
   caseId: integer("case_id").references(() => casesTable.id),
   fileType: text("file_type"),
   url: text("url"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

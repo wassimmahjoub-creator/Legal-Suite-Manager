@@ -4,7 +4,9 @@ import {
   Menu, X, Briefcase, Calendar as CalendarIcon,
   Users, FileText, Settings as SettingsIcon, CreditCard,
   LayoutDashboard, Scale, Timer, BarChart3, TrendingDown, Mic,
-  Shield, MessageSquare, FilePen, LogOut, ChevronDown
+  Shield, MessageSquare, FilePen, LogOut, ChevronDown,
+  Building2, PhoneCall, ShieldCheck, Landmark, Settings2,
+  ClipboardList, Trash2
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -21,23 +23,35 @@ const navGroups = [
       { href: "/calendar", label: "الرزنامة", icon: CalendarIcon },
       { href: "/opponents", label: "الخصوم", icon: Shield },
       { href: "/consultations", label: "الاستشارات", icon: MessageSquare },
+      { href: "/communications", label: "الاتصالات", icon: PhoneCall },
     ],
   },
   {
     label: "المالية",
     items: [
       { href: "/billing", label: "الفوترة", icon: CreditCard },
+      { href: "/bank-accounts", label: "الحسابات البنكية", icon: Landmark },
       { href: "/expenses", label: "المصاريف", icon: TrendingDown },
       { href: "/time-tracking", label: "الوقت", icon: Timer },
       { href: "/reports", label: "التقارير", icon: BarChart3 },
     ],
   },
   {
-    label: "أخرى",
+    label: "المراجع",
     items: [
-      { href: "/voice-dictation", label: "الإملاء", icon: Mic },
+      { href: "/courts", label: "المحاكم", icon: Building2 },
+      { href: "/insurance-companies", label: "شركات التأمين", icon: ShieldCheck },
       { href: "/templates", label: "النماذج", icon: FilePen },
       { href: "/documents", label: "الوثائق", icon: FileText },
+    ],
+  },
+  {
+    label: "النظام",
+    items: [
+      { href: "/voice-dictation", label: "الإملاء", icon: Mic },
+      { href: "/legal-config", label: "الإعدادات القانونية", icon: Settings2 },
+      { href: "/audit-logs", label: "سجل التعديلات", icon: ClipboardList },
+      { href: "/trash", label: "سلة المحذوفات", icon: Trash2 },
       { href: "/settings", label: "الإعدادات", icon: SettingsIcon },
     ],
   },
@@ -130,6 +144,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Link href="/settings" onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                       <SettingsIcon className="h-4 w-4 text-muted-foreground" /> الإعدادات
+                    </Link>
+                    <Link href="/audit-logs" onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
+                      <ClipboardList className="h-4 w-4 text-muted-foreground" /> سجل التعديلات
                     </Link>
                     <button
                       onClick={() => { logout(); setUserMenuOpen(false); }}

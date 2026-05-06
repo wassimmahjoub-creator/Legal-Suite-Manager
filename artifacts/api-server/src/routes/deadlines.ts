@@ -1,0 +1,75 @@
+import { Router } from "express";
+import { db, deadlinesTable } from "@workspace/db";
+import { eq, isNull } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+
+const router = Router();
+
+const DEADLINE_RULES: Record<string, { days: number; urgency: string; label: string }> = {
+  appeal: { days: 30, urgency: "critical", label: "أجل الاستئناف" },
+  cassation: { days: 60, urgency: "critical", label: "أجل التعقيب" },
+  execution: { days: 15, urgency: "high", label: "أجل التنفيذ" },
+  response: { days: 20, urgency: "high", label: "أجل الرد" },
+  custom: { days: 0, urgency: "normal", label: "أجل مخصص" },
+};
+
+router.get("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+  const caseId = Number(req.params.caseId);
+  const rows = await db.select().from(deadlinesTable).where(eq(deadlinesTable.caseId, caseId)).orderBy(deadlinesTable.dueDate);
+  res.json(rows);
+});
+
+router.get("/deadlines/upcoming", requireAuth, async (_req, res) => {
+  const rows = await db.select().from(deadlinesTable).where(isNull(deadlinesTable.completedAt)).orderBy(deadlinesTable.dueDate);
+  res.json(rows.slice(0, 20));
+});
+
+router.post("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
+  const caseId = Number(req.params.caseId);
+  const { title, type, dueDate, reminderDate, urgency, notes } = req.body as Record<string, string>;
+
+  let computedDueDate = dueDate;
+  let computedUrgency = urgency ?? "normal";
+  let computedTitle = title;
+
+  if (type && type !== "custom" && !dueDate) {
+    const rule = DEADLINE_RULES[type];
+    if (rule) {
+      const d = new Date();
+      d.setDate(d.getDate() + rule.days);
+      computedDueDate = d.toISOString().slice(0, 10);
+      computedUrgency = rule.urgency;
+      computedTitle = title || rule.label;
+    }
+  }
+
+  const reminder = reminderDate ?? (() => {
+    if (computedDueDate) {
+      const d = new Date(computedDueDate);
+      d.setDate(d.getDate() - 7);
+      return d.toISOString().slice(0, 10);
+    }
+    return null;
+  })();
+
+  const [row] = await db.insert(deadlinesTable).values({
+    caseId, title: computedTitle, type: type ?? "custom",
+    dueDate: computedDueDate, reminderDate: reminder as string | null,
+    urgency: computedUrgency, notes: notes ?? null,
+  }).returning();
+  res.status(201).json(row);
+});
+
+router.patch("/deadlines/:id/complete", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [row] = await db.update(deadlinesTable).set({ completedAt: new Date() }).where(eq(deadlinesTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "غير موجود" }); return; }
+  res.json(row);
+});
+
+router.delete("/deadlines/:id", requireAuth, async (req, res) => {
+  await db.delete(deadlinesTable).where(eq(deadlinesTable.id, Number(req.params.id)));
+  res.status(204).send();
+});
+
+export default router;

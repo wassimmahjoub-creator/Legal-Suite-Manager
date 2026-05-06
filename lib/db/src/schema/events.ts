@@ -10,7 +10,13 @@ export const eventsTable = pgTable("events", {
   date: date("date").notNull(),
   time: text("time"),
   location: text("location"),
+  court: text("court"),
+  division: text("division"),
   type: text("type").notNull().default("other"),
+  objective: text("objective"),
+  result: text("result"),
+  legalStatus: text("legal_status"),
+  postponedTo: date("postponed_to"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

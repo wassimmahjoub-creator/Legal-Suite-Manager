@@ -23,6 +23,13 @@ import VoiceDictation from "@/pages/VoiceDictation";
 import Opponents from "@/pages/Opponents";
 import Consultations from "@/pages/Consultations";
 import Templates from "@/pages/Templates";
+import Courts from "@/pages/Courts";
+import Communications from "@/pages/Communications";
+import InsuranceCompanies from "@/pages/InsuranceCompanies";
+import BankAccounts from "@/pages/BankAccounts";
+import LegalConfig from "@/pages/LegalConfig";
+import AuditLogs from "@/pages/AuditLogs";
+import Trash from "@/pages/Trash";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +68,13 @@ function Router() {
         <Route path="/opponents" component={Opponents} />
         <Route path="/consultations" component={Consultations} />
         <Route path="/templates" component={Templates} />
+        <Route path="/courts" component={Courts} />
+        <Route path="/communications" component={Communications} />
+        <Route path="/insurance-companies" component={InsuranceCompanies} />
+        <Route path="/bank-accounts" component={BankAccounts} />
+        <Route path="/legal-config" component={LegalConfig} />
+        <Route path="/audit-logs" component={AuditLogs} />
+        <Route path="/trash" component={Trash} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

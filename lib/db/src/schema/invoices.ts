@@ -12,6 +12,7 @@ export const invoicesTable = pgTable("invoices", {
   status: text("status").notNull().default("pending"),
   dueDate: date("due_date"),
   notes: text("notes"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

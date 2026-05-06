@@ -1,34 +1,63 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { authFetch } from "@/context/AuthContext";
 import { useListCases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Eye, Filter, Briefcase } from "lucide-react";
+import { Plus, Search, Eye, Filter, Briefcase, Archive, Hash } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
 export default function Cases() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [viewArchived, setViewArchived] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
-    title: "", client: "", court: "", lawyer: "", status: "active",
-    nextHearing: "", description: ""
+    title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
+    nextHearing: "", description: "", procedureStage: "ابتدائي",
   });
+  const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
+  const [saving, setSaving] = useState(false);
   const [, navigate] = useLocation();
-  const { data: cases, isLoading } = useListCases();
+  const { data: cases, isLoading, refetch } = useListCases();
 
-  const filteredCases = cases?.filter(c => {
+  async function openNewModal() {
+    const r = await authFetch(`${BASE}/api/clients`);
+    if (r.ok) setClients(await r.json());
+    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي" });
+    setShowModal(true);
+  }
+
+  async function saveCase() {
+    if (!form.title || !form.clientId) return;
+    setSaving(true);
+    await authFetch(`${BASE}/api/cases`, {
+      method: "POST",
+      body: JSON.stringify({ ...form, clientId: Number(form.clientId), nextHearing: form.nextHearing || undefined }),
+    });
+    refetch(); setSaving(false); setShowModal(false);
+  }
+
+  const filteredCases = cases?.filter((c: any) => {
+    if (viewArchived) {
+      if (!c.archivedAt) return false;
+    } else {
+      if (c.archivedAt) return false;
+    }
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
-    if (search && !c.title.includes(search) && !c.clientName?.includes(search)) return false;
+    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.clientName?.includes(search) && !(c.caseNumber ?? "").includes(search)) return false;
     return true;
   });
 
   const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
+  const STAGES = ["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"];
 
   return (
     <div className="space-y-6">
@@ -36,12 +65,25 @@ export default function Cases() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">القضايا</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة وتتبع جميع قضايا المكتب</p>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {viewArchived ? "القضايا المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+          </p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" />
-          قضية جديدة
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={viewArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewArchived(v => !v)}
+            className="gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            {viewArchived ? "العودة للنشطة" : "الأرشيف"}
+          </Button>
+          <Button onClick={openNewModal} className="rounded-lg gap-2 px-5">
+            <Plus className="h-4 w-4" />
+            قضية جديدة
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -49,7 +91,7 @@ export default function Cases() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="بحث باسم القضية أو الحريف..."
+            placeholder="بحث بالعنوان، الحريف، أو رقم الملف..."
             className="pr-9 h-10 bg-card border-border"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -67,10 +109,19 @@ export default function Cases() {
               <SelectItem value="pending">في الانتظار</SelectItem>
               <SelectItem value="suspended">موقوفة</SelectItem>
               <SelectItem value="closed">مغلقة</SelectItem>
+              <SelectItem value="archived">مؤرشفة</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {/* Stats */}
+      {!isLoading && cases && (
+        <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
+          <span className="px-2.5 py-1 bg-muted/40 rounded-full">{cases.filter((c: any) => !c.archivedAt && !c.deletedAt).length} قضية نشطة</span>
+          <span className="px-2.5 py-1 bg-orange-500/10 text-orange-400 rounded-full">{cases.filter((c: any) => c.archivedAt).length} مؤرشفة</span>
+        </div>
+      )}
 
       {/* Table */}
       <Card className="border-none shadow-md overflow-hidden">
@@ -78,12 +129,13 @@ export default function Cases() {
           <Table>
             <TableHeader className="bg-muted/40">
               <TableRow>
+                <TableHead className="text-right py-3 font-semibold w-28">رقم الملف</TableHead>
                 <TableHead className="text-right py-3 font-semibold">القضية</TableHead>
                 <TableHead className="text-right py-3 font-semibold">الحريف</TableHead>
                 <TableHead className="text-right py-3 font-semibold hidden md:table-cell">المحكمة</TableHead>
                 <TableHead className="text-right py-3 font-semibold">الحالة</TableHead>
                 <TableHead className="text-right py-3 font-semibold hidden lg:table-cell">الجلسة القادمة</TableHead>
-                <TableHead className="text-right py-3 font-semibold hidden lg:table-cell">المحامي</TableHead>
+                <TableHead className="text-right py-3 font-semibold hidden lg:table-cell">المرحلة</TableHead>
                 <TableHead className="text-center py-3 font-semibold w-16">عرض</TableHead>
               </TableRow>
             </TableHeader>
@@ -91,7 +143,7 @@ export default function Cases() {
               {isLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <TableCell key={j} className="py-3"><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
@@ -99,20 +151,27 @@ export default function Cases() {
                 : filteredCases?.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-40 text-center">
+                    <TableCell colSpan={8} className="h-40 text-center">
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Briefcase className="h-10 w-10 opacity-20" />
-                        <p>لم يتم العثور على قضايا</p>
+                        {viewArchived ? <Archive className="h-10 w-10 opacity-20" /> : <Briefcase className="h-10 w-10 opacity-20" />}
+                        <p>{viewArchived ? "لا توجد قضايا مؤرشفة" : "لم يتم العثور على قضايا"}</p>
                       </div>
                     </TableCell>
                   </TableRow>
                 )
-                : filteredCases?.map((c) => (
+                : filteredCases?.map((c: any) => (
                   <TableRow
                     key={c.id}
                     className="cursor-pointer hover:bg-muted/30 transition-colors"
                     onClick={() => navigate(`/cases/${c.id}`)}
                   >
+                    <TableCell className="py-3">
+                      {c.caseNumber ? (
+                        <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary rounded-md flex items-center gap-1 w-fit">
+                          <Hash className="h-3 w-3" />{c.caseNumber}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="font-semibold py-3">{c.title}</TableCell>
                     <TableCell className="py-3 text-muted-foreground">{c.clientName}</TableCell>
                     <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{c.court || "—"}</TableCell>
@@ -120,7 +179,11 @@ export default function Cases() {
                     <TableCell className="py-3 hidden lg:table-cell">
                       {c.nextHearing ? new Date(c.nextHearing).toLocaleDateString("ar-TN") : "—"}
                     </TableCell>
-                    <TableCell className="py-3 hidden lg:table-cell text-muted-foreground">{c.lawyer || "—"}</TableCell>
+                    <TableCell className="py-3 hidden lg:table-cell">
+                      {c.procedureStage ? (
+                        <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full">{c.procedureStage}</span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="py-3 text-center">
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/cases/${c.id}`); }}
@@ -147,8 +210,10 @@ export default function Cases() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الحريف *" htmlFor="case-client">
-              <Input id="case-client" placeholder="اسم الحريف" className={inputCls}
-                value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} />
+              <select id="case-client" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">اختر حريفاً...</option>
+                {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
+              </select>
             </FormField>
             <FormField label="المحامي المسؤول" htmlFor="case-lawyer">
               <Input id="case-lawyer" placeholder="اسم المحامي" className={inputCls}
@@ -161,6 +226,13 @@ export default function Cases() {
               <Input id="case-court" placeholder="مثال: محكمة تونس الابتدائية" className={inputCls}
                 value={form.court} onChange={e => setForm(f => ({ ...f, court: e.target.value }))} />
             </FormField>
+            <FormField label="الدائرة" htmlFor="case-div">
+              <Input id="case-div" placeholder="الدائرة الأولى" className={inputCls}
+                value={form.division} onChange={e => setForm(f => ({ ...f, division: e.target.value }))} />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <FormField label="الحالة" htmlFor="case-status">
               <select id="case-status" className={inputCls + " px-3 cursor-pointer"}
                 value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
@@ -168,6 +240,12 @@ export default function Cases() {
                 <option value="pending">في الانتظار</option>
                 <option value="suspended">موقوفة</option>
                 <option value="closed">مغلقة</option>
+              </select>
+            </FormField>
+            <FormField label="المرحلة الإجرائية" htmlFor="case-stage">
+              <select id="case-stage" className={inputCls + " px-3 cursor-pointer"}
+                value={form.procedureStage} onChange={e => setForm(f => ({ ...f, procedureStage: e.target.value }))}>
+                {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </FormField>
           </div>
@@ -184,8 +262,8 @@ export default function Cases() {
           </FormField>
 
           <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setShowModal(false)}>
-              حفظ القضية
+            <Button className="flex-1" disabled={saving || !form.title || !form.clientId} onClick={saveCase}>
+              {saving ? "جاري الحفظ..." : "حفظ القضية"}
             </Button>
             <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">
               إلغاء
