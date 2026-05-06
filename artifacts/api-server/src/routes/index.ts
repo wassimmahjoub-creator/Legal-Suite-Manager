@@ -26,6 +26,7 @@ import auditLogsRouter from "./audit-logs";
 import caseRelationsRouter from "./case-relations";
 import confidentialNotesRouter from "./confidential-notes";
 import trashRouter from "./trash";
+import correspondancesRouter from "./correspondances";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -68,5 +69,6 @@ router.use(auditLogsRouter);
 router.use(caseRelationsRouter);
 router.use(confidentialNotesRouter);
 router.use(trashRouter);
+router.use(correspondancesRouter);
 
 export default router;

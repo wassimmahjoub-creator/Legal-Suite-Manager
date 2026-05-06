@@ -21,7 +21,7 @@ export default function Cases() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
-    nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
+    nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "",
   });
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
   const [saving, setSaving] = useState(false);
@@ -31,7 +31,7 @@ export default function Cases() {
   async function openNewModal() {
     const r = await authFetch(`${BASE}/api/clients`);
     if (r.ok) setClients(await r.json());
-    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "" });
+    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "" });
     setShowModal(true);
   }
 
@@ -239,12 +239,20 @@ export default function Cases() {
             </FormField>
           </div>
 
-          <FormField label="رقم القضية لدى المحكمة" htmlFor="case-court-num"
-            hint="الرقم الذي خصصته المحكمة لهذه القضية (مختلف عن رقم الملف الداخلي)">
-            <Input id="case-court-num" placeholder="مثال: 12345/2026" className={inputCls} dir="ltr"
-              value={form.courtCaseNumber}
-              onChange={e => setForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
-          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="رقم القضية لدى المحكمة" htmlFor="case-court-num"
+              hint="الرقم الذي خصصته المحكمة">
+              <Input id="case-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
+                value={form.courtCaseNumber}
+                onChange={e => setForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
+            </FormField>
+            <FormField label="مرجع الحريف" htmlFor="case-client-ref"
+              hint="رقم الملف لدى الحريف نفسه">
+              <Input id="case-client-ref" placeholder="مرجع داخلي للحريف" className={inputCls}
+                value={form.clientFileRef}
+                onChange={e => setForm(f => ({ ...f, clientFileRef: e.target.value }))} />
+            </FormField>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الحالة" htmlFor="case-status">

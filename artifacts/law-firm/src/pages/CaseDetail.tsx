@@ -91,7 +91,7 @@ export default function CaseDetail() {
   );
   if (!caseData) return <div className="text-center py-20 text-muted-foreground">القضية غير موجودة</div>;
 
-  const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; division?: string; procedureStage?: string; archivedAt?: string | null; };
+  const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; };
   const today = new Date().toISOString().slice(0, 10);
   const overdueCount = deadlines.filter(d => !d.completedAt && d.dueDate < today).length;
 
@@ -109,6 +109,7 @@ export default function CaseDetail() {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   {c.caseNumber && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
                   {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
+                  {c.clientFileRef && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الحريف">📁 {c.clientFileRef}</span>}
                   <StatusBadge status={caseData.status} />
                   {c.archivedAt && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}

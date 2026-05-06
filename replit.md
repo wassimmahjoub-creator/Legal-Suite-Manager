@@ -51,6 +51,7 @@ pnpm workspace monorepo using TypeScript. This is a full-stack law firm manageme
 - **المحاكم** — Courts: CRUD reference table (name, division, city, address)
 - **شركات التأمين** — Insurance companies: CRUD reference table
 - **الحسابات البنكية** — Bank accounts: balance tracking, multi-currency (TND/EUR/USD)
+- **المراسلات** — Correspondances: formal letters/email/fax/notices linked to client + optional case, direction (outgoing/incoming), status (draft/sent/received/acknowledged), reference number
 - **سجل الاتصالات** — Communications log: call/meeting/email/SMS/WhatsApp/video
 - **الإعدادات القانونية** — Legal config: dynamic configurable lists (6 categories, 22 defaults)
 - **سجل التعديلات** — Audit logs: filterable by entity/user/date
@@ -61,7 +62,7 @@ pnpm workspace monorepo using TypeScript. This is a full-stack law firm manageme
 
 **Core**: `clients`, `cases`, `invoices`, `tasks`, `events`, `documents`, `conversations`, `messages`, `users`, `opponents`, `consultations`, `templates`
 
-**Extended (WinAvocat)**: `courts`, `procedures`, `deadlines`, `legal_config_items`, `case_teams`, `communications`, `insurance_companies`, `bank_accounts`, `audit_logs`, `case_relations`, `confidential_notes`
+**Extended (WinAvocat)**: `courts`, `procedures`, `deadlines`, `legal_config_items`, `case_teams`, `communications`, `correspondances`, `insurance_companies`, `bank_accounts`, `audit_logs`, `case_relations`, `confidential_notes`
 
 **Soft-delete fields**: `deletedAt` on cases, clients, documents, invoices
 

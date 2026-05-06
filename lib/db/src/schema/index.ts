@@ -21,3 +21,4 @@ export * from "./bank_accounts";
 export * from "./audit_logs";
 export * from "./case_relations";
 export * from "./confidential_notes";
+export * from "./correspondances";

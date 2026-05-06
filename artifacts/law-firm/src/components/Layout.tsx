@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Scale, Timer, BarChart3, TrendingDown, Mic,
   Shield, MessageSquare, FilePen, LogOut, ChevronDown,
   Building2, PhoneCall, ShieldCheck, Landmark, Settings2,
-  ClipboardList, Trash2, ChevronLeft,
+  ClipboardList, Trash2, ChevronLeft, MailOpen,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -24,6 +24,7 @@ const navGroups = [
       { href: "/opponents", label: "الخصوم", icon: Shield },
       { href: "/consultations", label: "الاستشارات", icon: MessageSquare },
       { href: "/communications", label: "الاتصالات", icon: PhoneCall },
+      { href: "/correspondances", label: "المراسلات", icon: MailOpen },
     ],
   },
   {

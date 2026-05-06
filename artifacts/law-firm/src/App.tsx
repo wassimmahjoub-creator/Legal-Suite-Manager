@@ -30,6 +30,7 @@ import BankAccounts from "@/pages/BankAccounts";
 import LegalConfig from "@/pages/LegalConfig";
 import AuditLogs from "@/pages/AuditLogs";
 import Trash from "@/pages/Trash";
+import Correspondances from "@/pages/Correspondances";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ function Router() {
         <Route path="/templates" component={Templates} />
         <Route path="/courts" component={Courts} />
         <Route path="/communications" component={Communications} />
+        <Route path="/correspondances" component={Correspondances} />
         <Route path="/insurance-companies" component={InsuranceCompanies} />
         <Route path="/bank-accounts" component={BankAccounts} />
         <Route path="/legal-config" component={LegalConfig} />
