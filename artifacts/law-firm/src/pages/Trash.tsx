@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { authFetch } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";

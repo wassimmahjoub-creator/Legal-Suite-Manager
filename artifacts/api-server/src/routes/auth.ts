@@ -87,4 +87,31 @@ router.get("/auth/users", requireAuth, async (_req, res) => {
   res.json(rows.map(u => ({ ...u, roleLabel: ROLES[u.role] ?? u.role })));
 });
 
+router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
+  const u = (req as typeof req & { user: { id: number } }).user;
+  const { name, email, currentPassword, newPassword } = req.body as {
+    name?: string; email?: string; currentPassword?: string; newPassword?: string;
+  };
+
+  const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, u.id));
+  if (!existing) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
+
+  if (newPassword) {
+    if (!currentPassword) { res.status(400).json({ error: "كلمة المرور الحالية مطلوبة" }); return; }
+    const valid = await bcrypt.compare(currentPassword, existing.passwordHash);
+    if (!valid) { res.status(401).json({ error: "كلمة المرور الحالية غير صحيحة" }); return; }
+  }
+
+  const updates: Partial<{ name: string; email: string; passwordHash: string }> = {};
+  if (name?.trim()) updates.name = name.trim();
+  if (email?.trim()) updates.email = email.trim();
+  if (newPassword) updates.passwordHash = await bcrypt.hash(newPassword, 10);
+
+  if (Object.keys(updates).length === 0) { res.status(400).json({ error: "لا توجد تغييرات" }); return; }
+
+  const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, u.id)).returning();
+  const token = signToken({ id: updated.id, email: updated.email, name: updated.name, role: updated.role });
+  res.json({ token, user: { id: updated.id, email: updated.email, name: updated.name, role: updated.role, roleLabel: ROLES[updated.role] ?? updated.role } });
+});
+
 export default router;

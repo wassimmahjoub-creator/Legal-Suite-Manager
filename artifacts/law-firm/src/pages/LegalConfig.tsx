@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { authFetch } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";

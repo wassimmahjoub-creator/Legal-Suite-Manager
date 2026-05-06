@@ -19,6 +19,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   setup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (data: { name?: string; email?: string; currentPassword?: string; newPassword?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -99,8 +100,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function updateProfile(data: { name?: string; email?: string; currentPassword?: string; newPassword?: string }) {
+    const r = await fetch(`${BASE_URL}/api/auth/me`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("mtoken")}` },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) {
+      const d = await r.json() as { error: string };
+      throw new Error(d.error ?? "خطأ في التحديث");
+    }
+    const d = await r.json() as { token: string; user: AuthUser };
+    applyToken(d.token);
+    setUser(d.user);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, hasUsers, login, setup, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, hasUsers, login, setup, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
@@ -112,14 +128,3 @@ export function useAuth() {
   return ctx;
 }
 
-export function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = localStorage.getItem("mtoken");
-  return fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "Content-Type": "application/json",
-    },
-  });
-}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
-import { authFetch } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { authFetch } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
 import { Input } from "@/components/ui/input";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
