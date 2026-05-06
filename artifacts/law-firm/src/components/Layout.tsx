@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Menu, X, Briefcase, Calendar as CalendarIcon,
@@ -75,6 +75,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
 
+  /* Scroll automatique : centre l'item actif dans la barre latérale à chaque changement de route */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const activeEl = document.querySelector<HTMLElement>("[data-nav-active='true']");
+      activeEl?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [location]);
+
   /* ── Sidebar content (shared between desktop + mobile) ── */
   const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full">
@@ -114,6 +123,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       onClick={onNavigate}
                       title={collapsed ? item.label : undefined}
+                      data-nav-active={active ? "true" : undefined}
                       className={cn(
                         "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 group relative",
                         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
