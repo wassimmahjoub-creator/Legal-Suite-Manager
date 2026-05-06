@@ -6,6 +6,7 @@ import { clientsTable } from "./clients";
 export const casesTable = pgTable("cases", {
   id: serial("id").primaryKey(),
   caseNumber: text("case_number"),
+  courtCaseNumber: text("court_case_number"),
   title: text("title").notNull(),
   clientId: integer("client_id").references(() => clientsTable.id).notNull(),
   status: text("status").notNull().default("active"),

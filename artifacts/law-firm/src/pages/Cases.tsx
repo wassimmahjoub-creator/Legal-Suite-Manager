@@ -21,7 +21,7 @@ export default function Cases() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
-    nextHearing: "", description: "", procedureStage: "ابتدائي",
+    nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
   });
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
   const [saving, setSaving] = useState(false);
@@ -31,7 +31,7 @@ export default function Cases() {
   async function openNewModal() {
     const r = await authFetch(`${BASE}/api/clients`);
     if (r.ok) setClients(await r.json());
-    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي" });
+    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "" });
     setShowModal(true);
   }
 
@@ -52,7 +52,7 @@ export default function Cases() {
       if (c.archivedAt) return false;
     }
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
-    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.clientName?.includes(search) && !(c.caseNumber ?? "").includes(search)) return false;
+    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.clientName?.includes(search) && !(c.caseNumber ?? "").includes(search) && !(c.courtCaseNumber ?? "").includes(search)) return false;
     return true;
   });
 
@@ -166,11 +166,18 @@ export default function Cases() {
                     onClick={() => navigate(`/cases/${c.id}`)}
                   >
                     <TableCell className="py-3">
-                      {c.caseNumber ? (
-                        <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary rounded-md flex items-center gap-1 w-fit">
-                          <Hash className="h-3 w-3" />{c.caseNumber}
-                        </span>
-                      ) : "—"}
+                      <div className="flex flex-col gap-1">
+                        {c.caseNumber ? (
+                          <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary rounded-md flex items-center gap-1 w-fit">
+                            <Hash className="h-3 w-3" />{c.caseNumber}
+                          </span>
+                        ) : <span className="text-muted-foreground/40 text-xs">—</span>}
+                        {c.courtCaseNumber && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 bg-muted/60 text-muted-foreground rounded-md flex items-center gap-1 w-fit" title="رقم القضية لدى المحكمة">
+                            ⚖ {c.courtCaseNumber}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="font-semibold py-3">{c.title}</TableCell>
                     <TableCell className="py-3 text-muted-foreground">{c.clientName}</TableCell>
@@ -231,6 +238,13 @@ export default function Cases() {
                 value={form.division} onChange={e => setForm(f => ({ ...f, division: e.target.value }))} />
             </FormField>
           </div>
+
+          <FormField label="رقم القضية لدى المحكمة" htmlFor="case-court-num"
+            hint="الرقم الذي خصصته المحكمة لهذه القضية (مختلف عن رقم الملف الداخلي)">
+            <Input id="case-court-num" placeholder="مثال: 12345/2026" className={inputCls} dir="ltr"
+              value={form.courtCaseNumber}
+              onChange={e => setForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
+          </FormField>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الحالة" htmlFor="case-status">

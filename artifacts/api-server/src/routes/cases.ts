@@ -8,6 +8,7 @@ const router = Router();
 const caseFields = {
   id: casesTable.id,
   caseNumber: casesTable.caseNumber,
+  courtCaseNumber: casesTable.courtCaseNumber,
   title: casesTable.title,
   clientId: casesTable.clientId,
   clientName: clientsTable.name,
@@ -45,6 +46,7 @@ router.get("/cases", async (req, res) => {
   if (search) filtered = filtered.filter((r) =>
     r.title.toLowerCase().includes(search.toLowerCase()) ||
     (r.caseNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (r.courtCaseNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
     (r.clientName ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -64,7 +66,8 @@ router.post("/cases", async (req, res) => {
   const next = (count?.cnt ?? 0) + 1;
   const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
 
-  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber }).returning();
+  const courtCaseNumber = typeof req.body.courtCaseNumber === "string" ? req.body.courtCaseNumber || null : null;
+  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, courtCaseNumber }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.status(201).json({ ...row, clientName: client?.name ?? "" });
 });
@@ -84,7 +87,8 @@ router.put("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
   const parsed = UpdateCaseBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const [row] = await db.update(casesTable).set(parsed.data).where(eq(casesTable.id, id)).returning();
+  const courtCaseNumber = typeof req.body.courtCaseNumber === "string" ? req.body.courtCaseNumber || null : null;
+  const [row] = await db.update(casesTable).set({ ...parsed.data, courtCaseNumber }).where(eq(casesTable.id, id)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.json({ ...row, clientName: client?.name ?? "" });
