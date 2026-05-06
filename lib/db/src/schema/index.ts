@@ -6,3 +6,7 @@ export * from "./events";
 export * from "./documents";
 export * from "./conversations";
 export * from "./messages";
+export * from "./users";
+export * from "./opponents";
+export * from "./consultations";
+export * from "./templates";

@@ -3,9 +3,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { KeypadProvider } from "@/context/KeypadContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
 
+import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Cases from "@/pages/Cases";
 import CaseDetail from "@/pages/CaseDetail";
@@ -18,10 +20,30 @@ import TimeTracking from "@/pages/TimeTracking";
 import Expenses from "@/pages/Expenses";
 import Reports from "@/pages/Reports";
 import VoiceDictation from "@/pages/VoiceDictation";
+import Opponents from "@/pages/Opponents";
+import Consultations from "@/pages/Consultations";
+import Templates from "@/pages/Templates";
 
 const queryClient = new QueryClient();
 
 function Router() {
+  const { user, loading, hasUsers } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <div className="text-center space-y-3">
+          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || hasUsers === false) {
+    return <Login />;
+  }
+
   return (
     <Layout>
       <Switch>
@@ -36,6 +58,9 @@ function Router() {
         <Route path="/expenses" component={Expenses} />
         <Route path="/reports" component={Reports} />
         <Route path="/voice-dictation" component={VoiceDictation} />
+        <Route path="/opponents" component={Opponents} />
+        <Route path="/consultations" component={Consultations} />
+        <Route path="/templates" component={Templates} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
@@ -46,14 +71,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <KeypadProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </KeypadProvider>
+      <AuthProvider>
+        <KeypadProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </KeypadProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
