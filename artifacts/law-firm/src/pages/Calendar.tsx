@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
+import { MicButton } from "@/components/MicButton";
 import {
   CalendarIcon, Clock, MapPin, Briefcase, Plus, Pencil, Trash2,
   Target, CheckCircle2, Scale, ChevronRight,
@@ -388,12 +390,18 @@ export default function CalendarView() {
 
           <div className="grid grid-cols-1 gap-3">
             <FormField label="الهدف" htmlFor="ev-obj">
-              <Input id="ev-obj" placeholder="الهدف من هذا الموعد..." className={inputCls}
-                value={form.objective} onChange={e => setForm(f => ({ ...f, objective: e.target.value }))} />
+              <div className="flex gap-2">
+                <Input id="ev-obj" placeholder="الهدف من هذا الموعد..." className={inputCls + " flex-1"}
+                  value={form.objective} onChange={e => setForm(f => ({ ...f, objective: e.target.value }))} />
+                <MicButton onResult={t => setForm(f => ({ ...f, objective: f.objective ? f.objective + " " + t : t }))} />
+              </div>
             </FormField>
             <FormField label="النتيجة" htmlFor="ev-result">
-              <Input id="ev-result" placeholder="نتيجة الجلسة أو الاجتماع..." className={inputCls}
-                value={form.result} onChange={e => setForm(f => ({ ...f, result: e.target.value }))} />
+              <div className="flex gap-2">
+                <Input id="ev-result" placeholder="نتيجة الجلسة أو الاجتماع..." className={inputCls + " flex-1"}
+                  value={form.result} onChange={e => setForm(f => ({ ...f, result: e.target.value }))} />
+                <MicButton onResult={t => setForm(f => ({ ...f, result: f.result ? f.result + " " + t : t }))} />
+              </div>
             </FormField>
           </div>
 
@@ -403,9 +411,9 @@ export default function CalendarView() {
           </FormField>
 
           <FormField label="ملاحظات" htmlFor="ev-notes">
-            <textarea id="ev-notes" rows={3} placeholder="ملاحظات إضافية..."
-              className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            <SmartTextarea id="ev-notes" rows={3} placeholder="ملاحظات إضافية..."
+              aiContext="ملاحظات جلسة قانونية"
+              value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
 
           <div className="flex gap-3 pt-2">

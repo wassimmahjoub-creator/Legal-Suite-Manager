@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
+import { MicButton } from "@/components/MicButton";
 import { Mail, Plus, Pencil, Trash2, FileText, ArrowUpRight, ArrowDownLeft, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -296,8 +298,11 @@ export default function Correspondances() {
           </div>
 
           <FormField label="الموضوع *" htmlFor="corr-subject">
-            <Input id="corr-subject" placeholder="موضوع المراسلة..." className={inputCls}
-              value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} />
+            <div className="flex gap-2">
+              <Input id="corr-subject" placeholder="موضوع المراسلة..." className={inputCls + " flex-1"}
+                value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} />
+              <MicButton onResult={t => setForm(f => ({ ...f, subject: f.subject ? f.subject + " " + t : t }))} />
+            </div>
           </FormField>
 
           <FormField label="رقم المرجع / الوصل" htmlFor="corr-ref">
@@ -306,10 +311,10 @@ export default function Correspondances() {
           </FormField>
 
           <FormField label="ملاحظات / محتوى" htmlFor="corr-content">
-            <textarea id="corr-content" rows={3}
+            <SmartTextarea id="corr-content" rows={4}
               placeholder="ملخص أو محتوى المراسلة..."
-              className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} />
+              aiContext="مراسلة رسمية"
+              value={form.content} onChange={v => setForm(f => ({ ...f, content: v }))} />
           </FormField>
         </div>
       </Modal>

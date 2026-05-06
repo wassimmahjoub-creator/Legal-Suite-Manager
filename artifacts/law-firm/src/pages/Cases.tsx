@@ -11,6 +11,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
+import { MicButton } from "@/components/MicButton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -278,9 +280,9 @@ export default function Cases() {
           </FormField>
 
           <FormField label="وصف القضية" htmlFor="case-desc">
-            <textarea id="case-desc" rows={3} placeholder="وصف مختصر للقضية والوقائع..."
-              className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            <SmartTextarea id="case-desc" rows={3} placeholder="وصف مختصر للقضية والوقائع..."
+              aiContext="وصف قضية قانونية"
+              value={form.description} onChange={v => setForm(f => ({ ...f, description: v }))} />
           </FormField>
 
           <div className="flex gap-3 pt-2">

@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
+import { MicButton } from "@/components/MicButton";
 import { MessageSquare, Plus, Pencil, Trash2, User, Calendar, CheckCircle2, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -123,7 +125,10 @@ export default function Consultations() {
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? "تعديل الاستشارة" : "استشارة جديدة"}>
         <div className="space-y-4">
           <FormField label="الموضوع *" htmlFor="cs-subject">
-            <Input id="cs-subject" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} placeholder="موضوع الاستشارة" className={inputCls} />
+            <div className="flex gap-2">
+              <Input id="cs-subject" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} placeholder="موضوع الاستشارة" className={inputCls + " flex-1"} />
+              <MicButton onResult={t => setForm(f => ({ ...f, subject: f.subject ? f.subject + " " + t : t }))} />
+            </div>
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="التاريخ *" htmlFor="cs-date">
@@ -146,8 +151,9 @@ export default function Consultations() {
             </FormField>
           </div>
           <FormField label="ملاحظات" htmlFor="cs-notes">
-            <textarea id="cs-notes" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})}
-              className={inputCls + " px-3 py-2 resize-none min-h-[80px]"} placeholder="ملاحظات..." />
+            <SmartTextarea id="cs-notes" rows={3} placeholder="ملاحظات..."
+              aiContext="ملاحظات استشارة قانونية"
+              value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" onClick={save} disabled={saving || !form.subject || !form.date}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>

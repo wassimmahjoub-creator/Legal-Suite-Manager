@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
 import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -116,7 +117,11 @@ export default function Communications() {
             </FormField>
             <FormField label="التاريخ *" htmlFor="cm-date"><Input id="cm-date" type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className={inputCls} dir="ltr" /></FormField>
           </div>
-          <FormField label="الملخص *" htmlFor="cm-summary"><textarea id="cm-summary" value={form.summary} onChange={e => setForm({...form, summary: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[80px]"} placeholder="ملخص الاتصال أو الاجتماع..." /></FormField>
+          <FormField label="الملخص *" htmlFor="cm-summary">
+            <SmartTextarea id="cm-summary" rows={3} placeholder="ملخص الاتصال أو الاجتماع..."
+              aiContext="ملخص اتصال قانوني"
+              value={form.summary} onChange={v => setForm(f => ({ ...f, summary: v }))} />
+          </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="رقم القضية" htmlFor="cm-case"><Input id="cm-case" type="number" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
             <FormField label="رقم الحريف" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
