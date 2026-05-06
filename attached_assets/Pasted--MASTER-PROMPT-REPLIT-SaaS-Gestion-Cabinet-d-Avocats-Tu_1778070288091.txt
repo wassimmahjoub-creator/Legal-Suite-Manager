@@ -1,0 +1,741 @@
+# MASTER PROMPT — REPLIT
+
+# SaaS Gestion Cabinet d’Avocats — Tunisie
+
+# Version Ultra Détaillée
+
+# RTL + Darija Tunisienne + Mobile First
+
+```text id="master-replit-prompt"
+Build a COMPLETE MODERN WEB APPLICATION (SaaS) for managing Tunisian law firms.
+
+IMPORTANT:
+This prompt defines the FINAL ARCHITECTURE, UI/UX, DATABASE STRUCTURE, COMPONENTS, PAGES, WORKFLOWS and DESIGN SYSTEM.
+
+DO NOT SIMPLIFY.
+DO NOT REMOVE FEATURES.
+DO NOT REGENERATE RANDOM STRUCTURES.
+BUILD CLEAN SCALABLE CODE.
+
+====================================================
+1) CORE OBJECTIVE
+====================================================
+
+Build a modern cloud-based legal practice management platform for Tunisian law firms.
+
+The application must:
+- be fully in Tunisian Arabic Darija
+- support RTL properly
+- be mobile-first
+- support multi-users
+- support multi-lawyers
+- support legal workflows
+- support documents
+- support billing
+- support events & deadlines
+- support client portal
+- support advanced permissions
+
+The product must feel:
+- modern
+- premium
+- minimal
+- fast
+- highly usable
+
+Inspired by:
+- SECIB Neo
+- Clio
+- Notion
+- Stripe
+- Linear
+- modern banking apps
+
+====================================================
+2) TECH STACK
+====================================================
+
+Frontend:
+- React
+- TypeScript
+- TailwindCSS
+- Shadcn UI
+- React Router
+- React Query
+
+Backend:
+- Node.js
+- Express
+
+Database:
+- PostgreSQL
+
+ORM:
+- Prisma
+
+Storage:
+- Supabase Storage or equivalent
+
+Authentication:
+- JWT
+- secure role-based auth
+
+====================================================
+3) RTL + LANGUAGE REQUIREMENTS
+====================================================
+
+CRITICAL:
+
+- Entire UI MUST be in Tunisian Arabic Darija.
+- No French.
+- No English visible to user.
+- Entire app RTL.
+- dir="rtl"
+
+Examples:
+- الحريف
+- القضية
+- زيد
+- بحث
+- رزنامة
+- خلاص
+- محامي
+
+ALL:
+- labels
+- placeholders
+- buttons
+- notifications
+- errors
+- menus
+- dialogs
+must be Arabic.
+
+====================================================
+4) DESIGN SYSTEM
+====================================================
+
+Style:
+- modern SaaS
+- ultra clean
+- premium minimal
+- soft shadows
+- rounded-xl
+- spacing comfortable
+- NOT old ERP style
+
+Colors:
+Primary:
+- Deep blue
+- White
+- Light gray
+
+Avoid:
+- too many colors
+- clutter
+- old desktop style
+
+Animations:
+- subtle transitions
+- smooth hover states
+
+Typography:
+- modern Arabic font
+- highly readable
+
+====================================================
+5) GLOBAL LAYOUT
+====================================================
+
+Top navigation bar RTL:
+
+لوحة القيادة
+القضايا
+الحرفاء
+الرزنامة
+الوثائق
+الفوترة
+الاستشارات
+التقارير
+الإعدادات
+
+Top bar includes:
+- global search
+- notifications
+- user profile
+- quick actions
+
+Left side:
+- collapsible sidebar
+
+Mobile:
+- bottom navigation
+
+====================================================
+6) DASHBOARD PAGE
+====================================================
+
+Build advanced dashboard.
+
+Widgets:
+- القضايا النشطة
+- الجلسات اليوم
+- آجال قريبة
+- الفواتير المعلقة
+- المداخيل الشهرية
+- الوقت المقضي
+- آخر النشاطات
+- التنبيهات
+
+Dashboard must be customizable.
+
+Include:
+- charts
+- recent activities
+- timeline
+
+====================================================
+7) CASE MANAGEMENT MODULE
+====================================================
+
+Core entity: القضية
+
+Fields:
+- رقم القضية
+- اسم القضية
+- نوع القضية
+- المحكمة
+- الحالة
+- تاريخ الفتح
+- الجلسة الجاية
+- تاريخ الحكم
+- ملاحظات
+- المحامي المسؤول
+
+Relations:
+- multiple clients
+- multiple opponents
+- multiple documents
+- multiple events
+- multiple invoices
+- multiple tasks
+
+Case tabs:
+- نظرة عامة
+- الأحداث
+- الوثائق
+- المهام
+- الفواتير
+- المراسلات
+- الملاحظات
+- التسلسل الزمني
+
+====================================================
+8) EVENTS MODULE
+====================================================
+
+Very important.
+
+Create legal events system.
+
+Event fields:
+- نوع الحدث
+- التاريخ
+- الساعة
+- المحكمة
+- الوصف
+- النتيجة
+- ملاحظات
+- ملفات مرتبطة
+
+Predefined event types:
+- جلسة
+- استئناف
+- تنفيذ
+- تبليغ
+- تصريح
+- ختم
+- حكم
+- تأجيل
+
+Allow custom event types.
+
+Timeline view mandatory.
+
+====================================================
+9) CLIENT MANAGEMENT
+====================================================
+
+Entity:
+الحريف
+
+Fields:
+- الاسم
+- النوع (شخص / شركة)
+- الهاتف
+- الإيميل
+- العنوان
+- رقم بطاقة التعريف
+- المعرف الجبائي
+- البنك
+- شركة التأمين
+- الممثل القانوني
+- ملاحظات
+
+Client profile:
+- active cases
+- invoices
+- payments
+- documents
+- communications
+
+====================================================
+10) OPPONENTS MODULE
+====================================================
+
+Entity:
+الخصوم
+
+Fields:
+- الاسم
+- المحامي
+- الهاتف
+- العنوان
+- ملاحظات
+
+====================================================
+11) DOCUMENT MANAGEMENT
+====================================================
+
+Advanced document system.
+
+Features:
+- upload
+- drag/drop
+- preview
+- versioning
+- PDF preview
+- Word preview
+- scan upload
+- OCR-ready structure
+
+Document categories:
+- عقود
+- عرائض
+- أحكام
+- مراسلات
+- إثباتات
+- فواتير
+
+Features:
+- templates
+- automatic generation
+- linked to cases
+- linked to clients
+
+====================================================
+12) DOCUMENT TEMPLATES
+====================================================
+
+Module:
+النماذج
+
+Features:
+- create templates
+- auto-fill variables
+- generate Word/PDF
+
+Examples:
+- عريضة
+- إعلام
+- وكالة
+- عقد
+- إنذار
+
+====================================================
+13) BILLING MODULE
+====================================================
+
+Advanced billing.
+
+Entities:
+- فاتورة
+- خلاص
+- مصاريف
+- فاتورة أولية
+
+Invoice fields:
+- الحريف
+- القضية
+- المبلغ
+- الأداء
+- TVA
+- التاريخ
+- الحالة
+
+Statuses:
+- غير خالصة
+- مدفوعة
+- جزئية
+
+====================================================
+14) TIME TRACKING
+====================================================
+
+Entity:
+الوقت المقضي
+
+Features:
+- start timer
+- stop timer
+- attach to case
+- attach to invoice
+- lawyer performance
+
+====================================================
+15) PAYMENTS
+====================================================
+
+Entity:
+الخلاصات
+
+Fields:
+- المبلغ
+- التاريخ
+- الطريقة
+- البنك
+- ملاحظات
+
+====================================================
+16) CONSULTATIONS
+====================================================
+
+Module:
+الاستشارات
+
+Fields:
+- الحريف
+- الموضوع
+- التاريخ
+- المبلغ
+- الملاحظات
+- الوثائق
+
+====================================================
+17) TASK MANAGEMENT
+====================================================
+
+Entity:
+المهام
+
+Fields:
+- العنوان
+- المسؤول
+- الأولوية
+- الحالة
+- الأجل
+- ملاحظات
+
+Statuses:
+- جديدة
+- بصدد الإنجاز
+- مكتملة
+- متأخرة
+
+====================================================
+18) CALENDAR
+====================================================
+
+Modern calendar.
+
+Views:
+- نهار
+- أسبوع
+- شهر
+
+Include:
+- hearings
+- tasks
+- meetings
+- reminders
+
+Sync-ready architecture.
+
+====================================================
+19) CLIENT PORTAL
+====================================================
+
+Very important.
+
+Module:
+فضاء الحريف
+
+Features:
+- متابعة القضية
+- تحميل الوثائق
+- إرسال الوثائق
+- الفواتير
+- الرسائل
+- الإشعارات
+- المواعيد
+
+Secure login.
+
+====================================================
+20) INTERNAL MESSAGING
+====================================================
+
+Module:
+المراسلات
+
+Features:
+- internal messages
+- file attachments
+- linked to cases
+
+====================================================
+21) EMAIL MANAGEMENT
+====================================================
+
+Module:
+البريد الإلكتروني
+
+Features:
+- email linking
+- attachments
+- email history
+- future Outlook/Gmail integration
+
+====================================================
+22) ALERTS & NOTIFICATIONS
+====================================================
+
+System:
+التنبيهات
+
+Alerts:
+- جلسة قريبة
+- أجل استئناف
+- فاتورة غير خالصة
+- مهمة متأخرة
+- وثيقة ناقصة
+
+Channels:
+- in-app
+- mobile push
+
+====================================================
+23) SEARCH SYSTEM
+====================================================
+
+Global smart search.
+
+Search by:
+- case number
+- client
+- lawyer
+- tribunal
+- dates
+- invoice
+- document
+
+Advanced filters mandatory.
+
+====================================================
+24) ADVANCED TIMELINE
+====================================================
+
+Build global timeline.
+
+Timeline includes:
+- events
+- documents
+- emails
+- payments
+- tasks
+- notes
+
+====================================================
+25) USER ROLES & PERMISSIONS
+====================================================
+
+Roles:
+- مدير
+- شريك
+- محامي
+- متربص
+- محاسب
+- سكرتيرة
+
+Granular permissions:
+- view
+- edit
+- delete
+- billing access
+- admin access
+
+====================================================
+26) AUDIT LOG
+====================================================
+
+Entity:
+سجل العمليات
+
+Track:
+- modifications
+- deletions
+- logins
+- payments
+- document access
+
+====================================================
+27) SETTINGS
+====================================================
+
+Settings pages:
+- المكتب
+- المستخدمين
+- الصلاحيات
+- أنواع القضايا
+- أنواع الأحداث
+- القوالب
+- الحسابات البنكية
+
+====================================================
+28) MOBILE EXPERIENCE
+====================================================
+
+Critical.
+
+Mobile-first UX.
+
+Features:
+- camera upload
+- scan document
+- voice notes
+- push notifications
+
+Bottom navigation on mobile.
+
+====================================================
+29) FLOATING NUMERIC KEYPAD
+====================================================
+
+CRITICAL FEATURE.
+
+Desktop:
+- fixed right side numeric keypad
+
+Mobile:
+- bottom sheet keypad
+
+Keys:
+1 2 3
+4 5 6
+7 8 9
+0 . ←
+
+Only appears:
+- amount fields
+- payment fields
+
+====================================================
+30) DATABASE STRUCTURE
+====================================================
+
+Create scalable normalized schema.
+
+Main tables:
+- users
+- roles
+- permissions
+- cases
+- clients
+- opponents
+- events
+- documents
+- invoices
+- payments
+- tasks
+- consultations
+- notifications
+- messages
+- timelines
+- audit_logs
+
+Use relational integrity.
+
+====================================================
+31) PERFORMANCE REQUIREMENTS
+====================================================
+
+- Fast loading
+- Pagination
+- Lazy loading
+- Optimized queries
+
+====================================================
+32) SECURITY
+====================================================
+
+- Secure auth
+- JWT
+- encrypted passwords
+- role validation
+- secure uploads
+- audit logs
+
+====================================================
+33) UI/UX REQUIREMENTS
+====================================================
+
+RULES:
+- no clutter
+- maximum usability
+- max 3 clicks
+- premium feel
+- smooth transitions
+
+Avoid:
+- old ERP design
+- crowded forms
+- too many buttons
+
+====================================================
+34) FUTURE AI READY ARCHITECTURE
+====================================================
+
+Prepare architecture for:
+- document summarization
+- AI drafting
+- semantic search
+- OCR
+- intelligent recommendations
+
+DO NOT implement advanced AI yet.
+Only prepare structure.
+
+====================================================
+35) FINAL OUTPUT REQUIREMENTS
+====================================================
+
+Generate:
+- full app architecture
+- reusable components
+- modern pages
+- responsive layouts
+- clean folder structure
+- scalable backend
+- Prisma schema
+- seed data
+- authentication
+- RTL support
+- dark/light ready structure
+
+IMPORTANT:
+Do NOT generate placeholder junk.
+Do NOT generate fake incomplete pages.
+Build coherent scalable production-style architecture.
+
+The app must feel like a modern premium legal SaaS for Tunisia.
+```
