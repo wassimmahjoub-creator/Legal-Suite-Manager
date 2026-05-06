@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, casesTable, clientsTable } from "@workspace/db";
-import { eq, isNull } from "drizzle-orm";
+import { eq, isNull, like, sql } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -55,9 +55,14 @@ router.post("/cases", async (req, res) => {
   const parsed = CreateCaseBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
-  const [count] = await db.select({ max: casesTable.id }).from(casesTable);
   const year = new Date().getFullYear();
-  const caseNumber = `${year}-${String((count?.max ?? 0) + 1).padStart(4, "0")}`;
+  const yearPrefix = `${year}-`;
+  const [count] = await db
+    .select({ cnt: sql<number>`count(*)::int` })
+    .from(casesTable)
+    .where(like(casesTable.caseNumber, `${yearPrefix}%`));
+  const next = (count?.cnt ?? 0) + 1;
+  const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
 
   const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
