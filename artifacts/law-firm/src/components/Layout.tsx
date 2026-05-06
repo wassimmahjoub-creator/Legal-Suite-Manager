@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Scale, Timer, BarChart3, TrendingDown, Mic,
   Shield, MessageSquare, FilePen, LogOut, ChevronDown,
   Building2, PhoneCall, ShieldCheck, Landmark, Settings2,
-  ClipboardList, Trash2, ChevronLeft, MailOpen,
+  ClipboardList, Trash2, ChevronLeft, MailOpen, Sun, Moon,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -72,6 +72,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains('dark')
+  );
+
+  function toggleTheme() {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
@@ -148,6 +164,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </div>
       </nav>
+
+      {/* Theme toggle */}
+      <div className={cn("shrink-0 px-3 pb-2", collapsed && "px-2 flex justify-center")}>
+        <button
+          onClick={toggleTheme}
+          title={isDark ? "التحويل إلى الوضع الفاتح" : "التحويل إلى الوضع الداكن"}
+          className={cn(
+            "flex items-center gap-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors",
+            collapsed ? "p-2" : "w-full px-3 py-2"
+          )}
+        >
+          {isDark
+            ? <Sun className="h-4 w-4 shrink-0" />
+            : <Moon className="h-4 w-4 shrink-0" />
+          }
+          {!collapsed && (
+            <span>{isDark ? "الوضع الفاتح" : "الوضع الداكن"}</span>
+          )}
+        </button>
+      </div>
 
       {/* User section */}
       <div className={cn("shrink-0 border-t border-border p-3", collapsed && "px-2")}>

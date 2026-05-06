@@ -13,8 +13,11 @@
           if (dark) document.documentElement.classList.add('dark');
           else document.documentElement.classList.remove('dark');
         }
-        apply(mq.matches);
-        mq.addEventListener('change', function (e) { apply(e.matches); });
+        var stored = localStorage.getItem('theme');
+        apply(stored === 'dark' || (!stored && mq.matches));
+        mq.addEventListener('change', function (e) {
+          if (!localStorage.getItem('theme')) apply(e.matches);
+        });
       })();
     </script>
   </head>
