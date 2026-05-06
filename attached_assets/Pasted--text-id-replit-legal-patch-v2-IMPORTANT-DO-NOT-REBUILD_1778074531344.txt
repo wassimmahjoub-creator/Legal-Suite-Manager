@@ -1,0 +1,549 @@
+```text id="replit-legal-patch-v2"
+IMPORTANT:
+DO NOT REBUILD THE APPLICATION.
+DO NOT REGENERATE EXISTING PAGES.
+DO NOT CHANGE THE CURRENT UI ARCHITECTURE.
+
+The current legal SaaS application has already been generated.
+
+Your task is ONLY to EXTEND the CURRENT application with advanced legal-business logic inspired by professional legal management systems like WinAvocat.
+
+You MUST:
+- preserve existing routes
+- preserve existing components
+- preserve existing database structure
+- preserve RTL
+- preserve Arabic UI
+- preserve design system
+
+ONLY ADD:
+- missing legal logic
+- missing workflows
+- missing relational structures
+- missing legal administration
+- missing legal automation
+
+This patch must integrate deeply into the existing system WITHOUT duplication.
+
+====================================================
+1) RELATIONAL LEGAL FILE STRUCTURE
+====================================================
+
+Extend the existing "القضايا" module.
+
+According to WinAvocat, a legal file can contain:
+- multiple clients
+- multiple opponents
+- multiple lawyers
+- multiple events
+- multiple documents
+- multiple invoices
+- multiple procedures
+- multiple legal operations
+- linked legal files
+- linked communications
+- linked financial records
+
+Implement:
+- many-to-many relationships where necessary
+- relational junction tables
+- relational timeline aggregation
+
+Add inside case page:
+القضايا المرتبطة
+
+Support:
+- linked cases
+- linked contracts
+- linked clients
+- linked properties
+- linked companies
+
+====================================================
+2) LEGAL EVENTS ENGINE
+====================================================
+
+Completely extend the events module.
+
+WinAvocat heavily structures events with:
+- type
+- objective
+- result
+- status
+- deadlines
+- legal meaning
+
+Add fields:
+- نوع الحدث
+- الهدف
+- النتيجة
+- الحالة
+- المحكمة
+- الدائرة
+- التأجيل
+- التاريخ الجديد
+- أجل قانوني
+
+Add configurable event types:
+- جلسة
+- تنفيذ
+- استئناف
+- تعقيب
+- تصريح
+- إعلام
+- ختم
+- حكم
+- تأخير
+- تقرير خبير
+
+Each event must support:
+- linked documents
+- linked procedures
+- linked communications
+- linked reminders
+
+====================================================
+3) LEGAL PROCEDURAL TRACKING
+====================================================
+
+Create advanced legal procedure lifecycle.
+
+New section inside cases:
+الإجراءات القانونية
+
+Support procedural stages:
+- ابتدائي
+- استئناف
+- تعقيب
+- تنفيذ
+- ختم
+
+Each procedure contains:
+- start date
+- end date
+- legal status
+- linked events
+- linked documents
+- linked deadlines
+- responsible lawyer
+
+Add visual procedural timeline.
+
+====================================================
+4) AUTOMATIC LEGAL DEADLINES
+====================================================
+
+Implement legal deadline calculation engine.
+
+Feature:
+حساب الآجال آلياً
+
+Examples:
+- appeal deadline
+- execution deadline
+- notification deadline
+
+When creating legal procedures:
+→ automatically calculate future deadlines.
+
+Add:
+- reminder date
+- urgency level
+- overdue status
+
+====================================================
+5) ADVANCED LEGAL CONFIGURATION
+====================================================
+
+Create admin module:
+الإعدادات القانونية
+
+Dynamic configurable tables:
+- أنواع القضايا
+- أنواع الأحكام
+- أنواع الجلسات
+- أنواع الوثائق
+- أنواع الأتعاب
+- أنواع المصاريف
+- أنواع الإجراءات
+- أنواع الأهداف
+- أنواع النتائج
+
+Admin users can:
+- add
+- edit
+- archive
+- reorder
+
+====================================================
+6) INTELLIGENT LEGAL NUMBERING
+====================================================
+
+Implement configurable numbering engine.
+
+Feature:
+الترقيم الأوتوماتيكي
+
+Configurable by:
+- year
+- tribunal
+- branch
+- case type
+
+Support:
+- automatic numbering
+- manual override
+- duplicate prevention
+
+====================================================
+7) LEGAL ARCHIVE SYSTEM
+====================================================
+
+Create advanced archive module.
+
+Statuses:
+- نشطة
+- مغلقة
+- مؤرشفة
+
+Features:
+- archive case
+- restore archived case
+- archived search
+- archive filters
+
+====================================================
+8) SOFT DELETE & TRASH
+====================================================
+
+Implement:
+سلة المحذوفات
+
+Use soft delete everywhere.
+
+Apply to:
+- cases
+- clients
+- invoices
+- documents
+- events
+- consultations
+
+Features:
+- restore
+- permanent delete (admin only)
+- deletion logs
+
+====================================================
+9) ADVANCED AUDIT LOGS
+====================================================
+
+Extend audit logs deeply.
+
+Track:
+- previous value
+- new value
+- modified field
+- modified by
+- timestamp
+- IP address
+
+Create UI:
+سجل التعديلات
+
+Filter by:
+- user
+- entity
+- date
+- operation type
+
+====================================================
+10) INTERNAL CONFIDENTIAL NOTES
+====================================================
+
+Create:
+ملاحظات داخلية
+
+Features:
+- visible internally only
+- hidden from client portal
+
+Allow:
+- legal strategy notes
+- private lawyer notes
+- risk assessments
+
+====================================================
+11) CASE TEAMS
+====================================================
+
+Extend lawyer assignment.
+
+Create:
+فريق القضية
+
+Allow:
+- multiple lawyers
+- assistants
+- trainees
+
+Roles:
+- مسؤول رئيسي
+- محامي مساعد
+- متربص
+
+====================================================
+12) COMMUNICATION LOG SYSTEM
+====================================================
+
+Create:
+سجل الاتصالات
+
+Track:
+- phone calls
+- meetings
+- emails
+- SMS
+- WhatsApp notes
+- physical mail
+
+Fields:
+- type
+- date
+- summary
+- linked case
+- linked client
+- linked document
+
+====================================================
+13) COURTS & CHAMBERS
+====================================================
+
+Create:
+المحاكم
+
+Fields:
+- المحكمة
+- الدائرة
+- المدينة
+- العنوان
+- أيام الجلسات
+- ملاحظات
+
+Link courts to:
+- cases
+- hearings
+- procedures
+
+====================================================
+14) INSURANCE COMPANIES
+====================================================
+
+Create:
+شركات التأمين
+
+Fields:
+- الاسم
+- الهاتف
+- البريد الإلكتروني
+- العنوان
+- المسؤول
+
+Link to:
+- clients
+- cases
+
+====================================================
+15) BANK ACCOUNTS
+====================================================
+
+Extend accounting system.
+
+Create:
+الحسابات البنكية
+
+Features:
+- multiple accounts
+- balances
+- linked payments
+- linked extractions
+
+====================================================
+16) PROFESSIONAL LEGAL PRINTING
+====================================================
+
+Implement:
+الطباعة القانونية
+
+Support:
+- Arabic RTL printing
+- PDF export
+- Word export
+- official legal layouts
+
+Allow:
+- printable reports
+- printable procedures
+- printable invoices
+- printable case summaries
+
+====================================================
+17) ADVANCED SEARCH ENGINE
+====================================================
+
+Extend search globally.
+
+Add:
+- partial search
+- wildcard search
+- phonetic-like matching
+- advanced legal filters
+
+Search by:
+- case number
+- client
+- opponent
+- lawyer
+- court
+- judgment
+- document
+- invoice
+
+Add:
+اقتراحات تلقائية
+
+====================================================
+18) LEGAL VALIDATION WORKFLOW
+====================================================
+
+Create:
+المراجعة القانونية
+
+Workflow states:
+- مسودة
+- قيد المراجعة
+- تمت الموافقة
+- تم الإرسال
+
+Allow:
+- validation by senior lawyer
+- approval history
+- rejection comments
+
+====================================================
+19) COMPLETE LEGAL TIMELINE
+====================================================
+
+Extend timeline system.
+
+The timeline must aggregate:
+- events
+- procedures
+- documents
+- communications
+- invoices
+- payments
+- edits
+- consultations
+- reminders
+
+Create unified chronological legal history.
+
+====================================================
+20) CLIENT / COMPANY ADVANCED TYPES
+====================================================
+
+Extend clients.
+
+Support:
+- شخص
+- شركة
+- مؤسسة
+- شركة تأمين
+
+Add:
+- legal representative
+- fiscal ID
+- multiple contacts
+
+====================================================
+21) LEGAL OPERATIONS
+====================================================
+
+Create:
+أعمال المحامين
+
+Track:
+- legal operations
+- lawyer activities
+- operation type
+- time spent
+- linked case
+
+====================================================
+22) DAILY LEGAL OPERATIONS DASHBOARD
+====================================================
+
+Add dashboard widgets:
+- جلسات اليوم
+- آجال اليوم
+- القضايا المستعجلة
+- الأعمال غير المكتملة
+- الفواتير المتأخرة
+- آخر العمليات
+
+====================================================
+23) REMINDER SYSTEM
+====================================================
+
+Create advanced reminders.
+
+Support:
+- hearing reminders
+- appeal deadlines
+- unpaid invoices
+- missing documents
+- overdue tasks
+
+Notification channels:
+- in-app
+- push-ready architecture
+
+====================================================
+24) TEMPLATE & LEGAL DOCUMENT AUTOMATION
+====================================================
+
+Extend templates system.
+
+Support:
+- auto-filled templates
+- reusable legal templates
+- Word generation
+- PDF generation
+
+Templates:
+- عريضة
+- عقد
+- وكالة
+- إعلام
+- تصريح
+
+====================================================
+25) KEEP CURRENT APP STABLE
+====================================================
+
+CRITICAL:
+- no duplicate pages
+- no duplicate entities
+- no redesign
+- no breaking changes
+- no random restructuring
+
+ONLY EXTEND CLEANLY.
+
+The final result must feel like:
+- a real legal operating system
+- not a generic CRM
+- modern UX + deep legal logic
+- premium Arabic RTL SaaS
+```

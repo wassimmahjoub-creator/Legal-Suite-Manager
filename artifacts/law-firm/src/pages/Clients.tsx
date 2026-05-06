@@ -1,24 +1,97 @@
-import { useState } from "react";
-import { useListClients } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Phone, Mail, MapPin, Users } from "lucide-react";
+import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
+interface Client {
+  id: number;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+const EMPTY = { name: "", phone: "", email: "", address: "", notes: "" };
+const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
+
 export default function Clients() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", notes: "" });
-  const { data: clients, isLoading } = useListClients();
+  const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState<Client | null>(null);
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Client | null>(null);
 
-  const filteredClients = clients?.filter(c =>
-    !search || c.name.includes(search) || (c.phone && c.phone.includes(search))
+  async function load() {
+    setLoading(true);
+    const r = await authFetch(`${BASE}/api/clients`);
+    if (r.ok) setClients(await r.json());
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function openNew() {
+    setEditing(null);
+    setForm(EMPTY);
+    setModal(true);
+  }
+
+  function openEdit(c: Client) {
+    setEditing(c);
+    setForm({
+      name:    c.name,
+      phone:   c.phone ?? "",
+      email:   c.email ?? "",
+      address: c.address ?? "",
+      notes:   c.notes ?? "",
+    });
+    setModal(true);
+  }
+
+  async function save() {
+    if (!form.name.trim()) return;
+    setSaving(true);
+    const url = editing
+      ? `${BASE}/api/clients/${editing.id}`
+      : `${BASE}/api/clients`;
+    await authFetch(url, {
+      method: editing ? "PUT" : "POST",
+      body: JSON.stringify({
+        name:    form.name,
+        phone:   form.phone || null,
+        email:   form.email || null,
+        address: form.address || null,
+        notes:   form.notes || null,
+      }),
+    });
+    await load();
+    setSaving(false);
+    setModal(false);
+  }
+
+  async function remove(id: number) {
+    if (!confirm("حذف هذا الحريف؟")) return;
+    await authFetch(`${BASE}/api/clients/${id}`, { method: "DELETE" });
+    await load();
+  }
+
+  const filtered = clients.filter(c =>
+    !search ||
+    c.name.includes(search) ||
+    (c.phone && c.phone.includes(search)) ||
+    (c.email && c.email.includes(search))
   );
-
-  const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
   return (
     <div className="space-y-6">
@@ -27,9 +100,8 @@ export default function Clients() {
           <h1 className="text-2xl font-bold">الحرفاء</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة معلومات وبيانات الحرفاء</p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" />
-          حريف جديد
+        <Button onClick={openNew} className="rounded-lg gap-2 px-5">
+          <Plus className="h-4 w-4" /> حريف جديد
         </Button>
       </div>
 
@@ -39,35 +111,47 @@ export default function Clients() {
           placeholder="بحث بالاسم أو الهاتف..."
           className="pr-9 h-10 bg-card border-border"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-44 rounded-xl" />)}
         </div>
-      ) : filteredClients?.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
           <Users className="h-12 w-12 text-muted-foreground/20" />
           <p className="text-muted-foreground">لم يتم العثور على حرفاء</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredClients?.map((client) => (
+          {filtered.map(client => (
             <Card
               key={client.id}
               className="border-none shadow-md hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer group"
-              onClick={() => setSelectedClient(client as any)}
+              onClick={() => setSelected(client)}
             >
               <CardContent className="p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    {client.name.charAt(0)}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      {client.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-bold truncate">{client.name}</h3>
+                      <p className="text-xs text-muted-foreground">حريف نشط</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold truncate">{client.name}</h3>
-                    <p className="text-xs text-muted-foreground">حريف نشط</p>
+                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={e => { e.stopPropagation(); openEdit(client); }}
+                      className="p-1.5 hover:bg-muted rounded-lg">
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); remove(client.id); }}
+                      className="p-1.5 hover:bg-destructive/10 rounded-lg">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-2 text-sm text-muted-foreground">
@@ -96,67 +180,77 @@ export default function Clients() {
         </div>
       )}
 
-      {/* New Client Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="إضافة حريف جديد">
+      {/* New / Edit Modal */}
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? `تعديل: ${editing.name}` : "إضافة حريف جديد"}>
         <div className="space-y-4">
-          <FormField label="الاسم الكامل *" htmlFor="client-name">
-            <Input id="client-name" placeholder="مثال: محمد بن علي" className={inputCls}
+          <FormField label="الاسم الكامل *" htmlFor="cl-name">
+            <Input id="cl-name" placeholder="مثال: محمد بن علي" className={inputCls}
               value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </FormField>
-          <FormField label="رقم الهاتف" htmlFor="client-phone">
-            <Input id="client-phone" placeholder="مثال: 22 123 456" className={inputCls} dir="ltr"
+          <FormField label="رقم الهاتف" htmlFor="cl-phone">
+            <Input id="cl-phone" placeholder="مثال: 22 123 456" className={inputCls} dir="ltr"
               value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
           </FormField>
-          <FormField label="البريد الإلكتروني" htmlFor="client-email">
-            <Input id="client-email" type="email" placeholder="example@email.com" className={inputCls} dir="ltr"
+          <FormField label="البريد الإلكتروني" htmlFor="cl-email">
+            <Input id="cl-email" type="email" placeholder="example@email.com" className={inputCls} dir="ltr"
               value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
           </FormField>
-          <FormField label="العنوان" htmlFor="client-address">
-            <Input id="client-address" placeholder="مثال: شارع الحبيب بورقيبة، تونس" className={inputCls}
+          <FormField label="العنوان" htmlFor="cl-address">
+            <Input id="cl-address" placeholder="مثال: شارع الحبيب بورقيبة، تونس" className={inputCls}
               value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
           </FormField>
-          <FormField label="ملاحظات" htmlFor="client-notes">
-            <textarea id="client-notes" rows={3} placeholder="ملاحظات إضافية..."
+          <FormField label="ملاحظات" htmlFor="cl-notes">
+            <textarea id="cl-notes" rows={3} placeholder="ملاحظات إضافية..."
               className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </FormField>
           <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setShowModal(false)}>حفظ الحريف</Button>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">إلغاء</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>
+              {saving ? "جاري الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الحريف"}
+            </Button>
+            <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>
 
-      {/* Client Detail Modal */}
-      {selectedClient && (
-        <Modal open={!!selectedClient} onClose={() => setSelectedClient(null)} title={(selectedClient as any).name} size="sm">
+      {/* Detail Modal */}
+      {selected && (
+        <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.name} size="sm">
           <div className="space-y-4">
             <div className="flex items-center justify-center">
               <div className="h-20 w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-3xl">
-                {(selectedClient as any).name?.charAt(0)}
+                {selected.name.charAt(0)}
               </div>
             </div>
             <div className="space-y-3 text-sm">
-              {(selectedClient as any).phone && (
+              {selected.phone && (
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <Phone className="h-4 w-4 text-primary shrink-0" />
-                  <span dir="ltr">{(selectedClient as any).phone}</span>
+                  <span dir="ltr">{selected.phone}</span>
                 </div>
               )}
-              {(selectedClient as any).email && (
+              {selected.email && (
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <Mail className="h-4 w-4 text-primary shrink-0" />
-                  <span>{(selectedClient as any).email}</span>
+                  <span>{selected.email}</span>
                 </div>
               )}
-              {(selectedClient as any).address && (
+              {selected.address && (
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  <span>{(selectedClient as any).address}</span>
+                  <span>{selected.address}</span>
+                </div>
+              )}
+              {selected.notes && (
+                <div className="p-3 bg-muted/50 rounded-lg text-muted-foreground">
+                  {selected.notes}
                 </div>
               )}
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setSelectedClient(null)}>إغلاق</Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => { setSelected(null); openEdit(selected); }}>تعديل</Button>
+              <Button variant="outline" className="px-5" onClick={() => setSelected(null)}>إغلاق</Button>
+            </div>
           </div>
         </Modal>
       )}

@@ -1,7 +1,6 @@
 import { Router } from "express";
-import { db, eventsTable, casesTable } from "@workspace/db";
+import { db, eventsTable, casesTable, insertEventSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -15,7 +14,13 @@ const withJoins = () =>
       date: eventsTable.date,
       time: eventsTable.time,
       location: eventsTable.location,
+      court: eventsTable.court,
+      division: eventsTable.division,
       type: eventsTable.type,
+      objective: eventsTable.objective,
+      result: eventsTable.result,
+      legalStatus: eventsTable.legalStatus,
+      postponedTo: eventsTable.postponedTo,
       notes: eventsTable.notes,
       createdAt: eventsTable.createdAt,
     })
@@ -32,7 +37,7 @@ router.get("/events", async (req, res) => {
 });
 
 router.post("/events", async (req, res) => {
-  const parsed = CreateEventBody.safeParse(req.body);
+  const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const [row] = await db.insert(eventsTable).values(parsed.data).returning();
   res.status(201).json({ ...row, caseName: null });
@@ -40,7 +45,7 @@ router.post("/events", async (req, res) => {
 
 router.put("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const parsed = UpdateEventBody.safeParse(req.body);
+  const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const [row] = await db.update(eventsTable).set(parsed.data).where(eq(eventsTable.id, id)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });

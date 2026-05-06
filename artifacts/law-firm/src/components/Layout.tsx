@@ -94,47 +94,48 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </div>
 
-      {/* Navigation groups */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {navGroups.map(group => (
-          <div key={group.label}>
-            {!collapsed && (
-              <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-3 mb-1.5">
-                {group.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map(item => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onNavigate}
-                    title={collapsed ? item.label : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 group relative",
-                      collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
-                      active
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                    {/* Tooltip on collapsed */}
-                    {collapsed && (
-                      <span className="absolute right-full mr-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-border z-50">
-                        {item.label}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+      {/* Navigation groups — scrollbar-rtl-fix force la scrollbar à droite */}
+      <nav className="scrollbar-rtl-fix flex-1 py-3 px-2">
+        <div className="space-y-4" dir="rtl">
+          {navGroups.map(group => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-3 mb-1.5">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onNavigate}
+                      title={collapsed ? item.label : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 group relative",
+                        collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {collapsed && (
+                        <span className="absolute right-full mr-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-border z-50">
+                          {item.label}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </nav>
 
       {/* User section */}

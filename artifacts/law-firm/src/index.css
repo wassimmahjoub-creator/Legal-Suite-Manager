@@ -304,3 +304,46 @@
     inset: -1px;
   }
 }
+
+/* ============================================================
+   SCROLLBAR — fine, dorée, à droite de chaque zone scrollable
+   ============================================================ */
+
+/* Mettre la scrollbar de page côté droit malgré le RTL */
+html {
+  direction: ltr;
+}
+body {
+  direction: rtl;
+}
+
+/* WebKit (Chrome, Edge, Safari) — scrollbar fine */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(40 65% 55% / 0.28);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(40 65% 55% / 0.55);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(40 65% 55% / 0.28) transparent;
+}
+
+/* Scrollbar de chaque conteneur scrollable → côté droit (inline-end LTR) */
+.scrollbar-rtl-fix {
+  direction: ltr;
+  overflow-y: auto;
+}
+.scrollbar-rtl-fix > * {
+  direction: rtl;
+}

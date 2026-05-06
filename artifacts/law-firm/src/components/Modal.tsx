@@ -36,7 +36,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
       />
       <div
         className={cn(
-          "relative bg-card border border-border rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 fade-in duration-200",
+          "relative bg-card border border-border rounded-2xl shadow-2xl w-full max-h-[90vh] animate-in zoom-in-95 fade-in duration-200 overflow-hidden flex flex-col",
           size === "sm" && "max-w-sm",
           size === "md" && "max-w-md",
           size === "lg" && "max-w-xl",
@@ -45,7 +45,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
         dir="rtl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
           <h2 className="text-xl font-bold">{title}</h2>
           <button
             onClick={onClose}
@@ -54,7 +54,10 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        {/* scrollbar-rtl-fix: direction:ltr on outer forces scrollbar to RIGHT, inner restores RTL */}
+        <div className="scrollbar-rtl-fix flex-1 min-h-0">
+          <div className="p-6" dir="rtl">{children}</div>
+        </div>
       </div>
     </div>
   );
