@@ -7,6 +7,7 @@ import {
   BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { authFetch } from "@/lib/authFetch";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -27,7 +28,7 @@ function useReports() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${BASE_URL}/api/reports/summary`);
+      const res = await authFetch(`${BASE_URL}/api/reports/summary`);
       if (!res.ok) throw new Error("فشل تحميل البيانات");
       setData(await res.json());
     } catch (e) {
@@ -200,7 +201,7 @@ export default function Reports() {
                 <Skeleton className="h-32 w-full" />
                 <Skeleton className="h-4 w-full" />
               </div>
-            ) : data?.monthly.every((m) => m.income === 0) ? (
+            ) : !data || data.monthly.every((m) => m.income === 0) ? (
               <div className="h-36 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
                 <BarChart3 className="h-8 w-8 opacity-20" />
                 لا توجد فواتير مسددة بعد
@@ -235,7 +236,7 @@ export default function Reports() {
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => <Skeleton key={i} className="h-4 w-full" />)}
                 </div>
-              ) : data?.caseStatus.length === 0 ? (
+              ) : !data || data.caseStatus.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">لا توجد قضايا بعد</p>
               ) : (
                 <div className="space-y-3">
@@ -277,7 +278,7 @@ export default function Reports() {
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
               </div>
-            ) : data?.topClients.length === 0 ? (
+            ) : !data || data.topClients.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
                 لا يوجد حرفاء بعد
