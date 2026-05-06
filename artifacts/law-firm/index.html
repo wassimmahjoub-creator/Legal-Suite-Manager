@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>محامي بلوس</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Theme detection — runs synchronously before paint to prevent flash -->
+    <script>
+      (function () {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        function apply(dark) {
+          if (dark) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        }
+        apply(mq.matches);
+        mq.addEventListener('change', function (e) { apply(e.matches); });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
