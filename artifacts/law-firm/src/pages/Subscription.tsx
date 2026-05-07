@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Modal, FormField } from "@/components/Modal";
 import {
   Crown, CheckCircle2, Clock, Users, CreditCard, TrendingUp, Calendar,
   AlertTriangle, RefreshCw, UserPlus, UserCheck, UserX,
-  Briefcase, FileText, HardDrive, Download, Plus, Phone, ArrowUp,
+  Briefcase, FileText, HardDrive, Download, Plus, Phone, ArrowUp, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -65,6 +67,9 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeCycle, setUpgradeCycle] = useState<"monthly" | "yearly">("monthly");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ holder: "", number: "", expiry: "", cvv: "" });
+  const [savedCard, setSavedCard] = useState<{ holder: string; last4: string; expiry: string } | null>(null);
 
   async function reload() {
     const [o, b, s] = await Promise.all([
@@ -76,6 +81,17 @@ export default function Subscription() {
   }
 
   useEffect(() => { reload().finally(() => setLoading(false)); }, []);
+
+  function saveCard() {
+    const raw = paymentForm.number.replace(/\s/g, "");
+    if (!paymentForm.holder || raw.length < 12 || !paymentForm.expiry) {
+      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" }); return;
+    }
+    setSavedCard({ holder: paymentForm.holder, last4: raw.slice(-4), expiry: paymentForm.expiry });
+    setPaymentForm({ holder: "", number: "", expiry: "", cvv: "" });
+    setShowPaymentModal(false);
+    toast({ title: "تمت إضافة طريقة الدفع", description: "سيتم استخدامها عند تفعيل بوابة الدفع" });
+  }
 
   async function upgradePlan(planId: string) {
     const planName = PLANS.find(p => p.id === planId)?.name ?? planId;
@@ -450,24 +466,80 @@ export default function Subscription() {
         </div>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-8 bg-muted rounded-md flex items-center justify-center">
-              <CreditCard className="h-4 w-4 text-muted-foreground/50" />
+            <div className={cn("w-12 h-8 rounded-md flex items-center justify-center", savedCard ? "bg-primary/10" : "bg-muted")}>
+              <CreditCard className={cn("h-4 w-4", savedCard ? "text-primary" : "text-muted-foreground/50")} />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">لا توجد طريقة دفع مسجلة</p>
-              <p className="text-xs text-muted-foreground/60">سيتم التكامل مع بوابة الدفع قريباً</p>
+              {savedCard ? (
+                <>
+                  <p className="text-sm font-semibold">{savedCard.holder}</p>
+                  <p className="text-xs text-muted-foreground">•••• •••• •••• {savedCard.last4} &nbsp;|&nbsp; {savedCard.expiry}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground">لا توجد طريقة دفع مسجلة</p>
+                  <p className="text-xs text-muted-foreground/60">أضف بطاقتك لتفعيل الاشتراك عند توفر بوابة الدفع</p>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="text-xs h-8" disabled>
-              تغيير البطاقة
-            </Button>
-            <Button size="sm" variant="outline" className="text-xs h-8" disabled>
-              <Plus className="h-3.5 w-3.5 ml-1" /> إضافة طريقة دفع
+            {savedCard && (
+              <Button size="sm" variant="ghost" className="text-xs h-8 text-destructive hover:text-destructive"
+                onClick={() => setSavedCard(null)}>
+                <Trash2 className="h-3.5 w-3.5 ml-1" /> حذف
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="text-xs h-8"
+              onClick={() => { setPaymentForm({ holder: "", number: "", expiry: "", cvv: "" }); setShowPaymentModal(true); }}>
+              {savedCard ? <><RefreshCw className="h-3.5 w-3.5 ml-1" /> تغيير البطاقة</> : <><Plus className="h-3.5 w-3.5 ml-1" /> إضافة طريقة دفع</>}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Payment modal */}
+      <Modal open={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="إضافة طريقة دفع">
+        <div className="space-y-4">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+            ℹ️ سيتم ربط بطاقتك بشكل آمن عند تفعيل بوابة الدفع. معلوماتك محفوظة بشكل مشفر.
+          </div>
+          <FormField label="اسم صاحب البطاقة *" htmlFor="pm-holder">
+            <Input id="pm-holder" placeholder="الاسم كما يظهر على البطاقة" dir="ltr"
+              className="h-10 bg-muted/50 border-border rounded-lg"
+              value={paymentForm.holder} onChange={e => setPaymentForm(f => ({ ...f, holder: e.target.value }))} />
+          </FormField>
+          <FormField label="رقم البطاقة *" htmlFor="pm-number">
+            <Input id="pm-number" placeholder="0000 0000 0000 0000" dir="ltr" maxLength={19}
+              className="h-10 bg-muted/50 border-border rounded-lg font-mono tracking-widest"
+              value={paymentForm.number}
+              onChange={e => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 16);
+                setPaymentForm(f => ({ ...f, number: v.replace(/(.{4})/g, "$1 ").trim() }));
+              }} />
+          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="تاريخ الانتهاء *" htmlFor="pm-expiry">
+              <Input id="pm-expiry" placeholder="MM/YY" dir="ltr" maxLength={5}
+                className="h-10 bg-muted/50 border-border rounded-lg font-mono"
+                value={paymentForm.expiry}
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  setPaymentForm(f => ({ ...f, expiry: v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v }));
+                }} />
+            </FormField>
+            <FormField label="CVV *" htmlFor="pm-cvv">
+              <Input id="pm-cvv" placeholder="000" dir="ltr" maxLength={4} type="password"
+                className="h-10 bg-muted/50 border-border rounded-lg font-mono"
+                value={paymentForm.cvv} onChange={e => setPaymentForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }))} />
+            </FormField>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <Button className="flex-1" onClick={saveCard}>حفظ طريقة الدفع</Button>
+            <Button variant="outline" className="px-6" onClick={() => setShowPaymentModal(false)}>إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* ── Billing history ── */}
       <div className="bg-card border border-border rounded-xl p-5 space-y-3">
