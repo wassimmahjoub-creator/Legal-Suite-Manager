@@ -113,7 +113,7 @@ function NavItem({
           "flex items-center gap-2.5 rounded-lg text-sm transition-all duration-150 relative",
           collapsed ? "justify-center px-0 py-2.5 w-10 mx-auto" : "px-2.5 py-2 pr-3",
           active
-            ? "bg-primary/12 text-primary font-semibold"
+            ? "bg-primary/10 text-primary font-semibold"
             : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60 font-normal"
         )}
       >
@@ -442,18 +442,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <div className="py-1">
-                  <Link href="/settings" onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-sm hover:bg-muted/60 transition-colors">
-                    <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground" /> الإعدادات
-                  </Link>
-                  <Link href="/audit-logs" onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-sm hover:bg-muted/60 transition-colors">
-                    <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" /> سجل التعديلات
-                  </Link>
-                  <div className="my-1 h-px bg-border/60" />
                   <button
                     onClick={() => { logout(); setUserMenuOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-destructive hover:bg-destructive/8 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                   >
                     <LogOut className="h-3.5 w-3.5" /> تسجيل الخروج
                   </button>
