@@ -501,7 +501,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {!collapsed && (
               <>
                 <div className="flex-1 text-right min-w-0">
-                  <p className="text-[12px] font-semibold leading-tight text-foreground/90 break-words line-clamp-2">{user?.name}</p>
+                  <p className="text-[12px] font-semibold leading-snug text-foreground/90 break-words">{user?.name}</p>
                   <p className="text-[11px] text-foreground/50 leading-tight mt-0.5">
                     {ROLE_LABELS[user?.role ?? "lawyer"] ?? user?.roleLabel}
                   </p>

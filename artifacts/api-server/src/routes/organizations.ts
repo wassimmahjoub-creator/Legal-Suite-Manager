@@ -13,8 +13,33 @@ function getUser(req: Express.Request) {
 
 router.get("/organization", requireAuth, async (req, res): Promise<void> => {
   const u = getUser(req);
-  if (!u.orgId) { res.json(null); return; }
-  const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, u.orgId));
+
+  /* Token may be old (orgId missing). Always resolve from DB. */
+  let orgId: number | undefined = u.orgId;
+  if (!orgId) {
+    const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, u.id));
+    orgId = dbUser?.orgId ?? undefined;
+
+    /* Still no org — auto-provision one (same logic as login route) */
+    if (!orgId) {
+      const now = new Date();
+      const trialEnd = new Date(now);
+      trialEnd.setDate(trialEnd.getDate() + 90);
+      const [newOrg] = await db.insert(organizationsTable).values({
+        name: u.email,
+        ownerId: u.id,
+        subscriptionPlan: "solo",
+        subscriptionStatus: "trial",
+        billingCycle: "monthly",
+        trialStartDate: now,
+        trialEndDate: trialEnd,
+      }).returning();
+      await db.update(usersTable).set({ orgId: newOrg.id }).where(eq(usersTable.id, u.id));
+      orgId = newOrg.id;
+    }
+  }
+
+  const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, orgId));
   if (!org) { res.status(404).json({ error: "المكتب غير موجود" }); return; }
 
   const now = new Date();
