@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
 import {
   Briefcase, CreditCard, Clock, AlertTriangle, CheckCircle2,
   Calendar, Plus, Timer, TrendingUp, Scale, Users, ArrowLeft,
@@ -19,6 +20,12 @@ import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+const STAGES = ["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"];
+
+const EMPTY_CASE = {
+  title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
+  nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "",
+};
 
 type QuickModal = "case" | "event" | "invoice" | null;
 
@@ -53,6 +60,9 @@ export default function Dashboard() {
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const updateTask = useUpdateTask();
   const [orgInfo, setOrgInfo] = useState<OrgTrialInfo | null>(null);
+  const [caseForm, setCaseForm] = useState({ ...EMPTY_CASE });
+  const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
+  const [savingCase, setSavingCase] = useState(false);
 
   useEffect(() => {
     authFetch(`${BASE}/api/organization`)
@@ -60,6 +70,28 @@ export default function Dashboard() {
       .then((d: OrgTrialInfo | null) => { if (d) setOrgInfo(d); })
       .catch(() => {});
   }, []);
+
+  async function openCaseModal() {
+    const r = await authFetch(`${BASE}/api/clients`);
+    if (r.ok) setClients(await r.json());
+    setCaseForm({ ...EMPTY_CASE });
+    setModal("case");
+  }
+
+  async function saveCase() {
+    if (!caseForm.title || !caseForm.clientId) return;
+    setSavingCase(true);
+    const res = await authFetch(`${BASE}/api/cases`, {
+      method: "POST",
+      body: JSON.stringify({ ...caseForm, clientId: Number(caseForm.clientId), nextHearing: caseForm.nextHearing || undefined }),
+    });
+    setSavingCase(false);
+    if (res.ok) {
+      const created = await res.json() as { id: number };
+      setModal(null);
+      navigate(`${BASE}/cases/${created.id}`);
+    }
+  }
 
   function toggleTask(taskId: number, currentDone: boolean) {
     setTogglingIds(prev => new Set(prev).add(taskId));
@@ -93,7 +125,7 @@ export default function Dashboard() {
         </div>
         {/* Quick Actions Bar */}
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => setModal("case")} className="gap-1.5 h-9">
+          <Button size="sm" onClick={openCaseModal} className="gap-1.5 h-9">
             <Plus className="h-3.5 w-3.5" /> قضية
           </Button>
           <Button size="sm" variant="outline" onClick={() => setModal("event")} className="gap-1.5 h-9">
@@ -369,33 +401,85 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Quick Add Case Modal */}
+      {/* New Case Modal — identical to Cases page form */}
       <Modal open={modal === "case"} onClose={() => setModal(null)} title="قضية جديدة" size="lg">
         <div className="space-y-4">
-          <FormField label="عنوان القضية *" htmlFor="qc-title">
-            <Input id="qc-title" placeholder="مثال: قضية ميراث عائلة..." className={inputCls} />
+          <FormField label="عنوان القضية *" htmlFor="dc-title">
+            <Input id="dc-title" placeholder="مثال: قضية ميراث عائلة بن علي" className={inputCls}
+              value={caseForm.title} onChange={e => setCaseForm(f => ({ ...f, title: e.target.value }))} />
           </FormField>
+
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="الحريف *" htmlFor="qc-client">
-              <Input id="qc-client" placeholder="اسم الحريف" className={inputCls} />
+            <FormField label="الحريف *" htmlFor="dc-client">
+              <select id="dc-client" value={caseForm.clientId} onChange={e => setCaseForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">اختر حريفاً...</option>
+                {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
+              </select>
             </FormField>
-            <FormField label="المحكمة" htmlFor="qc-court">
-              <Input id="qc-court" placeholder="محكمة..." className={inputCls} />
+            <FormField label="المحامي المسؤول" htmlFor="dc-lawyer">
+              <Input id="dc-lawyer" placeholder="اسم المحامي" className={inputCls}
+                value={caseForm.lawyer} onChange={e => setCaseForm(f => ({ ...f, lawyer: e.target.value }))} />
             </FormField>
           </div>
-          <FormField label="رقم الملف القضائي" htmlFor="qc-ref">
-            <Input id="qc-ref" placeholder="مثال: 2026/1234" className={inputCls} dir="ltr" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="المحكمة" htmlFor="dc-court">
+              <Input id="dc-court" placeholder="مثال: محكمة تونس الابتدائية" className={inputCls}
+                value={caseForm.court} onChange={e => setCaseForm(f => ({ ...f, court: e.target.value }))} />
+            </FormField>
+            <FormField label="الدائرة" htmlFor="dc-div">
+              <Input id="dc-div" placeholder="الدائرة الأولى" className={inputCls}
+                value={caseForm.division} onChange={e => setCaseForm(f => ({ ...f, division: e.target.value }))} />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="رقم القضية لدى المحكمة" htmlFor="dc-court-num"
+              hint="الرقم الذي خصصته المحكمة">
+              <Input id="dc-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
+                value={caseForm.courtCaseNumber} onChange={e => setCaseForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
+            </FormField>
+            <FormField label="مرجع الحريف" htmlFor="dc-client-ref"
+              hint="رقم الملف لدى الحريف نفسه">
+              <Input id="dc-client-ref" placeholder="مرجع داخلي للحريف" className={inputCls}
+                value={caseForm.clientFileRef} onChange={e => setCaseForm(f => ({ ...f, clientFileRef: e.target.value }))} />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="الحالة" htmlFor="dc-status">
+              <select id="dc-status" className={inputCls + " px-3 cursor-pointer"}
+                value={caseForm.status} onChange={e => setCaseForm(f => ({ ...f, status: e.target.value }))}>
+                <option value="active">نشطة</option>
+                <option value="pending">في الانتظار</option>
+                <option value="suspended">موقوفة</option>
+                <option value="closed">مغلقة</option>
+              </select>
+            </FormField>
+            <FormField label="المرحلة الإجرائية" htmlFor="dc-stage">
+              <select id="dc-stage" className={inputCls + " px-3 cursor-pointer"}
+                value={caseForm.procedureStage} onChange={e => setCaseForm(f => ({ ...f, procedureStage: e.target.value }))}>
+                {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </FormField>
+          </div>
+
+          <FormField label="موعد الجلسة القادمة" htmlFor="dc-hearing">
+            <Input id="dc-hearing" type="date" className={inputCls} dir="ltr"
+              value={caseForm.nextHearing} onChange={e => setCaseForm(f => ({ ...f, nextHearing: e.target.value }))} />
           </FormField>
-          <FormField label="نوع القضية" htmlFor="qc-type">
-            <select id="qc-type" className={inputCls + " px-3 cursor-pointer"}>
-              {["مدنية", "عقارية", "تجارية", "عائلية", "جزائية", "إدارية", "أخرى"].map(t =>
-                <option key={t} value={t}>{t}</option>
-              )}
-            </select>
+
+          <FormField label="وصف القضية" htmlFor="dc-desc">
+            <SmartTextarea id="dc-desc" rows={3} placeholder="وصف مختصر للقضية والوقائع..."
+              aiContext="وصف قضية قانونية"
+              value={caseForm.description} onChange={v => setCaseForm(f => ({ ...f, description: v }))} />
           </FormField>
+
           <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setModal(null)}>حفظ وفتح الملف</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+            <Button className="flex-1" disabled={savingCase || !caseForm.title || !caseForm.clientId} onClick={saveCase}>
+              {savingCase ? "جارٍ الحفظ..." : "حفظ وفتح الملف"}
+            </Button>
+            <Button variant="outline" onClick={() => setModal(null)} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>
