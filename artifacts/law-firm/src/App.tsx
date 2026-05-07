@@ -8,6 +8,10 @@ import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import AcceptInvitation from "@/pages/AcceptInvitation";
 import Dashboard from "@/pages/Dashboard";
 import Cases from "@/pages/Cases";
 import CaseDetail from "@/pages/CaseDetail";
@@ -31,8 +35,19 @@ import LegalConfig from "@/pages/LegalConfig";
 import AuditLogs from "@/pages/AuditLogs";
 import Trash from "@/pages/Trash";
 import Correspondances from "@/pages/Correspondances";
+import UserManagement from "@/pages/UserManagement";
+import Subscription from "@/pages/Subscription";
+import Pricing from "@/pages/Pricing";
 
 const queryClient = new QueryClient();
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
+function PublicOnly({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) { window.location.replace(`${BASE}/`); return null; }
+  return <>{children}</>;
+}
 
 function Router() {
   const { user, loading, hasUsers } = useAuth();
@@ -48,39 +63,67 @@ function Router() {
     );
   }
 
-  if (!user || hasUsers === false) {
-    return <Login />;
-  }
-
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/cases" component={Cases} />
-        <Route path="/cases/:id" component={CaseDetail} />
-        <Route path="/clients" component={Clients} />
-        <Route path="/billing" component={Billing} />
-        <Route path="/calendar" component={CalendarView} />
-        <Route path="/documents" component={Documents} />
-        <Route path="/time-tracking" component={TimeTracking} />
-        <Route path="/expenses" component={Expenses} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/voice-dictation" component={VoiceDictation} />
-        <Route path="/opponents" component={Opponents} />
-        <Route path="/consultations" component={Consultations} />
-        <Route path="/templates" component={Templates} />
-        <Route path="/courts" component={Courts} />
-        <Route path="/communications" component={Communications} />
-        <Route path="/correspondances" component={Correspondances} />
-        <Route path="/insurance-companies" component={InsuranceCompanies} />
-        <Route path="/bank-accounts" component={BankAccounts} />
-        <Route path="/legal-config" component={LegalConfig} />
-        <Route path="/audit-logs" component={AuditLogs} />
-        <Route path="/trash" component={Trash} />
-        <Route path="/settings" component={Settings} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Public-only routes (unauthenticated) */}
+      <Route path="/register">
+        <PublicOnly><Register /></PublicOnly>
+      </Route>
+      <Route path="/forgot-password">
+        <PublicOnly><ForgotPassword /></PublicOnly>
+      </Route>
+      <Route path="/reset-password/:token">
+        <ResetPassword />
+      </Route>
+      <Route path="/invite/:token">
+        <AcceptInvitation />
+      </Route>
+      <Route path="/pricing">
+        <Pricing />
+      </Route>
+
+      {/* Auth gate */}
+      <Route>
+        {!user || hasUsers === false ? (
+          hasUsers === false ? <Register /> : <Login />
+        ) : (
+          <Layout>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/cases" component={Cases} />
+              <Route path="/cases/:id" component={CaseDetail} />
+              <Route path="/clients" component={Clients} />
+              <Route path="/billing" component={Billing} />
+              <Route path="/calendar" component={CalendarView} />
+              <Route path="/documents" component={Documents} />
+              <Route path="/time-tracking" component={TimeTracking} />
+              <Route path="/expenses" component={Expenses} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/voice-dictation" component={VoiceDictation} />
+              <Route path="/opponents" component={Opponents} />
+              <Route path="/consultations" component={Consultations} />
+              <Route path="/templates" component={Templates} />
+              <Route path="/courts" component={Courts} />
+              <Route path="/communications" component={Communications} />
+              <Route path="/correspondances" component={Correspondances} />
+              <Route path="/insurance-companies" component={InsuranceCompanies} />
+              <Route path="/bank-accounts" component={BankAccounts} />
+              <Route path="/legal-config" component={LegalConfig} />
+              <Route path="/audit-logs" component={AuditLogs} />
+              <Route path="/trash" component={Trash} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/users" component={UserManagement} />
+              <Route path="/subscription" component={Subscription} />
+              <Route path="/pricing" component={Pricing} />
+              <Route path="/login">
+                {() => { window.location.replace(`${BASE}/`); return null; }}
+              </Route>
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        )}
+      </Route>
+    </Switch>
   );
 }
 

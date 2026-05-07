@@ -47,6 +47,13 @@ const navGroups = [
     ],
   },
   {
+    label: "الفريق",
+    items: [
+      { href: "/users", label: "إدارة المستخدمين", icon: Users },
+      { href: "/subscription", label: "الاشتراك والفوترة", icon: CreditCard },
+    ],
+  },
+  {
     label: "النظام",
     items: [
       { href: "/voice-dictation", label: "الإملاء الصوتي", icon: Mic },

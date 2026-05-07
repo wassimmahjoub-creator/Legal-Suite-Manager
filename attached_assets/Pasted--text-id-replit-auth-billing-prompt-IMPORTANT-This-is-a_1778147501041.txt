@@ -1,0 +1,425 @@
+```text id="replit-auth-billing-prompt"
+IMPORTANT:
+This is an EXTENSION prompt.
+DO NOT rebuild the app.
+DO NOT redesign the UI.
+DO NOT replace the existing architecture.
+
+You must EXTEND the existing legal SaaS platform with:
+- authentication system
+- account creation
+- subscription monetization
+- team management
+- permissions
+- billing plans
+- free trial logic
+- collaborator access management
+
+The platform must behave like a modern SaaS product.
+
+====================================================
+1) AUTHENTICATION SYSTEM
+====================================================
+
+The current app only supports login.
+
+You MUST implement FULL AUTHENTICATION.
+
+Add:
+- إنشاء حساب
+- تسجيل الدخول
+- نسيت كلمة المرور
+- إعادة تعيين كلمة المرور
+- تسجيل الخروج
+
+Add modern registration page.
+
+Registration fields:
+- الاسم الكامل
+- البريد الإلكتروني
+- كلمة المرور
+- تأكيد كلمة المرور
+- اسم المكتب
+- رقم الهاتف
+
+Requirements:
+- secure password hashing
+- JWT authentication
+- session persistence
+- email uniqueness validation
+- validation errors in Arabic
+
+====================================================
+2) USERS DATABASE
+====================================================
+
+Create complete database structure for users.
+
+Required tables:
+- users
+- organizations
+- subscriptions
+- roles
+- permissions
+- invitations
+- collaborator_access
+- password_resets
+- billing_history
+
+User fields:
+- id
+- full_name
+- email
+- phone
+- password_hash
+- role
+- subscription_status
+- trial_start_date
+- trial_end_date
+- created_at
+- updated_at
+- archived_at
+
+====================================================
+3) ORGANIZATION / LAW FIRM STRUCTURE
+====================================================
+
+The app must support law firms with multiple users.
+
+Create:
+المكتب
+
+Each organization contains:
+- owner account
+- collaborators
+- assistants
+- lawyers
+- trainees
+
+The owner account can:
+- invite collaborators
+- remove collaborators
+- suspend collaborators
+- reset collaborator passwords
+- assign permissions
+
+====================================================
+4) COLLABORATOR MANAGEMENT
+====================================================
+
+Create complete collaborator management.
+
+New section:
+إدارة المستخدمين
+
+Features:
+- إضافة مستخدم
+- إرسال دعوة
+- تعديل الصلاحيات
+- تعطيل الحساب
+- حذف الحساب
+- إعادة تعيين كلمة المرور
+
+Collaborator roles:
+- مدير
+- شريك
+- محامي
+- سكرتيرة
+- متربص
+- محاسب
+
+====================================================
+5) GRANULAR PERMISSIONS SYSTEM
+====================================================
+
+Create advanced permissions engine.
+
+Permissions examples:
+- view cases
+- edit cases
+- delete cases
+- create invoices
+- view accounting
+- manage users
+- export documents
+- manage templates
+
+The owner can assign permissions manually.
+
+Create visual permissions matrix UI.
+
+====================================================
+6) ACCOUNT DEACTIVATION & DELETION
+====================================================
+
+Users must be manageable.
+
+Features:
+- تعطيل الحساب
+- حذف الحساب
+- أرشفة الحساب
+
+Rules:
+- owner cannot accidentally delete organization
+- deleted users become archived
+- preserve legal audit logs
+
+====================================================
+7) FREE TRIAL SYSTEM
+====================================================
+
+Implement SaaS monetization logic.
+
+Every new organization receives:
+- 3 months free trial
+
+During trial:
+- full access
+- no restrictions
+
+Track:
+- start date
+- end date
+- remaining days
+
+Display:
+- عدد الأيام المتبقية
+
+After trial expiration:
+- restrict premium features
+- redirect to subscription page
+
+====================================================
+8) SUBSCRIPTION SYSTEM
+====================================================
+
+Create complete subscription engine.
+
+Subscription statuses:
+- تجربة مجانية
+- نشط
+- متوقف
+- منتهي
+
+Billing cycles:
+- شهري
+- سنوي
+
+Support future Stripe integration architecture.
+
+====================================================
+9) SAAS PRICING PLANS
+====================================================
+
+Create modern pricing page.
+
+====================================================
+PLAN 1 — SOLO
+====================================================
+
+Name:
+محامي فردي
+
+Target:
+solo lawyers
+
+Price recommendation:
+39 TND / month
+or
+390 TND / year
+
+Includes:
+- 1 owner account
+- unlimited cases
+- unlimited clients
+- billing
+- documents
+- calendar
+- reminders
+- basic reports
+
+NO collaborators included.
+
+====================================================
+PLAN 2 — CABINET
+====================================================
+
+Name:
+مكتب محاماة
+
+Target:
+small law firms
+
+Price recommendation:
+99 TND / month
+or
+990 TND / year
+
+Includes:
+- owner account
+- up to 5 collaborators
+- advanced permissions
+- client portal
+- advanced reports
+- legal workflows
+- accounting
+
+====================================================
+PLAN 3 — PREMIUM
+====================================================
+
+Name:
+مؤسسة قانونية
+
+Target:
+large firms
+
+Price recommendation:
+249 TND / month
+or
+2490 TND / year
+
+Includes:
+- unlimited collaborators
+- multi-branch support
+- advanced analytics
+- audit logs
+- AI-ready features
+- premium support
+
+====================================================
+10) COLLABORATOR BILLING MODEL
+====================================================
+
+Collaborators should also support monetization.
+
+Default included collaborators:
+- SOLO → 0
+- CABINET → 5
+- PREMIUM → unlimited
+
+Extra collaborator pricing:
+15 TND / month per additional collaborator
+
+Display:
+- عدد المستخدمين المستعملين
+- عدد المستخدمين المتبقين
+
+====================================================
+11) SUBSCRIPTION MANAGEMENT PAGE
+====================================================
+
+Create:
+الاشتراك والفوترة
+
+Features:
+- current plan
+- upgrade plan
+- downgrade plan
+- billing history
+- invoices
+- payment methods
+- renewal date
+
+====================================================
+12) INVITATION SYSTEM
+====================================================
+
+Implement invitation workflow.
+
+Flow:
+- owner enters collaborator email
+- invitation email generated
+- collaborator creates password
+- collaborator joins organization
+
+Invitation statuses:
+- pending
+- accepted
+- expired
+
+====================================================
+13) SECURITY REQUIREMENTS
+====================================================
+
+CRITICAL:
+- hashed passwords
+- secure JWT
+- role validation
+- permission middleware
+- protected routes
+- secure session handling
+
+====================================================
+14) UI/UX REQUIREMENTS
+====================================================
+
+Keep same design system already generated.
+
+Requirements:
+- modern SaaS feel
+- premium UI
+- Arabic RTL
+- mobile responsive
+- clean permissions UI
+
+Do NOT:
+- clutter forms
+- overload screens
+- break RTL
+
+====================================================
+15) DASHBOARD IMPROVEMENTS
+====================================================
+
+Add subscription widget to dashboard.
+
+Display:
+- current subscription
+- trial remaining days
+- collaborator usage
+- renewal date
+
+====================================================
+16) IMPORTANT BUSINESS LOGIC
+====================================================
+
+The OWNER ACCOUNT is the billing owner.
+
+Collaborators:
+- do not pay individually
+- belong to organization subscription
+
+BUT:
+additional collaborators may trigger extra billing.
+
+====================================================
+17) FUTURE-READY ARCHITECTURE
+====================================================
+
+Prepare architecture for:
+- Stripe
+- online payments
+- promo codes
+- coupons
+- enterprise plans
+- annual discounts
+
+Do NOT fully integrate Stripe yet.
+Prepare clean scalable billing architecture.
+
+====================================================
+18) DO NOT BREAK EXISTING SYSTEM
+====================================================
+
+CRITICAL:
+- preserve current architecture
+- preserve current pages
+- preserve current RTL
+- preserve current database
+- extend only
+
+NO REBUILD.
+NO DUPLICATE MODULES.
+ONLY CLEAN SAAS EXTENSIONS.
+```

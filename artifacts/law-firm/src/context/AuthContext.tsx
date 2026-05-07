@@ -9,6 +9,18 @@ export interface AuthUser {
   name: string;
   role: string;
   roleLabel: string;
+  orgId?: number;
+  phone?: string;
+  status?: string;
+}
+
+interface RegisterData {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  officeName: string;
+  phone?: string;
 }
 
 interface AuthState {
@@ -17,9 +29,11 @@ interface AuthState {
   loading: boolean;
   hasUsers: boolean | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   setup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: { name?: string; email?: string; currentPassword?: string; newPassword?: string }) => Promise<void>;
+  acceptInvite: (token: string, name: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -77,6 +91,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const d = await r.json() as { token: string; user: AuthUser };
     applyToken(d.token);
     setUser(d.user);
+    setHasUsers(true);
+  }
+
+  async function register(data: RegisterData) {
+    const r = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!r.ok) {
+      const d = await r.json() as { error: string };
+      throw new Error(d.error ?? "خطأ في إنشاء الحساب");
+    }
+    const d = await r.json() as { token: string; user: AuthUser };
+    applyToken(d.token);
+    setUser(d.user);
+    setHasUsers(true);
   }
 
   async function setup(name: string, email: string, password: string) {
@@ -115,8 +146,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(d.user);
   }
 
+  async function acceptInvite(token: string, name: string, password: string) {
+    const r = await fetch(`${BASE_URL}/api/invitations/accept/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, password }),
+    });
+    if (!r.ok) {
+      const d = await r.json() as { error: string };
+      throw new Error(d.error ?? "خطأ في قبول الدعوة");
+    }
+    const d = await r.json() as { token: string; user: AuthUser };
+    applyToken(d.token);
+    setUser(d.user);
+    setHasUsers(true);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, hasUsers, login, setup, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, token, loading, hasUsers, login, register, setup, logout, updateProfile, acceptInvite }}>
       {children}
     </AuthContext.Provider>
   );
@@ -127,4 +174,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-

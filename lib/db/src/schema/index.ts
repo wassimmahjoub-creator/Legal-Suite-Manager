@@ -22,3 +22,7 @@ export * from "./audit_logs";
 export * from "./case_relations";
 export * from "./confidential_notes";
 export * from "./correspondances";
+export * from "./organizations";
+export * from "./invitations";
+export * from "./password_resets";
+export * from "./billing_history";

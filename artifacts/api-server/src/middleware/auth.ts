@@ -8,6 +8,7 @@ export interface AuthPayload {
   email: string;
   name: string;
   role: string;
+  orgId?: number;
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {

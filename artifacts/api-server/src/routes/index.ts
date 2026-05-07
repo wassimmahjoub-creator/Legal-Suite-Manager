@@ -27,11 +27,18 @@ import caseRelationsRouter from "./case-relations";
 import confidentialNotesRouter from "./confidential-notes";
 import trashRouter from "./trash";
 import correspondancesRouter from "./correspondances";
+import organizationsRouter from "./organizations";
+import usersMgmtRouter from "./users-mgmt";
+import invitationsRouter from "./invitations";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
 
-const PUBLIC_PATHS = ["/auth/status", "/auth/login", "/auth/setup", "/healthz"];
+const PUBLIC_PATHS = [
+  "/auth/status", "/auth/login", "/auth/setup", "/auth/register",
+  "/auth/forgot-password", "/auth/reset-password",
+  "/invitations/accept/", "/healthz",
+];
 
 function softAuth(req: Request, res: Response, next: NextFunction) {
   if (PUBLIC_PATHS.some((p) => req.path === p || req.path.startsWith(p))) {
@@ -70,5 +77,8 @@ router.use(caseRelationsRouter);
 router.use(confidentialNotesRouter);
 router.use(trashRouter);
 router.use(correspondancesRouter);
+router.use(organizationsRouter);
+router.use(usersMgmtRouter);
+router.use(invitationsRouter);
 
 export default router;

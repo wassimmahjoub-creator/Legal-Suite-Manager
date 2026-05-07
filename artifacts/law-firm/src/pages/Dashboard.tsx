@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,9 +12,13 @@ import { Modal, FormField } from "@/components/Modal";
 import {
   Briefcase, CreditCard, Clock, AlertTriangle, CheckCircle2,
   Calendar, Plus, Timer, TrendingUp, Scale, Users, ArrowLeft,
-  Circle, CalendarClock
+  Circle, CalendarClock, Crown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { authFetch } from "@/lib/authFetch";
+import { cn } from "@/lib/utils";
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
 type QuickModal = "case" | "event" | "invoice" | null;
 
@@ -31,6 +35,14 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   closed: { label: "مغلقة", color: "text-muted-foreground bg-muted/50" },
 };
 
+interface OrgTrialInfo {
+  subscriptionStatus: string;
+  daysRemaining: number | null;
+  isTrialExpired: boolean;
+  subscriptionPlan: string;
+  plan: { name: string };
+}
+
 export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: today, isLoading: loadingToday } = useGetDashboardToday();
@@ -40,6 +52,14 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const updateTask = useUpdateTask();
+  const [orgInfo, setOrgInfo] = useState<OrgTrialInfo | null>(null);
+
+  useEffect(() => {
+    authFetch(`${BASE}/api/organization`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: OrgTrialInfo | null) => { if (d) setOrgInfo(d); })
+      .catch(() => {});
+  }, []);
 
   function toggleTask(taskId: number, currentDone: boolean) {
     setTogglingIds(prev => new Set(prev).add(taskId));
@@ -136,6 +156,39 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Subscription / Trial Banner */}
+      {orgInfo && (orgInfo.subscriptionStatus === "trial" || orgInfo.isTrialExpired || orgInfo.subscriptionStatus === "expired") && (
+        <div onClick={() => navigate("/subscription")} className="cursor-pointer">
+          {orgInfo.isTrialExpired || orgInfo.subscriptionStatus === "expired" ? (
+            <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-destructive text-sm">انتهت فترة التجربة المجانية</p>
+                <p className="text-xs text-muted-foreground">اشترك الآن للاستمرار في استخدام جميع الميزات</p>
+              </div>
+              <Button size="sm" variant="destructive" className="shrink-0">اشترك الآن</Button>
+            </div>
+          ) : orgInfo.daysRemaining !== null && orgInfo.daysRemaining <= 14 ? (
+            <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-xl p-4">
+              <Crown className="h-5 w-5 text-orange-500 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-orange-500 text-sm">تجربة مجانية — {orgInfo.daysRemaining} يوم متبقٍ</p>
+                <p className="text-xs text-muted-foreground">اشترك قبل انتهاء التجربة للاستمرار بدون انقطاع</p>
+              </div>
+              <Button size="sm" className="shrink-0 bg-orange-500 hover:bg-orange-600">ترقية</Button>
+            </div>
+          ) : orgInfo.daysRemaining !== null ? (
+            <div className="flex items-center gap-3 bg-primary/5 border border-primary/15 rounded-xl p-3">
+              <Crown className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm text-muted-foreground flex-1">
+                <span className="text-primary font-medium">تجربة مجانية</span> — {orgInfo.daysRemaining} يوم متبقٍ من أصل 90
+              </p>
+              <span className="text-xs text-primary hover:underline">تفاصيل</span>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Financial Strip */}
       <Card className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card">
