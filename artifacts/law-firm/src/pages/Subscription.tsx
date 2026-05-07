@@ -70,6 +70,7 @@ export default function Subscription() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ holder: "", number: "", expiry: "", cvv: "" });
   const [savedCard, setSavedCard] = useState<{ holder: string; last4: string; expiry: string } | null>(null);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   async function reload() {
     const [o, b, s] = await Promise.all([
@@ -541,6 +542,46 @@ export default function Subscription() {
         </div>
       </Modal>
 
+      {/* Contact modal */}
+      <Modal open={showContactModal} onClose={() => setShowContactModal(false)} title="تواصل معنا" size="sm">
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">فريق الدعم متاح للإجابة على استفساراتك حول الاشتراكات والخطط.</p>
+          <div className="space-y-3">
+            <a href="mailto:support@mahamiplus.tn"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">البريد الإلكتروني</p>
+                <p className="text-sm font-medium group-hover:text-primary transition-colors">support@mahamiplus.tn</p>
+              </div>
+            </a>
+            <a href="tel:+21671000000"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Phone className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">الهاتف</p>
+                <p className="text-sm font-medium group-hover:text-primary transition-colors dir-ltr" dir="ltr">+216 71 000 000</p>
+              </div>
+            </a>
+            <a href="https://wa.me/21671000000" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
+              <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                <Phone className="h-4 w-4 text-green-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">واتساب</p>
+                <p className="text-sm font-medium group-hover:text-green-500 transition-colors" dir="ltr">+216 71 000 000</p>
+              </div>
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground/60 text-center">أوقات العمل: الإثنين–الجمعة، 8ص–6م</p>
+        </div>
+      </Modal>
+
       {/* ── Billing history ── */}
       <div className="bg-card border border-border rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2">
@@ -606,7 +647,7 @@ export default function Subscription() {
               مقارنة الخطط
             </Button>
           </Link>
-          <Button variant="ghost" className="gap-1.5" disabled>
+          <Button variant="ghost" className="gap-1.5" onClick={() => setShowContactModal(true)}>
             <Phone className="h-4 w-4" /> تواصل معنا
           </Button>
         </div>

@@ -36,7 +36,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
       />
       <div
         className={cn(
-          "relative bg-card border border-border rounded-2xl shadow-2xl w-full max-h-[90vh] animate-in zoom-in-95 fade-in duration-200 overflow-hidden flex flex-col",
+          "relative z-10 bg-card border border-border rounded-2xl shadow-2xl w-full max-h-[90vh] animate-in zoom-in-95 fade-in duration-200 overflow-hidden flex flex-col",
           size === "sm" && "max-w-sm",
           size === "md" && "max-w-md",
           size === "lg" && "max-w-xl",
