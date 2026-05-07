@@ -1,0 +1,410 @@
+```text
+IMPORTANT:
+This is a SUBSCRIPTION PAGE COMPLETION prompt only.
+
+DO NOT rebuild the app.
+DO NOT redesign the full application.
+DO NOT change routing.
+DO NOT break RTL.
+DO NOT break authentication.
+DO NOT break existing subscription logic.
+
+The page "الاشتراك" is currently empty. Build it as a premium SaaS billing and subscription management page.
+
+The page must feel inspired by:
+- Stripe Billing
+- Notion Billing
+- Slack Billing
+- Revolut Business
+
+====================================================
+1) PAGE OBJECTIVE
+====================================================
+
+Create a complete subscription control center for the law firm.
+
+The page must allow the owner/admin to:
+- see current plan
+- track free trial
+- see collaborator usage
+- compare plans
+- upgrade/downgrade
+- view billing history
+- manage payment method
+- understand extra collaborator costs
+
+Everything must be in Arabic RTL.
+
+====================================================
+2) PAGE TITLE
+====================================================
+
+Title:
+الاشتراك والفوترة
+
+Subtitle:
+إدارة الخطة، الفوترة، والمستخدمين في مكتبك
+
+====================================================
+3) CURRENT PLAN SECTION
+====================================================
+
+Create top hero card:
+
+الخطة الحالية
+
+Show:
+- plan name
+- subscription status
+- billing cycle
+- monthly/annual price
+- renewal date
+- trial end date if trial active
+
+Example:
+مكتب محاماة
+نشط
+119 د.ت / شهر
+التجديد: 15 مارس 2027
+
+If trial active:
+تجربة مجانية
+باقي 24 يوم
+
+Add progress bar for trial remaining days.
+
+====================================================
+4) USAGE CARDS
+====================================================
+
+Create usage cards:
+
+1)
+المستخدمين
+3 / 5
+
+2)
+القضايا النشطة
+128
+
+3)
+التخزين
+2.1GB / 20GB
+
+4)
+الفواتير هذا الشهر
+42
+
+Each card must have:
+- icon
+- number
+- short label
+- progress bar where relevant
+
+====================================================
+5) COLLABORATOR USAGE SECTION
+====================================================
+
+Create section:
+المتعاونين
+
+Show:
+- المتعاونين المشمولين في الخطة
+- المستخدمين الحاليين
+- المقاعد المتبقية
+- المستخدمين الإضافيين
+
+Rules:
+SOLO:
+1 collaborator included
+
+CABINET:
+5 collaborators included
+
+PREMIUM:
+unlimited collaborators
+
+Extra collaborator price:
+12 TND / month
+
+If usage exceeds included users:
+show:
+كل متعاون إضافي بـ 12 د.ت / شهر
+
+Button:
+إضافة متعاون
+
+====================================================
+6) PRICING PLAN CARDS
+====================================================
+
+Create three modern pricing cards.
+
+====================================================
+PLAN 1
+====================================================
+
+Name:
+محامي فردي
+
+Price:
+49 د.ت / شهر
+
+Annual:
+490 د.ت / سنة
+
+Includes:
+- 1 مدير
+- 1 متعاون
+- قضايا غير محدودة
+- حرفاء غير محدودين
+- وثائق
+- رزنامة
+- فواتير
+- تنبيهات
+
+Button:
+اختار الخطة
+
+====================================================
+PLAN 2
+====================================================
+
+Name:
+مكتب محاماة
+
+Price:
+119 د.ت / شهر
+
+Annual:
+1190 د.ت / سنة
+
+Badge:
+الأكثر استعمالاً
+
+Includes:
+- 1 مدير
+- 5 متعاونين
+- صلاحيات متقدمة
+- فضاء الحريف
+- إجراءات قانونية
+- تقارير متقدمة
+- محاسبة
+
+Button:
+طوّر الاشتراك
+
+Highlight this card visually.
+
+====================================================
+PLAN 3
+====================================================
+
+Name:
+مؤسسة قانونية
+
+Price:
+249 د.ت / شهر
+
+Annual:
+2490 د.ت / سنة
+
+Includes:
+- مستخدمين غير محدودين
+- فروع متعددة
+- تحليلات متقدمة
+- سجل تعديلات
+- تجهيز للذكاء الاصطناعي
+- دعم أولوية
+
+Button:
+تواصل معنا أو طوّر الاشتراك
+
+====================================================
+7) BILLING HISTORY SECTION
+====================================================
+
+Create table:
+سجل الفوترة
+
+Columns:
+- الفاتورة
+- التاريخ
+- المبلغ
+- الحالة
+- تحميل
+
+Example rows:
+فاتورة #001
+15 جانفي 2026
+119 د.ت
+مدفوعة
+تحميل PDF
+
+====================================================
+8) PAYMENT METHOD SECTION
+====================================================
+
+Create card:
+طريقة الدفع
+
+Show placeholder:
+بطاقة الدفع
+•••• 4242
+
+Buttons:
+- تغيير البطاقة
+- إضافة طريقة دفع
+
+If no payment method:
+لا توجد طريقة دفع مسجلة
+
+====================================================
+9) ESTIMATED MONTHLY TOTAL
+====================================================
+
+Create summary card:
+التكلفة الشهرية المتوقعة
+
+Calculate:
+base plan price + extra collaborators
+
+Example:
+الخطة: 119 د.ت
+مستخدمين إضافيين: 24 د.ت
+المجموع: 143 د.ت / شهر
+
+For Premium:
+المستخدمين الإضافيين: 0 د.ت
+
+====================================================
+10) UPGRADE CTA
+====================================================
+
+Create bottom CTA section:
+
+تحتاج مستخدمين أكثر أو ميزات متقدمة؟
+
+Buttons:
+- ترقية الخطة
+- مقارنة الخطط
+- تواصل معنا
+
+====================================================
+11) UI DESIGN REQUIREMENTS
+====================================================
+
+Use:
+- clean cards
+- soft shadows
+- rounded-xl
+- gold accent color
+- light gray backgrounds
+- progress bars
+- badges
+- icons
+- modern SaaS layout
+
+Avoid:
+- dense ERP tables
+- heavy text
+- clutter
+- oversized elements
+
+====================================================
+12) RESPONSIVE DESIGN
+====================================================
+
+Desktop:
+- cards in grid
+- pricing plans side by side
+
+Mobile:
+- stacked cards
+- sticky bottom CTA if useful
+
+====================================================
+13) PERMISSION RULES
+====================================================
+
+Only owner/admin can:
+- change plan
+- manage payment method
+- view billing history
+- invite paid collaborators
+
+Non-admin users should see read-only subscription summary or no access depending on permissions.
+
+====================================================
+14) DATA ARCHITECTURE
+====================================================
+
+Use existing subscription tables if available.
+
+If missing, create/extend:
+
+plans:
+- id
+- name
+- monthly_price
+- annual_price
+- included_collaborators
+- extra_collaborator_price
+- features
+- is_recommended
+
+organization_subscription:
+- id
+- organization_id
+- plan_id
+- status
+- billing_cycle
+- trial_start
+- trial_end
+- renewal_date
+
+billing_history:
+- id
+- organization_id
+- invoice_number
+- amount
+- status
+- date
+- pdf_url
+
+payment_methods:
+- id
+- organization_id
+- brand
+- last4
+- is_default
+
+====================================================
+15) FUTURE PAYMENT READY
+====================================================
+
+Do NOT fully integrate Stripe yet.
+
+Prepare clean architecture for future:
+- Stripe
+- online payment
+- promo codes
+- annual discounts
+- invoices PDF
+
+Use placeholder actions for now.
+
+====================================================
+16) DO NOT BREAK EXISTING APP
+====================================================
+
+Preserve:
+- RTL Arabic interface
+- current sidebar
+- current authentication
+- existing users
+- existing organization logic
+- current design system
+
+Only complete the subscription page and related UI/data logic.
+```
