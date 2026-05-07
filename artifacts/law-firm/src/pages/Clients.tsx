@@ -206,7 +206,7 @@ export default function Clients() {
           </FormField>
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>
-              {saving ? "جاري الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الحريف"}
+              {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الحريف"}
             </Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>
           </div>

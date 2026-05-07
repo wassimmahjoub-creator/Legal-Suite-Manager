@@ -287,7 +287,7 @@ export default function Cases() {
 
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" disabled={saving || !form.title || !form.clientId} onClick={saveCase}>
-              {saving ? "جاري الحفظ..." : "حفظ القضية"}
+              {saving ? "جارٍ الحفظ..." : "حفظ القضية"}
             </Button>
             <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">
               إلغاء

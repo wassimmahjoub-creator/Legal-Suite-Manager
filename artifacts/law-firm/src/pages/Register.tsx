@@ -76,7 +76,7 @@ export default function Register() {
           {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
 
           <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
-            {loading ? "جاري الإنشاء..." : "إنشاء الحساب والبدء"}
+            {loading ? "جارٍ الإنشاء..." : "إنشاء الحساب والبدء"}
           </Button>
 
           <div className="text-center">

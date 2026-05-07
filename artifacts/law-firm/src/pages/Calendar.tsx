@@ -419,7 +419,7 @@ export default function CalendarView() {
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={save}
               disabled={saving || !form.title.trim() || !form.date}>
-              {saving ? "جاري الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الموعد"}
+              {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الموعد"}
             </Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>
           </div>

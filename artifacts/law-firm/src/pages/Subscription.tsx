@@ -254,7 +254,7 @@ export default function Subscription() {
 
         {!isUnlimited && org.remaining === 0 && !org.isTrialExpired && (
           <div className="bg-muted/40 border border-border rounded-xl p-3 text-sm text-muted-foreground">
-            وصلت للعدد المجاني في خطتك. تنجم تزيد مستخدم إضافي بـ 12 د.ت في الشهر، أو تطوّر الاشتراك للحصول على مزيد.
+            لقد بلغتَ الحدَّ المتاح في خطتك. يمكنك إضافة مستخدم إضافي بـ 12 د.ت في الشهر، أو ترقية الاشتراك للحصول على المزيد.
           </div>
         )}
       </div>
@@ -332,7 +332,7 @@ export default function Subscription() {
                   <Button size="sm" variant={p.recommended ? "default" : "outline"}
                     onClick={() => upgradePlan(p.id)} disabled={upgrading} className="w-full text-xs">
                     <RefreshCw className="h-3 w-3 ml-1" />
-                    {org.subscriptionStatus === "trial" ? "فعّل الاشتراك" : "اختار هذه الخطة"}
+                    {org.subscriptionStatus === "trial" ? "تفعيل الاشتراك" : "اختر هذه الخطة"}
                   </Button>
                 )}
               </div>

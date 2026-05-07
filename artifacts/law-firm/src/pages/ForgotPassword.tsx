@@ -63,7 +63,7 @@ export default function ForgotPassword() {
             </div>
             {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
             <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-              {loading ? "جاري البحث..." : "إرسال رابط إعادة التعيين"}
+              {loading ? "جارٍ الإرسال..." : "إرسال رابط إعادة التعيين"}
             </Button>
           </form>
         ) : (

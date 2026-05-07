@@ -189,7 +189,7 @@ export default function Templates() {
             />
           </div>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جاري الحفظ..." : "حفظ النموذج"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ النموذج"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>

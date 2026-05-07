@@ -156,7 +156,7 @@ export default function Consultations() {
               value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.subject || !form.date}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.subject || !form.date}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>

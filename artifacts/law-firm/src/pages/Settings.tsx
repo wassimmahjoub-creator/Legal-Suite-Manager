@@ -144,7 +144,7 @@ export default function Settings() {
 
                 <Button onClick={saveProfile} disabled={profileSaving || !name.trim() || !email.trim()} className="gap-2">
                   <Save className="h-4 w-4" />
-                  {profileSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
+                  {profileSaving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
                 </Button>
               </CardContent>
             </Card>
@@ -240,7 +240,7 @@ export default function Settings() {
 
                 <Button onClick={savePassword} disabled={secSaving || !currentPw || !newPw || !confirmPw} className="gap-2">
                   <Shield className="h-4 w-4" />
-                  {secSaving ? "جاري التحديث..." : "تحديث كلمة المرور"}
+                  {secSaving ? "جارٍ التحديث..." : "تحديث كلمة المرور"}
                 </Button>
               </CardContent>
             </Card>

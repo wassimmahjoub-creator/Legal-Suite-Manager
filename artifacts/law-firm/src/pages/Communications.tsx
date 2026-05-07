@@ -127,7 +127,7 @@ export default function Communications() {
             <FormField label="رقم الحريف" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
           </div>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.summary || !form.date}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.summary || !form.date}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>

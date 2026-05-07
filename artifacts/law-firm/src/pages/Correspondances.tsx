@@ -243,7 +243,7 @@ export default function Correspondances() {
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setModal(false)}>إلغاء</Button>
             <Button onClick={save} disabled={saving || !form.clientId || !form.subject.trim()}>
-              {saving ? "جاري الحفظ..." : "حفظ"}
+              {saving ? "جارٍ الحفظ..." : "حفظ"}
             </Button>
           </div>
         }

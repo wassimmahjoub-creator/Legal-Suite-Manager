@@ -363,7 +363,7 @@ export default function CaseDetail() {
           </div>
           <FormField label="ملاحظات" htmlFor="pr-notes"><textarea id="pr-notes" value={procForm.notes} onChange={e => setProcForm({...procForm, notes: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[70px]"} /></FormField>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/procedures`, { method: "POST", body: JSON.stringify(procForm) }); }, load.procedures)}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" disabled={saving} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/procedures`, { method: "POST", body: JSON.stringify(procForm) }); }, load.procedures)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
@@ -391,7 +391,7 @@ export default function CaseDetail() {
             </FormField>
           </div>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || (dlForm.type === "custom" && !dlForm.dueDate)} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/deadlines`, { method: "POST", body: JSON.stringify(dlForm) }); }, load.deadlines)}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" disabled={saving || (dlForm.type === "custom" && !dlForm.dueDate)} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/deadlines`, { method: "POST", body: JSON.stringify(dlForm) }); }, load.deadlines)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function CaseDetail() {
             </select>
           </FormField>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || !teamForm.userId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) }); }, load.team)}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" disabled={saving || !teamForm.userId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) }); }, load.team)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
@@ -428,7 +428,7 @@ export default function CaseDetail() {
             <textarea id="cn-content" value={confForm.content} onChange={e => setConfForm({...confForm, content: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[100px]"} placeholder="ملاحظة سرية، استراتيجية قانونية..." />
           </FormField>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
@@ -449,7 +449,7 @@ export default function CaseDetail() {
             </select>
           </FormField>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || !relForm.relatedCaseId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/relations`, { method: "POST", body: JSON.stringify({...relForm, relatedCaseId: Number(relForm.relatedCaseId)}) }); }, load.relations)}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" disabled={saving || !relForm.relatedCaseId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/relations`, { method: "POST", body: JSON.stringify({...relForm, relatedCaseId: Number(relForm.relatedCaseId)}) }); }, load.relations)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>

@@ -294,7 +294,7 @@ export default function Billing() {
 
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={saveNew} disabled={saving || !form.clientId}>
-              {saving ? "جاري الحفظ..." : "حفظ الفاتورة"}
+              {saving ? "جارٍ الحفظ..." : "حفظ الفاتورة"}
             </Button>
             <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">إلغاء</Button>
           </div>
@@ -346,7 +346,7 @@ export default function Billing() {
 
             <div className="flex gap-3 pt-2">
               <Button className="flex-1" onClick={saveEdit} disabled={saving}>
-                {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
+                {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
               </Button>
               <Button variant="outline" onClick={() => setEditInvoice(null)} className="px-6">إلغاء</Button>
             </div>

@@ -86,7 +86,7 @@ export default function InsuranceCompanies() {
           <FormField label="المسؤول" htmlFor="ic-contact"><Input id="ic-contact" value={form.contactPerson} onChange={e => setForm({...form, contactPerson: e.target.value})} className={inputCls} /></FormField>
           <FormField label="العنوان" htmlFor="ic-addr"><Input id="ic-addr" value={form.address} onChange={e => setForm({...form, address: e.target.value})} className={inputCls} /></FormField>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>

@@ -61,7 +61,7 @@ export default function Login() {
             <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>
           )}
           <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
-            {loading ? "جاري..." : "تسجيل الدخول"}
+            {loading ? "جارٍ..." : "تسجيل الدخول"}
           </Button>
           <div className="text-center text-sm text-muted-foreground">
             ليس لديك حساب؟{" "}

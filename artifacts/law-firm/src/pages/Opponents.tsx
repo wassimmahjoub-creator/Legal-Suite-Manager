@@ -149,7 +149,7 @@ export default function Opponents() {
               className={inputCls + " px-3 py-2 resize-none min-h-[80px]"} placeholder="ملاحظات..." />
           </FormField>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>

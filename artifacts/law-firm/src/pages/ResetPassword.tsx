@@ -71,7 +71,7 @@ export default function ResetPassword() {
             </div>
             {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
             <Button type="submit" className="w-full h-11 font-semibold" disabled={loading || !token}>
-              {loading ? "جاري التغيير..." : "تغيير كلمة المرور"}
+              {loading ? "جارٍ التغيير..." : "تغيير كلمة المرور"}
             </Button>
           </form>
         )}

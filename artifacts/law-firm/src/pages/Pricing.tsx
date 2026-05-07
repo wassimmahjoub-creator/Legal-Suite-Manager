@@ -159,8 +159,8 @@ export default function Pricing() {
                   {plan.id === "solo"
                     ? "ابدأ التجربة المجانية"
                     : plan.id === "cabinet"
-                    ? "اختار الخطة"
-                    : "طوّر الاشتراك"}
+                    ? "اختر الخطة"
+                    : "ترقية الاشتراك"}
                 </Button>
               </Link>
             </div>

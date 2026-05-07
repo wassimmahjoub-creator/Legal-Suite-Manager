@@ -123,7 +123,7 @@ export default function LegalConfig() {
             <Input id="lc-label" value={form.label} onChange={e => setForm({...form, label: e.target.value})} className={inputCls} placeholder="مدني" />
           </FormField>
           <div className="flex gap-3 pt-1">
-            <Button className="flex-1" onClick={save} disabled={saving || !form.label.trim()}>{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.label.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>

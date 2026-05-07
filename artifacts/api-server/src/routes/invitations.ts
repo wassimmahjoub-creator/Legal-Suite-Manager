@@ -49,7 +49,7 @@ router.post("/invitations", requireAuth, async (req, res): Promise<void> => {
       const collaboratorsUsed = Math.max(0, members.length - 1);
       if (collaboratorsUsed >= limit) {
         res.status(400).json({
-          error: "وصلت للعدد المجاني في خطتك. تنجم تزيد مستخدم إضافي بـ 12 د.ت في الشهر.",
+          error: "لقد بلغتَ الحدَّ المتاح في خطتك. يمكنك إضافة مستخدم إضافي بـ 12 د.ت في الشهر.",
           limitReached: true,
           currentCount: collaboratorsUsed,
           limit,

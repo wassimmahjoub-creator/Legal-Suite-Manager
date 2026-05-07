@@ -312,7 +312,7 @@ export default function UserManagement() {
             </select>
           </div>
           <div className="flex gap-2 pt-2">
-            <Button onClick={addUser} disabled={saving} className="flex-1">{saving ? "جاري الإضافة..." : "إضافة"}</Button>
+            <Button onClick={addUser} disabled={saving} className="flex-1">{saving ? "جارٍ الإضافة..." : "إضافة"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="flex-1">إلغاء</Button>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function UserManagement() {
                 </select>
               </div>
               <div className="flex gap-2">
-                <Button onClick={sendInvite} disabled={saving} className="flex-1">{saving ? "جاري الإرسال..." : "إنشاء رابط الدعوة"}</Button>
+                <Button onClick={sendInvite} disabled={saving} className="flex-1">{saving ? "جارٍ الإرسال..." : "إنشاء رابط الدعوة"}</Button>
                 <Button variant="outline" onClick={() => setModal(null)} className="flex-1">إلغاء</Button>
               </div>
             </>
@@ -381,7 +381,7 @@ export default function UserManagement() {
             </select>
           </div>
           <div className="flex gap-2 pt-2">
-            <Button onClick={saveEdit} disabled={saving} className="flex-1">{saving ? "جاري الحفظ..." : "حفظ"}</Button>
+            <Button onClick={saveEdit} disabled={saving} className="flex-1">{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="flex-1">إلغاء</Button>
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function UserManagement() {
             ))}
           </div>
           <div className="flex gap-2 pt-2">
-            <Button onClick={savePerms} disabled={saving} className="flex-1">{saving ? "جاري الحفظ..." : "حفظ الصلاحيات"}</Button>
+            <Button onClick={savePerms} disabled={saving} className="flex-1">{saving ? "جارٍ الحفظ..." : "حفظ الصلاحيات"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="flex-1">إلغاء</Button>
           </div>
         </div>
@@ -420,7 +420,7 @@ export default function UserManagement() {
           </div>
           <div className="flex gap-2 pt-2">
             <Button onClick={doResetPwd} disabled={saving || newPwd.length < 6} className="flex-1">
-              {saving ? "جاري التغيير..." : "تغيير كلمة المرور"}
+              {saving ? "جارٍ التغيير..." : "تغيير كلمة المرور"}
             </Button>
             <Button variant="outline" onClick={() => setModal(null)} className="flex-1">إلغاء</Button>
           </div>

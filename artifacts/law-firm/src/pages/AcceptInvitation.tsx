@@ -74,7 +74,7 @@ export default function AcceptInvitation() {
           <div className="bg-card rounded-2xl p-8 border border-border shadow-lg text-center space-y-4">
             <CheckCircle2 className="h-14 w-14 text-green-500 mx-auto" />
             <p className="font-bold text-lg">مرحباً بك في الفريق!</p>
-            <p className="text-sm text-muted-foreground">جاري التحويل...</p>
+            <p className="text-sm text-muted-foreground">جارٍ التحويل...</p>
           </div>
         ) : info ? (
           <form onSubmit={handleSubmit} className="space-y-4 bg-card rounded-2xl p-6 border border-border shadow-lg">
@@ -99,7 +99,7 @@ export default function AcceptInvitation() {
             </div>
             {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
             <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-              {loading ? "جاري الانضمام..." : "انضم إلى الفريق"}
+              {loading ? "جارٍ الانضمام..." : "انضم إلى الفريق"}
             </Button>
           </form>
         ) : (
