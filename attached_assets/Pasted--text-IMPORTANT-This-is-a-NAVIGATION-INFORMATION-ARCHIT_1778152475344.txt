@@ -1,0 +1,402 @@
+```text
+IMPORTANT:
+This is a NAVIGATION + INFORMATION ARCHITECTURE + SIDEBAR UX REFACTOR ONLY.
+
+DO NOT rebuild the application.
+DO NOT regenerate backend logic.
+DO NOT recreate pages.
+DO NOT remove functionality.
+DO NOT break routing.
+DO NOT break RTL.
+DO NOT break database structure.
+DO NOT duplicate modules.
+
+Your goal is to MODERNIZE, SIMPLIFY and OPTIMIZE the navigation experience of the legal SaaS application while preserving ALL existing functionality.
+
+The current sidebar exposes too many modules at the same visual hierarchy level, creating:
+- cognitive overload
+- ERP feeling
+- poor mobile UX
+- heavy visual density
+- weak information hierarchy
+
+You must transform the app into a MODERN PREMIUM LEGAL SaaS experience inspired by:
+- Notion
+- Linear
+- Stripe
+- Revolut
+- Slack
+
+====================================================
+1) PRIMARY UX OBJECTIVE
+====================================================
+
+The application must feel:
+- simple
+- premium
+- modern
+- fast
+- approachable
+- elegant
+- professional
+
+WITHOUT losing legal depth.
+
+The user must NEVER feel overwhelmed.
+
+HIDE COMPLEXITY INTELLIGENTLY.
+
+====================================================
+2) NEW NAVIGATION ARCHITECTURE
+====================================================
+
+Create a 3-level navigation structure.
+
+====================================================
+LEVEL 1 — MAIN DAILY NAVIGATION
+====================================================
+
+ONLY show frequently used daily modules in the visible sidebar.
+
+Visible top-level items ONLY:
+
+- لوحة القيادة
+- القضايا
+- الرزنامة
+- المهام
+- الحرفاء
+- الوثائق
+- الفواتير
+
+These represent the core daily workflow.
+
+====================================================
+LEVEL 2 — SECONDARY MODULES
+====================================================
+
+Create expandable section:
+المزيد
+
+Inside move:
+
+- الخصوم
+- الاستشارات
+- الاتصالات
+- المراسلات
+- تتبع الوقت
+- التقارير
+- المحاكم
+- شركات التأمين
+- النماذج
+
+These remain accessible but no longer clutter the primary navigation.
+
+====================================================
+LEVEL 3 — ADMINISTRATION & SYSTEM
+====================================================
+
+Create separate administration section.
+
+Move technical/admin modules here:
+
+- إدارة المستخدمين
+- الاشتراك والفوترة
+- الإعدادات القانونية
+- سجل التعديلات
+- سلة المحذوفات
+- الحسابات البنكية
+- الإعدادات
+
+This section must feel administrative and secondary.
+
+====================================================
+3) CONTEXTUAL NAVIGATION
+====================================================
+
+Some modules should NOT exist as independent sidebar items.
+
+Move them contextually inside related pages.
+
+Examples:
+
+Inside "القضايا":
+- الإجراءات القانونية
+- الأحداث
+- التسلسل الزمني
+
+Inside "الفواتير":
+- الخلاصات
+- المصاريف
+
+Inside "الإعدادات":
+- الحسابات البنكية
+- سجل التعديلات
+- سلة المحذوفات
+
+====================================================
+4) MOBILE NAVIGATION REFACTOR
+====================================================
+
+CRITICAL:
+Current mobile experience behaves like compressed desktop sidebar.
+
+Replace with modern SaaS mobile navigation.
+
+====================================================
+BOTTOM NAVIGATION (MOBILE)
+====================================================
+
+Show ONLY:
+
+- لوحة القيادة
+- القضايا
+- الرزنامة
+- الحرفاء
+- المزيد
+
+When clicking:
+المزيد
+
+Open:
+- fullscreen menu
+OR
+- slide-up mobile sheet
+
+with secondary/admin modules.
+
+====================================================
+5) COLLAPSIBLE DESKTOP SIDEBAR
+====================================================
+
+Desktop sidebar must support:
+
+====================================================
+EXPANDED MODE
+====================================================
+
+- icon + label
+
+====================================================
+COLLAPSED MODE
+====================================================
+
+- icons only
+- tooltips on hover
+
+Add smooth transitions.
+
+Persist sidebar state locally.
+
+====================================================
+6) REDUCE VISUAL DENSITY
+====================================================
+
+Current sidebar is visually too tall and heavy.
+
+Reduce:
+- vertical spacing
+- menu item height
+- padding
+- whitespace
+
+Target:
+48px–56px max per menu item.
+
+The menu must feel compact but breathable.
+
+====================================================
+7) MODERN ACTIVE STATE
+====================================================
+
+Replace current oversized yellow active block.
+
+New active style:
+- subtle background
+- right border accent
+- highlighted icon
+- semi-bold text
+- softer premium appearance
+
+Avoid aggressive oversized buttons.
+
+====================================================
+8) TYPOGRAPHY HIERARCHY
+====================================================
+
+CRITICAL FOR ARABIC UI.
+
+Arabic typography must feel:
+- elegant
+- premium
+- lightweight
+- modern
+
+NOT:
+- heavy
+- old ERP style
+
+====================================================
+TYPOGRAPHY RULES
+====================================================
+
+Section headers:
+- semi-bold only
+- smaller size
+- muted opacity
+
+Active item:
+- semi-bold only
+
+Regular items:
+- regular or medium weight ONLY
+
+DO NOT overuse bold typography.
+
+Avoid visual heaviness.
+
+====================================================
+9) SECTION HEADERS
+====================================================
+
+Improve section hierarchy.
+
+Examples:
+- العمل اليومي
+- العلاقات
+- المالية
+- الإدارة
+
+Improve:
+- spacing
+- typography
+- separators
+- muted backgrounds
+
+Headers must organize the menu visually.
+
+====================================================
+10) FAVORITES / PINNED MODULES
+====================================================
+
+Create:
+المفضلة
+
+Allow users to pin frequently used modules.
+
+Examples:
+- القضايا
+- الرزنامة
+- الفواتير
+
+Persist per user.
+
+====================================================
+11) QUICK ACTIONS
+====================================================
+
+Add floating quick actions button.
+
+Examples:
+- قضية جديدة
+- حريف جديد
+- فاتورة جديدة
+- موعد جديد
+
+Accessible globally.
+
+====================================================
+12) SMART SEARCH
+====================================================
+
+Improve global search visibility.
+
+Search bar must:
+- remain accessible
+- support quick navigation
+- support recent items
+- support smart suggestions
+
+Search examples:
+- قضية
+- حريف
+- جلسة
+- فاتورة
+
+====================================================
+13) RESPONSIVE BEHAVIOR
+====================================================
+
+Desktop:
+- full sidebar
+
+Tablet:
+- mini collapsible sidebar
+
+Mobile:
+- bottom navigation
+
+Transitions must feel modern and smooth.
+
+====================================================
+14) DARK MODE IMPROVEMENTS
+====================================================
+
+Improve dark mode.
+
+Requirements:
+- softer contrasts
+- elegant dark palette
+- preserve gold branding
+- avoid harsh black backgrounds
+
+====================================================
+15) ICONOGRAPHY
+====================================================
+
+Standardize all icons.
+
+Requirements:
+- consistent stroke width
+- consistent sizing
+- aligned visually
+- modern outline style
+
+====================================================
+16) UX PRINCIPLES
+====================================================
+
+Use:
+- progressive disclosure
+- contextual navigation
+- collapsible sections
+- secondary menus
+
+The system must feel:
+- powerful but simple
+- rich but accessible
+- legal but modern
+
+====================================================
+17) IMPORTANT RESTRICTIONS
+====================================================
+
+DO NOT:
+- rebuild backend
+- recreate pages
+- remove functionality
+- duplicate navigation
+- break permissions
+- break RTL
+- break Arabic localization
+
+ONLY improve:
+- navigation
+- hierarchy
+- usability
+- responsiveness
+- visual clarity
+- mobile experience
+- information architecture
+
+Preserve all existing business logic.
+```
