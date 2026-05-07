@@ -168,11 +168,18 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
 /* ─────────────────────── SectionHeader ─────────────────────── */
 
 function SectionHeader({ label, collapsed }: { label: string; collapsed?: boolean }) {
-  if (collapsed) return <div className="my-2 mx-2 h-px bg-border/40" />;
+  if (collapsed) return <div className="my-2 mx-2 h-px bg-border/50" />;
   return (
-    <div className="flex items-center gap-2 px-2.5 pt-4 pb-1" dir="rtl">
-      <span className="text-[10px] font-medium text-muted-foreground/35 shrink-0 leading-none">{label}</span>
-      <div className="flex-1 h-px bg-border/30" />
+    <div className="pt-4 pb-1.5 px-2.5" dir="rtl">
+      <div className="flex items-center gap-2">
+        <span
+          className="text-[11px] font-semibold shrink-0 leading-none tracking-wide uppercase"
+          style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}
+        >
+          {label}
+        </span>
+        <div className="flex-1 h-px" style={{ background: "color-mix(in oklch, var(--border) 80%, var(--primary) 10%)" }} />
+      </div>
     </div>
   );
 }
@@ -606,7 +613,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5" dir="rtl">
                 {/* Services */}
                 <div>
-                  <p className="text-[10px] font-medium text-muted-foreground/35 px-1 mb-2">الخدمات</p>
+                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>الخدمات</p>
                   <div className="grid grid-cols-3 gap-1.5">
                     {NAV_SECONDARY.map(item => {
                       const Icon = item.icon;
@@ -632,7 +639,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                 {/* Admin */}
                 <div>
-                  <p className="text-[10px] font-medium text-muted-foreground/35 px-1 mb-2">الإدارة</p>
+                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>الإدارة</p>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[...NAV_ADMIN, ...NAV_SYSTEM].map(item => {
                       const Icon = item.icon;

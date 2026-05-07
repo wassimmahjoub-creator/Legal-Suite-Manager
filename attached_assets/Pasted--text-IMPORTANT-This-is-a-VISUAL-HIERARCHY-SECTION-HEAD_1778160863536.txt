@@ -1,0 +1,167 @@
+```text
+IMPORTANT:
+This is a VISUAL HIERARCHY + SECTION HEADER POLISH ONLY.
+
+DO NOT rebuild the sidebar.
+DO NOT regenerate navigation.
+DO NOT change routing.
+DO NOT break RTL.
+DO NOT modify backend logic.
+
+The current sidebar structure is good, but the section headers are still:
+- too light
+- too small
+- insufficiently visible
+- visually disconnected
+
+The user must instantly understand navigation grouping.
+
+====================================================
+1) IMPROVE SECTION HEADER VISIBILITY
+====================================================
+
+Current section headers:
+- العمل اليومي
+- الخدمات
+- الإدارة
+
+are too pale and visually weak.
+
+Make them:
+- more visible
+- more premium
+- easier to scan
+
+====================================================
+2) TYPOGRAPHY IMPROVEMENTS
+====================================================
+
+Increase section header size.
+
+Target:
+14px–15px
+
+Use:
+font-weight: 600
+
+NOT bold-heavy.
+
+The typography must remain:
+- elegant
+- modern
+- SaaS-like
+
+====================================================
+3) CHANGE HEADER COLOR
+====================================================
+
+Current gray is too pale.
+
+Replace with:
+- darker warm gray
+OR
+- muted gold-gray tone
+
+The section headers must:
+- clearly separate groups
+- remain subtle
+- not compete with active menu items
+
+Avoid:
+- low contrast pale gray
+- washed out appearance
+
+====================================================
+4) ADD PREMIUM VISUAL STRUCTURE
+====================================================
+
+Improve section separation.
+
+Add:
+- subtle divider lines
+- more balanced spacing
+- better vertical rhythm
+
+Example structure:
+
+────────────
+العمل اليومي
+
+[menu items]
+
+────────────
+الخدمات
+
+[menu items]
+
+====================================================
+5) IMPROVE ACTIVE SECTION ALIGNMENT
+====================================================
+
+Ensure section headers align perfectly with:
+- menu labels
+- icon grid
+- sidebar rhythm
+
+The current layout feels slightly disconnected visually.
+
+====================================================
+6) MENU ITEM SPACING
+====================================================
+
+Slightly reduce whitespace between menu items.
+
+Current sidebar still feels:
+- too stretched vertically
+- too sparse
+
+Target:
+more compact and premium.
+
+====================================================
+7) SIDEBAR FEELING
+====================================================
+
+The final sidebar must feel:
+- premium
+- organized
+- elegant
+- easy to scan
+- modern SaaS
+
+NOT:
+- empty
+- washed out
+- ERP-like
+- weak hierarchy
+
+====================================================
+8) IMPORTANT DESIGN RULE
+====================================================
+
+Section headers must:
+- guide the eye
+- organize the interface
+- improve scanability
+
+WITHOUT:
+- becoming visually aggressive
+- using oversized bold typography
+- creating clutter
+
+====================================================
+9) DO NOT BREAK CURRENT DESIGN
+====================================================
+
+Preserve:
+- current navigation structure
+- current Arabic RTL layout
+- current gold branding
+- current sidebar logic
+
+ONLY improve:
+- visibility
+- hierarchy
+- section readability
+- visual structure
+```
