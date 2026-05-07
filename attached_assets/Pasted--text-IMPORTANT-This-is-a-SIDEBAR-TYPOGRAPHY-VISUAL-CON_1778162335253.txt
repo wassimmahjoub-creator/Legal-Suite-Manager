@@ -1,0 +1,192 @@
+```text
+IMPORTANT:
+This is a SIDEBAR TYPOGRAPHY + VISUAL CONSISTENCY FIX ONLY.
+
+DO NOT rebuild the app.
+DO NOT regenerate layouts.
+DO NOT modify backend logic.
+DO NOT change routing.
+DO NOT break RTL.
+
+The current sidebar/menu typography is visually inconsistent with the rest of the dashboard.
+
+Problems to fix:
+- sidebar text is too light
+- sidebar typography is too thin
+- text color is too pale
+- menu labels feel disconnected from dashboard typography
+- user name at bottom is truncated/cut
+- sidebar hierarchy lacks visual strength
+- overall sidebar feels weaker than main content area
+
+The sidebar must visually match the premium dashboard style.
+
+====================================================
+1) SIDEBAR TEXT COLOR FIX
+====================================================
+
+Current sidebar text color is too pale gray.
+
+Replace sidebar typography color with:
+- darker premium gray
+- same dark tone used in dashboard titles/cards
+
+Target feel:
+- stronger readability
+- premium contrast
+- elegant Arabic typography
+
+Avoid:
+- washed-out gray
+- low contrast text
+
+====================================================
+2) SIDEBAR FONT WEIGHT FIX
+====================================================
+
+Increase sidebar typography weight slightly.
+
+Rules:
+
+Regular menu items:
+- font-weight: 500
+
+Active item:
+- font-weight: 600
+
+Section headers:
+- font-weight: 600
+
+The sidebar must feel:
+- stronger
+- more readable
+- visually balanced with dashboard
+
+BUT:
+Avoid overly bold ERP-style typography.
+
+====================================================
+3) TYPOGRAPHY CONSISTENCY
+====================================================
+
+Unify typography hierarchy between:
+- dashboard
+- sidebar
+- cards
+- menu labels
+
+The sidebar currently feels visually disconnected.
+
+Use the SAME typography system:
+- font family
+- weight rhythm
+- color hierarchy
+- spacing rhythm
+
+====================================================
+4) USER NAME TRUNCATION FIX
+====================================================
+
+The user name at the bottom is currently cut/truncated.
+
+Fix user footer layout.
+
+Requirements:
+- full user name visible
+- responsive layout
+- proper text wrapping or truncation handling
+- enough width allocation
+
+Do NOT allow:
+- cropped names
+- broken alignment
+- overlapping elements
+
+====================================================
+5) USER FOOTER POLISH
+====================================================
+
+Improve bottom user area.
+
+Requirements:
+- better spacing
+- aligned avatar
+- aligned role badge
+- compact premium layout
+
+Typography:
+- stronger text color
+- better readability
+- same premium dark tone as dashboard
+
+====================================================
+6) SIDEBAR VISUAL BALANCE
+====================================================
+
+The dashboard content currently feels visually stronger than the sidebar.
+
+Rebalance sidebar visual presence using:
+- darker typography
+- slightly stronger hierarchy
+- better section contrast
+- improved readability
+
+WITHOUT:
+- making sidebar visually aggressive
+- adding heavy backgrounds
+- creating ERP feeling
+
+====================================================
+7) ACTIVE MENU ITEM IMPROVEMENT
+====================================================
+
+Improve active item readability.
+
+Requirements:
+- stronger dark text
+- gold accent preserved
+- better contrast
+- more premium appearance
+
+====================================================
+8) SECTION HEADER IMPROVEMENT
+====================================================
+
+Section headers:
+- slightly darker
+- more readable
+- better separated visually
+
+Examples:
+- العمل اليومي
+- الخدمات
+- الإدارة
+
+Must feel:
+- organized
+- premium
+- easy to scan
+
+====================================================
+9) RESPONSIVE FIXES
+====================================================
+
+Ensure:
+- sidebar text never clips
+- labels remain readable
+- spacing adapts properly
+- user footer remains stable
+
+====================================================
+10) FINAL UX GOAL
+====================================================
+
+The sidebar must now feel:
+- premium
+- visually balanced
+- readable
+- elegant
+- cohesive with dashboard
+
+The dashboard and sidebar must feel like they belong to the SAME premium SaaS design system.
+```

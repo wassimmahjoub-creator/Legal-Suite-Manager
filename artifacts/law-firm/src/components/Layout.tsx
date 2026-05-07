@@ -123,8 +123,8 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
               ? "px-2 py-[5px] mr-1"
               : "px-2.5 py-[5px]",
           active
-            ? "text-primary font-medium"
-            : "text-muted-foreground/70 hover:text-foreground/90 hover:bg-muted/50 font-normal"
+            ? "text-primary font-semibold"
+            : "text-foreground/60 hover:text-foreground hover:bg-muted/50 font-medium"
         )}
         style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
       >
@@ -135,7 +135,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
         <Icon className={cn(
           "shrink-0 transition-colors duration-150",
           collapsed ? "h-[17px] w-[17px]" : "h-[15px] w-[15px]",
-          active ? "text-primary" : "text-muted-foreground/50"
+          active ? "text-primary" : "text-foreground/40"
         )} />
         {!collapsed && (
           <span className="truncate leading-[1.4]">{label}</span>
@@ -173,12 +173,12 @@ function SectionHeader({ label, collapsed }: { label: string; collapsed?: boolea
     <div className="pt-4 pb-1.5 px-2.5" dir="rtl">
       <div className="flex items-center gap-2">
         <span
-          className="text-[11px] font-semibold shrink-0 leading-none tracking-wide uppercase"
-          style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}
+          className="text-[10.5px] font-semibold shrink-0 leading-none tracking-widest uppercase"
+          style={{ color: "color-mix(in oklch, var(--foreground) 58%, var(--primary) 28%)" }}
         >
           {label}
         </span>
-        <div className="flex-1 h-px" style={{ background: "color-mix(in oklch, var(--border) 80%, var(--primary) 10%)" }} />
+        <div className="flex-1 h-px" style={{ background: "color-mix(in oklch, var(--border) 70%, var(--primary) 15%)" }} />
       </div>
     </div>
   );
@@ -207,14 +207,14 @@ function ExpandableSection({
         className={cn(
           "w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[13px] transition-all duration-150",
           hasActive && !open
-            ? "text-primary/70 font-medium"
-            : "text-muted-foreground/55 hover:text-foreground/80 hover:bg-muted/40 font-normal"
+            ? "text-primary/80 font-semibold"
+            : "text-foreground/55 hover:text-foreground hover:bg-muted/40 font-medium"
         )}
       >
-        <Icon className="h-[15px] w-[15px] shrink-0 text-muted-foreground/40" />
+        <Icon className="h-[15px] w-[15px] shrink-0 text-foreground/35" />
         <span className="flex-1 text-right truncate leading-[1.4]">{label}</span>
         <ChevronDown className={cn(
-          "h-3 w-3 shrink-0 text-muted-foreground/40 transition-transform duration-200",
+          "h-3 w-3 shrink-0 text-foreground/30 transition-transform duration-200",
           open && "rotate-180"
         )} />
       </button>
@@ -486,7 +486,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* User section — sticky */}
-      <div className={cn("shrink-0 border-t border-border/60 px-1.5 py-1.5", collapsed && "px-0 flex justify-center")}>
+      <div className={cn("shrink-0 border-t border-border/60 px-1.5 py-2", collapsed && "px-0 flex justify-center")}>
         <div className="relative">
           <button
             onClick={() => setUserMenuOpen(o => !o)}
@@ -495,18 +495,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
               collapsed ? "justify-center p-1.5 w-9 mx-auto" : "w-full px-2 py-1.5"
             )}
           >
-            <div className="h-6 w-6 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[11px] font-bold shrink-0">
+            <div className="h-7 w-7 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[12px] font-bold shrink-0">
               {user?.name?.charAt(0) ?? "م"}
             </div>
             {!collapsed && (
               <>
                 <div className="flex-1 text-right min-w-0">
-                  <p className="text-[12px] font-medium truncate leading-tight text-foreground/80">{user?.name}</p>
-                  <p className="text-[10px] text-muted-foreground/50 leading-tight">
+                  <p className="text-[12px] font-semibold leading-tight text-foreground/90 break-words line-clamp-2">{user?.name}</p>
+                  <p className="text-[11px] text-foreground/50 leading-tight mt-0.5">
                     {ROLE_LABELS[user?.role ?? "lawyer"] ?? user?.roleLabel}
                   </p>
                 </div>
-                <ChevronDown className="h-3 w-3 text-muted-foreground/30 shrink-0" />
+                <ChevronDown className="h-3 w-3 text-foreground/35 shrink-0" />
               </>
             )}
           </button>
