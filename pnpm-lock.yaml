@@ -175,6 +175,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/plans':
+        specifier: workspace:*
+        version: link:../../lib/plans
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -350,6 +353,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/plans':
+        specifier: workspace:*
+        version: link:../../lib/plans
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -673,6 +679,8 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.3.5
+
+  lib/plans: {}
 
   scripts:
     devDependencies:

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { PLANS, collabLabel } from "@workspace/plans";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -55,20 +56,6 @@ const PLAN_COLORS: Record<string, string> = {
   premium: "from-purple-500/10 to-purple-500/5 border-purple-500/20",
 };
 
-const UPGRADE_PLANS = [
-  {
-    id: "solo", name: "محامي فردي", monthly: 49, yearly: 490, collabs: 1, collabLabel: "1 متعاون",
-    features: ["قضايا غير محدودة", "حرفاء غير محدودون", "الفوترة والمالية", "الوثائق", "الرزنامة", "التنبيهات", "سجل الاتصالات"],
-  },
-  {
-    id: "cabinet", name: "مكتب محاماة", monthly: 119, yearly: 1190, collabs: 5, collabLabel: "5 متعاونين", recommended: true,
-    features: ["5 متعاونين مشمولين", "صلاحيات متقدمة", "تقارير متقدمة", "محاسبة وحسابات بنكية", "سير العمل القانوني", "بوابة الحرفاء", "إجراءات قانونية"],
-  },
-  {
-    id: "premium", name: "مؤسسة قانونية", monthly: 249, yearly: 2490, collabs: -1, collabLabel: "غير محدود",
-    features: ["متعاونون غير محدودون", "دعم متعدد الفروع", "تحليلات متقدمة", "سجل التعديلات الكامل", "تجهيز الذكاء الاصطناعي", "دعم أولوي 24/7"],
-  },
-];
 
 export default function Subscription() {
   const { toast } = useToast();
@@ -91,7 +78,7 @@ export default function Subscription() {
   useEffect(() => { reload().finally(() => setLoading(false)); }, []);
 
   async function upgradePlan(planId: string) {
-    const planName = UPGRADE_PLANS.find(p => p.id === planId)?.name ?? planId;
+    const planName = PLANS.find(p => p.id === planId)?.name ?? planId;
     if (!confirm(`هل تريد الترقية إلى خطة "${planName}"؟`)) return;
     setUpgrading(true);
     try {
@@ -380,29 +367,27 @@ export default function Subscription() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {UPGRADE_PLANS.map(p => {
-            const price = upgradeCycle === "yearly" ? p.yearly : p.monthly;
+          {PLANS.map(p => {
+            const price = upgradeCycle === "yearly" ? p.priceYearly : p.priceMonthly;
             const isCurrent = org.subscriptionPlan === p.id;
             return (
               <div key={p.id} className={cn("border rounded-xl p-4 space-y-3 relative flex flex-col transition-colors",
                 isCurrent ? "border-primary bg-primary/5"
-                : p.recommended ? "border-primary/40 hover:border-primary shadow-sm"
+                : p.isRecommended ? "border-primary/40 hover:border-primary shadow-sm"
                 : "border-border hover:border-primary/40")}>
                 {isCurrent && (
                   <span className="absolute -top-2.5 right-3 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                     خطتك الحالية
                   </span>
                 )}
-                {p.recommended && !isCurrent && (
+                {p.isRecommended && !isCurrent && (
                   <span className="absolute -top-2.5 right-3 text-xs bg-primary/80 text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                     الأكثر استعمالاً
                   </span>
                 )}
                 <div>
                   <p className="font-semibold text-sm">{p.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {p.collabs === -1 ? "متعاونون غير محدودون" : `${p.collabLabel} مشمول`}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{collabLabel(p)} مشمول</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold text-primary">
@@ -410,7 +395,7 @@ export default function Subscription() {
                     <span className="text-xs font-normal text-muted-foreground"> د.ت/{upgradeCycle === "yearly" ? "سنة" : "شهر"}</span>
                   </p>
                   {upgradeCycle === "yearly" && (
-                    <p className="text-xs text-green-500 font-medium">توفير {p.monthly * 12 - p.yearly} د.ت</p>
+                    <p className="text-xs text-green-500 font-medium">توفير {p.priceMonthly * 12 - p.priceYearly} د.ت</p>
                   )}
                 </div>
                 <ul className="space-y-1.5 flex-1">
@@ -421,7 +406,7 @@ export default function Subscription() {
                   ))}
                 </ul>
                 {!isCurrent && (
-                  <Button size="sm" variant={p.recommended ? "default" : "outline"}
+                  <Button size="sm" variant={p.isRecommended ? "default" : "outline"}
                     onClick={() => upgradePlan(p.id)} disabled={upgrading} className="w-full text-xs mt-auto">
                     <RefreshCw className="h-3 w-3 ml-1" />
                     {org.subscriptionStatus === "trial" ? "تفعيل الاشتراك" : "اختر هذه الخطة"}

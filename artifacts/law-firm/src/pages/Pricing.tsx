@@ -3,75 +3,13 @@ import { CheckCircle2, Crown, Users, Zap, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { PLANS } from "@workspace/plans";
 
-const PLANS = [
-  {
-    id: "solo",
-    name: "محامي فردي",
-    subtitle: "للمحامي الفردي والمكتب الصغير",
-    priceMonthly: 49,
-    priceYearly: 490,
-    includedCollaborators: 1,
-    icon: Star,
-    color: "border-border",
-    badge: null as string | null,
-    features: [
-      "المدير الرئيسي + 1 متعاون مشمول",
-      "قضايا غير محدودة",
-      "حرفاء غير محدودون",
-      "نظام الفوترة والفواتير",
-      "الوثائق والنماذج",
-      "الرزنامة والمواعيد",
-      "التنبيهات والتذكيرات",
-      "سجل الاتصالات",
-    ],
-    notIncluded: ["تقارير متقدمة", "محاسبة متقدمة", "بوابة الحرفاء"],
-  },
-  {
-    id: "cabinet",
-    name: "مكتب محاماة",
-    subtitle: "للمكاتب الصغيرة والمتوسطة",
-    priceMonthly: 119,
-    priceYearly: 1190,
-    includedCollaborators: 5,
-    icon: Users,
-    color: "border-primary shadow-lg shadow-primary/10",
-    badge: "الأكثر شعبية" as string | null,
-    features: [
-      "المدير الرئيسي + 5 متعاونين مشمولين",
-      "جميع ميزات المحامي الفردي",
-      "نظام الصلاحيات المتقدم",
-      "التقارير المتقدمة",
-      "المحاسبة والحسابات البنكية",
-      "سير العمل القانوني",
-      "بوابة الحرفاء",
-      "إدارة الفريق بالكامل",
-    ],
-    notIncluded: ["متعاونون غير محدودون", "دعم متعدد الفروع"],
-  },
-  {
-    id: "premium",
-    name: "مؤسسة قانونية",
-    subtitle: "للمؤسسات القانونية الكبيرة",
-    priceMonthly: 249,
-    priceYearly: 2490,
-    includedCollaborators: -1,
-    icon: Crown,
-    color: "border-purple-500/40",
-    badge: null as string | null,
-    features: [
-      "متعاونون غير محدودون مشمولون",
-      "جميع ميزات مكتب المحاماة",
-      "دعم متعدد الفروع",
-      "التحليلات المتقدمة",
-      "سجل التعديلات الكامل",
-      "ميزات الذكاء الاصطناعي المتقدمة",
-      "دعم مميز على مدار الساعة",
-      "تكامل مخصص",
-    ],
-    notIncluded: [],
-  },
-];
+const PLAN_UI: Record<string, { icon: React.ElementType; color: string }> = {
+  solo:    { icon: Star,  color: "border-border" },
+  cabinet: { icon: Users, color: "border-primary shadow-lg shadow-primary/10" },
+  premium: { icon: Crown, color: "border-purple-500/40" },
+};
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
@@ -102,15 +40,16 @@ export default function Pricing() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANS.map(plan => {
-          const Icon = plan.icon;
+          const ui = PLAN_UI[plan.id] ?? { icon: Star, color: "border-border" };
+          const Icon = ui.icon;
           const price = yearly ? plan.priceYearly : plan.priceMonthly;
           const period = yearly ? "سنة" : "شهر";
-          const collabLabel = plan.includedCollaborators === -1
+          const cl = plan.includedCollaborators === -1
             ? "متعاونون غير محدودون"
-            : `${plan.includedCollaborators} متعاون${plan.includedCollaborators > 1 ? "" : ""} مشمول`;
+            : `${plan.includedCollaborators} متعاون مشمول`;
 
           return (
-            <div key={plan.id} className={cn("relative bg-card border-2 rounded-2xl p-6 space-y-5 flex flex-col", plan.color)}>
+            <div key={plan.id} className={cn("relative bg-card border-2 rounded-2xl p-6 space-y-5 flex flex-col", ui.color)}>
               {plan.badge && (
                 <div className="absolute -top-3 right-1/2 translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
                   {plan.badge}
@@ -125,7 +64,7 @@ export default function Pricing() {
                 </div>
                 <p className="text-sm text-muted-foreground">{plan.subtitle}</p>
                 <div className="inline-flex items-center gap-1 bg-primary/8 text-primary text-xs font-medium px-2 py-0.5 rounded-full">
-                  <Users className="h-3 w-3" /> {collabLabel}
+                  <Users className="h-3 w-3" /> {cl}
                 </div>
               </div>
 
