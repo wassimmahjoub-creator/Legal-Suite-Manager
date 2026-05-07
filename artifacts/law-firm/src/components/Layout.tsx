@@ -7,12 +7,22 @@ import {
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X,
+  MoreHorizontal, X, Crown, AlertTriangle,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { useAuth } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
+interface OrgTrial {
+  subscriptionStatus: string;
+  subscriptionPlan: string;
+  daysRemaining: number | null;
+  isTrialExpired: boolean;
+}
 
 /* ─────────────────────── nav data ─────────────────────── */
 
@@ -219,6 +229,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(() =>
     localStorage.getItem("sidebar_collapsed") === "true"
   );
+  const [orgTrial, setOrgTrial] = useState<OrgTrial | null>(null);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [systemOpen, setSystemOpen] = useState(false);
@@ -255,6 +266,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem("nav_favorites", JSON.stringify(favorites));
   }, [favorites]);
+
+  /* Fetch trial info once on mount */
+  useEffect(() => {
+    authFetch(`${BASE}/api/organization`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: OrgTrial | null) => { if (d) setOrgTrial(d); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -400,6 +419,64 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </ExpandableSection>
       </nav>
+
+      {/* Trial badge — sticky, visible on all pages */}
+      {orgTrial && (orgTrial.subscriptionStatus === "trial" || orgTrial.isTrialExpired || orgTrial.subscriptionStatus === "expired") && (
+        <div className="shrink-0 px-1.5 pb-1">
+          <Link href="/subscription">
+            {orgTrial.isTrialExpired || orgTrial.subscriptionStatus === "expired" ? (
+              /* Expired */
+              collapsed ? (
+                <div title="انتهت التجربة — اشترك الآن"
+                  className="flex justify-center py-1.5 rounded-md bg-destructive/15 text-destructive">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-2.5 py-2 hover:bg-destructive/15 transition-colors">
+                  <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-destructive leading-tight">انتهت التجربة</p>
+                    <p className="text-[10px] text-muted-foreground/60 leading-tight">اشترك للاستمرار</p>
+                  </div>
+                </div>
+              )
+            ) : orgTrial.daysRemaining !== null && orgTrial.daysRemaining <= 14 ? (
+              /* Urgent — ≤14 days */
+              collapsed ? (
+                <div title={`${orgTrial.daysRemaining} يوم متبقٍ`}
+                  className="flex justify-center py-1.5 rounded-md bg-orange-500/15 text-orange-500">
+                  <Crown className="h-3.5 w-3.5" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2.5 py-2 hover:bg-orange-500/15 transition-colors">
+                  <Crown className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-orange-500 leading-tight">{orgTrial.daysRemaining} يوم متبقٍ</p>
+                    <p className="text-[10px] text-muted-foreground/60 leading-tight">اشترك قبل الانتهاء</p>
+                  </div>
+                </div>
+              )
+            ) : orgTrial.daysRemaining !== null ? (
+              /* Normal trial */
+              collapsed ? (
+                <div title={`تجربة مجانية — ${orgTrial.daysRemaining} يوم متبقٍ`}
+                  className="flex justify-center py-1.5 rounded-md bg-primary/10 text-primary">
+                  <Crown className="h-3.5 w-3.5" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg bg-primary/8 border border-primary/15 px-2.5 py-2 hover:bg-primary/12 transition-colors"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--primary) 7%, transparent)" }}>
+                  <Crown className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-primary leading-tight">تجربة مجانية</p>
+                    <p className="text-[10px] text-muted-foreground/60 leading-tight">{orgTrial.daysRemaining} يوم متبقٍ من 90</p>
+                  </div>
+                </div>
+              )
+            ) : null}
+          </Link>
+        </div>
+      )}
 
       {/* Theme toggle — sticky */}
       <div className={cn("shrink-0 px-1.5 pb-1", collapsed && "flex justify-center px-0")}>
