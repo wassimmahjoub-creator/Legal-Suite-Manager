@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import {
   Crown, CheckCircle2, Clock, Users, CreditCard, TrendingUp, Calendar,
-  AlertTriangle, RefreshCw, UserPlus, UserCheck, UserX,
-  Briefcase, FileText, HardDrive, Download, Plus, Phone, ArrowUp, Trash2,
+  AlertTriangle, RefreshCw, FileText, Download, Plus, Phone, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -38,12 +37,6 @@ interface BillingItem {
   status: string; billingCycle: string | null; createdAt: string;
 }
 
-interface DashboardSummary {
-  activeCases: number;
-  monthlyIncome: number;
-  pendingInvoices: number;
-  upcomingDeadlines: number;
-}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   trial:   { label: "تجربة مجانية", color: "text-blue-500",        bg: "bg-blue-500/10" },
@@ -63,7 +56,6 @@ export default function Subscription() {
   const { toast } = useToast();
   const [org, setOrg] = useState<OrgInfo | null>(null);
   const [billing, setBilling] = useState<BillingItem[]>([]);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeCycle, setUpgradeCycle] = useState<"monthly" | "yearly">("monthly");
@@ -73,12 +65,11 @@ export default function Subscription() {
   const [showContactModal, setShowContactModal] = useState(false);
 
   async function reload() {
-    const [o, b, s] = await Promise.all([
+    const [o, b] = await Promise.all([
       authFetch(`${BASE}/api/organization`).then(r => r.json()) as Promise<OrgInfo>,
       authFetch(`${BASE}/api/organization/billing-history`).then(r => r.json()) as Promise<BillingItem[]>,
-      authFetch(`${BASE}/api/dashboard/summary`).then(r => r.json()) as Promise<DashboardSummary>,
     ]);
-    setOrg(o); setBilling(b); setSummary(s);
+    setOrg(o); setBilling(b);
   }
 
   useEffect(() => { reload().finally(() => setLoading(false)); }, []);
@@ -159,6 +150,12 @@ export default function Subscription() {
                 <Calendar className="h-3.5 w-3.5" />
                 {org.billingCycle === "yearly" ? "دورة سنوية" : "دورة شهرية"}
               </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {isUnlimited
+                  ? "مستخدمون غير محدودون"
+                  : `${org.memberCount} / ${org.includedCollaborators + 1} مستخدم · ${org.remaining ?? 0} مقعد متاح`}
+              </span>
               {org.trialEndDate && org.subscriptionStatus === "trial" && (
                 <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
@@ -213,154 +210,6 @@ export default function Subscription() {
           </div>
         </div>
       )}
-
-      {/* ── Usage cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          {
-            label: "المستخدمون",
-            value: `${org.memberCount}${isUnlimited ? "" : ` / ${(org.includedCollaborators + 1)}`}`,
-            sub: isUnlimited ? "غير محدودون" : `${org.remaining ?? 0} مقعد متاح`,
-            icon: Users,
-            color: "text-primary bg-primary/10",
-            progress: isUnlimited ? null : ((org.memberCount / ((org.includedCollaborators + 1))) * 100),
-            progressColor: org.remaining === 0 ? "bg-orange-500" : "bg-primary",
-          },
-          {
-            label: "القضايا النشطة",
-            value: String(summary?.activeCases ?? "—"),
-            sub: "قضية جارية",
-            icon: Briefcase,
-            color: "text-blue-500 bg-blue-500/10",
-            progress: null,
-            progressColor: "bg-blue-500",
-          },
-          {
-            label: "الفواتير المعلقة",
-            value: String(summary?.pendingInvoices ?? "—"),
-            sub: "بانتظار التسديد",
-            icon: FileText,
-            color: "text-orange-500 bg-orange-500/10",
-            progress: null,
-            progressColor: "bg-orange-500",
-          },
-          {
-            label: "التخزين",
-            value: "—",
-            sub: "غير محدود",
-            icon: HardDrive,
-            color: "text-green-500 bg-green-500/10",
-            progress: null,
-            progressColor: "bg-green-500",
-          },
-        ].map(card => (
-          <div key={card.label} className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", card.color)}>
-              <card.icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold leading-tight">{card.value}</p>
-              <p className="text-xs font-medium text-foreground/80 leading-tight mt-0.5">{card.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{card.sub}</p>
-            </div>
-            {card.progress !== null && (
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full", card.progressColor)}
-                  style={{ width: `${Math.min(100, card.progress)}%` }} />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Collaborator breakdown ── */}
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">المتعاونون</h3>
-          </div>
-          <Link href="/users">
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">
-              <Plus className="h-3.5 w-3.5" /> إضافة متعاون
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            {
-              label: "المشمولون في الخطة",
-              value: isUnlimited ? "∞" : String(org.includedCollaborators + 1),
-              sub: "بما فيهم المدير",
-              icon: UserCheck,
-              color: "text-blue-500 bg-blue-500/10",
-            },
-            {
-              label: "المستخدمون الحاليون",
-              value: String(org.memberCount),
-              sub: `${org.collaboratorsUsed} متعاون`,
-              icon: Users,
-              color: "text-primary bg-primary/10",
-            },
-            {
-              label: "المقاعد المتبقية",
-              value: isUnlimited ? "∞" : String(org.remaining ?? 0),
-              sub: isUnlimited ? "غير محدود" : (org.remaining === 0 ? "وصلتَ للحد" : "مقعد متاح"),
-              icon: UserPlus,
-              color: (org.remaining === 0 && !isUnlimited) ? "text-orange-500 bg-orange-500/10" : "text-green-500 bg-green-500/10",
-            },
-            {
-              label: "مستخدمون إضافيون",
-              value: isUnlimited ? "0" : String(org.extraCollaborators),
-              sub: org.extraCollaborators > 0 ? `${org.extraCollaborators * 12} د.ت/شهر` : "لا تكلفة إضافية",
-              icon: UserX,
-              color: org.extraCollaborators > 0 ? "text-orange-500 bg-orange-500/10" : "text-muted-foreground bg-muted/50",
-            },
-          ].map(item => (
-            <div key={item.label} className="bg-muted/30 rounded-xl p-3 space-y-2">
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.color)}>
-                <item.icon className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{item.value}</p>
-                <p className="text-xs font-medium leading-tight">{item.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {org.extraCollaborators > 0 && (
-          <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-3 text-sm">
-            <p className="font-medium text-orange-500">تكلفة المستخدمين الإضافيين</p>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              {org.extraCollaborators} مستخدم × 12 د.ت = <span className="font-bold text-foreground">{org.extraCost} د.ت / شهر</span>
-            </p>
-            <p className="text-muted-foreground text-xs mt-1">
-              المجموع المقدّر: {org.plan.priceMonthly} + {org.extraCost} = <span className="font-bold text-foreground">{org.estimatedMonthlyTotal} د.ت / شهر</span>
-            </p>
-          </div>
-        )}
-
-        {!isUnlimited && org.remaining === 0 && !org.isTrialExpired && (
-          <div className="bg-muted/40 border border-border rounded-xl p-3 text-sm text-muted-foreground">
-            لقد بلغتَ الحدَّ المتاح في خطتك. يمكنك إضافة متعاون إضافي بـ <span className="font-semibold text-foreground">12 د.ت / شهر</span>، أو ترقية الاشتراك للحصول على المزيد.
-          </div>
-        )}
-      </div>
-
-      {/* ── Plan features ── */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="font-semibold mb-3">ما يشمله اشتراكك الحالي</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {org.plan.features.map(f => (
-            <div key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> {f}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* ── Upgrade section ── */}
       <div className="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -638,27 +487,6 @@ export default function Subscription() {
         )}
       </div>
 
-      {/* ── Bottom CTA ── */}
-      <div className="bg-gradient-to-br from-primary/8 to-primary/3 border border-primary/20 rounded-2xl p-6 text-center space-y-4"
-        style={{ background: "color-mix(in oklch, var(--primary) 6%, var(--card))" }}>
-        <div>
-          <p className="font-semibold text-base">تحتاج مستخدمين أكثر أو ميزات متقدمة؟</p>
-          <p className="text-sm text-muted-foreground mt-1">رقّ خطتك اليوم وانتفع بكامل إمكانيات المنصة</p>
-        </div>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <Button className="gap-1.5" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <ArrowUp className="h-4 w-4" /> ترقية الخطة
-          </Button>
-          <Link href="/pricing">
-            <Button variant="outline" className="gap-1.5">
-              مقارنة الخطط
-            </Button>
-          </Link>
-          <Button variant="ghost" className="gap-1.5" onClick={() => setShowContactModal(true)}>
-            <Phone className="h-4 w-4" /> تواصل معنا
-          </Button>
-        </div>
-      </div>
 
     </div>
   );
