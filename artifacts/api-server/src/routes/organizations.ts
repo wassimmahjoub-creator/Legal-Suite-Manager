@@ -10,29 +10,32 @@ const PLANS = {
   solo: {
     id: "solo",
     name: "محامي فردي",
-    priceMonthly: 39,
-    priceYearly: 390,
-    collaborators: 0,
-    extraCollaboratorPrice: 15,
-    features: ["قضايا غير محدودة", "حرفاء غير محدودون", "الفوترة", "الوثائق", "الرزنامة", "التقارير الأساسية"],
+    priceMonthly: 49,
+    priceYearly: 490,
+    includedCollaborators: 1,
+    extraCollaboratorPrice: 12,
+    isRecommended: false,
+    features: ["قضايا غير محدودة", "حرفاء غير محدودون", "الفوترة", "الوثائق", "الرزنامة", "التنبيهات والتذكيرات", "سجل الاتصالات", "1 متعاون مشمول"],
   },
   cabinet: {
     id: "cabinet",
     name: "مكتب محاماة",
-    priceMonthly: 99,
-    priceYearly: 990,
-    collaborators: 5,
-    extraCollaboratorPrice: 15,
-    features: ["حتى 5 مستخدمين", "صلاحيات متقدمة", "تقارير متقدمة", "محاسبة", "سير العمل القانوني", "بوابة الحرفاء"],
+    priceMonthly: 119,
+    priceYearly: 1190,
+    includedCollaborators: 5,
+    extraCollaboratorPrice: 12,
+    isRecommended: true,
+    features: ["5 متعاونين مشمولين", "صلاحيات متقدمة", "تقارير متقدمة", "محاسبة وحسابات بنكية", "سير العمل القانوني", "بوابة الحرفاء"],
   },
   premium: {
     id: "premium",
     name: "مؤسسة قانونية",
     priceMonthly: 249,
     priceYearly: 2490,
-    collaborators: -1,
+    includedCollaborators: -1,
     extraCollaboratorPrice: 0,
-    features: ["مستخدمون غير محدودون", "دعم متعدد الفروع", "تحليلات متقدمة", "سجل التعديلات", "ميزات الذكاء الاصطناعي", "دعم مميز"],
+    isRecommended: false,
+    features: ["متعاونون غير محدودون", "دعم متعدد الفروع", "تحليلات متقدمة", "سجل التعديلات الكامل", "ميزات الذكاء الاصطناعي", "دعم مميز على مدار الساعة"],
   },
 };
 
@@ -58,12 +61,33 @@ router.get("/organization", requireAuth, async (req, res): Promise<void> => {
   const members = await db.select({ id: usersTable.id }).from(usersTable)
     .where(and(eq(usersTable.orgId, u.orgId), eq(usersTable.status, "active")));
 
+  const memberCount = members.length;
+  // owner counts as 1, the rest are collaborators
+  const collaboratorsUsed = Math.max(0, memberCount - 1);
+  const includedCollaborators = plan.includedCollaborators; // -1 = unlimited
+  const extraCollaborators = includedCollaborators === -1
+    ? 0
+    : Math.max(0, collaboratorsUsed - includedCollaborators);
+  const allowedTotal = includedCollaborators === -1 ? null : includedCollaborators + 1; // +1 for owner
+  const remaining = includedCollaborators === -1 ? null : Math.max(0, includedCollaborators - collaboratorsUsed);
+
+  const basePriceMonthly = plan.priceMonthly;
+  const extraCost = extraCollaborators * plan.extraCollaboratorPrice;
+  const estimatedMonthlyTotal = basePriceMonthly + extraCost;
+
   res.json({
     ...org,
     daysRemaining,
     isTrialExpired,
     plan,
-    memberCount: members.length,
+    memberCount,
+    collaboratorsUsed,
+    includedCollaborators,
+    extraCollaborators,
+    allowedTotal,
+    remaining,
+    estimatedMonthlyTotal,
+    extraCost,
   });
 });
 

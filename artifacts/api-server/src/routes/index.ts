@@ -37,7 +37,7 @@ const router: IRouter = Router();
 const PUBLIC_PATHS = [
   "/auth/status", "/auth/login", "/auth/setup", "/auth/register",
   "/auth/forgot-password", "/auth/reset-password",
-  "/invitations/accept/", "/healthz",
+  "/invitations/accept/", "/healthz", "/organization/plans",
 ];
 
 function softAuth(req: Request, res: Response, next: NextFunction) {

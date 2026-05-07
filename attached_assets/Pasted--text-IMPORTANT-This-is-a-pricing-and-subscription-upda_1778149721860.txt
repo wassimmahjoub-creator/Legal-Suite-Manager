@@ -1,0 +1,206 @@
+```text
+IMPORTANT:
+This is a pricing and subscription update only.
+
+DO NOT rebuild the app.
+DO NOT redesign existing pages.
+DO NOT break the current authentication, RTL Arabic UI, or database structure.
+
+Update the SaaS subscription model so that collaborators are INCLUDED in each plan instead of charging every collaborator from the beginning.
+
+====================================================
+1) PRICING STRATEGY
+====================================================
+
+Use this new pricing model:
+
+PLAN 1:
+Name: محامي فردي
+Price: 49 TND / month
+Annual: 490 TND / year
+Includes:
+- 1 administrator / owner
+- 1 collaborator included
+- unlimited cases
+- unlimited clients
+- documents
+- calendar
+- billing
+- reminders
+
+PLAN 2:
+Name: مكتب محاماة
+Price: 119 TND / month
+Annual: 1190 TND / year
+Includes:
+- 1 administrator / owner
+- 5 collaborators included
+- advanced permissions
+- client portal
+- legal workflows
+- advanced reports
+- accounting
+
+PLAN 3:
+Name: مؤسسة قانونية
+Price: 249 TND / month
+Annual: 2490 TND / year
+Includes:
+- 1 administrator / owner
+- unlimited collaborators
+- multi-branch support
+- advanced analytics
+- audit logs
+- AI-ready architecture
+- priority support
+
+====================================================
+2) EXTRA COLLABORATOR LOGIC
+====================================================
+
+Do NOT charge for collaborators included in the plan.
+
+Only charge if the organization exceeds the included collaborator limit.
+
+Extra collaborator price:
+12 TND / month per additional collaborator
+
+Rules:
+- SOLO includes 1 collaborator
+- CABINET includes 5 collaborators
+- PREMIUM includes unlimited collaborators
+
+Display clearly:
+- المستخدمين المسموح بهم
+- المستخدمين المستعملين
+- المستخدمين المتبقين
+- مستخدمين إضافيين
+
+====================================================
+3) OWNER VS COLLABORATOR LOGIC
+====================================================
+
+The owner/admin is the billing account.
+
+Collaborators do NOT pay individually.
+
+Collaborators belong to the organization subscription.
+
+The owner can:
+- invite collaborators
+- suspend collaborators
+- delete collaborators
+- assign permissions
+- reset passwords
+
+====================================================
+4) FREE TRIAL
+====================================================
+
+Keep 3-month free trial for every new organization.
+
+During free trial:
+- full access to selected plan
+- display remaining trial days
+- allow collaborators based on selected plan
+
+After trial:
+- require subscription activation
+
+Arabic labels:
+- تجربة مجانية
+- الأيام المتبقية
+- فعّل الاشتراك
+
+====================================================
+5) PRICING PAGE UI
+====================================================
+
+Update pricing page in Arabic RTL.
+
+Use clear cards for the three plans.
+
+Buttons:
+- ابدأ التجربة المجانية
+- اختار الخطة
+- طوّر الاشتراك
+
+Highlight recommended plan:
+مكتب محاماة
+
+Add small note:
+"كل خطة تشمل المدير الرئيسي وعدد من المتعاونين حسب الخطة."
+
+====================================================
+6) SUBSCRIPTION MANAGEMENT PAGE
+====================================================
+
+Update:
+الاشتراك والفوترة
+
+Show:
+- current plan
+- monthly price
+- annual price
+- included collaborators
+- used collaborators
+- extra collaborators
+- estimated monthly total
+- renewal date
+- trial end date
+
+====================================================
+7) DATABASE UPDATE
+====================================================
+
+Extend subscription/plans schema with:
+
+plans:
+- id
+- name
+- monthly_price
+- annual_price
+- included_collaborators
+- extra_collaborator_price
+- features
+- is_recommended
+
+organization_subscription:
+- organization_id
+- plan_id
+- billing_cycle
+- trial_start
+- trial_end
+- status
+
+Add logic to calculate:
+total_monthly_price =
+plan monthly price + extra collaborators beyond included limit
+
+For PREMIUM:
+extra collaborators = 0 always.
+
+====================================================
+8) PERMISSION LIMITS
+====================================================
+
+When owner tries to invite collaborator beyond included limit:
+
+If plan is SOLO or CABINET:
+show message:
+"وصلت للعدد المجاني في خطتك. تنجم تزيد مستخدم إضافي بـ 12 د.ت في الشهر."
+
+If PREMIUM:
+allow unlimited users.
+
+====================================================
+9) DO NOT BREAK EXISTING APP
+====================================================
+
+Do not remove existing authentication.
+Do not remove existing collaborator management.
+Do not remove current RTL.
+Do not create duplicate pricing logic.
+
+Only update the monetization logic cleanly.
+```

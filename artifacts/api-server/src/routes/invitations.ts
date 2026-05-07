@@ -1,11 +1,13 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { db, invitationsTable, usersTable } from "@workspace/db";
+import { db, invitationsTable, usersTable, organizationsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { signToken } from "../middleware/auth.js";
 import type { AuthPayload } from "../middleware/auth.js";
+
+const PLAN_LIMITS: Record<string, number> = { solo: 1, cabinet: 5, premium: -1 };
 
 const router = Router();
 
@@ -36,6 +38,26 @@ router.post("/invitations", requireAuth, async (req, res): Promise<void> => {
   if (!u.orgId) { res.status(400).json({ error: "لا يوجد مكتب" }); return; }
   const { email, role } = req.body as { email: string; role: string };
   if (!email) { res.status(400).json({ error: "البريد الإلكتروني مطلوب" }); return; }
+
+  // Collaborator limit check
+  const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, u.orgId));
+  if (org) {
+    const limit = PLAN_LIMITS[org.subscriptionPlan] ?? 1;
+    if (limit !== -1) {
+      const members = await db.select({ id: usersTable.id }).from(usersTable)
+        .where(and(eq(usersTable.orgId, u.orgId), eq(usersTable.status, "active")));
+      const collaboratorsUsed = Math.max(0, members.length - 1);
+      if (collaboratorsUsed >= limit) {
+        res.status(400).json({
+          error: "وصلت للعدد المجاني في خطتك. تنجم تزيد مستخدم إضافي بـ 12 د.ت في الشهر.",
+          limitReached: true,
+          currentCount: collaboratorsUsed,
+          limit,
+        });
+        return;
+      }
+    }
+  }
 
   const existing = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
   if (existing.length > 0) { res.status(400).json({ error: "هذا البريد الإلكتروني مسجّل بالفعل" }); return; }
