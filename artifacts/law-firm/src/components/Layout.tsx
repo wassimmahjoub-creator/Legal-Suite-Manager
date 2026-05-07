@@ -116,7 +116,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
         onClick={onNavigate}
         data-nav-active={active ? "true" : undefined}
         className={cn(
-          "flex items-center gap-2 rounded-md text-[13px] transition-all duration-150 relative select-none",
+          "flex items-center gap-2 rounded-md text-[14px] transition-all duration-150 relative select-none",
           collapsed
             ? "justify-center py-2 w-9 mx-auto"
             : indent
@@ -124,7 +124,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
               : "px-2.5 py-[5px]",
           active
             ? "text-primary font-semibold"
-            : "text-foreground/60 hover:text-foreground hover:bg-muted/50 font-medium"
+            : "text-foreground/85 hover:text-foreground hover:bg-muted/50 font-medium"
         )}
         style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
       >
