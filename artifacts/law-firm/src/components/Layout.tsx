@@ -478,23 +478,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Theme toggle — sticky */}
-      <div className={cn("shrink-0 px-1.5 pb-1", collapsed && "flex justify-center px-0")}>
-        <button
-          onClick={toggleTheme}
-          title={isDark ? "الوضع الفاتح" : "الوضع الداكن"}
-          className={cn(
-            "flex items-center gap-2 rounded-md text-[12px] text-muted-foreground/45 hover:text-muted-foreground hover:bg-muted/50 transition-all duration-150",
-            collapsed ? "p-2 w-9 justify-center mx-auto" : "w-full px-2.5 py-1.5"
-          )}
-        >
-          {isDark
-            ? <Sun className="h-[14px] w-[14px] shrink-0" />
-            : <Moon className="h-[14px] w-[14px] shrink-0" />}
-          {!collapsed && <span>{isDark ? "الوضع الفاتح" : "الوضع الداكن"}</span>}
-        </button>
-      </div>
-
       {/* User section — sticky */}
       <div className={cn("shrink-0 border-t border-border/60 px-1.5 py-1.5", collapsed && "px-0 flex justify-center")}>
         <div className="relative">
@@ -538,6 +521,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className="flex items-center gap-2.5 px-3.5 py-2 text-[13px] hover:bg-muted/50 transition-colors">
                     <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground/50" /> الإعدادات
                   </Link>
+                  {/* Dark mode toggle row */}
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[13px] hover:bg-muted/50 transition-colors"
+                  >
+                    {isDark
+                      ? <Sun className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                      : <Moon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />}
+                    <span className="flex-1 text-right">الوضع الداكن</span>
+                    {/* Toggle pill */}
+                    <span className={cn(
+                      "relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-200",
+                      isDark ? "bg-primary" : "bg-muted-foreground/25"
+                    )}>
+                      <span className={cn(
+                        "inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-200",
+                        isDark ? "-translate-x-0.5" : "translate-x-3.5"
+                      )} />
+                    </span>
+                  </button>
                   <div className="my-1 h-px bg-border/40 mx-2" />
                   <button
                     onClick={() => { logout(); setUserMenuOpen(false); }}

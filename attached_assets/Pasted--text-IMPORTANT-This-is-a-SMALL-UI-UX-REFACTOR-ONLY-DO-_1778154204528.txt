@@ -1,0 +1,99 @@
+```text
+IMPORTANT:
+This is a SMALL UI/UX REFACTOR ONLY.
+
+DO NOT rebuild the app.
+DO NOT change backend logic.
+DO NOT remove features.
+DO NOT break RTL.
+DO NOT break routing.
+
+Move the dark mode control out of the main sidebar navigation.
+
+Current issue:
+"الوضع الداكن" is displayed as a normal sidebar menu item, but dark mode is a user preference, not a business module.
+
+====================================================
+1) REMOVE FROM SIDEBAR
+====================================================
+
+Remove:
+الوضع الداكن
+
+from the main sidebar navigation list.
+
+It must no longer appear as a regular menu item.
+
+====================================================
+2) ADD TO USER PROFILE DROPDOWN
+====================================================
+
+Place the dark mode toggle inside the user profile menu at the bottom of the sidebar.
+
+User footer:
+
+[Avatar]
+وسيم محبوب
+مدير
+▼
+
+When clicking the dropdown, show:
+
+- الملف الشخصي
+- الإعدادات
+- الوضع الداكن
+- تسجيل الخروج
+
+====================================================
+3) DARK MODE TOGGLE UX
+====================================================
+
+Inside the dropdown, display dark mode as a clean toggle row:
+
+الوضع الداكن    [toggle]
+
+The toggle must:
+- switch light/dark mode instantly
+- save preference in localStorage
+- preserve existing dark mode logic
+- use smooth transition
+
+====================================================
+4) USER FOOTER POLISH
+====================================================
+
+Make the user footer more compact and premium.
+
+Requirements:
+- sticky at bottom
+- height around 64–72px
+- reduce padding
+- smaller avatar
+- subtle hover state
+- clean dropdown animation
+
+====================================================
+5) STYLE REQUIREMENTS
+====================================================
+
+Keep:
+- Arabic RTL
+- current design system
+- gold accent color
+- premium SaaS look
+
+Avoid:
+- large blocks
+- heavy styling
+- treating dark mode like a navigation module
+
+====================================================
+6) DO NOT BREAK EXISTING APP
+====================================================
+
+Only move and restyle the dark mode control.
+
+Do not duplicate it.
+Do not remove dark mode functionality.
+Do not recreate the sidebar.
+```
