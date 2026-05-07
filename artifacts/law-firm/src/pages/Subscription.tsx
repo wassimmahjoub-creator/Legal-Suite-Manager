@@ -422,7 +422,14 @@ export default function Subscription() {
                     </li>
                   ))}
                 </ul>
-                {!isCurrent && (
+                {isCurrent ? (
+                  <Button size="sm" variant="default"
+                    onClick={() => { setPaymentForm({ holder: "", number: "", expiry: "", cvv: "" }); setShowPaymentModal(true); }}
+                    className="w-full text-xs mt-auto gap-1">
+                    <CreditCard className="h-3 w-3" />
+                    {org.subscriptionStatus === "trial" ? "تفعيل الاشتراك والدفع" : "ادفع الآن"}
+                  </Button>
+                ) : (
                   <Button size="sm" variant={p.isRecommended ? "default" : "outline"}
                     onClick={() => upgradePlan(p.id)} disabled={upgrading} className="w-full text-xs mt-auto">
                     <RefreshCw className="h-3 w-3 ml-1" />
