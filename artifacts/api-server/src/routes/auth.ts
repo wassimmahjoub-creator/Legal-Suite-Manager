@@ -90,12 +90,30 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   if (!email || !password) {
     res.status(400).json({ error: "البريد الإلكتروني وكلمة المرور مطلوبان" }); return;
   }
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (!user) { res.status(401).json({ error: "بيانات غير صحيحة" }); return; }
   if (user.status === "suspended") { res.status(403).json({ error: "حسابك موقوف. تواصل مع المدير" }); return; }
   if (user.status === "archived") { res.status(403).json({ error: "هذا الحساب محذوف" }); return; }
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) { res.status(401).json({ error: "بيانات غير صحيحة" }); return; }
+
+  /* Auto-provision org for legacy users without one */
+  if (!user.orgId) {
+    const trialStart = new Date();
+    const trialEnd = new Date(trialStart);
+    trialEnd.setDate(trialEnd.getDate() + 90);
+    const [org] = await db.insert(organizationsTable).values({
+      name: user.name || user.email,
+      subscriptionPlan: "solo",
+      subscriptionStatus: "trial",
+      billingCycle: "monthly",
+      trialStartDate: trialStart,
+      trialEndDate: trialEnd,
+      ownerId: user.id,
+    }).returning();
+    [user] = await db.update(usersTable).set({ orgId: org.id }).where(eq(usersTable.id, user.id)).returning();
+  }
+
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: user.orgId ?? undefined });
   res.json({ token, user: fmtUser(user) });
 });
