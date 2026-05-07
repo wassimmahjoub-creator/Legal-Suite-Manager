@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 function FileIcon({ name }: { name: string }) {
   const ext = name?.split(".").pop()?.toLowerCase();
@@ -128,9 +129,7 @@ export default function Documents() {
               value={form.case} onChange={e => setForm(f => ({ ...f, case: e.target.value }))} />
           </FormField>
           <FormField label="ملاحظات" htmlFor="doc-notes">
-            <textarea id="doc-notes" rows={2} placeholder="ملاحظات حول الوثيقة..."
-              className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            <SmartTextarea id="doc-notes" rows={2} placeholder="ملاحظات حول الوثيقة..." aiContext="ملاحظات وثيقة" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={() => setShowModal(false)}>رفع الوثيقة</Button>

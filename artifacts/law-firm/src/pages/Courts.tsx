@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { Building2, Plus, Pencil, Trash2, MapPin, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface Court { id: number; name: string; division: string | null; city: string | null; address: string | null; notes: string | null; }
@@ -85,7 +86,9 @@ export default function Courts() {
             <FormField label="المدينة" htmlFor="ct-city"><Input id="ct-city" value={form.city} onChange={e => setForm({...form, city: e.target.value})} className={inputCls} /></FormField>
           </div>
           <FormField label="العنوان" htmlFor="ct-addr"><Input id="ct-addr" value={form.address} onChange={e => setForm({...form, address: e.target.value})} className={inputCls} /></FormField>
-          <FormField label="ملاحظات" htmlFor="ct-notes"><textarea id="ct-notes" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[70px]"} /></FormField>
+          <FormField label="ملاحظات" htmlFor="ct-notes">
+            <SmartTextarea id="ct-notes" value={form.notes} onChange={v => setForm({...form, notes: v})} rows={3} aiContext="ملاحظات محكمة" placeholder="ملاحظات حول المحكمة..." />
+          </FormField>
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-5">إلغاء</Button>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { FilePen, Plus, Pencil, Trash2, Copy, Download, Wand2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -181,11 +182,10 @@ export default function Templates() {
                 ))}
               </div>
             </div>
-            <textarea
-              value={form.content} onChange={e => setForm({...form, content: e.target.value})}
-              className="w-full bg-muted/50 border border-border rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary min-h-[220px] font-mono leading-relaxed"
+            <SmartTextarea
+              value={form.content} onChange={v => setForm({...form, content: v})}
+              rows={9} aiContext="نموذج قانوني"
               placeholder="اكتب محتوى النموذج هنا... استخدم {{اسم_الحريف}} للمتغيرات"
-              dir="rtl"
             />
           </div>
           <div className="flex gap-3 pt-1">

@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 import { useKeypadInput } from "@/context/KeypadContext";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -287,9 +288,7 @@ export default function Billing() {
           </div>
 
           <FormField label="ملاحظات" htmlFor="inv-notes">
-            <textarea id="inv-notes" rows={2} placeholder="وصف الأتعاب أو ملاحظات إضافية..."
-              className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            <SmartTextarea id="inv-notes" rows={2} placeholder="وصف الأتعاب أو ملاحظات إضافية..." aiContext="ملاحظات فاتورة" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
 
           <div className="flex gap-3 pt-2">
@@ -338,10 +337,7 @@ export default function Billing() {
             </FormField>
 
             <FormField label="ملاحظات" htmlFor="edit-notes">
-              <textarea id="edit-notes" rows={2}
-                className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                value={editInvoice.notes ?? ""}
-                onChange={e => setEditInvoice(inv => inv ? { ...inv, notes: e.target.value || null } : null)} />
+              <SmartTextarea id="edit-notes" rows={2} aiContext="ملاحظات فاتورة" value={editInvoice.notes ?? ""} onChange={v => setEditInvoice(inv => inv ? { ...inv, notes: v || null } : null)} />
             </FormField>
 
             <div className="flex gap-3 pt-2">

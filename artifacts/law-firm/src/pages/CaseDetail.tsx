@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
+import { SmartTextarea } from "@/components/SmartTextarea";
 import {
   Plus, MapPin, User, Calendar, FileText, CheckCircle2,
   Clock, Briefcase, ArrowRight, Trash2,
@@ -361,7 +362,9 @@ export default function CaseDetail() {
             <FormField label="تاريخ البداية" htmlFor="pr-start"><Input id="pr-start" type="date" value={procForm.startedAt} onChange={e => setProcForm({...procForm, startedAt: e.target.value})} className={inputCls} dir="ltr" /></FormField>
             <FormField label="تاريخ النهاية" htmlFor="pr-end"><Input id="pr-end" type="date" value={procForm.endedAt} onChange={e => setProcForm({...procForm, endedAt: e.target.value})} className={inputCls} dir="ltr" /></FormField>
           </div>
-          <FormField label="ملاحظات" htmlFor="pr-notes"><textarea id="pr-notes" value={procForm.notes} onChange={e => setProcForm({...procForm, notes: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[70px]"} /></FormField>
+          <FormField label="ملاحظات" htmlFor="pr-notes">
+            <SmartTextarea id="pr-notes" value={procForm.notes} onChange={v => setProcForm({...procForm, notes: v})} rows={3} aiContext="ملاحظات إجراء قانوني" placeholder="ملاحظات حول الإجراء..." />
+          </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/procedures`, { method: "POST", body: JSON.stringify(procForm) }); }, load.procedures)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
@@ -425,7 +428,7 @@ export default function CaseDetail() {
             <Lock className="h-4 w-4 shrink-0" /> هذه الملاحظة للاستخدام الداخلي فقط
           </div>
           <FormField label="المحتوى *" htmlFor="cn-content">
-            <textarea id="cn-content" value={confForm.content} onChange={e => setConfForm({...confForm, content: e.target.value})} className={inputCls + " px-3 py-2 resize-none min-h-[100px]"} placeholder="ملاحظة سرية، استراتيجية قانونية..." />
+            <SmartTextarea id="cn-content" value={confForm.content} onChange={v => setConfForm({...confForm, content: v})} rows={4} aiContext="ملاحظة سرية قانونية" placeholder="ملاحظة سرية، استراتيجية قانونية..." />
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>

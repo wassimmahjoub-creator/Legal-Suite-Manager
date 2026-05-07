@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { Shield, Plus, Pencil, Trash2, Phone, MapPin, Briefcase, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -145,8 +146,7 @@ export default function Opponents() {
             <Input id="op-address" value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="العنوان" className={inputCls} />
           </FormField>
           <FormField label="ملاحظات" htmlFor="op-notes">
-            <textarea id="op-notes" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})}
-              className={inputCls + " px-3 py-2 resize-none min-h-[80px]"} placeholder="ملاحظات..." />
+            <SmartTextarea id="op-notes" value={form.notes} onChange={v => setForm({...form, notes: v})} rows={3} aiContext="ملاحظات خصم" placeholder="ملاحظات حول الخصم..." />
           </FormField>
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
