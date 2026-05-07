@@ -453,6 +453,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <p className="text-[11px] text-muted-foreground/60 mt-0.5">{user?.email}</p>
                 </div>
                 <div className="py-1">
+                  <Link href="/subscription" onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-[13px] hover:bg-muted/50 transition-colors">
+                    <CreditCard className="h-3.5 w-3.5 text-muted-foreground/50" /> الاشتراك والخطط
+                  </Link>
                   <Link href="/settings" onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3.5 py-2 text-[13px] hover:bg-muted/50 transition-colors">
                     <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground/50" /> الإعدادات
