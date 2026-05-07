@@ -1,0 +1,433 @@
+```text
+IMPORTANT:
+This prompt is a FINAL PREMIUM SaaS SIDEBAR + NAVIGATION POLISH REFACTOR.
+
+DO NOT rebuild the application.
+DO NOT regenerate backend logic.
+DO NOT recreate pages.
+DO NOT remove functionality.
+DO NOT break routing.
+DO NOT break RTL.
+DO NOT break database structure.
+
+Your mission is to transform the current sidebar/navigation into a TRUE PREMIUM MODERN SaaS EXPERIENCE comparable to:
+- Linear
+- Notion
+- Stripe
+- Revolut
+- Slack
+- Attio
+
+The current sidebar is already improved but still feels:
+- too ERP-like
+- too vertically heavy
+- too visually stretched
+- too exposed functionally
+- insufficiently hierarchical
+- not premium enough
+
+The goal now is MICRO-UX POLISH + PREMIUM VISUAL HIERARCHY.
+
+====================================================
+1) GLOBAL UX OBJECTIVE
+====================================================
+
+The sidebar must feel:
+- elegant
+- compact
+- premium
+- intelligent
+- modern
+- fast
+- structured
+- lightweight
+
+The interface must NEVER feel:
+- crowded
+- administrative
+- old ERP
+- visually heavy
+
+====================================================
+2) SIDEBAR WIDTH & STRUCTURE
+====================================================
+
+Reduce sidebar visual heaviness.
+
+Desktop sidebar:
+- slightly narrower
+- more compact horizontally
+
+Target feel:
+- elegant
+- efficient
+- not oversized
+
+Keep:
+- RTL
+- icon right side
+- labels aligned correctly
+
+====================================================
+3) REDUCE VERTICAL DENSITY
+====================================================
+
+CRITICAL.
+
+Current menu items still consume too much height.
+
+Reduce:
+- menu item height
+- vertical margins
+- section spacing
+- empty whitespace
+
+Target:
+48px–52px item height MAXIMUM.
+
+The menu must become:
+- denser
+- more scannable
+- faster visually
+
+WITHOUT feeling cramped.
+
+====================================================
+4) PREMIUM ACTIVE STATE
+====================================================
+
+Current yellow active block is still too dominant.
+
+Replace with premium SaaS active state.
+
+NEW ACTIVE STYLE:
+- subtle gold-tinted background
+- thin right-side gold accent line
+- icon in gold
+- text semi-bold
+- softer corners
+- lighter visual weight
+
+Avoid:
+- large heavy blocks
+- oversized backgrounds
+- aggressive contrast
+
+Inspired by:
+- Linear
+- Revolut
+- Stripe
+
+====================================================
+5) SECTION HEADERS — PREMIUM STYLE
+====================================================
+
+Current section headers are still too weak visually.
+
+Improve headers:
+- smaller typography
+- semi-bold only
+- subtle muted gold/gray tone
+- tighter spacing
+- elegant separators
+
+Examples:
+- العمل اليومي
+- العلاقات
+- المالية
+- الإدارة
+- النظام
+
+Headers must:
+- structure the eye naturally
+- improve scanning speed
+- feel premium and subtle
+
+DO NOT:
+- use heavy backgrounds
+- use strong bold
+- create ERP feeling
+
+====================================================
+6) ICON SPACING & ALIGNMENT
+====================================================
+
+CRITICAL.
+
+Current icon/text spacing is too wide.
+
+Reduce horizontal gap between:
+- icon
+- label
+
+by approximately:
+25–35%.
+
+This alone will dramatically improve:
+- compactness
+- readability
+- premium feel
+
+Icons must:
+- align perfectly
+- share same optical size
+- have consistent stroke width
+
+====================================================
+7) TYPOGRAPHY POLISH
+====================================================
+
+Arabic typography must feel:
+- elegant
+- refined
+- premium
+- lightweight
+
+NOT:
+- bulky
+- oversized
+- ERP-like
+
+RULES:
+
+Regular menu items:
+- medium weight ONLY
+
+Active item:
+- semi-bold ONLY
+
+Section headers:
+- small semi-bold
+
+Avoid excessive bold usage.
+
+Reduce overall visual heaviness.
+
+Improve:
+- line-height
+- optical alignment
+- label rhythm
+
+====================================================
+8) INFORMATION ARCHITECTURE CLEANUP
+====================================================
+
+Some modules are still too exposed.
+
+Move lower-frequency modules deeper into:
+- contextual menus
+- settings pages
+- secondary screens
+
+====================================================
+REMOVE FROM MAIN SIDEBAR
+====================================================
+
+Move under:
+الإعدادات
+OR
+المزيد
+
+These modules:
+- الحسابات البنكية
+- سجل التعديلات
+- سلة المحذوفات
+- الإعدادات القانونية
+
+These should NOT compete visually with daily workflow items.
+
+====================================================
+9) STICKY SCROLL BEHAVIOR
+====================================================
+
+Improve sidebar scrolling.
+
+Requirements:
+- internal sidebar scrolling ONLY
+- sticky logo/header
+- sticky user profile section
+- smooth scrolling
+
+Avoid:
+- full-page sidebar movement
+
+====================================================
+10) USER PROFILE AREA
+====================================================
+
+Current bottom user area feels too large.
+
+Reduce:
+- avatar size slightly
+- whitespace
+- padding
+
+Make it:
+- cleaner
+- tighter
+- more SaaS-like
+
+Add:
+- subtle hover states
+- cleaner dropdown behavior
+
+====================================================
+11) DARK MODE POLISH
+====================================================
+
+Improve dark mode aesthetics.
+
+Requirements:
+- soft dark surfaces
+- elegant muted gold
+- premium contrast
+- avoid pure black
+
+Dark mode should feel:
+- luxurious
+- calm
+- professional
+
+====================================================
+12) HOVER STATES
+====================================================
+
+Add subtle premium hover interactions.
+
+Examples:
+- soft background tint
+- smooth transitions
+- icon color transitions
+
+Avoid:
+- aggressive hover colors
+- flashy animations
+
+====================================================
+13) SIDEBAR ANIMATIONS
+====================================================
+
+Add subtle premium motion.
+
+Examples:
+- smooth collapse/expand
+- smooth hover
+- smooth active transitions
+
+Duration:
+150ms–220ms
+
+Must feel:
+- responsive
+- premium
+- lightweight
+
+====================================================
+14) MOBILE UX FINAL POLISH
+====================================================
+
+CRITICAL.
+
+Mobile experience must feel like:
+- modern banking app
+- modern productivity SaaS
+
+Bottom navigation:
+- compact
+- clean
+- icon-first
+- max 5 items
+
+Use:
+- fullscreen slide-up "المزيد"
+instead of old sidebar behavior.
+
+====================================================
+15) QUICK ACTION BUTTON
+====================================================
+
+Add premium floating action button.
+
+Examples:
+- قضية جديدة
+- حريف جديد
+- فاتورة جديدة
+- موعد جديد
+
+Requirements:
+- compact
+- elegant
+- contextual
+
+====================================================
+16) SEARCH EXPERIENCE
+====================================================
+
+Global search must feel premium.
+
+Improve:
+- visibility
+- spacing
+- placeholder hierarchy
+- recent searches
+- suggestions
+
+Search should feel:
+- Spotlight-like
+- instant
+- intelligent
+
+====================================================
+17) FAVORITES / PINNING
+====================================================
+
+Add:
+المفضلة
+
+Allow pinning frequently used modules.
+
+Examples:
+- القضايا
+- الرزنامة
+- الفواتير
+
+Persist preferences per user.
+
+====================================================
+18) FINAL UX PRINCIPLE
+====================================================
+
+The application must feel:
+- simpler than it really is
+- more powerful than it looks
+- elegant without losing legal depth
+
+Hide complexity intelligently.
+
+The user should feel:
+"I can master this easily."
+
+NOT:
+"This system looks complicated."
+
+====================================================
+19) IMPORTANT RESTRICTIONS
+====================================================
+
+DO NOT:
+- rebuild backend
+- remove features
+- duplicate modules
+- change business logic
+- break RTL
+- break Arabic UI
+
+ONLY improve:
+- sidebar UX
+- navigation hierarchy
+- spacing
+- visual polish
+- micro-interactions
+- premium SaaS feeling
+- mobile usability
+```
