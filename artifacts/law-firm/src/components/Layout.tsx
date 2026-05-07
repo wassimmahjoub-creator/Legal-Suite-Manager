@@ -173,8 +173,7 @@ function SectionHeader({ label, collapsed }: { label: string; collapsed?: boolea
     <div className="pt-4 pb-1.5 px-2.5" dir="rtl">
       <div className="flex items-center gap-2">
         <span
-          className="text-[10.5px] font-semibold shrink-0 leading-none tracking-widest uppercase"
-          style={{ color: "color-mix(in oklch, var(--foreground) 58%, var(--primary) 28%)" }}
+          className="text-[14px] font-bold shrink-0 leading-none text-foreground"
         >
           {label}
         </span>
