@@ -41,9 +41,8 @@ const NAV_SECONDARY = [
   { href: "/communications",      label: "الاتصالات",     icon: PhoneCall    },
   { href: "/correspondances",     label: "المراسلات",     icon: MailOpen     },
   { href: "/time-tracking",       label: "تتبع الوقت",    icon: Timer        },
-  { href: "/reports",             label: "التقارير",      icon: BarChart3    },
+  { href: "/reports",             label: "المحاسبة",      icon: BarChart3    },
   { href: "/courts",              label: "المحاكم",       icon: Building2    },
-  { href: "/insurance-companies", label: "شركات التأمين", icon: ShieldCheck  },
   { href: "/templates",           label: "النماذج",       icon: FilePen      },
   { href: "/expenses",            label: "المصاريف",      icon: TrendingDown },
 ];
@@ -75,7 +74,7 @@ const QUICK_ACTIONS = [
   { label: "قضية جديدة",   href: "/cases",    icon: Briefcase    },
   { label: "حريف جديد",    href: "/clients",  icon: Users        },
   { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
-  { label: "موعد جديد",    href: "/calendar", icon: CalendarIcon },
+  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
 ];
 
 const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_SECONDARY, ...NAV_ADMIN, ...NAV_SYSTEM];

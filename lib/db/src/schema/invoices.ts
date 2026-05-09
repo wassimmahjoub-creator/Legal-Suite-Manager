@@ -6,9 +6,14 @@ import { casesTable } from "./cases";
 
 export const invoicesTable = pgTable("invoices", {
   id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number"),
   clientId: integer("client_id").references(() => clientsTable.id).notNull(),
   caseId: integer("case_id").references(() => casesTable.id),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  expenses: numeric("expenses", { precision: 12, scale: 2 }),
+  taxAmount: numeric("tax_amount", { precision: 12, scale: 2 }),
+  retenue: numeric("retenue", { precision: 12, scale: 2 }),
+  description: text("description"),
   status: text("status").notNull().default("pending"),
   dueDate: date("due_date"),
   notes: text("notes"),

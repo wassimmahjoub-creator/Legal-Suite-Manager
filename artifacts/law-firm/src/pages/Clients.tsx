@@ -13,14 +13,18 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface Client {
   id: number;
   name: string;
+  clientType: string | null;
   phone: string | null;
   email: string | null;
   address: string | null;
+  cin: string | null;
+  taxId: string | null;
+  officeSeq: string | null;
   notes: string | null;
   createdAt: string;
 }
 
-const EMPTY = { name: "", phone: "", email: "", address: "", notes: "" };
+const EMPTY = { name: "", clientType: "individual", phone: "", email: "", address: "", cin: "", taxId: "", notes: "" };
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
 export default function Clients() {
@@ -51,11 +55,14 @@ export default function Clients() {
   function openEdit(c: Client) {
     setEditing(c);
     setForm({
-      name:    c.name,
-      phone:   c.phone ?? "",
-      email:   c.email ?? "",
-      address: c.address ?? "",
-      notes:   c.notes ?? "",
+      name:       c.name,
+      clientType: c.clientType ?? "individual",
+      phone:      c.phone ?? "",
+      email:      c.email ?? "",
+      address:    c.address ?? "",
+      cin:        c.cin ?? "",
+      taxId:      c.taxId ?? "",
+      notes:      c.notes ?? "",
     });
     setModal(true);
   }
@@ -69,11 +76,14 @@ export default function Clients() {
     await authFetch(url, {
       method: editing ? "PUT" : "POST",
       body: JSON.stringify({
-        name:    form.name,
-        phone:   form.phone || null,
-        email:   form.email || null,
-        address: form.address || null,
-        notes:   form.notes || null,
+        name:       form.name,
+        clientType: form.clientType || "individual",
+        phone:      form.phone || null,
+        email:      form.email || null,
+        address:    form.address || null,
+        cin:        form.cin || null,
+        taxId:      form.taxId || null,
+        notes:      form.notes || null,
       }),
     });
     await load();
@@ -141,7 +151,10 @@ export default function Clients() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-bold truncate">{client.name}</h3>
-                      <p className="text-xs text-muted-foreground">حريف نشط</p>
+                      <p className="text-xs text-muted-foreground">
+                        {client.clientType === "company" ? "شخص معنوي" : "شخص طبيعي"}
+                        {client.officeSeq && <span className="mr-1 font-mono text-primary/70"> · {client.officeSeq}</span>}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -182,26 +195,47 @@ export default function Clients() {
       )}
 
       {/* New / Edit Modal */}
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? `تعديل: ${editing.name}` : "إضافة حريف جديد"}>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? `تعديل: ${editing.name}` : "إضافة حريف جديد"} size="lg">
         <div className="space-y-4">
-          <FormField label="الاسم الكامل *" htmlFor="cl-name">
-            <Input id="cl-name" placeholder="مثال: محمد بن علي" className={inputCls}
-              value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          </FormField>
-          <FormField label="رقم الهاتف" htmlFor="cl-phone">
-            <Input id="cl-phone" placeholder="مثال: 22 123 456" className={inputCls} dir="ltr"
-              value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-          </FormField>
-          <FormField label="البريد الإلكتروني" htmlFor="cl-email">
-            <Input id="cl-email" type="email" placeholder="example@email.com" className={inputCls} dir="ltr"
-              value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="نوع الحريف" htmlFor="cl-type">
+              <select id="cl-type" className={inputCls + " px-3 cursor-pointer"}
+                value={form.clientType} onChange={e => setForm(f => ({ ...f, clientType: e.target.value }))}>
+                <option value="individual">شخص طبيعي</option>
+                <option value="company">شخص معنوي / شركة</option>
+              </select>
+            </FormField>
+            <FormField label="الاسم الكامل *" htmlFor="cl-name">
+              <Input id="cl-name" placeholder="مثال: محمد بن علي" className={inputCls}
+                value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="رقم بطاقة التعريف (CIN)" htmlFor="cl-cin">
+              <Input id="cl-cin" placeholder="مثال: 12345678" className={inputCls} dir="ltr"
+                value={form.cin} onChange={e => setForm(f => ({ ...f, cin: e.target.value }))} />
+            </FormField>
+            <FormField label="المعرف الجبائي" htmlFor="cl-taxid">
+              <Input id="cl-taxid" placeholder="مثال: 1234567A/P/M/000" className={inputCls} dir="ltr"
+                value={form.taxId} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))} />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="رقم الهاتف" htmlFor="cl-phone">
+              <Input id="cl-phone" placeholder="مثال: 22 123 456" className={inputCls} dir="ltr"
+                value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            </FormField>
+            <FormField label="البريد الإلكتروني" htmlFor="cl-email">
+              <Input id="cl-email" type="email" placeholder="example@email.com" className={inputCls} dir="ltr"
+                value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </FormField>
+          </div>
           <FormField label="العنوان" htmlFor="cl-address">
             <Input id="cl-address" placeholder="مثال: شارع الحبيب بورقيبة، تونس" className={inputCls}
               value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
           </FormField>
           <FormField label="ملاحظات" htmlFor="cl-notes">
-            <SmartTextarea id="cl-notes" rows={3} placeholder="ملاحظات إضافية حول الحريف..." aiContext="ملاحظات حريف" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
+            <SmartTextarea id="cl-notes" rows={2} placeholder="ملاحظات إضافية حول الحريف..." aiContext="ملاحظات حريف" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>

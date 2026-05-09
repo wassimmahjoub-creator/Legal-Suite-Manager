@@ -15,11 +15,16 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
 interface Invoice {
   id: number;
+  invoiceNumber: string | null;
   clientId: number;
   clientName: string;
   caseId: number | null;
   caseName: string | null;
   amount: number;
+  expenses: number | null;
+  taxAmount: number | null;
+  retenue: number | null;
+  description: string | null;
   status: string;
   dueDate: string | null;
   notes: string | null;
@@ -198,7 +203,7 @@ export default function Billing() {
                 : invoices.map(inv => (
                   <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="font-mono text-sm py-3 text-muted-foreground">
-                      #INV-{inv.id.toString().padStart(4, "0")}
+                      {inv.invoiceNumber ?? `#INV-${inv.id.toString().padStart(4, "0")}`}
                     </TableCell>
                     <TableCell className="font-semibold py-3">{inv.clientName}</TableCell>
                     <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{inv.caseName || "—"}</TableCell>
@@ -264,11 +269,11 @@ export default function Billing() {
               type="text"
               inputMode="decimal"
               placeholder="0.000"
-              className="h-14 text-2xl font-bold font-mono tracking-wider focus-visible:ring-primary text-left bg-muted/30 border-primary/30 rounded-lg"
               dir="ltr"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               {...amountKeypad}
+              className={`h-14 text-2xl font-bold font-mono tracking-wider focus-visible:ring-primary text-left bg-muted/30 border-primary/30 rounded-lg ${amountKeypad.className ?? ""}`}
             />
           </FormField>
 
@@ -287,8 +292,8 @@ export default function Billing() {
             </FormField>
           </div>
 
-          <FormField label="ملاحظات" htmlFor="inv-notes">
-            <SmartTextarea id="inv-notes" rows={2} placeholder="وصف الأتعاب أو ملاحظات إضافية..." aiContext="ملاحظات فاتورة" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
+          <FormField label="بيان الأتعاب" htmlFor="inv-desc">
+            <SmartTextarea id="inv-desc" rows={2} placeholder="تفصيل الخدمات القانونية المقدمة..." aiContext="بيان أتعاب محامي" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
 
           <div className="flex gap-3 pt-2">
@@ -303,7 +308,7 @@ export default function Billing() {
       {/* Edit Invoice Modal */}
       {editInvoice && (
         <Modal open={!!editInvoice} onClose={() => setEditInvoice(null)}
-          title={`تعديل الفاتورة #INV-${editInvoice.id.toString().padStart(4, "0")}`}>
+          title={`تعديل الفاتورة ${editInvoice.invoiceNumber ?? `#INV-${editInvoice.id.toString().padStart(4, "0")}`}`}>
           <div className="space-y-4">
             <div className="p-4 bg-muted/30 rounded-lg space-y-2 text-sm">
               <div className="flex justify-between">

@@ -144,7 +144,7 @@ export default function Dashboard() {
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
           {
-            title: "القضايا النشطة",
+            title: "القضايا الجارية",
             value: loadingSummary ? null : summary?.activeCases ?? 0,
             icon: Briefcase, color: "text-primary", bg: "bg-primary/10",
             action: () => navigate("/cases"),
@@ -485,9 +485,9 @@ export default function Dashboard() {
       </Modal>
 
       {/* Quick Add Event Modal */}
-      <Modal open={modal === "event"} onClose={() => setModal(null)} title="موعد جديد">
+      <Modal open={modal === "event"} onClose={() => setModal(null)} title="حدث جديد">
         <div className="space-y-4">
-          <FormField label="عنوان الموعد *" htmlFor="qe-title">
+          <FormField label="عنوان الحدث *" htmlFor="qe-title">
             <Input id="qe-title" placeholder="مثال: جلسة محكمة تونس" className={inputCls} />
           </FormField>
           <div className="grid grid-cols-2 gap-4">
@@ -502,7 +502,7 @@ export default function Dashboard() {
             <Input id="qe-case" placeholder="اسم القضية المرتبطة" className={inputCls} />
           </FormField>
           <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setModal(null)}>حفظ الموعد</Button>
+            <Button className="flex-1" onClick={() => setModal(null)}>حفظ الحدث</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>

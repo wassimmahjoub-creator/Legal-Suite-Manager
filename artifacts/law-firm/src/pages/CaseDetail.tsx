@@ -15,7 +15,7 @@ import {
   Clock, Briefcase, ArrowRight, Trash2,
   StickyNote, CircleCheck, Circle,
   Users, AlertTriangle, Lock, Link2, GitBranch,
-  Archive, Hash, Layers,
+  Archive, Hash, Layers, Shield,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -92,7 +92,7 @@ export default function CaseDetail() {
   );
   if (!caseData) return <div className="text-center py-20 text-muted-foreground">القضية غير موجودة</div>;
 
-  const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; };
+  const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };
   const today = new Date().toISOString().slice(0, 10);
   const overdueCount = deadlines.filter(d => !d.completedAt && d.dueDate < today).length;
 
@@ -120,7 +120,9 @@ export default function CaseDetail() {
                   {caseData.clientName && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />{caseData.clientName}</span>}
                   {caseData.court && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
                   {caseData.lawyer && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
-                  {caseData.nextHearing && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{new Date(caseData.nextHearing).toLocaleDateString("ar-TN")}</span>}
+                  {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{new Date(caseData.nextHearing).toLocaleDateString("ar-TN")}</span>}
+                  {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-orange-400"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
+                  {c.opponentName && <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" />{c.opponentName}{c.opponentLawyer ? ` — ذ. ${c.opponentLawyer}` : ""}</span>}
                 </div>
               </div>
             </div>

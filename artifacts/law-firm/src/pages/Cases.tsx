@@ -24,6 +24,7 @@ export default function Cases() {
   const [form, setForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "",
+    opponentName: "", opponentLawyer: "",
   });
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
   const [saving, setSaving] = useState(false);
@@ -33,7 +34,7 @@ export default function Cases() {
   async function openNewModal() {
     const r = await authFetch(`${BASE}/api/clients`);
     if (r.ok) setClients(await r.json());
-    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "" });
+    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" });
     setShowModal(true);
   }
 
@@ -175,7 +176,7 @@ export default function Cases() {
                           </span>
                         ) : <span className="text-muted-foreground/40 text-xs">—</span>}
                         {c.courtCaseNumber && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 bg-muted/60 text-muted-foreground rounded-md flex items-center gap-1 w-fit" title="رقم القضية لدى المحكمة">
+                          <span className="text-[10px] font-mono px-2 py-0.5 bg-muted/60 text-muted-foreground rounded-md flex items-center gap-1 w-fit" title="عدد القضية بالمحكمة">
                             ⚖ {c.courtCaseNumber}
                           </span>
                         )}
@@ -242,8 +243,8 @@ export default function Cases() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="رقم القضية لدى المحكمة" htmlFor="case-court-num"
-              hint="الرقم الذي خصصته المحكمة">
+            <FormField label="عدد القضية بالمحكمة" htmlFor="case-court-num"
+              hint="العدد الذي خصصته المحكمة">
               <Input id="case-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
                 value={form.courtCaseNumber}
                 onChange={e => setForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
@@ -253,6 +254,19 @@ export default function Cases() {
               <Input id="case-client-ref" placeholder="مرجع داخلي للحريف" className={inputCls}
                 value={form.clientFileRef}
                 onChange={e => setForm(f => ({ ...f, clientFileRef: e.target.value }))} />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="اسم الخصم" htmlFor="case-opponent">
+              <Input id="case-opponent" placeholder="الاسم الكامل للخصم" className={inputCls}
+                value={form.opponentName}
+                onChange={e => setForm(f => ({ ...f, opponentName: e.target.value }))} />
+            </FormField>
+            <FormField label="محامي الخصم" htmlFor="case-opp-lawyer">
+              <Input id="case-opp-lawyer" placeholder="اسم محامي الطرف الآخر" className={inputCls}
+                value={form.opponentLawyer}
+                onChange={e => setForm(f => ({ ...f, opponentLawyer: e.target.value }))} />
             </FormField>
           </div>
 

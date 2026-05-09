@@ -10,6 +10,7 @@ const caseFields = {
   caseNumber: casesTable.caseNumber,
   courtCaseNumber: casesTable.courtCaseNumber,
   clientFileRef: casesTable.clientFileRef,
+  officeRef: casesTable.officeRef,
   title: casesTable.title,
   clientId: casesTable.clientId,
   clientName: clientsTable.name,
@@ -18,6 +19,9 @@ const caseFields = {
   division: casesTable.division,
   lawyer: casesTable.lawyer,
   nextHearing: casesTable.nextHearing,
+  opponentName: casesTable.opponentName,
+  opponentLawyer: casesTable.opponentLawyer,
+  judgmentText: casesTable.judgmentText,
   description: casesTable.description,
   notes: casesTable.notes,
   procedureStage: casesTable.procedureStage,
@@ -25,6 +29,18 @@ const caseFields = {
   deletedAt: casesTable.deletedAt,
   createdAt: casesTable.createdAt,
 };
+
+function extractExtras(body: Record<string, unknown>) {
+  const str = (key: string) => typeof body[key] === "string" ? (body[key] as string) || null : null;
+  return {
+    courtCaseNumber: str("courtCaseNumber"),
+    clientFileRef: str("clientFileRef"),
+    officeRef: str("officeRef"),
+    opponentName: str("opponentName"),
+    opponentLawyer: str("opponentLawyer"),
+    judgmentText: str("judgmentText"),
+  };
+}
 
 router.get("/cases", async (req, res) => {
   const { status, court, clientId, search, archived } = req.query as Record<string, string>;
@@ -67,9 +83,8 @@ router.post("/cases", async (req, res) => {
   const next = (count?.cnt ?? 0) + 1;
   const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
 
-  const courtCaseNumber = typeof req.body.courtCaseNumber === "string" ? req.body.courtCaseNumber || null : null;
-  const clientFileRef = typeof req.body.clientFileRef === "string" ? req.body.clientFileRef || null : null;
-  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, courtCaseNumber, clientFileRef }).returning();
+  const extras = extractExtras(req.body as Record<string, unknown>);
+  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, ...extras }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.status(201).json({ ...row, clientName: client?.name ?? "" });
 });
@@ -89,9 +104,8 @@ router.put("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
   const parsed = UpdateCaseBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const courtCaseNumber = typeof req.body.courtCaseNumber === "string" ? req.body.courtCaseNumber || null : null;
-  const clientFileRef = typeof req.body.clientFileRef === "string" ? req.body.clientFileRef || null : null;
-  const [row] = await db.update(casesTable).set({ ...parsed.data, courtCaseNumber, clientFileRef }).where(eq(casesTable.id, id)).returning();
+  const extras = extractExtras(req.body as Record<string, unknown>);
+  const [row] = await db.update(casesTable).set({ ...parsed.data, ...extras }).where(eq(casesTable.id, id)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.json({ ...row, clientName: client?.name ?? "" });

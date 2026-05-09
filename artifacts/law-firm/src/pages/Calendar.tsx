@@ -192,7 +192,7 @@ export default function CalendarView() {
           <p className="text-muted-foreground text-sm mt-0.5">مواعيد الجلسات، الاجتماعات والآجال القانونية</p>
         </div>
         <Button onClick={openNew} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" /> موعد جديد
+          <Plus className="h-4 w-4" /> حدث جديد
         </Button>
       </div>
 
@@ -327,9 +327,9 @@ export default function CalendarView() {
         )}
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "تعديل الموعد" : "موعد جديد"} size="lg">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? "تعديل الحدث" : "حدث جديد"} size="lg">
         <div className="space-y-4">
-          <FormField label="عنوان الموعد *" htmlFor="ev-title">
+          <FormField label="عنوان الحدث *" htmlFor="ev-title">
             <Input id="ev-title" placeholder="مثال: جلسة محكمة تونس الابتدائية" className={inputCls}
               value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
           </FormField>
