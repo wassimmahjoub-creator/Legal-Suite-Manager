@@ -236,7 +236,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.getItem("sidebar_collapsed") === "true"
   );
   const [orgTrial, setOrgTrial] = useState<OrgTrial | null>(null);
-  const [secondaryOpen, setSecondaryOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [systemOpen, setSystemOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -260,7 +259,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const inSystem = NAV_SYSTEM.some(i => isActive(i.href));
 
   useEffect(() => {
-    if (inSecondary) setSecondaryOpen(true);
     if (inAdmin) setAdminOpen(true);
     if (inSystem) { setAdminOpen(true); setSystemOpen(true); }
   }, [location]);
@@ -368,23 +366,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Services */}
         <SectionHeader label="الخدمات" collapsed={collapsed} />
-        <ExpandableSection
-          label="المزيد"
-          icon={MoreHorizontal}
-          open={secondaryOpen}
-          onToggle={() => setSecondaryOpen(o => !o)}
-          collapsed={collapsed}
-          hasActive={inSecondary}
-        >
+        <div className="space-y-px">
           {NAV_SECONDARY.map(item => (
             <NavItem key={item.href} {...item}
               active={isActive(item.href)} collapsed={collapsed}
               favorited={favorites.includes(item.href)}
-              onToggleFav={!collapsed ? toggleFavorite : undefined}
-              onNavigate={onNavigate} indent
+              onToggleFav={toggleFavorite} onNavigate={onNavigate}
             />
           ))}
-        </ExpandableSection>
+        </div>
 
         {/* Admin */}
         <SectionHeader label="الإدارة" collapsed={collapsed} />
