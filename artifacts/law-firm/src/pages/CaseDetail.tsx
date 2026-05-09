@@ -15,7 +15,7 @@ import {
   Clock, Briefcase, ArrowRight, Trash2,
   StickyNote, CircleCheck, Circle,
   Users, AlertTriangle, Lock, Link2, GitBranch,
-  Archive, Hash, Layers, Shield,
+  Archive, Hash, Layers, Shield, Pencil,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -57,6 +57,13 @@ export default function CaseDetail() {
   const [allCases, setAllCases] = useState<Array<{ id: number; title: string }>>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
 
+  const [courts, setCourts] = useState<Array<{ id: number; name: string; division?: string | null; city?: string | null }>>([]);
+  const [editForm, setEditForm] = useState({
+    title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
+    nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
+    clientFileRef: "", opponentName: "", opponentLawyer: "", judgmentText: "",
+  });
+
   const [modal, setModal] = useState<string | null>(null);
   const [procForm, setProcForm] = useState({ stage: "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" });
   const [dlForm, setDlForm] = useState({ title: "", type: "custom", dueDate: "", urgency: "normal", notes: "" });
@@ -79,6 +86,40 @@ export default function CaseDetail() {
     authFetch(`${BASE}/api/cases`).then(r => { if (r.ok) r.json().then(setAllCases); });
     authFetch(`${BASE}/api/auth/users`).then(r => { if (r.ok) r.json().then(setAllUsers); });
   }, [id]);
+
+  async function openEdit() {
+    const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };
+    const rco = await authFetch(`${BASE}/api/courts`);
+    if (rco.ok) setCourts(await rco.json());
+    setEditForm({
+      title: caseData.title ?? "",
+      clientId: String(caseData.clientId ?? ""),
+      court: caseData.court ?? "",
+      division: c.division ?? "",
+      lawyer: caseData.lawyer ?? "",
+      status: caseData.status ?? "active",
+      nextHearing: caseData.nextHearing ? caseData.nextHearing.slice(0, 10) : "",
+      description: caseData.description ?? "",
+      procedureStage: c.procedureStage ?? "ابتدائي",
+      courtCaseNumber: c.courtCaseNumber ?? "",
+      clientFileRef: c.clientFileRef ?? "",
+      opponentName: c.opponentName ?? "",
+      opponentLawyer: c.opponentLawyer ?? "",
+      judgmentText: c.judgmentText ?? "",
+    });
+    setModal("edit");
+  }
+
+  async function saveEdit() {
+    if (!editForm.title) return;
+    setSaving(true);
+    const r = await authFetch(`${BASE}/api/cases/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...editForm, clientId: Number(editForm.clientId), nextHearing: editForm.nextHearing || undefined }),
+    });
+    if (r.ok) { refetch(); setModal(null); }
+    setSaving(false);
+  }
 
   async function withSave(fn: () => Promise<void>, reloader: () => Promise<void>) {
     setSaving(true); await fn(); await reloader(); setSaving(false); setModal(null);
@@ -132,6 +173,9 @@ export default function CaseDetail() {
                   <AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر
                 </span>
               )}
+              <Button variant="outline" size="sm" onClick={openEdit} className="gap-1.5 text-xs">
+                <Pencil className="h-3.5 w-3.5" /> تعديل
+              </Button>
               <Button variant="outline" size="sm" onClick={async () => { if (!confirm(c.archivedAt ? "استرجاع هذه القضية؟" : "أرشفة هذه القضية؟")) return; await authFetch(`${BASE}/api/cases/${id}/archive`, { method: "PATCH" }); refetch(); }} className="gap-1.5 text-xs">
                 <Archive className="h-3.5 w-3.5" /> {c.archivedAt ? "استرجاع" : "أرشفة"}
               </Button>
@@ -434,6 +478,89 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL: Edit Case */}
+      <Modal open={modal === "edit"} onClose={() => setModal(null)} title="تعديل بيانات القضية">
+        <div className="space-y-4">
+          <FormField label="عنوان القضية *" htmlFor="ed-title">
+            <Input id="ed-title" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} className={inputCls} placeholder="عنوان القضية" />
+          </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="الحالة" htmlFor="ed-status">
+              <select id="ed-status" value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="active">نشطة</option>
+                <option value="pending">معلقة</option>
+                <option value="closed">مغلقة</option>
+                <option value="archived">مؤرشفة</option>
+              </select>
+            </FormField>
+            <FormField label="المرحلة الإجرائية" htmlFor="ed-stage">
+              <select id="ed-stage" value={editForm.procedureStage} onChange={e => setEditForm(f => ({ ...f, procedureStage: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+                {["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="المحكمة" htmlFor="ed-court">
+              <select id="ed-court" value={editForm.court} onChange={e => {
+                const sel = courts.find(c => c.name === e.target.value);
+                setEditForm(f => ({ ...f, court: e.target.value, division: sel?.division ?? f.division }));
+              }} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">اختر محكمة...</option>
+                {courts.map(c => <option key={c.id} value={c.name}>{c.name}{c.city ? ` — ${c.city}` : ""}</option>)}
+              </select>
+            </FormField>
+            <FormField label="الدائرة" htmlFor="ed-div">
+              <Input id="ed-div" value={editForm.division} onChange={e => setEditForm(f => ({ ...f, division: e.target.value }))} className={inputCls} placeholder="الدائرة الأولى" />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="المحامي المسؤول" htmlFor="ed-lawyer">
+              <Input id="ed-lawyer" value={editForm.lawyer} onChange={e => setEditForm(f => ({ ...f, lawyer: e.target.value }))} className={inputCls} placeholder="اسم المحامي" />
+            </FormField>
+            <FormField label="موعد الجلسة القادمة" htmlFor="ed-hearing">
+              <Input id="ed-hearing" type="date" value={editForm.nextHearing} onChange={e => setEditForm(f => ({ ...f, nextHearing: e.target.value }))} className={inputCls} dir="ltr" />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="عدد القضية بالمحكمة" htmlFor="ed-courtnum">
+              <Input id="ed-courtnum" value={editForm.courtCaseNumber} onChange={e => setEditForm(f => ({ ...f, courtCaseNumber: e.target.value }))} className={inputCls} placeholder="12345/2026" dir="ltr" />
+            </FormField>
+            <FormField label="مرجع الحريف" htmlFor="ed-clientref">
+              <Input id="ed-clientref" value={editForm.clientFileRef} onChange={e => setEditForm(f => ({ ...f, clientFileRef: e.target.value }))} className={inputCls} placeholder="مرجع داخلي" />
+            </FormField>
+          </div>
+
+          <div className="pt-1 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" />معلومات الخصم</p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="اسم الخصم" htmlFor="ed-opp">
+                <Input id="ed-opp" value={editForm.opponentName} onChange={e => setEditForm(f => ({ ...f, opponentName: e.target.value }))} className={inputCls} placeholder="اسم الخصم" />
+              </FormField>
+              <FormField label="محامي الخصم" htmlFor="ed-opplawyer">
+                <Input id="ed-opplawyer" value={editForm.opponentLawyer} onChange={e => setEditForm(f => ({ ...f, opponentLawyer: e.target.value }))} className={inputCls} placeholder="ذ. اسم المحامي" />
+              </FormField>
+            </div>
+          </div>
+
+          <FormField label="نص الحكم" htmlFor="ed-judgment">
+            <Input id="ed-judgment" value={editForm.judgmentText} onChange={e => setEditForm(f => ({ ...f, judgmentText: e.target.value }))} className={inputCls} placeholder="نص الحكم أو القرار النهائي" />
+          </FormField>
+
+          <FormField label="الوصف" htmlFor="ed-desc">
+            <SmartTextarea id="ed-desc" value={editForm.description} onChange={v => setEditForm(f => ({ ...f, description: v }))} rows={3} aiContext="وصف قضية قانونية" placeholder="وصف القضية..." />
+          </FormField>
+
+          <div className="flex gap-3 pt-1">
+            <Button className="flex-1" disabled={saving || !editForm.title} onClick={saveEdit}>{saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
