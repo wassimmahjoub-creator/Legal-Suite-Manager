@@ -1,0 +1,413 @@
+```text
+IMPORTANT:
+This prompt is a LEGAL BUSINESS LOGIC + UX REFINEMENT PATCH based on real lawyer feedback after testing the application.
+
+DO NOT rebuild the app.
+DO NOT regenerate pages from scratch.
+DO NOT break existing architecture.
+DO NOT break RTL.
+DO NOT break routing.
+DO NOT remove existing modules.
+
+Your task is to REFINE and EXTEND the current legal SaaS application to better match REAL TUNISIAN LAW FIRM WORKFLOWS.
+
+This patch is extremely important because it comes from actual lawyer operational feedback.
+
+The objective is to make the system feel:
+- legally accurate
+- operationally realistic
+- more professional
+- closer to real law firm terminology/workflows
+
+====================================================
+1) CASES MODULE TERMINOLOGY & FIELDS
+====================================================
+
+Replace everywhere:
+القضايا النشطة
+
+WITH:
+القضايا الجارية
+
+====================================================
+CASE ENTITY IMPROVEMENTS
+====================================================
+
+Add fields:
+- عدد القضية بالمحكمة
+- مرجع الملف بالمكتب
+- مرجع الحريف
+- اسم الضد
+- اسم محامي الضد
+
+====================================================
+CASE NUMBERING LOGIC
+====================================================
+
+Inside:
+إضافة قضية جديدة
+
+Replace:
+رقم القضية
+
+WITH:
+عدد القضية
+
+====================================================
+OFFICE FILE REFERENCE
+====================================================
+
+Add:
+مرجع الملف بالمكتب
+
+Requirements:
+- automatic sequential numbering
+- unique per organization
+- generated automatically
+- editable by admin if needed
+
+Example:
+2026/001
+2026/002
+
+====================================================
+COURTS LIST
+====================================================
+
+Add dynamic selectable court list:
+المحاكم
+
+Allow:
+- selecting existing court
+- auto-fill related data
+- adding new courts dynamically
+
+====================================================
+2) CALENDAR / EVENTS TERMINOLOGY
+====================================================
+
+Inside:
+الرزنامة
+
+Replace:
+موعد جديد
+
+WITH:
+حدث جديد
+
+Reason:
+The word "حدث" covers:
+- hearings
+- meetings
+- reminders
+- tasks
+- legal activities
+
+====================================================
+3) CLIENTS MODULE IMPROVEMENTS
+====================================================
+
+Add:
+- العدد الرتبي للحريف بالمكتب
+- المعرف الجبائي للشركات
+- رقم بطاقة التعريف للأشخاص
+
+====================================================
+MULTI-CONTACT SUPPORT FOR COMPANIES
+====================================================
+
+Companies often have multiple employees following files.
+
+Add:
+جهات الاتصال
+
+Each contact contains:
+- الاسم
+- الوظيفة
+- الهاتف
+- البريد الإلكتروني
+
+Allow multiple contacts per company client.
+
+====================================================
+CLIENT GLOBAL WORK SUMMARY
+====================================================
+
+Inside client profile show complete work summary:
+
+- القضايا
+- الاستشارات
+- العقود
+- التنبيهات
+- الأذون على العرائض
+
+Display:
+- total count
+- office references
+- linked files
+
+====================================================
+4) ARCHIVE MODULE IMPROVEMENTS
+====================================================
+
+Inside archived files:
+
+REMOVE:
+الجلسة القادمة
+
+REPLACE WITH:
+نص الحكم
+
+Because archived files are closed.
+
+====================================================
+CLIENT DOCUMENT RETURN TRACKING
+====================================================
+
+Add buttons:
+- استرجع الحريف وثائقه بتاريخ ...
+- تسلم الحريف نسخة الحكم بتاريخ ...
+- تسلم الحريف نسخة العقد بتاريخ ...
+- تسلم الحريف نسخة الاستشارة بتاريخ ...
+
+Track:
+- date
+- user
+- confirmation log
+
+====================================================
+5) TODAY'S TASKS & HEARINGS
+====================================================
+
+Inside:
+جلسات ومهام اليوم
+
+Add:
+حدث جديد
+
+This quick action already exists in calendar.
+Reuse same modal/component.
+
+====================================================
+6) DOCUMENTS MODULE IMPROVEMENTS
+====================================================
+
+Documents must be linked to:
+- عدد القضية بالمحكمة
+- مرجع الملف بالمكتب
+
+Support document categories:
+- قضية
+- استشارة
+- عقد
+- تنبيه
+- إذن على عريضة
+
+====================================================
+TERMINOLOGY CHANGE
+====================================================
+
+Replace:
+نوع القضية
+
+WITH:
+موضوع القضية
+
+====================================================
+EMAIL ATTACHMENTS
+====================================================
+
+Add:
+المراسلات الإلكترونية المرتبطة
+
+Allow:
+- linking emails to file
+- storing related communications
+- viewing email history
+
+====================================================
+7) BILLING / INVOICING IMPROVEMENTS
+====================================================
+
+Create REALISTIC Tunisian legal invoice workflow.
+
+====================================================
+INVOICE GENERATION
+====================================================
+
+Inside every:
+- ملف
+- قضية
+- استشارة
+- عقد
+
+Add:
+زر الفوترة
+
+When clicked:
+open invoice generator modal.
+
+User only enters:
+- مبلغ الأتعاب
+- المصاريف
+
+The system auto-generates:
+- invoice number
+- client name
+- address
+- tax number
+- TVA
+- retenue à la source
+- total amount
+
+====================================================
+AUTOMATIC INVOICE NUMBERING
+====================================================
+
+Invoice numbering must:
+- be sequential globally
+- auto-generated
+- unique
+- always increment from previous invoice
+
+====================================================
+INVOICE FIELDS
+====================================================
+
+Include:
+- اسم الحريف
+- العنوان
+- المعرف الجبائي
+- الأداء على القيمة المضافة
+- الخصم من المورد
+- المبلغ الواجب للخلاص
+
+====================================================
+E-INVOICE PREPARATION
+====================================================
+
+Prepare architecture for:
+الفاتورة الإلكترونية التونسية
+
+Do NOT fully integrate yet.
+Prepare clean extensible structure.
+
+====================================================
+8) DASHBOARD RESTRUCTURE
+====================================================
+
+Current dashboard is too litigation-focused.
+
+Lawyers also manage:
+- contracts
+- consultations
+- petitions
+- legal notices
+
+====================================================
+CREATE MAIN CATEGORY:
+الملفات
+====================================================
+
+Under it:
+- القضايا
+- العقود
+- الاستشارات
+- التنبيهات
+- الأذون على العرائض
+
+This must become a central navigation/workflow concept.
+
+====================================================
+9) SERVICES MENU CLEANUP
+====================================================
+
+REMOVE:
+شركات التأمين
+
+Reason:
+not operationally relevant in main navigation.
+
+====================================================
+RENAME:
+التقارير
+
+TO:
+المحاسبة
+OR
+التقرير المالي للمكتب
+
+Use more realistic legal-office terminology.
+
+====================================================
+10) LEGAL OFFICE TERMINOLOGY
+====================================================
+
+Review the application globally and ensure terminology reflects:
+REAL TUNISIAN LAW FIRM LANGUAGE.
+
+Avoid:
+- generic SaaS language
+- overly technical ERP wording
+- non-legal wording
+
+The app must feel like:
+a real Tunisian lawyer operating system.
+
+====================================================
+11) DATA MODEL EXTENSIONS
+====================================================
+
+Extend database cleanly.
+
+Add support for:
+- office file references
+- court case numbers
+- opponent lawyer
+- multiple client contacts
+- archive delivery tracking
+- invoice sequencing
+- linked emails
+
+Maintain:
+- relational integrity
+- organization isolation
+- audit logs
+
+====================================================
+12) UI/UX REQUIREMENTS
+====================================================
+
+Preserve:
+- premium SaaS UI
+- Arabic RTL
+- modern navigation
+- clean spacing
+
+The new additions must feel:
+- integrated
+- coherent
+- operationally useful
+
+NOT:
+- bolted on
+- ERP-like
+- cluttered
+
+====================================================
+13) IMPORTANT RESTRICTIONS
+====================================================
+
+DO NOT:
+- rebuild current modules
+- duplicate pages
+- remove existing logic
+- break sidebar structure
+- break subscriptions/authentication
+
+ONLY:
+- refine legal workflows
+- improve legal terminology
+- add operational legal depth
+- align app with real lawyer workflows
+```
