@@ -144,7 +144,7 @@ export default function CaseDetail() {
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <button onClick={() => navigate("/cases")} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
+              <button onClick={() => window.history.back()} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
               </button>
               <div>

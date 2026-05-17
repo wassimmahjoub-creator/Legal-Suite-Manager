@@ -242,7 +242,7 @@ export default function ClientPage() {
     <div className="space-y-6 pb-10">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button onClick={() => navigate("/clients")} className="hover:text-foreground transition-colors">
+        <button onClick={() => window.history.back()} className="hover:text-foreground transition-colors">
           الحرفاء
         </button>
         <ChevronRight className="h-3.5 w-3.5 rotate-180" />

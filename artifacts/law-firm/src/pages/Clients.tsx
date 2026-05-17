@@ -151,7 +151,7 @@ export default function Clients() {
                       {client.name.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold truncate">{client.name}</h3>
+                      <h3 className="font-bold truncate group-hover:underline">{client.name}</h3>
                       <p className="text-xs text-muted-foreground">
                         {client.clientType === "company" ? "شخص معنوي" : "شخص طبيعي"}
                         {client.officeSeq && <span className="mr-1 font-mono text-primary/70"> · {client.officeSeq}</span>}

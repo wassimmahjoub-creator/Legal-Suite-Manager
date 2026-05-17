@@ -167,7 +167,7 @@ export default function Cases() {
                 : filteredCases?.map((c: any) => (
                   <TableRow
                     key={c.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="cursor-pointer hover:bg-muted/30 transition-colors group"
                     onClick={() => navigate(`/cases/${c.id}`)}
                   >
                     <TableCell className="py-3">
@@ -184,7 +184,7 @@ export default function Cases() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold py-3">{c.title}</TableCell>
+                    <TableCell className="font-semibold py-3 text-primary group-hover:underline">{c.title}</TableCell>
                     <TableCell className="py-3 text-muted-foreground">{c.clientName}</TableCell>
                     <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{c.court || "—"}</TableCell>
                     <TableCell className="py-3"><StatusBadge status={c.status} /></TableCell>

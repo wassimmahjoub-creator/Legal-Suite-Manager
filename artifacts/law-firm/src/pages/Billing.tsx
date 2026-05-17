@@ -158,9 +158,9 @@ export default function Billing() {
                     && inv.lockedAt && new Date(inv.dueDate) < new Date();
                   return (
                     <TableRow key={inv.id}
-                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      className="hover:bg-muted/30 transition-colors cursor-pointer group"
                       onClick={() => navigate(`/billing/${inv.id}`)}>
-                      <TableCell className="font-mono text-sm py-3 text-primary font-semibold">
+                      <TableCell className="font-mono text-sm py-3 text-primary font-semibold group-hover:underline">
                         {inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`}
                       </TableCell>
                       <TableCell className="py-3 font-semibold">{inv.clientName ?? "—"}</TableCell>
