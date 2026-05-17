@@ -47,6 +47,7 @@ type TeamMember = { id: number; userId: number; role: string; userName: string |
 type ConfNote = { id: number; content: string; createdBy: string | null; createdAt: string; };
 type Relation = { id: number; relatedCaseId: number; relationType: string; relatedTitle: string | null; };
 type UserItem = { id: number; name: string; email: string; role: string; };
+type Opponent = { id: number; name: string; lawyerName: string | null; phone: string | null; address: string | null; notes: string | null; caseId: number | null; };
 
 export default function CaseDetail() {
   const { id } = useParams();
@@ -59,6 +60,9 @@ export default function CaseDetail() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [confNotes, setConfNotes] = useState<ConfNote[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
+  const [opponents, setOpponents] = useState<Opponent[]>([]);
+  const [oppForm, setOppForm] = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "" });
+  const [confirmOppId, setConfirmOppId] = useState<number | null>(null);
   const [allCases, setAllCases] = useState<Array<{ id: number; title: string }>>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
 
@@ -89,6 +93,7 @@ export default function CaseDetail() {
     team: async () => { const r = await authFetch(`${BASE}/api/cases/${id}/team`); if (r.ok) setTeam(await r.json()); },
     confNotes: async () => { const r = await authFetch(`${BASE}/api/cases/${id}/confidential-notes`); if (r.ok) setConfNotes(await r.json()); },
     relations: async () => { const r = await authFetch(`${BASE}/api/cases/${id}/relations`); if (r.ok) setRelations(await r.json()); },
+    opponents: async () => { const r = await authFetch(`${BASE}/api/opponents?caseId=${id}`); if (r.ok) setOpponents(await r.json()); },
   };
 
   useEffect(() => {
@@ -206,6 +211,7 @@ export default function CaseDetail() {
               { id: "team",       label: "الفريق",        icon: <Users className="h-4 w-4" /> },
               { id: "relations",  label: "قضايا مرتبطة", icon: <Link2 className="h-4 w-4" /> },
               { id: "conf-notes", label: "ملاحظات سرية", icon: <Lock className="h-4 w-4" /> },
+              { id: "opponents",  label: "الخصوم",       icon: <Shield className="h-4 w-4" />, badge: opponents.length > 0 ? opponents.length : 0 },
               { id: "overview",   label: "ملاحظات",      icon: <StickyNote className="h-4 w-4" /> },
             ] as { id: string; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string }[]).map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -398,6 +404,39 @@ export default function CaseDetail() {
           </CardContent></Card>
         )}
 
+        {/* OPPONENTS */}
+        {activeTab === "opponents" && (
+          <Card className="border-none shadow-sm"><CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">الخصوم</h3>
+              <Button size="sm" onClick={() => { setOppForm({ name: "", lawyerName: "", phone: "", address: "", notes: "" }); setModal("opponent"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />خصم جديد</Button>
+            </div>
+            {opponents.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><Shield className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا خصوم مسجلين لهذه القضية</p></div>
+            ) : (
+              <div className="space-y-3">
+                {opponents.map(o => (
+                  <div key={o.id} className="flex items-start justify-between p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center font-bold shrink-0">{o.name.charAt(0)}</div>
+                      <div>
+                        <p className="font-semibold text-sm">{o.name}</p>
+                        <div className="space-y-0.5 mt-0.5">
+                          {o.lawyerName && <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" />{o.lawyerName}</p>}
+                          {o.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><span>📞</span>{o.phone}</p>}
+                          {o.address && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" />{o.address}</p>}
+                          {o.notes && <p className="text-xs text-muted-foreground mt-1 italic">{o.notes}</p>}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => setConfirmOppId(o.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent></Card>
+        )}
+
         {/* OVERVIEW */}
         {activeTab === "overview" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-4">
@@ -419,6 +458,48 @@ export default function CaseDetail() {
 
         </div>
       </div>
+
+      {/* MODAL: Opponent */}
+      <Modal open={modal === "opponent"} onClose={() => setModal(null)} title="إضافة خصم">
+        <div className="space-y-4">
+          <FormField label="الاسم *" htmlFor="opp-name">
+            <Input id="opp-name" value={oppForm.name} onChange={e => setOppForm({...oppForm, name: e.target.value})} placeholder="اسم الخصم" className={inputCls} />
+          </FormField>
+          <FormField label="محامي الخصم" htmlFor="opp-lawyer">
+            <Input id="opp-lawyer" value={oppForm.lawyerName} onChange={e => setOppForm({...oppForm, lawyerName: e.target.value})} placeholder="اسم المحامي" className={inputCls} />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="الهاتف" htmlFor="opp-phone">
+              <Input id="opp-phone" value={oppForm.phone} onChange={e => setOppForm({...oppForm, phone: e.target.value})} placeholder="2X XXX XXX" className={inputCls} dir="ltr" />
+            </FormField>
+            <FormField label="العنوان" htmlFor="opp-addr">
+              <Input id="opp-addr" value={oppForm.address} onChange={e => setOppForm({...oppForm, address: e.target.value})} placeholder="العنوان" className={inputCls} />
+            </FormField>
+          </div>
+          <FormField label="ملاحظات" htmlFor="opp-notes">
+            <SmartTextarea id="opp-notes" value={oppForm.notes} onChange={v => setOppForm({...oppForm, notes: v})} rows={3} aiContext="ملاحظات خصم قانوني" placeholder="ملاحظات حول الخصم..." />
+          </FormField>
+          <div className="flex gap-3">
+            <Button className="flex-1" disabled={saving || !oppForm.name.trim()} onClick={() => withSave(async () => {
+              await authFetch(`${BASE}/api/opponents`, { method: "POST", body: JSON.stringify({ ...oppForm, caseId: Number(id) }) });
+            }, load.opponents)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirm opponent delete */}
+      <ConfirmDestructive
+        open={confirmOppId !== null}
+        onClose={() => setConfirmOppId(null)}
+        onConfirm={async () => {
+          await authFetch(`${BASE}/api/opponents/${confirmOppId}`, { method: "DELETE" });
+          await load.opponents();
+        }}
+        title="حذف الخصم؟"
+        description="سيتم حذف هذا الخصم نهائياً من القضية."
+        confirmLabel="حذف"
+      />
 
       {/* MODAL: Add Note */}
       <Modal open={noteModal} onClose={() => setNoteModal(false)} title="إضافة ملاحظة">

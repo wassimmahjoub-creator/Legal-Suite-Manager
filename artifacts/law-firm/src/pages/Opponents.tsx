@@ -11,6 +11,7 @@ import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClient
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import { SmartTextarea } from "@/components/SmartTextarea";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -30,6 +31,8 @@ export default function Opponents() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [allCases, setAllCases] = useState<Array<{ id: number; title: string }>>([]);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -38,7 +41,10 @@ export default function Opponents() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    authFetch(`${BASE}/api/cases`).then(r => { if (r.ok) r.json().then(setAllCases); });
+  }, []);
 
   function openNew() { setEditing(null); setForm(EMPTY); setModal(true); }
   function openEdit(o: Opponent) {
@@ -58,9 +64,9 @@ export default function Opponents() {
   }
 
   async function remove(id: number) {
-    if (!confirm("حذف الخصم؟")) return;
     await authFetch(`${BASE}/api/opponents/${id}`, { method: "DELETE" });
     await load();
+    setConfirmId(null);
   }
 
   const filtered = data.filter(o =>
@@ -112,7 +118,7 @@ export default function Opponents() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(o)} className="p-1.5 hover:bg-muted rounded-lg transition-colors"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                    <button onClick={() => remove(o.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={() => setConfirmId(o.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 </div>
                 <div className="space-y-1.5 text-xs text-muted-foreground">
@@ -142,8 +148,11 @@ export default function Opponents() {
             <FormField label="الهاتف" htmlFor="op-phone">
               <Input id="op-phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="2X XXX XXX" className={inputCls} dir="ltr" />
             </FormField>
-            <FormField label="رقم القضية" htmlFor="op-case">
-              <Input id="op-case" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} placeholder="ID القضية" className={inputCls} dir="ltr" type="number" />
+            <FormField label="القضية المرتبطة" htmlFor="op-case">
+              <select id="op-case" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">بدون ربط...</option>
+                {allCases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
             </FormField>
           </div>
           <FormField label="العنوان" htmlFor="op-address">
@@ -158,6 +167,15 @@ export default function Opponents() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDestructive
+        open={confirmId !== null}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => remove(confirmId!)}
+        title="حذف الخصم؟"
+        description="سيتم حذف هذا الخصم نهائياً."
+        confirmLabel="حذف"
+      />
     </div>
   );
 }
