@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, clientsTable, clientContactsTable, clientEventsTable, casesTable, invoicesTable, documentsTable } from "@workspace/db";
-import { eq, ilike, isNull, sql, like } from "drizzle-orm";
+import { eq, ilike, isNull, sql, like, and } from "drizzle-orm";
 import { CreateClientBody, UpdateClientBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -180,8 +180,19 @@ router.get("/clients/:id/invoices", async (req, res) => {
 
 router.get("/clients/:id/documents", async (req, res) => {
   const clientId = Number(req.params.id);
-  const docs = await db.select().from(documentsTable)
-    .where(eq(documentsTable.clientId, clientId))
+  const docs = await db
+    .select({
+      id: documentsTable.id,
+      name: documentsTable.name,
+      caseId: documentsTable.caseId,
+      fileType: documentsTable.fileType,
+      url: documentsTable.url,
+      deletedAt: documentsTable.deletedAt,
+      createdAt: documentsTable.createdAt,
+    })
+    .from(documentsTable)
+    .innerJoin(casesTable, eq(documentsTable.caseId, casesTable.id))
+    .where(and(eq(casesTable.clientId, clientId), isNull(documentsTable.deletedAt)))
     .orderBy(documentsTable.createdAt);
   res.json(docs);
 });
