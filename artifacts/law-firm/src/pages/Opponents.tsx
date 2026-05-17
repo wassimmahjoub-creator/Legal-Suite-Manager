@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { Shield, Plus, Pencil, Trash2, Phone, MapPin, Briefcase, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeletons";
 import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -83,9 +84,7 @@ export default function Opponents() {
         className="h-10 bg-muted/50 border-border rounded-lg max-w-sm" />
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1,2,3].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}
-        </div>
+        <SkeletonTable rows={6} cols={4} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Shield className="h-12 w-12 mx-auto mb-3 opacity-20" />

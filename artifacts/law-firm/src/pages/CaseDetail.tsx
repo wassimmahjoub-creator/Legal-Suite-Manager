@@ -20,6 +20,7 @@ import {
   Archive, Hash, Layers, Shield, Pencil,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -125,12 +126,7 @@ export default function CaseDetail() {
     setSaving(true); await fn(); await reloader(); setSaving(false); setModal(null);
   }
 
-  if (isLoading) return (
-    <div className="space-y-6">
-      <Skeleton className="h-32 w-full rounded-2xl" />
-      <Skeleton className="h-96 w-full rounded-2xl" />
-    </div>
-  );
+  if (isLoading) return <SkeletonClientPage tabs={6} />;
   if (!caseData) return <div className="text-center py-20 text-muted-foreground">القضية غير موجودة</div>;
 
   const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };

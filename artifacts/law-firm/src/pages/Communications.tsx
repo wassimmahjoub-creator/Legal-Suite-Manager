@@ -8,6 +8,7 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeletons";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface Comm { id: number; caseId: number | null; clientId: number | null; caseName: string | null; clientName: string | null; type: string; date: string; summary: string; createdBy: string | null; }
@@ -77,7 +78,7 @@ export default function Communications() {
         </div>
       </div>
       {loading ? (
-        <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
+        <SkeletonTable rows={5} cols={5} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground"><PhoneCall className="h-12 w-12 mx-auto mb-3 opacity-20" /><p>لا توجد اتصالات</p></div>
       ) : (

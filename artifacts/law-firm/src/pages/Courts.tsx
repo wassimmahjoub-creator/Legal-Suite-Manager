@@ -10,6 +10,7 @@ import {
   Phone, Globe, Layers,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeletons";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -257,9 +258,7 @@ export default function Courts() {
       </Card>
 
       {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
-        </div>
+        <SkeletonTable rows={8} cols={4} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Building2 className="h-12 w-12 mx-auto mb-3 opacity-20" />

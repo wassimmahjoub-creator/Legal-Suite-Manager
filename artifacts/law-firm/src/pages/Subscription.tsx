@@ -101,7 +101,23 @@ export default function Subscription() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+    return (
+      <div className="space-y-4 max-w-2xl mx-auto">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl skeleton-shimmer shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-1/2 rounded-md skeleton-shimmer" />
+                <div className="h-3.5 w-1/3 rounded-md skeleton-shimmer" />
+              </div>
+            </div>
+            <div className="h-3.5 w-full rounded-md skeleton-shimmer" />
+            <div className="h-3.5 w-4/5 rounded-md skeleton-shimmer" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (!org) {

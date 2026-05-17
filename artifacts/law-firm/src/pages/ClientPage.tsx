@@ -10,6 +10,7 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonClientPage } from "@/components/ui/skeletons";
 import {
   User, Building2, Phone, Mail, MapPin, Plus, Pencil, Trash2,
   Briefcase, FileText, Clock, MessageSquare, BookOpen,
@@ -224,15 +225,7 @@ export default function ClientPage() {
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + Number(i.amount ?? 0), 0);
   const balance = totalInvoiced - totalPaid;
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-36 rounded-2xl" />
-        <Skeleton className="h-10 rounded-xl" />
-        <Skeleton className="h-64 rounded-2xl" />
-      </div>
-    );
-  }
+  if (loading) return <SkeletonClientPage tabs={7} />;
 
   if (!client) return null;
 

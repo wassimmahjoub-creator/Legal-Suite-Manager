@@ -10,6 +10,7 @@ import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
 import { MessageSquare, Plus, Pencil, Trash2, User, Calendar, CheckCircle2, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeletons";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -87,7 +88,7 @@ export default function Consultations() {
         className="h-10 bg-muted/50 border-border rounded-lg max-w-sm" />
 
       {loading ? (
-        <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
+        <SkeletonTable rows={5} cols={4} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-20" />

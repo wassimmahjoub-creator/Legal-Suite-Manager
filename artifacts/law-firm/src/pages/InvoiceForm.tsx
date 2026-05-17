@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/Modal";
 import { ArrowRight, Plus, Trash2, Send, Save, Loader2 } from "lucide-react";
+import { SkeletonForm } from "@/components/ui/skeletons";
 import { calcLine, calcTotals, UNITS, VAT_RATES } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
 
@@ -164,7 +165,7 @@ export default function InvoiceForm() {
     navigate(`/billing/${inv.id}`);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <SkeletonForm fields={5} className="max-w-2xl mx-auto rounded-2xl border border-border bg-card" />;
 
   return (
     <div className="space-y-6 pb-10">

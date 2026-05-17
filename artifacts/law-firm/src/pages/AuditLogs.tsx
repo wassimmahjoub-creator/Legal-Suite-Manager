@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeletons";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface AuditLog { id: number; entityType: string; entityId: number | null; action: string; oldValue: string | null; newValue: string | null; userName: string | null; ipAddress: string | null; createdAt: string; }
@@ -76,7 +77,7 @@ export default function AuditLogs() {
       </div>
 
       {loading ? (
-        <div className="space-y-2">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+        <SkeletonTable rows={8} cols={5} />
       ) : data.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground"><ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-20" /><p>لا توجد سجلات</p></div>
       ) : (
