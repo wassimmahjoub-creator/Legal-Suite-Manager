@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/Modal";
 import { ArrowRight, Plus, Trash2, Send, Save, Loader2 } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/skeletons";
-import { calcLine, calcTotals, UNITS, VAT_RATES } from "@/services/invoiceCalculator";
+import { calcLine, calcTotals, UNITS, UNIT_LABELS, VAT_RATES } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -277,7 +277,7 @@ export default function InvoiceForm() {
                     <th className={`${cellCls} text-right w-[10%]`}>الوحدة</th>
                     <th className={`${cellCls} text-right w-[10%]`}>الكمية</th>
                     <th className={`${cellCls} text-right w-[15%]`}>سعر الوحدة خ.ض</th>
-                    <th className={`${cellCls} text-right w-[8%]`}>TVA %</th>
+                    <th className={`${cellCls} text-right w-[8%]`}>% ض.م</th>
                     <th className={`${cellCls} text-right w-[14%]`}>الإجمالي خ.ض</th>
                     <th className={`${cellCls} w-[8%]`}></th>
                   </tr>
@@ -294,7 +294,7 @@ export default function InvoiceForm() {
                         <td className={cellCls}>
                           <SelectNative value={line.unit} onChange={e => updateLine(idx, "unit", e.target.value)}
                             className="h-8 w-full bg-transparent border-0 text-xs cursor-pointer focus:outline-none">
-                            {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                            {UNITS.map(u => <option key={u} value={u}>{UNIT_LABELS[u] ?? u}</option>)}
                           </SelectNative>
                         </td>
                         <td className={cellCls}>
@@ -363,7 +363,7 @@ export default function InvoiceForm() {
                 <Money amount={totals.subtotalHt} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">TVA</span>
+                <span className="text-muted-foreground">ض.م</span>
                 <Money amount={totals.vatTotal} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">

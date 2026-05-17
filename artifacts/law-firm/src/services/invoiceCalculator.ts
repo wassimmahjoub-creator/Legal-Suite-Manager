@@ -44,6 +44,14 @@ export function calcTotals(
 }
 
 export const UNITS = ["forfait", "heure", "déplacement", "acte", "consultation", "vacation"];
+export const UNIT_LABELS: Record<string, string> = {
+  forfait:      "جزافي",
+  heure:        "ساعة",
+  "déplacement":"تنقل",
+  acte:         "إجراء",
+  consultation: "استشارة",
+  vacation:     "مهمة",
+};
 export const VAT_RATES = [0, 7, 13, 19];
 
 export const STATUS_LABELS: Record<string, string> = {
