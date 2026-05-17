@@ -16,7 +16,7 @@ const router = Router();
 
 router.get("/cases/:id/pdf-data", async (req, res) => {
   const caseId = Number(req.params.id);
-  if (!caseId || isNaN(caseId)) return res.status(400).json({ error: "Invalid id" });
+  if (!caseId || isNaN(caseId)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const [caseRow] = await db
     .select({
