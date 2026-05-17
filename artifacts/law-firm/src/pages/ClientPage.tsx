@@ -16,7 +16,7 @@ import {
   Briefcase, FileText, Clock, MessageSquare, BookOpen,
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
   CheckCircle2, AlertCircle, Calendar, Hash, Loader2, Upload,
-  FileImage, File, FileSpreadsheet,
+  FileImage, File, FileSpreadsheet, ArrowUpRight, ArrowDownLeft, Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CourtSelect } from "@/components/CourtSelect";
@@ -68,6 +68,7 @@ interface ClientEvent {
 interface CaseRow { id: number; title: string; status: string; court: string | null; caseNumber: string | null; archivedAt: string | null; createdAt: string; }
 interface InvoiceRow { id: number; invoiceNumber: string | null; description: string | null; netToPay: string; balanceDue: string; amountPaid: string; status: string; dueDate: string | null; createdAt: string; }
 interface DocRow { id: number; name: string; fileType: string | null; caseId: number | null; url: string | null; createdAt: string; }
+interface CorrespRow { id: number; type: string; direction: string; date: string; subject: string; content: string | null; reference: string | null; status: string; caseName: string | null; }
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
   case_created: <Briefcase className="h-4 w-4 text-blue-400" />,
@@ -124,6 +125,16 @@ export default function ClientPage() {
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [tabLoaded, setTabLoaded] = useState<Set<string>>(new Set());
 
+  // Correspondances
+  const [corresp, setCorresp] = useState<CorrespRow[]>([]);
+  const [corrModal, setCorrModal] = useState(false);
+  const [corrForm, setCorrForm] = useState({
+    type: "letter", direction: "outgoing",
+    date: new Date().toISOString().slice(0, 10),
+    subject: "", content: "", reference: "", status: "sent", caseId: "",
+  });
+  const [savingCorr, setSavingCorr] = useState(false);
+
   // Doc upload modal
   const [docModal, setDocModal] = useState(false);
   const [docForm, setDocForm] = useState({ name: "", fileType: "عقد", caseId: "", url: "" });
@@ -176,6 +187,9 @@ export default function ClientPage() {
     } else if (tab === "documents") {
       const r = await authFetch(`${BASE}/api/clients/${clientId}/documents`);
       if (r.ok) setDocs(await r.json());
+    } else if (tab === "corresp") {
+      const r = await authFetch(`${BASE}/api/correspondances?clientId=${clientId}`);
+      if (r.ok) setCorresp(await r.json());
     } else if (tab === "journal") {
       const r = await authFetch(`${BASE}/api/clients/${clientId}/events`);
       if (r.ok) setEvents(await r.json());
@@ -571,7 +585,69 @@ export default function ClientPage() {
 
         {/* CORRESPONDANCES */}
         {activeTab === "corresp" && (
-          <EmptyState icon={<MessageSquare className="h-12 w-12 opacity-20" />} label="المراسلات المرتبطة بهذا الحريف ستظهر هنا" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">المراسلات</h2>
+              <Button size="sm" className="gap-1.5 text-xs"
+                onClick={() => {
+                  setCorrForm({ type: "letter", direction: "outgoing", date: new Date().toISOString().slice(0, 10), subject: "", content: "", reference: "", status: "sent", caseId: "" });
+                  setCorrModal(true);
+                }}>
+                <Plus className="h-3.5 w-3.5" /> مراسلة جديدة
+              </Button>
+            </div>
+            {corresp.length === 0 ? (
+              <EmptyState icon={<MessageSquare className="h-12 w-12 opacity-20" />} label="لا توجد مراسلات لهذا الحريف" />
+            ) : (
+              <div className="space-y-3">
+                {corresp.map(c => {
+                  const TYPE_MAP: Record<string, { label: string; icon: React.ElementType }> = {
+                    letter:  { label: "رسالة رسمية",   icon: FileText },
+                    email:   { label: "بريد إلكتروني", icon: Mail },
+                    fax:     { label: "فاكس",          icon: Send },
+                    notice:  { label: "إشعار / إعلام", icon: Send },
+                    other:   { label: "أخرى",          icon: FileText },
+                  };
+                  const STATUS_MAP: Record<string, { label: string; color: string }> = {
+                    draft:        { label: "مسودة",   color: "bg-muted text-muted-foreground" },
+                    sent:         { label: "مُرسلة",  color: "bg-blue-500/10 text-blue-400" },
+                    received:     { label: "مُستلمة", color: "bg-green-500/10 text-green-400" },
+                    acknowledged: { label: "مُؤكدة",  color: "bg-primary/10 text-primary" },
+                  };
+                  const typeInfo = TYPE_MAP[c.type] ?? TYPE_MAP.other;
+                  const statusInfo = STATUS_MAP[c.status] ?? STATUS_MAP.sent;
+                  const TypeIcon = typeInfo.icon;
+                  const DirIcon = c.direction === "outgoing" ? ArrowUpRight : ArrowDownLeft;
+                  const dirColor = c.direction === "outgoing" ? "text-orange-400" : "text-cyan-400";
+                  return (
+                    <Card key={c.id} className="border-border hover:border-primary/30 transition-colors border-none shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <TypeIcon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <DirIcon className={`h-3.5 w-3.5 shrink-0 ${dirColor}`} />
+                              <span className="font-semibold text-sm truncate">{c.subject}</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{typeInfo.label}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                              {c.caseName && <span>القضية: <span className="text-foreground">{c.caseName}</span></span>}
+                              {c.reference && <span>المرجع: <span className="font-mono text-primary">{c.reference}</span></span>}
+                              <span>{fmt(c.date)}</span>
+                            </div>
+                            {c.content && <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{c.content}</p>}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* JOURNAL */}
@@ -852,6 +928,124 @@ export default function ClientPage() {
                 : "إنشاء الفاتورة"}
             </Button>
             <Button variant="outline" onClick={() => setInvoiceModal(false)} className="px-6">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Correspondance Modal */}
+      <Modal open={corrModal} onClose={() => setCorrModal(false)} title="مراسلة جديدة">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl text-sm">
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div>
+              <p className="font-semibold">{client?.name}</p>
+              <p className="text-xs text-muted-foreground">سيتم ربط المراسلة بهذا الحريف تلقائياً</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="نوع المراسلة" htmlFor="corr-type">
+              <select id="corr-type" className={inputCls + " px-3 cursor-pointer"}
+                value={corrForm.type} onChange={e => setCorrForm(f => ({ ...f, type: e.target.value }))}>
+                <option value="letter">رسالة رسمية</option>
+                <option value="email">بريد إلكتروني</option>
+                <option value="fax">فاكس</option>
+                <option value="notice">إشعار / إعلام</option>
+                <option value="other">أخرى</option>
+              </select>
+            </FormField>
+            <FormField label="الاتجاه" htmlFor="corr-dir">
+              <select id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
+                value={corrForm.direction} onChange={e => setCorrForm(f => ({ ...f, direction: e.target.value }))}>
+                <option value="outgoing">صادر (من المكتب)</option>
+                <option value="incoming">وارد (من الحريف)</option>
+              </select>
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="التاريخ *" htmlFor="corr-date">
+              <Input id="corr-date" type="date" className={inputCls} dir="ltr"
+                value={corrForm.date} onChange={e => setCorrForm(f => ({ ...f, date: e.target.value }))} />
+            </FormField>
+            <FormField label="الحالة" htmlFor="corr-status">
+              <select id="corr-status" className={inputCls + " px-3 cursor-pointer"}
+                value={corrForm.status} onChange={e => setCorrForm(f => ({ ...f, status: e.target.value }))}>
+                <option value="draft">مسودة</option>
+                <option value="sent">مُرسلة</option>
+                <option value="received">مُستلمة</option>
+                <option value="acknowledged">مُؤكدة</option>
+              </select>
+            </FormField>
+          </div>
+
+          {cases.filter(c => !c.archivedAt).length > 0 && (
+            <FormField label="القضية المرتبطة" htmlFor="corr-case">
+              <select id="corr-case" className={inputCls + " px-3 cursor-pointer"}
+                value={corrForm.caseId} onChange={e => setCorrForm(f => ({ ...f, caseId: e.target.value }))}>
+                <option value="">بدون قضية (اختياري)</option>
+                {cases.filter(c => !c.archivedAt).map(c => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
+
+          <FormField label="الموضوع *" htmlFor="corr-subject">
+            <Input id="corr-subject" placeholder="موضوع المراسلة..." className={inputCls}
+              value={corrForm.subject} onChange={e => setCorrForm(f => ({ ...f, subject: e.target.value }))} autoFocus />
+          </FormField>
+
+          <FormField label="رقم المرجع" htmlFor="corr-ref">
+            <Input id="corr-ref" placeholder="مثال: مراسلة رقم 045/2026" className={inputCls} dir="ltr"
+              value={corrForm.reference} onChange={e => setCorrForm(f => ({ ...f, reference: e.target.value }))} />
+          </FormField>
+
+          <FormField label="الملاحظات / المحتوى" htmlFor="corr-content">
+            <SmartTextarea id="corr-content" rows={3}
+              placeholder="ملخص أو محتوى المراسلة..."
+              aiContext="مراسلة رسمية"
+              value={corrForm.content}
+              onChange={v => setCorrForm(f => ({ ...f, content: v }))} />
+          </FormField>
+
+          <div className="flex gap-3 pt-2">
+            <Button className="flex-1"
+              disabled={savingCorr || !corrForm.subject.trim() || !corrForm.date}
+              onClick={async () => {
+                setSavingCorr(true);
+                try {
+                  const r = await authFetch(`${BASE}/api/correspondances`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                      clientId: String(clientId),
+                      caseId: corrForm.caseId || "",
+                      type: corrForm.type,
+                      direction: corrForm.direction,
+                      date: corrForm.date,
+                      subject: corrForm.subject.trim(),
+                      content: corrForm.content,
+                      reference: corrForm.reference,
+                      status: corrForm.status,
+                    }),
+                  });
+                  if (r.ok) {
+                    const reloaded = await authFetch(`${BASE}/api/correspondances?clientId=${clientId}`);
+                    if (reloaded.ok) setCorresp(await reloaded.json());
+                    // reset tabLoaded so next visit reloads
+                    setCorrModal(false);
+                  }
+                } finally {
+                  setSavingCorr(false);
+                }
+              }}>
+              {savingCorr
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> جارٍ الحفظ...</>
+                : <><Send className="h-4 w-4" /> حفظ المراسلة</>}
+            </Button>
+            <Button variant="outline" onClick={() => setCorrModal(false)} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>
