@@ -66,7 +66,7 @@ interface ClientEvent {
 }
 
 interface CaseRow { id: number; title: string; status: string; court: string | null; caseNumber: string | null; archivedAt: string | null; createdAt: string; }
-interface InvoiceRow { id: number; description: string; amount: string; status: string; dueDate: string | null; createdAt: string; }
+interface InvoiceRow { id: number; invoiceNumber: string | null; description: string | null; netToPay: string; balanceDue: string; amountPaid: string; status: string; dueDate: string | null; createdAt: string; }
 interface DocRow { id: number; name: string; fileType: string | null; caseId: number | null; url: string | null; createdAt: string; }
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
@@ -245,9 +245,9 @@ export default function ClientPage() {
 
   const activeCases = cases.filter(c => !c.archivedAt);
   const archivedCases = cases.filter(c => !!c.archivedAt);
-  const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
-  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + Number(i.amount ?? 0), 0);
-  const balance = totalInvoiced - totalPaid;
+  const totalInvoiced = invoices.reduce((s, i) => s + Number(i.netToPay ?? 0), 0);
+  const totalPaid = invoices.reduce((s, i) => s + Number(i.amountPaid ?? 0), 0);
+  const balance = invoices.reduce((s, i) => s + Number(i.balanceDue ?? 0), 0);
 
   if (loading) return <SkeletonClientPage tabs={7} />;
 
@@ -487,19 +487,29 @@ export default function ClientPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/30 text-right">
-                      <th className="px-4 py-3 font-semibold">الوصف</th>
-                      <th className="px-4 py-3 font-semibold hidden md:table-cell">المبلغ (د.ت)</th>
+                      <th className="px-4 py-3 font-semibold">رقم الفاتورة</th>
+                      <th className="px-4 py-3 font-semibold hidden md:table-cell">الصافي (د.ت)</th>
+                      <th className="px-4 py-3 font-semibold hidden sm:table-cell">الرصيد</th>
                       <th className="px-4 py-3 font-semibold">الحالة</th>
-                      <th className="px-4 py-3 font-semibold hidden sm:table-cell">تاريخ الاستحقاق</th>
+                      <th className="px-4 py-3 font-semibold hidden lg:table-cell">تاريخ الاستحقاق</th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoices.map(inv => (
-                      <tr key={inv.id} className="border-t border-border hover:bg-muted/20">
-                        <td className="px-4 py-3">{inv.description || "—"}</td>
-                        <td className="px-4 py-3 hidden md:table-cell font-mono">{Number(inv.amount).toFixed(3)}</td>
+                      <tr key={inv.id}
+                        className="border-t border-border hover:bg-muted/20 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/billing/${inv.id}`)}>
+                        <td className="px-4 py-3 font-mono text-primary font-semibold group-hover:underline">
+                          {inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`}
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell font-mono">{Number(inv.netToPay).toFixed(3)}</td>
+                        <td className="px-4 py-3 hidden sm:table-cell font-mono">
+                          <span className={Number(inv.balanceDue) > 0 ? "text-amber-400 font-semibold" : "text-muted-foreground"}>
+                            {Number(inv.balanceDue).toFixed(3)}
+                          </span>
+                        </td>
                         <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
-                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{fmt(inv.dueDate)}</td>
+                        <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{fmt(inv.dueDate)}</td>
                       </tr>
                     ))}
                   </tbody>
