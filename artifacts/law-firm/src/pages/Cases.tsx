@@ -78,10 +78,9 @@ export default function Cases() {
         </div>
         <div className="flex gap-2">
           {viewArchived ? (
-            <Button size="sm" onClick={() => setViewArchived(false)} className="gap-2">
-              <ArrowRight className="h-4 w-4" />
-              رجوع
-            </Button>
+            <button onClick={() => setViewArchived(false)} className="p-2 rounded-xl hover:bg-muted transition-colors shrink-0" title="رجوع">
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </button>
           ) : (
             <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
               <Archive className="h-4 w-4" />
