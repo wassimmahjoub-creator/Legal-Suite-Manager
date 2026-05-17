@@ -3,6 +3,7 @@ import { Mic, MicOff, Sparkles, RotateCcw } from "lucide-react";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
+import { FEATURE_DICTATION } from "@/config/features";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -68,11 +69,11 @@ export function SmartTextarea({
           className={cn(
             "w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm",
             "focus:outline-none focus:ring-1 focus:ring-primary resize-none",
-            "pl-10",
+            FEATURE_DICTATION && supported ? "pl-10" : "",
             className
           )}
         />
-        {supported && (
+        {FEATURE_DICTATION && supported && (
           <button
             type="button"
             onClick={toggle}

@@ -14,6 +14,7 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { useAuth } from "@/context/AuthContext";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
+import { FEATURE_DICTATION } from "@/config/features";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -52,7 +53,7 @@ const NAV_ADMIN = [
   { href: "/users",           label: "إدارة المستخدمين", icon: Users        },
   { href: "/subscription",    label: "الاشتراك",          icon: CreditCard   },
   { href: "/settings",        label: "الإعدادات",         icon: SettingsIcon },
-  { href: "/voice-dictation", label: "الإملاء الصوتي",   icon: Mic          },
+  ...(FEATURE_DICTATION ? [{ href: "/voice-dictation", label: "الإملاء الصوتي", icon: Mic }] : []),
 ];
 
 /* Deep system items — low frequency, nested deeper */

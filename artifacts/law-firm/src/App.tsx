@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,6 +50,12 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function Redirect({ to }: { to: string }) {
+  const [, navigate] = useLocation();
+  useEffect(() => { navigate(to, { replace: true }); }, [to]);
+  return null;
+}
+
 function Router() {
   const { user, loading, hasUsers } = useAuth();
 
@@ -80,6 +87,11 @@ function Router() {
       </Route>
       <Route path="/pricing">
         <Pricing />
+      </Route>
+
+      {/* Legacy / alias redirects */}
+      <Route path="/adversaries">
+        <Redirect to="/opponents" />
       </Route>
 
       {/* Auth gate */}

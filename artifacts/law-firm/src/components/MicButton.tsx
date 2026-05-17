@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Mic, MicOff } from "lucide-react";
 import { useSpeechInput } from "@/hooks/useSpeechInput";
 import { cn } from "@/lib/utils";
+import { FEATURE_DICTATION } from "@/config/features";
 
 interface MicButtonProps {
   onResult: (text: string) => void;
@@ -15,6 +16,7 @@ export function MicButton({ onResult, className }: MicButtonProps) {
   );
   const { listening, supported, toggle } = useSpeechInput({ onResult: appendResult });
 
+  if (!FEATURE_DICTATION) return null;
   if (!supported) return null;
 
   return (
