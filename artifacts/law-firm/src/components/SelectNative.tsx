@@ -29,6 +29,7 @@ interface SelectNativeProps {
 export function SelectNative({ value, onChange, children, className, id }: SelectNativeProps) {
   const options = extractOptions(children);
   const internal = value === "" ? EMPTY : value;
+  const selectedLabel = options.find(o => o.value === value)?.label;
 
   return (
     <Select
@@ -36,7 +37,7 @@ export function SelectNative({ value, onChange, children, className, id }: Selec
       onValueChange={v => onChange({ target: { value: v === EMPTY ? "" : v } })}
     >
       <SelectTrigger id={id} className={cn("cursor-pointer", className)}>
-        <SelectValue />
+        <SelectValue placeholder="—">{selectedLabel}</SelectValue>
       </SelectTrigger>
       <SelectContent className="z-[10000]">
         {options.map(opt => (
