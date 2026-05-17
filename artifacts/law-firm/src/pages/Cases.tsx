@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Eye, Filter, Briefcase, Archive, Hash, ArrowRight } from "lucide-react";
+import { Plus, Search, Filter, Briefcase, Archive, Hash, ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,7 +147,6 @@ export default function Cases() {
                 <TableHead className="text-start py-3 font-semibold">الحالة</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">الجلسة القادمة</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">المرحلة</TableHead>
-                <TableHead className="text-center py-3 font-semibold w-16">عرض</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,7 +161,7 @@ export default function Cases() {
                 : filteredCases?.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-0">
+                    <TableCell colSpan={7} className="py-0">
                       <EmptyState
                         illustration={<EmptyCasesIllustration />}
                         title={viewArchived ? "لا توجد قضايا مؤرشفة" : "لا توجد قضايا بعد"}
@@ -204,14 +203,6 @@ export default function Cases() {
                       {c.procedureStage ? (
                         <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full">{c.procedureStage}</span>
                       ) : "—"}
-                    </TableCell>
-                    <TableCell className="py-3 text-center">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/cases/${c.id}`); }}
-                        className="inline-flex items-center justify-center p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
                     </TableCell>
                   </TableRow>
                 ))
