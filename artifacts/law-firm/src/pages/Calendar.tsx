@@ -267,7 +267,27 @@ export default function CalendarView() {
   const typeColor = (t: string) => TYPE_COLORS[t] ?? "bg-primary";
   const statusLabel = (s: string | null) => LEGAL_STATUSES.find(x => x.value === s)?.label ?? s ?? "";
 
-  const grouped = events
+  const listEvents = events.filter(e => {
+    const d = new Date(e.date);
+    if (viewMode === "day") {
+      return d.getFullYear() === currentDate.getFullYear()
+        && d.getMonth() === currentDate.getMonth()
+        && d.getDate() === currentDate.getDate();
+    }
+    if (viewMode === "week") {
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+      return d >= startOfWeek && d <= endOfWeek;
+    }
+    return d.getFullYear() === currentDate.getFullYear()
+      && d.getMonth() === currentDate.getMonth();
+  });
+
+  const grouped = listEvents
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce((acc, e) => {
