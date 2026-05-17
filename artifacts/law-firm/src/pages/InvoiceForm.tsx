@@ -270,7 +270,7 @@ export default function InvoiceForm() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">بنود الفاتورة</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setLines(ls => [...ls, EMPTY_LINE()])}
+                <Button size="sm" onClick={() => setLines(ls => [...ls, EMPTY_LINE()])}
                   className="gap-1.5 h-8 text-xs">
                   <Plus className="h-3.5 w-3.5" /> إضافة بند
                 </Button>
