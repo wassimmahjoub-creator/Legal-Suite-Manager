@@ -75,6 +75,8 @@ export default function CaseDetail() {
   const [relForm, setRelForm] = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
   const [activeTab, setActiveTab] = useState("procedures");
+  const [noteModal, setNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -399,20 +401,42 @@ export default function CaseDetail() {
         {/* OVERVIEW */}
         {activeTab === "overview" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">ملاحظات الملف</h3>
+              <Button size="sm" onClick={() => { setNoteText(""); setNoteModal(true); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />إضافة ملاحظة</Button>
+            </div>
             {caseData.description && (
               <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">الوصف</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl">{caseData.description}</p></div>
             )}
             {caseData.notes && (
-              <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">ملاحظات</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl">{caseData.notes}</p></div>
+              <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">ملاحظات</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl whitespace-pre-wrap">{caseData.notes}</p></div>
             )}
             {!caseData.description && !caseData.notes && (
-              <div className="text-center py-10 text-muted-foreground"><StickyNote className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد ملاحظات</p></div>
+              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><StickyNote className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد ملاحظات</p></div>
             )}
           </CardContent></Card>
         )}
 
         </div>
       </div>
+
+      {/* MODAL: Add Note */}
+      <Modal open={noteModal} onClose={() => setNoteModal(false)} title="إضافة ملاحظة">
+        <div className="space-y-4">
+          <FormField label="الملاحظة *" htmlFor="ov-note">
+            <SmartTextarea id="ov-note" value={noteText} onChange={setNoteText} rows={5} aiContext="ملاحظة على قضية قانونية" placeholder="أضف ملاحظتك هنا..." />
+          </FormField>
+          <div className="flex gap-3">
+            <Button className="flex-1" disabled={saving || !noteText.trim()} onClick={() => withSave(async () => {
+              const existing = caseData?.notes ?? "";
+              const appended = existing ? `${existing}\n\n${noteText.trim()}` : noteText.trim();
+              await authFetch(`${BASE}/api/cases/${id}`, { method: "PATCH", body: JSON.stringify({ notes: appended }) });
+              setNoteModal(false);
+            }, () => refetch().then(() => {}))}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => setNoteModal(false)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* MODAL: Procedure */}
       <Modal open={modal === "procedure"} onClose={() => setModal(null)} title="إضافة إجراء قانوني">
