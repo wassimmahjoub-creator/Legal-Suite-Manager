@@ -73,7 +73,7 @@ export default function Documents() {
           <EmptyState
             illustration={<EmptyDocumentsIllustration />}
             title="لا توجد وثائق"
-            description="ارفع عقودًا، محاضر جلسات أو أي وثيقة متعلقة بالقضية وستظهر هنا"
+            description="ارفع عقودًا أو محاضر جلسات — ستظهر هنا فور رفعها بالضغط على «رفع وثيقة» أعلاه"
           />
         </div>
       ) : (

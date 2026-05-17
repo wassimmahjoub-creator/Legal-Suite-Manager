@@ -7,6 +7,8 @@ import { Modal, FormField } from "@/components/Modal";
 import { FilePen, Plus, Pencil, Trash2, Copy, Download, Wand2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SmartTextarea } from "@/components/SmartTextarea";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -125,10 +127,12 @@ export default function Templates() {
           {[1,2,3].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <FilePen className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p className="mb-4">لا توجد نماذج بعد</p>
-          <Button variant="outline" onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> أضف أول نموذج</Button>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyDocumentsIllustration />}
+            title="لا توجد نماذج بعد"
+            description="أنشئ قوالب عقودك ومراسلاتك — ستظهر هنا فور إنشائها بالضغط على «+ نموذج جديد» أعلاه"
+          />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

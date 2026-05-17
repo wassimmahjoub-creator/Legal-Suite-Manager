@@ -418,7 +418,7 @@ export default function CalendarView() {
               <EmptyState
                 illustration={<EmptyCalendarIllustration />}
                 title="لا مواعيد لهذه الفترة"
-                description="أضف جلسة، موعدًا أو تذكيرًا وسيظهر تلقائيًا في الرزنامة"
+                description="أضف جلسة أو موعدًا — سيظهر هنا فور إضافته بالضغط على «+ موعد جديد» أعلاه"
               />
             </div>
           ) : (

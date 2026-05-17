@@ -3,6 +3,7 @@ import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
@@ -177,13 +178,12 @@ export default function Correspondances() {
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="border-dashed border-border">
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <Mail className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">لا توجد مراسلات</p>
-            <p className="text-sm mt-1">أضف مراسلة جديدة للبدء</p>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            title="لا توجد مراسلات بعد"
+            description="أضف رسائل، فاكسات أو إنذارات رسمية — ستظهر هنا فور إضافتها بالضغط على الزر أعلاه"
+          />
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(c => {

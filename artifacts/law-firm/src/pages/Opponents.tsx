@@ -92,7 +92,7 @@ export default function Opponents() {
           <EmptyState
             illustration={<EmptyClientsIllustration />}
             title="لا خصوم مسجلين"
-            description="سيظهر الخصوم تلقائيًا عند إنشاء القضايا، أو يمكنك إضافتهم يدويًا"
+            description="سيظهر الخصوم تلقائيًا عند ربطهم بالقضايا — أو أضفهم يدويًا بالضغط على «+ خصم جديد» أعلاه"
           />
         </div>
       ) : (

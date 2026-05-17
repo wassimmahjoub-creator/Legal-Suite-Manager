@@ -139,7 +139,7 @@ export default function Clients() {
           <EmptyState
             illustration={<EmptyClientsIllustration />}
             title="لا حرفاء بعد"
-            description="أضف حرفاءك واحدًا واحدًا وتتبع ملفاتهم وفواتيرهم من مكان واحد"
+            description="أضف حريفك الأول — سيظهر هنا فور إضافته بالضغط على «+ حريف جديد» أعلاه"
           />
         </div>
       ) : (

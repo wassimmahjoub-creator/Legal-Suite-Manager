@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { MessageSquare, Plus, Pencil, Trash2, User, Calendar, CheckCircle2, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -90,9 +91,11 @@ export default function Consultations() {
       {loading ? (
         <SkeletonTable rows={5} cols={4} />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p>لا توجد استشارات</p>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            title="لا توجد استشارات بعد"
+            description="سجّل استشاراتك القانونية ومداخيلها — ستظهر هنا فور إضافتها بالضغط على «+ استشارة جديدة» أعلاه"
+          />
         </div>
       ) : (
         <div className="space-y-3">

@@ -3,6 +3,8 @@ import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Money } from "@/components/Money";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { Landmark, Plus, Pencil, Trash2, CreditCard } from "lucide-react";
@@ -57,7 +59,13 @@ export default function BankAccounts() {
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1,2].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
       ) : data.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground"><Landmark className="h-12 w-12 mx-auto mb-3 opacity-20" /><p>لا توجد حسابات بنكية</p></div>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyInvoicesIllustration />}
+            title="لا توجد حسابات بنكية بعد"
+            description="أضف حساباتك وتتبع أرصدتها — ستظهر هنا فور إضافتها بالضغط على الزر أعلاه"
+          />
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.map(a => (

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -80,7 +81,12 @@ export default function Communications() {
       {loading ? (
         <SkeletonTable rows={5} cols={5} />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground"><PhoneCall className="h-12 w-12 mx-auto mb-3 opacity-20" /><p>لا توجد اتصالات</p></div>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            title="لا توجد اتصالات بعد"
+            description="سجّل مكالماتك واجتماعاتك مع الحرفاء — ستظهر هنا فور تسجيلها بالضغط على الزر أعلاه"
+          />
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(c => {

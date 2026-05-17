@@ -82,8 +82,9 @@ export default function LegalConfig() {
           {loading ? (
             <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
           ) : categoryItems.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-2xl">
-              <p className="mb-3">لا توجد عناصر في هذه الفئة</p>
+            <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-2xl px-4">
+              <p className="font-medium text-foreground/70 mb-1">لا توجد عناصر في هذه الفئة</p>
+              <p className="text-sm mb-3">ستظهر هنا فور إضافتها بالضغط على الزر أدناه</p>
               <Button variant="outline" size="sm" onClick={openNew} className="gap-1"><Plus className="h-3.5 w-3.5" />أضف عنصراً</Button>
             </div>
           ) : (

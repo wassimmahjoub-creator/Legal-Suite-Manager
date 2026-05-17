@@ -148,7 +148,7 @@ export default function Billing() {
                       <EmptyState
                         illustration={<EmptyInvoicesIllustration />}
                         title="لا فواتير بعد"
-                        description="أصدر فاتورتك الأولى انطلاقًا من قضية أو حريف موجود وتتبع مستحقاتك"
+                        description="أصدر فاتورتك الأولى — ستظهر هنا فور إنشائها بالضغط على «+ فاتورة جديدة» أعلاه"
                       />
                     </TableCell>
                   </TableRow>
