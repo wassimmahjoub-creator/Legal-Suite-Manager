@@ -15,6 +15,8 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
 import { CourtSelect } from "@/components/CourtSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyCasesIllustration } from "@/components/illustrations/EmptyCases";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -156,11 +158,18 @@ export default function Cases() {
                 : filteredCases?.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-40 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        {viewArchived ? <Archive className="h-10 w-10 opacity-20" /> : <Briefcase className="h-10 w-10 opacity-20" />}
-                        <p>{viewArchived ? "لا توجد قضايا مؤرشفة" : "لم يتم العثور على قضايا"}</p>
-                      </div>
+                    <TableCell colSpan={8} className="py-0">
+                      <EmptyState
+                        illustration={<EmptyCasesIllustration />}
+                        title={viewArchived ? "لا توجد قضايا مؤرشفة" : "لا توجد قضايا بعد"}
+                        description={viewArchived
+                          ? "لم يتم أرشفة أي قضية بعد"
+                          : "ابدأ بإنشاء قضيتك الأولى وتتبع ملفاتك القانونية بسهولة"}
+                        primaryAction={viewArchived ? undefined : {
+                          label: "+ إنشاء قضية",
+                          onClick: openNewModal,
+                        }}
+                      />
                     </TableCell>
                   </TableRow>
                 )

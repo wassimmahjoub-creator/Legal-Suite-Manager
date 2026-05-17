@@ -9,6 +9,8 @@ import "@/styles/big-calendar.css";
 
 import { authFetch } from "@/lib/authFetch";
 import { CourtSelect } from "@/components/CourtSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyCalendarIllustration } from "@/components/illustrations/EmptyCalendar";
 import { formatDateTN, formatDateLongTN, formatPeriodTitleTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -412,12 +414,13 @@ export default function CalendarView() {
               </div>
             ))
           ) : Object.keys(grouped).length === 0 ? (
-            <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
-              <CalendarIcon className="h-14 w-14 text-muted-foreground/20" />
-              <p className="text-muted-foreground">لا توجد مواعيد</p>
-              <Button variant="outline" onClick={() => openNew()} className="gap-2">
-                <Plus className="h-4 w-4" /> أضف موعدك الأول
-              </Button>
+            <div className="bg-card rounded-xl shadow-sm">
+              <EmptyState
+                illustration={<EmptyCalendarIllustration />}
+                title="لا مواعيد لهذه الفترة"
+                description="أضف جلسة، موعدًا أو تذكيرًا وسيظهر تلقائيًا في الرزنامة"
+                primaryAction={{ label: "+ موعد جديد", onClick: () => openNew() }}
+              />
             </div>
           ) : (
             Object.entries(grouped).map(([date, dayEvents]) => (

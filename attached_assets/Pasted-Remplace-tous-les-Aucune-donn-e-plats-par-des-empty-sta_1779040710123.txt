@@ -1,0 +1,69 @@
+Remplace tous les "Aucune donnée / لا توجد" plats par des empty states pédagogiques actionnables.
+
+COMPOSANT
+Crée src/components/ui/EmptyState.tsx :
+
+interface EmptyStateProps {
+  illustration?: ReactNode; // SVG ou icône
+  title: string;
+  description: string;
+  primaryAction?: { label: string; onClick: () => void; icon?: ReactNode };
+  secondaryAction?: { label: string; onClick: () => void; icon?: ReactNode };
+  helpLink?: { label: string; href: string };
+}
+
+Layout vertical centré, illustration en haut (160-200px), titre h3, description text-muted, boutons côte à côte, lien d'aide en bas en text-sm underline.
+
+ILLUSTRATIONS
+Crée src/components/illustrations/ avec un SVG simple par contexte :
+- EmptyCases.tsx (dossiers de justice empilés)
+- EmptyClients.tsx (silhouettes vides)
+- EmptyInvoices.tsx (facture)
+- EmptyCalendar.tsx (calendrier vide)
+- EmptyDocuments.tsx (dossier vide)
+
+Garde-les minimalistes, monochrome avec la couleur dorée du brand, sans librairie externe.
+
+CONTENUS PAR ÉCRAN
+Pour chaque liste, configure l'empty state avec ces messages (à raffiner via i18n) :
+
+Qadhiyat (Affaires) :
+- Titre AR : "لا توجد قضايا بعد" / FR : "Aucun dossier pour l'instant"
+- Description AR : "ابدأ بإنشاء قضيتك الأولى أو استورد قاعدة بياناتك الحالية" / FR : "Créez votre premier dossier ou importez votre base existante"
+- Action 1 : "+ إنشاء قضية / Nouveau dossier"
+- Action 2 : "📥 استيراد من Excel / Importer depuis Excel"
+- Help : "شاهد فيديو (60 ث) / Voir le tutoriel (60 s)"
+
+Hirif (Clients) :
+- Titre : "لا حرفاء بعد / Aucun client pour l'instant"
+- Description : "أضف حرفاءك واحدًا واحدًا أو استورد قائمة كاملة / Ajoutez vos clients un par un ou importez une liste complète"
+- Actions : Nouveau client, Importer
+
+Khusum (Adversaires) :
+- Titre : "لا خصوم مسجلين / Aucun adversaire enregistré"
+- Description : "سيظهر الخصوم تلقائيًا عند إنشاء قضايا أو يمكنك إضافتهم يدويًا / Les adversaires apparaîtront automatiquement à la création de dossiers, ou vous pouvez les ajouter manuellement"
+- Actions : Ajouter manuellement
+
+Mahakim (Juridictions) :
+- Titre : "قائمة المحاكم فارغة / Liste des juridictions vide"
+- Description : "تم تحميل المحاكم التونسية مسبقًا. أعد تشغيل الـ seed إذا كنت لا تراها / Les juridictions tunisiennes sont pré-chargées. Relancez le seed si vous ne les voyez pas"
+- Actions : Ajouter, Importer CSV
+
+Factures :
+- Titre : "لا فواتير بعد / Aucune facture émise"
+- Description : "أصدر فاتورتك الأولى من قضية أو حرف موجود / Émettez votre première facture depuis un dossier ou un client"
+- Action : Nouvelle facture
+
+Agenda (jour vide) :
+- Titre : "لا مواعيد لهذا اليوم / Aucun événement aujourd'hui"
+- Description : "أضف جلسة، موعدًا أو تذكيرًا / Ajoutez une audience, un rendez-vous ou un rappel"
+- Action : + Nouvel événement
+
+IMPLÉMENTATION
+Va dans chaque liste/table et ajoute :
+{data.length === 0 ? <EmptyState ... /> : <Table ... />}
+
+LIVRABLES :
+- <EmptyState /> + illustrations SVG
+- Diff de chaque page concernée (8 minimum)
+- Capture d'écran de 4 empty states en AR et en FR

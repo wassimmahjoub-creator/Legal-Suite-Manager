@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useListDocuments } from "@workspace/api-client-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,12 +69,13 @@ export default function Documents() {
           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
       ) : filtered?.length === 0 ? (
-        <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
-          <FileText className="h-14 w-14 text-muted-foreground/20" />
-          <p className="text-muted-foreground">لا توجد وثائق</p>
-          <Button variant="outline" onClick={() => setShowModal(true)} className="gap-2">
-            <Upload className="h-4 w-4" /> ارفع وثيقتك الأولى
-          </Button>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyDocumentsIllustration />}
+            title="لا توجد وثائق"
+            description="ارفع عقودًا، محاضر جلسات أو أي وثيقة متعلقة بالقضية وستظهر هنا"
+            primaryAction={{ label: "↑ رفع وثيقة", onClick: () => setShowModal(true) }}
+          />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

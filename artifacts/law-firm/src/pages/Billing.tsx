@@ -11,6 +11,8 @@ import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle }
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
 import { formatCurrency } from "@/lib/currency";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -142,14 +144,13 @@ export default function Billing() {
                 : filtered.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-40 text-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <TrendingUp className="h-10 w-10 opacity-20" />
-                        <p>لا توجد فواتير</p>
-                        <Button size="sm" variant="outline" onClick={() => navigate("/billing/new")} className="gap-1.5">
-                          <Plus className="h-3.5 w-3.5" /> إنشاء فاتورة
-                        </Button>
-                      </div>
+                    <TableCell colSpan={8} className="py-0">
+                      <EmptyState
+                        illustration={<EmptyInvoicesIllustration />}
+                        title="لا فواتير بعد"
+                        description="أصدر فاتورتك الأولى انطلاقًا من قضية أو حريف موجود وتتبع مستحقاتك"
+                        primaryAction={{ label: "+ فاتورة جديدة", onClick: () => navigate("/billing/new") }}
+                      />
                     </TableCell>
                   </TableRow>
                 )

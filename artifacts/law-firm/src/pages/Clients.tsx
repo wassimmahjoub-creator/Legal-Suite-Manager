@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/ui/skeletons";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -133,9 +135,13 @@ export default function Clients() {
           {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
-          <Users className="h-12 w-12 text-muted-foreground/20" />
-          <p className="text-muted-foreground">لم يتم العثور على حرفاء</p>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyClientsIllustration />}
+            title="لا حرفاء بعد"
+            description="أضف حرفاءك واحدًا واحدًا وتتبع ملفاتهم وفواتيرهم من مكان واحد"
+            primaryAction={{ label: "+ إضافة حريف", onClick: openNew }}
+          />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

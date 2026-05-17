@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 import {
   Building2, Plus, Pencil, Trash2, MapPin, Search,
   Filter, Upload, Download, ChevronDown, DatabaseZap,
@@ -260,14 +262,20 @@ export default function Courts() {
       {loading ? (
         <SkeletonTable rows={8} cols={4} />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Building2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p className="font-medium">لا توجد محاكم</p>
-          {data.length === 0 && (
-            <p className="text-sm mt-1">
-              اضغط &quot;تهيئة المحاكم الافتراضية&quot; لإضافة جميع المحاكم التونسية
-            </p>
-          )}
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyDocumentsIllustration />}
+            title="قائمة المحاكم فارغة"
+            description={data.length === 0
+              ? "المحاكم التونسية متاحة للتهيئة التلقائية — اضغط الزر أدناه لإضافتها دفعة واحدة"
+              : "لا توجد محاكم مطابقة للبحث"}
+            primaryAction={data.length === 0
+              ? { label: "تهيئة المحاكم الافتراضية", onClick: runSeed }
+              : { label: "+ إضافة محكمة", onClick: openNew }}
+            secondaryAction={data.length === 0
+              ? { label: "+ إضافة يدوية", onClick: openNew }
+              : undefined}
+          />
         </div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden">

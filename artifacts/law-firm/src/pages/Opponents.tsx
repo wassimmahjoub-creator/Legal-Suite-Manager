@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { Shield, Plus, Pencil, Trash2, Phone, MapPin, Briefcase, User } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import { SmartTextarea } from "@/components/SmartTextarea";
@@ -86,9 +88,13 @@ export default function Opponents() {
       {loading ? (
         <SkeletonTable rows={6} cols={4} />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Shield className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p>لا يوجد خصوم</p>
+        <div className="bg-card rounded-xl shadow-sm">
+          <EmptyState
+            illustration={<EmptyClientsIllustration />}
+            title="لا خصوم مسجلين"
+            description="سيظهر الخصوم تلقائيًا عند إنشاء القضايا، أو يمكنك إضافتهم يدويًا"
+            primaryAction={{ label: "+ إضافة خصم", onClick: openNew }}
+          />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
