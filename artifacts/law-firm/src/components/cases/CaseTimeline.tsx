@@ -453,8 +453,8 @@ export function CaseTimeline({ caseId }: { caseId: number }) {
 
   function handleSaved() {
     setShowModal(false);
+    // Increment count so useEffect fires fetchEvents() once — no direct call to avoid double fetch
     setTotalCount(c => (c ?? 0) + 1);
-    fetchEvents();
   }
 
   function handleFiltersChange(f: ActiveFilters) {
@@ -488,9 +488,9 @@ export function CaseTimeline({ caseId }: { caseId: number }) {
   // ── State 2 + 3 ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className={cn("flex items-center gap-2", isState3 ? "justify-between" : "justify-end")}>
-        {isState3 && (
+      {/* Header — always justify-between so the add button stays on the right and never shifts */}
+      <div className="flex items-center justify-between gap-2">
+        {isState3 ? (
           <Button variant="ghost" size="sm" onClick={() => setShowFilter(v => !v)}
             className={cn("gap-1.5 text-xs", showFilter && "bg-muted")}>
             <Filter className="h-3.5 w-3.5" />
@@ -499,6 +499,8 @@ export function CaseTimeline({ caseId }: { caseId: number }) {
               <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
             )}
           </Button>
+        ) : (
+          <div />
         )}
         <Button size="sm" onClick={() => setShowModal(true)} className="gap-1.5 text-xs">
           <Plus className="h-3.5 w-3.5" />
