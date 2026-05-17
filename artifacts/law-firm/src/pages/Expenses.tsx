@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Money } from "@/components/Money";
+import { formatDateTN } from "@/lib/date";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
@@ -162,7 +163,7 @@ export default function Expenses() {
                     return (
                       <tr key={e.id} className="hover:bg-muted/20 transition-colors">
                         <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
-                          {new Date(e.date).toLocaleDateString("ar-TN")}
+                          {formatDateTN(e.date)}
                         </td>
                         <td className="py-3 px-4 font-medium max-w-[160px] truncate">{e.case}</td>
                         <td className="py-3 px-4 w-[200px]">

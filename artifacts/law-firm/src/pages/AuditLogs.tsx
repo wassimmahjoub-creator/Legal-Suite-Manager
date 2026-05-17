@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTimeTN } from "@/lib/date";
 import { Input } from "@/components/ui/input";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,7 +103,7 @@ export default function AuditLogs() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{log.userName ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell max-w-[200px] truncate">{log.newValue ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap" dir="ltr">{new Date(log.createdAt).toLocaleString("ar-TN")}</td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTimeTN(log.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

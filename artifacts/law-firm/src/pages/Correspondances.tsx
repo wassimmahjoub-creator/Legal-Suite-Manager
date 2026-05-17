@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -214,7 +215,7 @@ export default function Correspondances() {
                           {c.clientName && <span>الحريف: <span className="text-foreground font-medium">{c.clientName}</span></span>}
                           {c.caseName  && <span>القضية: <span className="text-foreground">{c.caseName}</span></span>}
                           {c.reference && <span>المرجع: <span className="font-mono text-primary">{c.reference}</span></span>}
-                          <span>{new Date(c.date).toLocaleDateString("ar-TN")}</span>
+                          <span>{formatDateTN(c.date)}</span>
                         </div>
                         {c.content && <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{c.content}</p>}
                       </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Search, Briefcase, Users, Calendar, MessageSquare, X } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -136,7 +137,7 @@ export function GlobalSearch() {
                           <Calendar className="h-4 w-4 text-orange-400 shrink-0" />
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">{e.title}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(e.date).toLocaleDateString("ar-TN")}</p>
+                            <p className="text-xs text-muted-foreground">{formatDateTN(e.date)}</p>
                           </div>
                         </button>
                       ))}
@@ -151,7 +152,7 @@ export function GlobalSearch() {
                           <MessageSquare className="h-4 w-4 text-blue-400 shrink-0" />
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">{c.subject}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString("ar-TN")}</p>
+                            <p className="text-xs text-muted-foreground">{formatDateTN(c.date)}</p>
                           </div>
                         </button>
                       ))}

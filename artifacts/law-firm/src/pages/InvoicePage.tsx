@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -177,11 +178,11 @@ export default function InvoicePage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">تاريخ الإصدار</p>
-                <p>{inv.issueDate ? new Date(inv.issueDate + "T00:00:00").toLocaleDateString("ar-TN") : "—"}</p>
+                <p>{inv.issueDate ? formatDateTN(inv.issueDate) : "—"}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">تاريخ الاستحقاق</p>
-                <p>{inv.dueDate ? new Date(inv.dueDate + "T00:00:00").toLocaleDateString("ar-TN") : "—"}</p>
+                <p>{inv.dueDate ? formatDateTN(inv.dueDate) : "—"}</p>
               </div>
             </CardContent>
           </Card>
@@ -273,7 +274,7 @@ export default function InvoicePage() {
           {isLocked && (
             <Card className="border-none shadow-sm bg-muted/30">
               <CardContent className="pt-4 text-xs text-muted-foreground space-y-1">
-                <p>تاريخ الإصدار: {inv.issueDate ? new Date(inv.issueDate + "T00:00:00").toLocaleDateString("ar-TN") : "—"}</p>
+                <p>تاريخ الإصدار: {inv.issueDate ? formatDateTN(inv.issueDate) : "—"}</p>
                 <p className="font-mono text-primary">{inv.invoiceNumber}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <Lock className="h-3 w-3" />

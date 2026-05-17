@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Money } from "@/components/Money";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -160,7 +161,7 @@ export default function Subscription() {
               {org.trialEndDate && org.subscriptionStatus === "trial" && (
                 <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
-                  تنتهي التجربة: {new Date(org.trialEndDate).toLocaleDateString("ar-TN")}
+                  تنتهي التجربة: {formatDateTN(org.trialEndDate)}
                 </span>
               )}
             </div>
@@ -466,7 +467,7 @@ export default function Subscription() {
                 {billing.map(b => (
                   <tr key={b.id} className="border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="py-2.5 font-medium">{b.description}</td>
-                    <td className="py-2.5 text-muted-foreground">{new Date(b.createdAt).toLocaleDateString("ar-TN")}</td>
+                    <td className="py-2.5 text-muted-foreground">{formatDateTN(b.createdAt)}</td>
                     <td className="py-2.5 font-bold">{b.amount} {b.currency}</td>
                     <td className="py-2.5">
                       <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium",

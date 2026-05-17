@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Money } from "@/components/Money";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,7 @@ export default function Consultations() {
                     <p className="font-semibold">{c.subject}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                       {c.clientName && <span className="flex items-center gap-1"><User className="h-3 w-3" />{c.clientName}</span>}
-                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(c.date).toLocaleDateString("ar-TN")}</span>
+                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateTN(c.date)}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
+import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -160,7 +161,7 @@ export default function CaseDetail() {
                   {caseData.clientName && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />{caseData.clientName}</span>}
                   {caseData.court && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
                   {caseData.lawyer && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
-                  {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{new Date(caseData.nextHearing).toLocaleDateString("ar-TN")}</span>}
+                  {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDateTN(caseData.nextHearing)}</span>}
                   {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-orange-400"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
                   {c.opponentName && <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" />{c.opponentName}{c.opponentLawyer ? ` — ذ. ${c.opponentLawyer}` : ""}</span>}
                 </div>
@@ -232,8 +233,8 @@ export default function CaseDetail() {
                         {p.notes && <p className="text-sm text-muted-foreground mt-2">{p.notes}</p>}
                         {(p.startedAt || p.endedAt) && (
                           <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                            {p.startedAt && <span>البداية: {new Date(p.startedAt).toLocaleDateString("ar-TN")}</span>}
-                            {p.endedAt && <span>النهاية: {new Date(p.endedAt).toLocaleDateString("ar-TN")}</span>}
+                            {p.startedAt && <span>البداية: {formatDateTN(p.startedAt)}</span>}
+                            {p.endedAt && <span>النهاية: {formatDateTN(p.endedAt)}</span>}
                           </div>
                         )}
                       </div>
@@ -268,7 +269,7 @@ export default function CaseDetail() {
                           <div>
                             <p className={`font-semibold text-sm ${d.completedAt ? "line-through" : ""}`}>{d.title}</p>
                             <div className="flex items-center gap-3 text-xs mt-0.5">
-                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(d.dueDate).toLocaleDateString("ar-TN")}</span>
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateTN(d.dueDate)}</span>
                               {isOver && <span className="text-red-400 font-bold animate-pulse">متأخر!</span>}
                               <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${d.urgency === "critical" ? "bg-red-500/20 text-red-400" : d.urgency === "high" ? "bg-orange-500/20 text-orange-400" : "bg-muted text-muted-foreground"}`}>{d.urgency === "critical" ? "حرج" : d.urgency === "high" ? "عالٍ" : "عادي"}</span>
                             </div>
@@ -365,7 +366,7 @@ export default function CaseDetail() {
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       {n.createdBy && <span className="flex items-center gap-1"><User className="h-3 w-3" />{n.createdBy}</span>}
-                      <span dir="ltr">{new Date(n.createdAt).toLocaleDateString("ar-TN")}</span>
+                      <span>{formatDateTN(n.createdAt)}</span>
                     </div>
                   </div>
                 ))}

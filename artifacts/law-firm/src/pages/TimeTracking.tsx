@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { formatDateTN } from "@/lib/date";
 import { Money } from "@/components/Money";
 import { formatCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
@@ -181,7 +182,7 @@ export default function TimeTracking() {
               <tbody className="divide-y divide-border">
                 {filtered.map(e => (
                   <tr key={e.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4 text-muted-foreground">{new Date(e.date).toLocaleDateString("ar-TN")}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{formatDateTN(e.date)}</td>
                     <td className="py-3 px-4 font-medium max-w-[200px] truncate">{e.case}</td>
                     <td className="py-3 px-4 text-muted-foreground">{e.description}</td>
                     <td className="py-3 px-4 font-mono" dir="ltr">{e.hours.toFixed(2)}</td>

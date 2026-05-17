@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -270,7 +271,7 @@ export default function UserManagement() {
                     {inv.roleLabel}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    تنتهي: {new Date(inv.expiresAt).toLocaleDateString("ar-TN")}
+                    تنتهي: {formatDateTN(inv.expiresAt)}
                   </span>
                 </div>
               </div>

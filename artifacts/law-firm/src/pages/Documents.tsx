@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useListDocuments } from "@workspace/api-client-react";
+import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,7 +164,7 @@ export default function Documents() {
               <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
                 <span className="text-muted-foreground">تاريخ الرفع</span>
                 <span className="font-semibold">
-                  {viewDoc.createdAt ? new Date(viewDoc.createdAt).toLocaleDateString("ar-TN") : "—"}
+                  {viewDoc.createdAt ? formatDateTN(viewDoc.createdAt) : "—"}
                 </span>
               </div>
             </div>

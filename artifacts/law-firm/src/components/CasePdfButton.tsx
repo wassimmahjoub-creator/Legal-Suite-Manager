@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { pdf } from "@react-pdf/renderer";
+import { formatDateTN } from "@/lib/date";
 import { FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ export function CasePdfButton({ caseId, caseTitle, caseNumber }: Props) {
       if (!r.ok) throw new Error("fetch failed");
       const data = await r.json() as Omit<CasePdfProps, "lang" | "generatedAt">;
 
-      const generatedAt = new Date().toLocaleDateString(locale === "ar" ? "ar-TN" : "fr-FR");
+      const generatedAt = formatDateTN(new Date());
 
       const blob = await pdf(
         <CaseDocument
@@ -102,7 +103,7 @@ async function archiveDocument(
 ) {
   try {
     const label = caseNumber ?? caseTitle ?? `case-${caseId}`;
-    const name = `فيشة القضية — ${label} — ${new Date().toLocaleDateString("fr-FR")}`;
+    const name = `فيشة القضية — ${label} — ${formatDateTN(new Date())}`;
     await authFetch(`${BASE}/api/documents`, {
       method: "POST",
       body: JSON.stringify({ caseId: Number(caseId), name, fileType: "pdf", url: null }),

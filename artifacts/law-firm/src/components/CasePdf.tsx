@@ -2,6 +2,7 @@ import {
   Document, Page, Text, View, StyleSheet, Font,
 } from "@react-pdf/renderer";
 import { formatCurrency } from "@/lib/currency";
+import { formatDateTN } from "@/lib/date";
 import cairoRegular from "@fontsource/cairo/files/cairo-arabic-400-normal.woff2?url";
 import cairoBold from "@fontsource/cairo/files/cairo-arabic-700-normal.woff2?url";
 
@@ -204,8 +205,7 @@ const BORDER = "#d0d8e4";
 const fmt = (n: string | number | null | undefined) =>
   formatCurrency(typeof n === "string" ? parseFloat(n) : (n ?? 0), "fr");
 
-const fmtDate = (d: string | null | undefined) =>
-  d ? new Date(d + (d.length === 10 ? "T00:00:00" : "")).toLocaleDateString("fr-FR") : "—";
+const fmtDate = (d: string | null | undefined) => formatDateTN(d ?? null);
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +93,7 @@ export default function Communications() {
                     <p className="font-semibold text-sm">{c.summary}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                       <span>{t.label}</span>
-                      <span>{new Date(c.date).toLocaleDateString("ar-TN")}</span>
+                      <span>{formatDateTN(c.date)}</span>
                       {c.clientName && <span>• {c.clientName}</span>}
                       {c.caseName && <span>• {c.caseName}</span>}
                     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/currency";
+import { formatDateTN, formatDateLongTN } from "@/lib/date";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts,
@@ -120,7 +121,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold">لوحة القيادة</h1>
             <p className="text-muted-foreground text-sm">
-              {new Date().toLocaleDateString("ar-TN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              {formatDateLongTN(new Date())}
             </p>
           </div>
         </div>
@@ -350,7 +351,7 @@ export default function Dashboard() {
                         <div className="flex justify-between items-center mt-1">
                           <p className="text-xs text-muted-foreground truncate">{a.caseName}</p>
                           <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded shrink-0 mr-1">
-                            {new Date(a.dueDate).toLocaleDateString("ar-TN")}
+                            {formatDateTN(a.dueDate)}
                           </span>
                         </div>
                       </div>

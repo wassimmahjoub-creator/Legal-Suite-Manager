@@ -2,6 +2,7 @@ import {
   Document, Page, Text, View, StyleSheet,
   PDFDownloadLink,
 } from "@react-pdf/renderer";
+import { formatDateTN } from "@/lib/date";
 import { formatCurrency } from "@/lib/currency";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -77,7 +78,7 @@ const s = StyleSheet.create({
 
 function InvoiceDocument({ inv, cab }: { inv: Invoice; cab: CabinetSettings }) {
   const fmt = (n: number) => formatCurrency(n, "fr");
-  const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("fr-TN") : "—";
+  const fmtDate = (d: string | null) => formatDateTN(d);
   const cabName = cab.cabinetName ?? "Cabinet d'Avocats";
   const invNum = inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`;
 

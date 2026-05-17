@@ -8,6 +8,7 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "@/styles/big-calendar.css";
 
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN, formatDateLongTN, formatPeriodTitleTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,26 +99,7 @@ const EMPTY_FORM = {
 // ── Arabic period title ───────────────────────────────────────────────────────
 
 function formatPeriodTitle(date: Date, view: ViewMode): string {
-  try {
-    switch (view) {
-      case "day":
-        return format(date, "EEEE d MMMM yyyy", { locale: ar });
-      case "week": {
-        const start = startOfWeek(date, { weekStartsOn: 1 });
-        const end = addDays(start, 6);
-        if (start.getMonth() === end.getMonth()) {
-          return `${format(start, "d")}–${format(end, "d MMMM yyyy", { locale: ar })}`;
-        }
-        return `${format(start, "d MMM", { locale: ar })} – ${format(end, "d MMM yyyy", { locale: ar })}`;
-      }
-      case "month":
-        return format(date, "MMMM yyyy", { locale: ar });
-      default:
-        return format(date, "MMMM yyyy", { locale: ar });
-    }
-  } catch {
-    return format(date, "MMMM yyyy");
-  }
+  return formatPeriodTitleTN(date, view);
 }
 
 // ── Custom Toolbar (injected into react-big-calendar) ─────────────────────────
@@ -256,7 +238,7 @@ export default function CalendarView() {
         body: JSON.stringify({ date: newDate, ...(newTime ? { time: newTime } : {}) }),
       });
       if (!r.ok) throw new Error("API error");
-      setDndToast(`تم نقل "${event.title}" إلى ${format(new Date(start), "d MMM", { locale: ar })}`);
+      setDndToast(`تم نقل "${event.title}" إلى ${formatDateTN(new Date(start), true)}`);
       setTimeout(() => setDndToast(null), 3000);
     } catch {
       setEvents(prev);
@@ -286,9 +268,7 @@ export default function CalendarView() {
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce((acc, e) => {
-      const key = new Date(e.date + "T00:00:00").toLocaleDateString("ar-TN", {
-        weekday: "long", year: "numeric", month: "long", day: "numeric",
-      });
+      const key = formatDateLongTN(e.date);
       if (!acc[key]) acc[key] = [];
       acc[key].push(e);
       return acc;
@@ -488,7 +468,7 @@ export default function CalendarView() {
                               {event.postponedTo && (
                                 <div className="flex items-center gap-1.5 text-xs text-orange-400">
                                   <ChevronRight className="h-3 w-3" />
-                                  <span>مؤجل إلى: {new Date(event.postponedTo + "T00:00:00").toLocaleDateString("ar-TN")}</span>
+                                  <span>مؤجل إلى: {formatDateTN(event.postponedTo)}</span>
                                 </div>
                               )}
                             </div>

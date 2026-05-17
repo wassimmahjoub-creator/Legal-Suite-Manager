@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/lib/currency";
+import { formatDateTN } from "@/lib/date";
 import { useParams, useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
@@ -95,8 +96,7 @@ const TABS = [
 const EMPTY_CONTACT = { firstName: "", lastName: "", role: "", phone: "", email: "", isPrimary: false };
 
 function fmt(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("ar-TN");
+  return formatDateTN(d);
 }
 
 export default function ClientPage() {
@@ -763,7 +763,7 @@ function CasesTab({ cases, label, navigate }: { cases: CaseRow[]; label: string;
               </td>
               <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{c.court || "—"}</td>
               <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-              <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{new Date(c.createdAt).toLocaleDateString("ar-TN")}</td>
+              <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{formatDateTN(c.createdAt)}</td>
               <td className="py-3 px-2">
                 <ChevronRight className="h-4 w-4 text-muted-foreground rotate-180" />
               </td>

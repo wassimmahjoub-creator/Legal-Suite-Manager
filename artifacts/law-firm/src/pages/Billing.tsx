@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
+import { formatDateTN } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -185,7 +186,7 @@ export default function Billing() {
                       <TableCell className="py-3 text-sm hidden lg:table-cell">
                         {inv.dueDate ? (
                           <span className={isOverdue ? "text-red-500 font-semibold" : "text-muted-foreground"}>
-                            {new Date(inv.dueDate + "T00:00:00").toLocaleDateString("ar-TN")}
+                            {formatDateTN(inv.dueDate)}
                           </span>
                         ) : "—"}
                       </TableCell>
