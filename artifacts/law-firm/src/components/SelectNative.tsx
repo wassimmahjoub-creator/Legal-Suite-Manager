@@ -1,21 +1,5 @@
 import React from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-const EMPTY = "__empty__";
-
-interface OptionData { value: string; label: string; }
-
-function extractOptions(children: React.ReactNode): OptionData[] {
-  const opts: OptionData[] = [];
-  React.Children.forEach(children, child => {
-    if (React.isValidElement(child) && child.type === "option") {
-      const p = child.props as { value?: string; children?: React.ReactNode };
-      opts.push({ value: p.value ?? "", label: String(p.children ?? "") });
-    }
-  });
-  return opts;
-}
 
 interface SelectNativeProps {
   value: string;
@@ -26,29 +10,23 @@ interface SelectNativeProps {
   dir?: string;
 }
 
-export function SelectNative({ value, onChange, children, className, id }: SelectNativeProps) {
-  const options = extractOptions(children);
-  const internal = value === "" ? EMPTY : value;
-  const selectedLabel = options.find(o => o.value === value)?.label;
-
+export function SelectNative({ value, onChange, children, className, id, dir }: SelectNativeProps) {
   return (
-    <Select
-      value={internal}
-      onValueChange={v => onChange({ target: { value: v === EMPTY ? "" : v } })}
+    <select
+      id={id}
+      dir={dir}
+      value={value}
+      onChange={e => onChange({ target: { value: e.target.value } })}
+      className={cn(
+        "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm",
+        "focus:outline-none focus:ring-1 focus:ring-ring",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        "cursor-pointer appearance-none",
+        "[&>option]:bg-popover [&>option]:text-popover-foreground",
+        className
+      )}
     >
-      <SelectTrigger id={id} className={cn("cursor-pointer", className)}>
-        <SelectValue placeholder="—">{selectedLabel}</SelectValue>
-      </SelectTrigger>
-      <SelectContent className="z-[10000]">
-        {options.map(opt => (
-          <SelectItem
-            key={opt.value === "" ? EMPTY : opt.value}
-            value={opt.value === "" ? EMPTY : opt.value}
-          >
-            {opt.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      {children}
+    </select>
   );
 }
