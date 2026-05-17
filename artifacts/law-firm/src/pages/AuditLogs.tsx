@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
-import { formatDateTimeTN } from "@/lib/date";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
+import { DateDisplay } from "@/components/DateDisplay";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface AuditLog { id: number; entityType: string; entityId: number | null; action: string; oldValue: string | null; newValue: string | null; userName: string | null; ipAddress: string | null; createdAt: string; }
@@ -105,7 +105,7 @@ export default function AuditLogs() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{log.userName ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell max-w-[200px] truncate">{log.newValue ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTimeTN(log.createdAt)}</td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap"><DateDisplay date={log.createdAt} format="datetime" /></td>
                 </tr>
               ))}
             </tbody>

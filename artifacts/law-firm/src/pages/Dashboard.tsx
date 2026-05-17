@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/currency";
-import { formatDateTN, formatDateLongTN } from "@/lib/date";
+import { formatDateTN } from "@/lib/date";
+import { DateDisplay } from "@/components/DateDisplay";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts,
@@ -121,7 +122,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold">لوحة القيادة</h1>
             <p className="text-muted-foreground text-sm">
-              {formatDateLongTN(new Date())}
+              <DateDisplay date={new Date()} format="full" />
             </p>
           </div>
         </div>

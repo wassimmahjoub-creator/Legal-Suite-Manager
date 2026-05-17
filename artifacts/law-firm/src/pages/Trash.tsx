@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatCurrency } from "@/lib/currency";
-import { formatDateTimeTN } from "@/lib/date";
+import { DateDisplay } from "@/components/DateDisplay";
 import { Button } from "@/components/ui/button";
 import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,7 +48,7 @@ export default function Trash() {
             <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-xl border border-border">
               <div>
                 <p className="font-medium text-sm">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{formatDateTimeTN(item.deletedAt)}</p>
+                <p className="text-xs text-muted-foreground"><DateDisplay date={item.deletedAt} format="datetime" /></p>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => restore(entity, item.id)} className="gap-1.5 text-xs h-8">

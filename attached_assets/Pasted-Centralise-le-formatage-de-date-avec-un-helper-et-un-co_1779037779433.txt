@@ -1,0 +1,52 @@
+Centralise le formatage de date avec un helper et un composant uniques.
+
+HELPER
+Crée src/lib/date.ts en t'appuyant sur date-fns (ou dayjs si déjà utilisé) avec les locales fr et ar-TN.
+
+ATTENTION usage tunisien des mois en arabe :
+janvier=جانفي, février=فيفري, mars=مارس, avril=أفريل, mai=ماي, juin=جوان, juillet=جويلية, août=أوت, septembre=سبتمبر, octobre=أكتوبر, novembre=نوفمبر, décembre=ديسمبر
+
+(C'est différent du standard ar-EG qui dit مايو au lieu de ماي. Si date-fns ne supporte pas la variante tunisienne, override les noms de mois via un dictionnaire local.)
+
+Jours :
+الأحد، الإثنين، الثلاثاء، الأربعاء، الخميس، الجمعة، السبت
+
+Signatures :
+export function formatDate(date: Date | string, locale: 'fr' | 'ar', format: DateFormat): string;
+
+type DateFormat = 'full' | 'long' | 'short' | 'time' | 'datetime' | 'relative';
+
+Exemples attendus pour le 14 mai 2026 à 14h30 :
+- full FR : "vendredi 14 mai 2026"
+- full AR : "الجمعة 14 ماي 2026"
+- long FR : "14 mai 2026"
+- long AR : "14 ماي 2026"
+- short FR : "14/05/2026"
+- short AR : "14/05/2026"
+- time : "14:30"
+- datetime FR : "vendredi 14 mai 2026 à 14:30"
+- datetime AR : "الجمعة 14 ماي 2026 الساعة 14:30"
+- relative FR : "dans 3 jours" / "il y a 2 heures"
+- relative AR : "بعد 3 أيام" / "منذ ساعتين"
+
+COMPOSANT
+<DateDisplay date={...} format="full" /> qui lit la locale via context i18n et appelle formatDate.
+
+MIGRATION
+1. grep des regex de date dans le code : /\d{4}[\/\-]\d{2}[\/\-]\d{2}/ et toutes les utilisations de toLocaleDateString.
+2. Remplace par <DateDisplay /> avec le format approprié au contexte :
+   - Audience dans agenda → format="full"
+   - Liste de factures → format="long"
+   - Timestamps de journal → format="datetime"
+   - Compteurs ("il y a X") → format="relative"
+   - Champs de formulaire → format="short" (pour input cohérence)
+
+TESTS
+Au moins 12 tests unitaires couvrant chaque format × chaque locale.
+
+LIVRABLES :
+- src/lib/date.ts avec dictionnaire mois TN
+- <DateDisplay />
+- Tests
+- Diff de migration
+- Capture avant/après sur agenda + détail dossier
