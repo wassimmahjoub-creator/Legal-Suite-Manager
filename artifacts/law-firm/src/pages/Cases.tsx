@@ -78,7 +78,6 @@ export default function Cases() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant={viewArchived ? "default" : "outline"}
             size="sm"
             onClick={() => setViewArchived(v => !v)}
             className="gap-2"
