@@ -63,14 +63,34 @@ export default function InvoiceForm() {
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
     authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then((list: CaseOption[]) => {
       setCases(list);
-      // Pre-fill caseId from query param on new invoice
+      // Pre-fill from query params on new invoice
       if (!isEdit) {
-        const params = new URLSearchParams(window.location.search);
-        const qCaseId = params.get("caseId");
+        const qp = new URLSearchParams(window.location.search);
+        const qCaseId   = qp.get("caseId");
+        const qClientId = qp.get("clientId");
+        const qDesc     = qp.get("desc");
+        const qAmount   = qp.get("amount");
+
         if (qCaseId) {
           setCaseId(qCaseId);
-          const matched = list.find(c => String(c.id) === qCaseId);
-          if (matched) setClientId(String(matched.clientId));
+          // derive clientId from case list if not explicitly provided
+          if (!qClientId) {
+            const matched = list.find(c => String(c.id) === qCaseId);
+            if (matched) setClientId(String(matched.clientId));
+          }
+        }
+        if (qClientId) setClientId(qClientId);
+
+        // Pre-fill first line with description and/or amount from case
+        if (qDesc || qAmount) {
+          setLines([{
+            _id: Math.random().toString(36).slice(2),
+            description: qDesc ? decodeURIComponent(qDesc) : "",
+            unit: "forfait",
+            quantity: "1",
+            unitPriceHt: qAmount ?? "0",
+            vatRate: "19",
+          }]);
         }
       }
     });
