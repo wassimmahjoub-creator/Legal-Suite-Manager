@@ -1,5 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
 import { formatDateTN } from "@/lib/date";
@@ -23,6 +23,7 @@ import {
   Archive, Hash, Layers, Shield, Pencil, DollarSign,
   BarChart2, Timer, FolderOpen, Receipt, ArrowUpRight,
   ExternalLink, Scale, Upload, Banknote, TrendingDown,
+  Play, Pause, Square, TrendingUp,
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
@@ -86,6 +87,14 @@ const EXPENSE_TYPES = [
   { value: "other",       ar: "أخرى",                   fr: "Autres"                 },
 ];
 type ExpenseItem = { id: number; date: string; typeValue: string; description: string; amount: number; reimbursable: boolean; };
+type TimeEntry   = { id: number; date: string; description: string; hours: number; rate: number; billable: boolean; };
+
+function fmtTime(secs: number) {
+  const h = Math.floor(secs / 3600).toString().padStart(2, "0");
+  const m = Math.floor((secs % 3600) / 60).toString().padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
 const URGENCY_COLORS: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/20",
   high:     "bg-orange-500/10 text-orange-400 border-orange-500/20",
@@ -162,6 +171,15 @@ export default function CaseDetail() {
   const [showExpModal, setShowExpModal] = useState(false);
   const [expForm, setExpForm] = useState({ date: new Date().toISOString().slice(0, 10), typeValue: EXPENSE_TYPES[0].value, description: "", amount: "", reimbursable: true });
 
+  // Time tracking state
+  const [timeEntries,   setTimeEntries]   = useState<TimeEntry[]>([]);
+  const [timeRunning,   setTimeRunning]   = useState(false);
+  const [timeElapsed,   setTimeElapsed]   = useState(0);
+  const [timerDesc,     setTimerDesc]     = useState("");
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [timeForm, setTimeForm] = useState({ date: new Date().toISOString().slice(0, 10), description: "", hours: "", rate: "150", billable: true });
+  const timeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Forms
   const [oppForm,  setOppForm]  = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" });
   const [procForm, setProcForm] = useState({ stage: "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" });
@@ -212,6 +230,15 @@ export default function CaseDetail() {
     authFetch(`${BASE}/api/cases`).then(r => { if (r.ok) r.json().then(setAllCases); });
     authFetch(`${BASE}/api/auth/users`).then(r => { if (r.ok) r.json().then(setAllUsers); });
   }, [id]);
+
+  useEffect(() => {
+    if (timeRunning) {
+      timeInterval.current = setInterval(() => setTimeElapsed(e => e + 1), 1000);
+    } else {
+      if (timeInterval.current) clearInterval(timeInterval.current);
+    }
+    return () => { if (timeInterval.current) clearInterval(timeInterval.current); };
+  }, [timeRunning]);
 
   async function withSave(fn: () => Promise<void>, reloader: () => Promise<void>) {
     setSaving(true); await fn(); await reloader(); setSaving(false); setModal(null);
@@ -701,6 +728,134 @@ export default function CaseDetail() {
     );
   }
 
+  function renderTime() {
+    const totalHours   = timeEntries.reduce((s, e) => s + e.hours, 0);
+    const billableHrs  = timeEntries.filter(e => e.billable).reduce((s, e) => s + e.hours, 0);
+    const totalAmount  = timeEntries.filter(e => e.billable).reduce((s, e) => s + e.hours * e.rate, 0);
+    const stopTimer = () => {
+      setTimeRunning(false);
+      if (timeElapsed > 60) {
+        const hours = parseFloat((timeElapsed / 3600).toFixed(2));
+        setTimeEntries(es => [{ id: Date.now(), date: new Date().toISOString().slice(0, 10), description: timerDesc || "وقت مسجّل بالكرونومتر", hours, rate: 150, billable: true }, ...es]);
+      }
+      setTimeElapsed(0);
+      setTimerDesc("");
+    };
+    return (
+      <div className="space-y-4">
+        {/* Stopwatch */}
+        <Card className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card">
+          <CardContent className="p-5">
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              <div className="text-center shrink-0">
+                <div className="text-4xl font-mono font-bold tracking-wider text-primary" dir="ltr">{fmtTime(timeElapsed)}</div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1"><Timer className="h-3 w-3" />الكرونومتر</p>
+              </div>
+              <div className="flex-1 w-full">
+                <Input placeholder="وصف النشاط (اختياري)..." className={inputCls} value={timerDesc} onChange={e => setTimerDesc(e.target.value)} />
+              </div>
+              <div className="flex gap-3 shrink-0">
+                <button onClick={() => setTimeRunning(r => !r)} className={`p-3.5 rounded-full transition-all shadow-md ${timeRunning ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"} text-primary-foreground`}>
+                  {timeRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                </button>
+                {(timeRunning || timeElapsed > 0) && (
+                  <button onClick={stopTimer} className="p-3.5 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-all shadow-md">
+                    <Square className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Summary */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 rounded-xl"><Clock className="h-4 w-4 text-blue-400" /></div>
+            <div><p className="text-[11px] text-muted-foreground">إجمالي الساعات</p><p className="font-bold">{totalHours.toFixed(1)} س</p></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl"><Timer className="h-4 w-4 text-primary" /></div>
+            <div><p className="text-[11px] text-muted-foreground">ساعات قابلة للفوترة</p><p className="font-bold">{billableHrs.toFixed(1)} س</p></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-green-500/10 rounded-xl"><TrendingUp className="h-4 w-4 text-green-400" /></div>
+            <div><p className="text-[11px] text-muted-foreground">المبلغ القابل للفوترة</p><Money amount={totalAmount} className="font-bold" /></div>
+          </CardContent></Card>
+        </div>
+
+        {/* Entries list */}
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="font-semibold text-sm">سجل الوقت</h3>
+              <div className="flex gap-2">
+                {timeEntries.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/billing/new?caseId=${id}`)} className="gap-1.5 text-xs h-7">
+                    <Receipt className="h-3.5 w-3.5" />تحويل إلى فاتورة
+                  </Button>
+                )}
+                <Button size="sm" onClick={() => { setTimeForm({ date: new Date().toISOString().slice(0, 10), description: "", hours: "", rate: "150", billable: true }); setShowTimeModal(true); }} className="gap-1.5 text-xs">
+                  <Plus className="h-3.5 w-3.5" />إدخال يدوي
+                </Button>
+              </div>
+            </div>
+            {timeEntries.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <Timer className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد إدخالات وقت — ابدأ الكرونومتر أو أضف يدوياً</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="text-right py-2 px-4 font-medium">التاريخ</th>
+                    <th className="text-right py-2 px-4 font-medium">الوصف</th>
+                    <th className="text-right py-2 px-4 font-medium">الساعات</th>
+                    <th className="text-right py-2 px-4 font-medium">المعدل</th>
+                    <th className="text-right py-2 px-4 font-medium">المبلغ</th>
+                    <th className="text-center py-2 px-4 font-medium">فوترة</th>
+                    <th className="py-2 px-2 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {timeEntries.map(e => (
+                    <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">{formatDateTN(e.date)}</td>
+                      <td className="py-2.5 px-4">{e.description}</td>
+                      <td className="py-2.5 px-4 font-mono" dir="ltr">{e.hours.toFixed(2)}</td>
+                      <td className="py-2.5 px-4 text-muted-foreground" dir="ltr"><Money amount={e.rate} />/س</td>
+                      <td className="py-2.5 px-4 font-semibold" dir="ltr"><Money amount={e.hours * e.rate} /></td>
+                      <td className="py-2.5 px-4 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${e.billable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>{e.billable ? "نعم" : "لا"}</span>
+                      </td>
+                      <td className="py-2.5 px-2 text-center">
+                        <button onClick={() => setTimeEntries(es => es.filter(x => x.id !== e.id))} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {timeEntries.length > 0 && (
+                  <tfoot className="bg-muted/20 border-t border-border">
+                    <tr>
+                      <td colSpan={2} className="py-2.5 px-4 text-xs text-muted-foreground font-semibold">المجموع</td>
+                      <td className="py-2.5 px-4 font-mono font-bold" dir="ltr">{totalHours.toFixed(2)}</td>
+                      <td></td>
+                      <td className="py-2.5 px-4 font-bold text-primary" dir="ltr"><Money amount={totalAmount} /></td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   function renderPlaceholder(icon: React.ReactNode, title: string, subtitle: string) {
     return (
       <Card className="border-none shadow-sm"><CardContent className="p-10 flex flex-col items-center justify-center text-center gap-3">
@@ -899,7 +1054,7 @@ export default function CaseDetail() {
           {activeTab === "documents"  && renderDocuments()}
           {activeTab === "invoicing"  && renderInvoicing()}
           {activeTab === "expenses"   && renderExpenses()}
-          {activeTab === "time"       && renderPlaceholder(<Timer className="h-7 w-7" />, "الوقت", "تتبع ساعات العمل وتحديد التعرفة بالساعة — قيد التطوير")}
+          {activeTab === "time"       && renderTime()}
           {activeTab === "notes"      && renderNotes()}
         </div>
       </div>
@@ -1056,6 +1211,51 @@ export default function CaseDetail() {
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Time entry modal */}
+      <Modal open={showTimeModal} onClose={() => setShowTimeModal(false)} title="إدخال وقت يدوي">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="التاريخ *" htmlFor="te-date">
+              <Input id="te-date" type="date" className={inputCls} dir="ltr"
+                value={timeForm.date} onChange={e => setTimeForm(f => ({ ...f, date: e.target.value }))} />
+            </FormField>
+            <FormField label="عدد الساعات *" htmlFor="te-hours">
+              <Input id="te-hours" type="number" step="0.25" placeholder="1.5" className={inputCls} dir="ltr"
+                value={timeForm.hours} onChange={e => setTimeForm(f => ({ ...f, hours: e.target.value }))} />
+            </FormField>
+          </div>
+          <FormField label="وصف النشاط *" htmlFor="te-desc">
+            <Input id="te-desc" placeholder="مثال: دراسة الملف وتحضير الدفاع" className={inputCls}
+              value={timeForm.description} onChange={e => setTimeForm(f => ({ ...f, description: e.target.value }))} />
+          </FormField>
+          <FormField label="المعدل (د.ت/ساعة)" htmlFor="te-rate">
+            <Input id="te-rate" type="number" className={inputCls} dir="ltr"
+              value={timeForm.rate} onChange={e => setTimeForm(f => ({ ...f, rate: e.target.value }))} />
+          </FormField>
+          <label className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg cursor-pointer">
+            <input type="checkbox" checked={timeForm.billable}
+              onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))}
+              className="h-4 w-4 accent-primary" />
+            <span className="text-sm">هذا الوقت قابل للفوترة للحريف</span>
+          </label>
+          {timeForm.hours && timeForm.rate && parseFloat(timeForm.hours) > 0 && (
+            <div className="p-3 bg-primary/10 rounded-lg flex justify-between items-center">
+              <span className="text-sm text-primary font-medium">المبلغ الإجمالي:</span>
+              <span className="font-bold text-primary" dir="ltr"><Money amount={parseFloat(timeForm.hours) * parseFloat(timeForm.rate)} /></span>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button className="flex-1" disabled={!timeForm.description.trim() || !timeForm.hours || parseFloat(timeForm.hours) <= 0}
+              onClick={() => {
+                setTimeEntries(es => [{ id: Date.now(), date: timeForm.date, description: timeForm.description, hours: parseFloat(timeForm.hours), rate: parseFloat(timeForm.rate) || 150, billable: timeForm.billable }, ...es]);
+                setTimeForm({ date: new Date().toISOString().slice(0, 10), description: "", hours: "", rate: "150", billable: true });
+                setShowTimeModal(false);
+              }}>حفظ الإدخال</Button>
+            <Button variant="outline" onClick={() => setShowTimeModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
