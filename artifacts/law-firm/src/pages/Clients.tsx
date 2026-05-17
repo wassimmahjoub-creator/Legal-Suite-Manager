@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
@@ -35,7 +36,7 @@ export default function Clients() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
-  const [selected, setSelected] = useState<Client | null>(null);
+  const [, navigate] = useLocation();
 
   async function load() {
     setLoading(true);
@@ -141,7 +142,7 @@ export default function Clients() {
             <Card
               key={client.id}
               className="border-none shadow-md hover:shadow-lg transition-all duration-200 rounded-xl overflow-hidden cursor-pointer group"
-              onClick={() => setSelected(client)}
+              onClick={() => navigate(`/clients/${client.id}`)}
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
@@ -246,47 +247,6 @@ export default function Clients() {
         </div>
       </Modal>
 
-      {/* Detail Modal */}
-      {selected && (
-        <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.name} size="sm">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="h-20 w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-3xl">
-                {selected.name.charAt(0)}
-              </div>
-            </div>
-            <div className="space-y-3 text-sm">
-              {selected.phone && (
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Phone className="h-4 w-4 text-primary shrink-0" />
-                  <span dir="ltr">{selected.phone}</span>
-                </div>
-              )}
-              {selected.email && (
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Mail className="h-4 w-4 text-primary shrink-0" />
-                  <span>{selected.email}</span>
-                </div>
-              )}
-              {selected.address && (
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  <span>{selected.address}</span>
-                </div>
-              )}
-              {selected.notes && (
-                <div className="p-3 bg-muted/50 rounded-lg text-muted-foreground">
-                  {selected.notes}
-                </div>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => { setSelected(null); openEdit(selected); }}>تعديل</Button>
-              <Button variant="outline" className="px-5" onClick={() => setSelected(null)}>إغلاق</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

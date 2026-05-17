@@ -1,0 +1,64 @@
+Refonte complète de la fiche client. Aujourd'hui un clic sur un client ouvre une modale avec 3 champs — on remplace par une vraie page 360°.
+
+ÉTAPE 1 — EXTENSION DU SCHÉMA CLIENT
+Ajoute les colonnes suivantes à la table `clients` (حرفاء) via migration :
+- legal_form (text, nullable) — SARL, SA, SUARL, personne physique, etc.
+- tax_id (text, nullable) — matricule fiscal tunisien (8 chiffres + lettre + 3 chiffres)
+- commercial_register (text, nullable) — RC
+- rib (text, nullable) — RIB tunisien 20 chiffres, valide via format check
+- withholding_rate (numeric, default 0) — 0, 3 ou 5 (%)
+- withholding_exempt (boolean, default false)
+- notes (text, nullable)
+
+Crée une table liée `client_contacts` pour gérer plusieurs interlocuteurs sur une personne morale :
+- id, client_id (FK), first_name, last_name, role, phone, email, is_primary (bool)
+
+Crée une table `client_events` (journal) :
+- id, client_id, event_type (enum: case_created, invoice_issued, payment_received, document_signed, message_sent, note_added), payload (jsonb), occurred_at, created_by
+
+ÉTAPE 2 — ROUTING
+- Supprime la modale de fiche client actuelle.
+- Crée la route `/clients/:id` avec un layout à onglets.
+- Le clic sur une ligne client dans la liste navigue désormais vers cette route (router push, pas modale).
+
+ÉTAPE 3 — UI DE LA PAGE
+Layout :
+- Header sticky en haut avec :
+  - Nom client (gros) + type (badge personne physique / morale)
+  - Statut (actif / inactif / prospect)
+  - Boutons à droite : "+ Nouveau dossier", "+ Nouvelle facture", "✉ Message", "..." (menu déroulant : Éditer, Archiver, Supprimer)
+- Sous le header, barre d'onglets :
+  1. Informations (par défaut)
+  2. Dossiers en cours (badge avec count)
+  3. Dossiers archivés
+  4. Échéancier financier
+  5. Heures
+  6. Documents
+  7. Correspondances
+  8. Journal
+
+Onglet Informations :
+- Section "Identité" : nom, forme juridique, matricule fiscal, RC, RIB
+- Section "Coordonnées" : adresse, téléphone, email
+- Section "Fiscalité" : taux de retenue à la source (select : non assujetti / 3 % / 5 %)
+- Section "Contacts" : table de client_contacts avec CRUD inline
+
+Onglet Échéancier financier :
+- 4 KPI cards en haut : CA total, Encaissé, Solde dû, Prochaine échéance
+- Table : factures émises avec statut (payée, partiellement, impayée, en retard)
+
+Onglet Journal :
+- Timeline verticale, plus récent en haut
+- Chaque entrée : icône par type d'événement + texte + horodatage + qui
+
+LAZY LOADING :
+Les onglets autres qu'Informations ne doivent fetch leur data qu'au moment où on les active (React.lazy + Suspense ou simple useEffect conditionnel).
+
+BREADCRUMB :
+"Clients > [Nom]" en haut, cliquable pour revenir à la liste.
+
+LIVRABLES :
+- Migrations
+- Composant <ClientPage /> avec sous-composants par onglet
+- Diff de la liste clients (suppression du trigger modale + ajout du Link)
+- Capture d'écran de la page assemblée

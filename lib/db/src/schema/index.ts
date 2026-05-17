@@ -1,4 +1,6 @@
 export * from "./clients";
+export * from "./client_contacts";
+export * from "./client_events";
 export * from "./cases";
 export * from "./invoices";
 export * from "./tasks";
