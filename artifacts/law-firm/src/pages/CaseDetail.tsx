@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
+import { CaseTimeline } from "@/components/cases/CaseTimeline";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -400,48 +401,11 @@ export default function CaseDetail() {
 
   function renderTimeline() {
     return (
-      <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">التسلسل الإجرائي</h3>
-          <Button size="sm" onClick={() => { setProcForm({ stage: c.litigationDegree ?? "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" }); setModal("procedure"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />إجراء جديد</Button>
-        </div>
-        <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-xl text-sm">
-          <GitBranch className="h-5 w-5 text-indigo-400 shrink-0" />
-          <p className="text-muted-foreground">سيتم تفعيل التتبع التلقائي للمراحل الإجرائية قريباً. يمكنك إضافة الإجراءات يدوياً في الوقت الحالي.</p>
-        </div>
-        {procedures.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
-            <GitBranch className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد إجراءات مسجلة</p>
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="absolute right-5 top-5 bottom-5 w-0.5 bg-border" />
-            <div className="space-y-4">
-              {procedures.map((p, i) => (
-                <div key={p.id} className="flex gap-4">
-                  <div className={`h-10 w-10 rounded-full shrink-0 flex items-center justify-center z-10 border-2 font-bold text-sm ${p.status === "مكتملة" ? "bg-green-500/10 text-green-400 border-green-500/30" : p.status === "موقوفة" ? "bg-orange-500/10 text-orange-400 border-orange-500/30" : "bg-primary/10 text-primary border-primary/30"}`}>{i + 1}</div>
-                  <div className="flex-1 p-4 bg-muted/30 rounded-xl border border-border">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold">{p.stage}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${p.status === "مكتملة" ? "bg-green-500/10 text-green-400" : p.status === "موقوفة" ? "bg-orange-500/10 text-orange-400" : "bg-blue-500/10 text-blue-400"}`}>{p.status}</span>
-                      </div>
-                      <button onClick={() => setConfirmProcId(p.id)} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
-                    </div>
-                    {p.notes && <p className="text-sm text-muted-foreground mt-2">{p.notes}</p>}
-                    {(p.startedAt || p.endedAt) && (
-                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                        {p.startedAt && <span>البداية: {formatDateTN(p.startedAt)}</span>}
-                        {p.endedAt   && <span>النهاية: {formatDateTN(p.endedAt)}</span>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent></Card>
+      <Card className="border-none shadow-sm">
+        <CardContent className="p-5">
+          <CaseTimeline caseId={Number(id)} />
+        </CardContent>
+      </Card>
     );
   }
 

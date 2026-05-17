@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, casesTable, clientsTable } from "@workspace/db";
 import { eq, isNull, like, sql } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
+import { CaseEventLogger } from "../services/caseEventLogger.js";
 
 const router = Router();
 
@@ -123,6 +124,13 @@ router.post("/cases", async (req, res) => {
   const extras = extractExtras(req.body as Record<string, unknown>);
   const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, ...extras }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
+  const actor = (req as typeof req & { user?: { id: number } }).user;
+  void CaseEventLogger.log({
+    caseId: row.id,
+    eventType: "case_filed",
+    occurredAt: row.openedAt ? new Date(row.openedAt) : row.createdAt,
+    actorUserId: actor?.id ?? null,
+  });
   res.status(201).json({ ...row, clientName: client?.name ?? "" });
 });
 
@@ -184,6 +192,8 @@ router.patch("/cases/:id/archive", async (req, res): Promise<void> => {
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   const archivedAt = row.archivedAt ? null : new Date();
   await db.update(casesTable).set({ archivedAt, status: archivedAt ? "archived" : "active" }).where(eq(casesTable.id, id));
+  const actor = (req as typeof req & { user?: { id: number } }).user;
+  void CaseEventLogger.log({ caseId: id, eventType: archivedAt ? "case_archived" : "case_reopened", actorUserId: actor?.id ?? null });
   res.json({ archived: !!archivedAt });
 });
 

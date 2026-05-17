@@ -1,0 +1,296 @@
+Implémente l'auto-log silencieux des événements métier sur la timeline d'un dossier juridique.
+
+PRÉREQUIS : T17 livré (cases enrichie + case_opponents + case_team), T17b livré (9 onglets dont "التسلسل الإجرائي" en placeholder).
+
+PHILOSOPHIE :
+- AUCUN trigger SQL. Tout passe par un service applicatif explicite.
+- Aucun log ne doit faire échouer l'action métier qui l'a déclenché (try/catch silencieux côté logger).
+- Tous les événements sont "is_system_generated = true" par défaut, sauf la saisie manuelle.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — SCHÉMA
+═══════════════════════════════════════════════════════
+
+Migration : table case_events
+
+Crée l'enum case_event_type avec EXACTEMENT ces valeurs :
+case_filed, case_updated, client_added, opponent_added, opponent_removed,
+team_member_added, team_member_removed, responsible_changed,
+hearing_scheduled, hearing_held, hearing_postponed,
+judgment_recorded, stage_transitioned,
+document_added, document_removed,
+invoice_issued, invoice_paid, invoice_partially_paid, payment_received,
+expense_recorded, time_entry_logged,
+legal_deadline_added, legal_deadline_approaching, legal_deadline_missed,
+confidentiality_changed, internal_note_added,
+case_archived, case_closed, case_reopened,
+manual_entry
+
+Crée l'enum related_entity_type :
+invoice, document, hearing, payment, opponent, team_member, expense, time_entry, legal_deadline
+
+CREATE TABLE case_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  event_type case_event_type NOT NULL,
+  occurred_at timestamptz NOT NULL,
+  logged_at timestamptz DEFAULT now(),
+  title_ar text NOT NULL,
+  title_fr text,
+  description text,
+  metadata jsonb DEFAULT '{}',
+  actor_user_id uuid REFERENCES users(id),
+  related_entity_type related_entity_type,
+  related_entity_id uuid,
+  is_system_generated boolean DEFAULT true,
+  case_stage_id uuid, -- FK vers case_stages, à ajouter quand T18b livré
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_case_events_case_time ON case_events(case_id, occurred_at DESC);
+CREATE INDEX idx_case_events_type ON case_events(event_type);
+CREATE INDEX idx_case_events_actor ON case_events(actor_user_id);
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — SERVICE CASEEVENTLOGGER
+═══════════════════════════════════════════════════════
+
+Crée src/services/caseEventLogger.ts (ou .js selon ton stack) :
+
+class CaseEventLogger {
+  static async log({
+    caseId,
+    eventType,
+    occurredAt = new Date(),
+    titleAr,
+    titleFr = null,
+    description = null,
+    metadata = {},
+    actorUserId,
+    relatedEntityType = null,
+    relatedEntityId = null,
+    isSystemGenerated = true
+  }) {
+    try {
+      const event = await db.case_events.insert({
+        case_id: caseId,
+        event_type: eventType,
+        occurred_at: occurredAt,
+        title_ar: titleAr,
+        title_fr: titleFr,
+        description,
+        metadata,
+        actor_user_id: actorUserId,
+        related_entity_type: relatedEntityType,
+        related_entity_id: relatedEntityId,
+        is_system_generated: isSystemGenerated
+      });
+
+      // Émettre un événement temps réel pour rafraîchir l'UI si possible
+      try {
+        await pubsub.publish(`case:${caseId}:events`, event);
+      } catch (e) {
+        // ignore - le log a réussi, c'est l'essentiel
+      }
+
+      return event;
+    } catch (err) {
+      console.error('[CaseEventLogger] Failed to log event', {
+        caseId, eventType, error: err.message
+      });
+      // NE PAS propager l'erreur. L'action métier doit réussir même si le log échoue.
+      return null;
+    }
+  }
+
+  // Helper pour générer le titre AR automatiquement à partir du type
+  static getDefaultTitleAr(eventType, metadata = {}) {
+    const titles = {
+      case_filed: 'تم رفع الدعوى',
+      case_updated: 'تم تعديل بيانات الملف',
+      opponent_added: `إضافة الخصم ${metadata.opponent_name || ''}`,
+      opponent_removed: `إزالة الخصم ${metadata.opponent_name || ''}`,
+      team_member_added: `إضافة ${metadata.user_name || ''} للفريق`,
+      team_member_removed: `إزالة ${metadata.user_name || ''} من الفريق`,
+      responsible_changed: `تعيين ${metadata.user_name || ''} كمحامي مسؤول`,
+      hearing_scheduled: 'برمجة جلسة',
+      hearing_held: 'انعقاد الجلسة',
+      hearing_postponed: 'تأخير الجلسة',
+      judgment_recorded: 'تسجيل حكم',
+      stage_transitioned: `الانتقال إلى الطور ${metadata.new_stage_ar || ''}`,
+      document_added: `إضافة وثيقة: ${metadata.document_name || ''}`,
+      document_removed: `حذف وثيقة: ${metadata.document_name || ''}`,
+      invoice_issued: `إصدار الفاتورة ${metadata.invoice_number || ''}`,
+      invoice_paid: `تسديد الفاتورة ${metadata.invoice_number || ''}`,
+      invoice_partially_paid: `تسديد جزئي للفاتورة ${metadata.invoice_number || ''}`,
+      payment_received: `استلام دفعة ${metadata.amount || ''} د.ت`,
+      expense_recorded: `تسجيل مصروف ${metadata.amount || ''} د.ت`,
+      time_entry_logged: `تسجيل ${metadata.hours || ''} ساعة عمل`,
+      legal_deadline_added: `إضافة أجل قانوني: ${metadata.deadline_name || ''}`,
+      legal_deadline_approaching: `اقتراب أجل قانوني: ${metadata.deadline_name || ''}`,
+      legal_deadline_missed: `فوات أجل قانوني: ${metadata.deadline_name || ''}`,
+      confidentiality_changed: `تغيير درجة الحساسية إلى ${metadata.new_level_ar || ''}`,
+      internal_note_added: 'تحديث الملاحظات الداخلية',
+      case_archived: 'أرشفة الملف',
+      case_closed: 'غلق الملف',
+      case_reopened: 'إعادة فتح الملف',
+      manual_entry: metadata.custom_title || 'إجراء يدوي'
+    };
+    return titles[eventType] || 'حدث';
+  }
+}
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — CÂBLAGE DANS LES MODULES EXISTANTS
+═══════════════════════════════════════════════════════
+
+Identifie dans le code les points d'entrée des actions métier suivantes et ajoute un appel à CaseEventLogger.log() APRÈS le succès de l'action principale.
+
+Liste exhaustive des points à câbler :
+
+cases.ts / casesController :
+- createCase() → log case_filed (occurred_at = case.opened_at, actorUserId = req.user.id)
+- updateCase() → COMPARER ancien vs nouveau état. Si l'un des champs whitelistés change (title, case_type, litigation_degree, procedure_type, court_id, dispute_value, agreed_fees, fee_method, confidentiality_level, internal_notes), log case_updated avec metadata = { changed_fields: [...] }. Pour internal_notes, debounce 5 min via Redis ou cache mémoire pour éviter le spam.
+- archiveCase() → log case_archived
+- closeCase() → log case_closed
+- reopenCase() → log case_reopened
+- changeConfidentiality() → log confidentiality_changed avec metadata { old_level, new_level_ar }
+
+caseOpponentsController :
+- addCaseOpponent() → log opponent_added avec metadata { opponent_name, opponent_id }
+- removeCaseOpponent() → log opponent_removed
+
+caseTeamController :
+- addTeamMember() → log team_member_added OU responsible_changed selon role
+- removeTeamMember() → log team_member_removed
+
+agendaController / eventsController :
+- createEvent() avec event_type = 'audience' ET case_id NOT NULL → log hearing_scheduled (occurred_at = event.start_date)
+- updateEvent() si status change → log hearing_held ou hearing_postponed selon transition
+
+invoicesController :
+- issueInvoice() (draft → issued) → log invoice_issued
+- recordPayment() :
+  - log payment_received TOUJOURS
+  - SI le paiement amène le statut à 'paid' → log AUSSI invoice_paid
+  - SI passage en 'partially_paid' → log invoice_partially_paid
+
+documentsController :
+- uploadDocument() avec case_id NOT NULL → log document_added avec metadata { document_name }
+- deleteDocument() avec case_id NOT NULL → log document_removed
+
+expensesController :
+- createExpense() avec case_id NOT NULL → log expense_recorded avec metadata { amount }
+
+timeEntriesController :
+- createTimeEntry() avec case_id NOT NULL ET duration_minutes >= 15 → log time_entry_logged
+- Si < 15 min, ne pas logger (bruit)
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — UI TIMELINE FONCTIONNELLE
+═══════════════════════════════════════════════════════
+
+Composant <CaseTimeline caseId={...} /> qui REMPLACE le placeholder actuel dans l'onglet "التسلسل الإجرائي".
+
+Fetch : GET /api/cases/:caseId/events?cursor=...&filters={...}
+- Pagination cursor-based par occurred_at DESC
+- 50 événements par page
+- Filtres en query string
+
+UI :
+
+Barre de filtres en haut :
+- Multi-select "نوع الحدث" avec groupes :
+  - إجرائي : case_filed, case_updated, hearing_*, judgment_*, stage_transitioned, legal_deadline_*
+  - مالي : invoice_*, payment_received, expense_recorded
+  - إداري : opponent_*, team_member_*, responsible_changed, case_archived/closed/reopened, confidentiality_changed
+  - وثائق : document_*
+- Multi-select "المستخدم" (acteurs)
+- Date range "الفترة"
+- Search input "بحث"
+- Toggle "إظهار التلقائي فقط / اليدوي فقط / الكل" (filtre is_system_generated)
+
+Timeline verticale :
+- Grouper par jour, séparateurs avec date enrichie (T11) : "الجمعة ١٤ ماي ٢٠٢٦"
+- Pour chaque événement :
+  - Icône à gauche (mapping Lucide React fourni dans le ticket)
+  - Card avec :
+    - Heure (HH:mm)
+    - Avatar de l'acteur (initiales si pas de photo, icône système si actor_user_id NULL)
+    - Titre AR (title_ar)
+    - Description si présente
+    - Lien deep "عرض" si related_entity_id présent :
+      - invoice → /invoices/:id
+      - document → ouvre preview
+      - hearing → /agenda?event=:id
+      - opponent → /opponents/:id
+
+Performance :
+- Scroll infini avec react-intersection-observer
+- Si > 200 événements, mode compact : juste compteur par jour, dépliable au clic
+
+Bouton "+ إجراء جديد" (conserver) :
+Garde le bouton existant. Au clic, ouvre modal :
+- نوع الحدث (limité à : manual_entry, judgment_recorded, hearing_held)
+- التاريخ
+- العنوان
+- الوصف
+- الوثائق المرتبطة (multi-upload optionnel)
+
+À la sauvegarde, appelle CaseEventLogger.log avec is_system_generated = false.
+
+Temps réel :
+Si possible, branche un WebSocket/SSE sur /api/cases/:caseId/events/stream pour rafraîchir la timeline en live quand un nouvel événement est loggé pendant que l'utilisateur a le dossier ouvert. Sinon, polling toutes les 30 s.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 5 — BACKFILL DES DONNÉES EXISTANTES
+═══════════════════════════════════════════════════════
+
+Crée un script de migration scripts/backfill_case_events.ts :
+
+1. Pour chaque case existante sans aucun case_event :
+   INSERT case_filed avec occurred_at = COALESCE(opened_at, created_at)
+   actor_user_id = case.created_by (si dispo, sinon NULL)
+
+2. Pour chaque case_opponent existant :
+   INSERT opponent_added avec occurred_at = case_opponents.created_at
+
+3. Pour chaque case_team existant :
+   INSERT team_member_added (et responsible_changed si role = 'responsible')
+
+4. Pour chaque invoice existante :
+   INSERT invoice_issued avec occurred_at = invoices.issued_at (ou created_at si NULL)
+   SI status = 'paid' : INSERT invoice_paid avec occurred_at = invoices.paid_at OU dernière payment.created_at
+   SI status = 'partially_paid' : INSERT invoice_partially_paid
+
+5. Pour chaque payment existant :
+   INSERT payment_received avec occurred_at = payments.received_at
+
+6. Pour chaque document avec case_id :
+   INSERT document_added avec occurred_at = documents.uploaded_at
+
+Lancer en mode batch nocturne, par chunks de 500 lignes, avec logging du progrès.
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. Migration case_events + enums.
+2. Service CaseEventLogger documenté.
+3. Câblage dans 7+ modules (cases, opponents, team, agenda, invoices, documents, expenses, time-entries).
+4. Composant <CaseTimeline /> remplaçant le placeholder.
+5. Script de backfill exécuté avec rapport (combien d'événements créés).
+6. Endpoint GET /api/cases/:id/events avec filtres + pagination.
+7. Tests unitaires sur CaseEventLogger (au moins 5 cas dont un échec de DB qui ne propage pas).
+8. Tests d'intégration : créer un dossier, vérifier que case_filed apparaît. Émettre une facture, vérifier invoice_issued.
+9. Capture d'écran de la timeline remplie après quelques actions test.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- AUCUNE action métier existante ne doit échouer à cause du logger (try/catch absolu).
+- Les performances de createCase, issueInvoice, etc. ne doivent pas se dégrader de plus de 50 ms.
+- L'UI de la timeline ne charge pas tous les événements d'un coup (pagination obligatoire).
+- RTL préservé sur la timeline.
+- Les filtres fonctionnent en combinaison (type + utilisateur + période en même temps).

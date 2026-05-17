@@ -9,6 +9,7 @@ import {
 import { eq, isNull, desc } from "drizzle-orm";
 import { calcLine, calcTotals } from "../services/invoiceCalculator";
 import { generateInvoiceNumber } from "../services/invoiceNumberService";
+import { CaseEventLogger } from "../services/caseEventLogger.js";
 
 const router = Router();
 
@@ -193,6 +194,13 @@ router.post("/invoices/:id/issue", async (req, res) => {
 
   const [fresh] = await withJoins().where(eq(invoicesTable.id, id));
   const lines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id)).orderBy(invoiceLinesTable.position);
+  if (fresh?.caseId) {
+    void CaseEventLogger.log({
+      caseId: fresh.caseId, eventType: "invoice_issued",
+      metadata: { invoice_number: invoiceNumber },
+      relatedEntityType: "invoice", relatedEntityId: id,
+    });
+  }
   res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
 });
 
@@ -221,6 +229,26 @@ router.post("/invoices/:id/payment", async (req, res) => {
 
   const [fresh] = await withJoins().where(eq(invoicesTable.id, id));
   const lines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id)).orderBy(invoiceLinesTable.position);
+  if (fresh?.caseId) {
+    void CaseEventLogger.log({
+      caseId: fresh.caseId, eventType: "payment_received",
+      metadata: { amount: amount.toFixed(3), invoice_number: existing.invoiceNumber ?? `#${id}` },
+      relatedEntityType: "invoice", relatedEntityId: id,
+    });
+    if (newStatus === "paid") {
+      void CaseEventLogger.log({
+        caseId: fresh.caseId, eventType: "invoice_paid",
+        metadata: { invoice_number: existing.invoiceNumber ?? `#${id}` },
+        relatedEntityType: "invoice", relatedEntityId: id,
+      });
+    } else if (newStatus === "partially_paid") {
+      void CaseEventLogger.log({
+        caseId: fresh.caseId, eventType: "invoice_partially_paid",
+        metadata: { invoice_number: existing.invoiceNumber ?? `#${id}` },
+        relatedEntityType: "invoice", relatedEntityId: id,
+      });
+    }
+  }
   res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
 });
 

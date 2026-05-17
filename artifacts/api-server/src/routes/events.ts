@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, eventsTable, casesTable, insertEventSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { CaseEventLogger } from "../services/caseEventLogger.js";
 
 const router = Router();
 
@@ -40,6 +41,15 @@ router.post("/events", async (req, res) => {
   const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const [row] = await db.insert(eventsTable).values(parsed.data).returning();
+  if (row.caseId && (row.type === "audience" || row.type === "hearing" || !row.type || row.type === "other")) {
+    void CaseEventLogger.log({
+      caseId: row.caseId, eventType: "hearing_scheduled",
+      occurredAt: row.date ? new Date(row.date) : new Date(),
+      titleAr: `برمجة جلسة${row.title ? `: ${row.title}` : ""}`,
+      metadata: { date: row.date ?? "", location: row.court ?? "" },
+      relatedEntityType: "hearing", relatedEntityId: row.id,
+    });
+  }
   res.status(201).json({ ...row, caseName: null });
 });
 

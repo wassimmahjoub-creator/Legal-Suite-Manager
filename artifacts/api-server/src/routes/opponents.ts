@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db, opponentsTable, casesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
+import { CaseEventLogger } from "../services/caseEventLogger.js";
+import type { AuthPayload } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -45,6 +47,14 @@ router.post("/opponents", requireAuth, async (req, res): Promise<void> => {
     capacity: capacity ?? null,
     opponentLawyerPhone: opponentLawyerPhone ?? null,
   }).returning();
+  if (caseId) {
+    const actor = (req as typeof req & { user?: AuthPayload }).user;
+    void CaseEventLogger.log({
+      caseId: Number(caseId), eventType: "opponent_added", actorUserId: actor?.id ?? null,
+      metadata: { opponent_name: name, opponent_id: row.id },
+      relatedEntityType: "opponent", relatedEntityId: row.id,
+    });
+  }
   res.status(201).json({ ...row, caseName: null });
 });
 
@@ -69,7 +79,16 @@ router.put("/opponents/:id", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.delete("/opponents/:id", requireAuth, async (req, res) => {
-  await db.delete(opponentsTable).where(eq(opponentsTable.id, Number(req.params.id)));
+  const oppId = Number(req.params.id);
+  const [opp] = await db.select().from(opponentsTable).where(eq(opponentsTable.id, oppId));
+  await db.delete(opponentsTable).where(eq(opponentsTable.id, oppId));
+  if (opp?.caseId) {
+    const actor = (req as typeof req & { user?: AuthPayload }).user;
+    void CaseEventLogger.log({
+      caseId: opp.caseId, eventType: "opponent_removed", actorUserId: actor?.id ?? null,
+      metadata: { opponent_name: opp.name },
+    });
+  }
   res.status(204).send();
 });
 
