@@ -13,6 +13,7 @@ import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { useAuth } from "@/context/AuthContext";
+import { useLocale } from "@/context/LocaleContext";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
 import { FEATURE_DICTATION } from "@/config/features";
@@ -232,6 +233,7 @@ function ExpandableSection({
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const locale = useLocale();
 
   const [collapsed, setCollapsed] = useState(() =>
     localStorage.getItem("sidebar_collapsed") === "true"
@@ -562,7 +564,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   /* ─────────── render ─────────── */
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans" dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="flex min-h-screen">
 
         {/* Desktop Sidebar */}
