@@ -76,6 +76,7 @@ export default function CaseDetail() {
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
   const [saving, setSaving] = useState(false);
   const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmProcId, setConfirmProcId] = useState<number | null>(null);
   const [confirmDeadlineId, setConfirmDeadlineId] = useState<number | null>(null);
 
@@ -176,7 +177,7 @@ export default function CaseDetail() {
               <Button variant="outline" size="sm" onClick={openEdit} className="gap-1.5 text-xs">
                 <Pencil className="h-3.5 w-3.5" /> تعديل
               </Button>
-              <Button variant="outline" size="sm" onClick={async () => { if (!confirm(c.archivedAt ? "استرجاع هذه القضية؟" : "أرشفة هذه القضية؟")) return; await authFetch(`${BASE}/api/cases/${id}/archive`, { method: "PATCH" }); refetch(); }} className="gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs">
                 <Archive className="h-3.5 w-3.5" /> {c.archivedAt ? "استرجاع" : "أرشفة"}
               </Button>
               <CasePdfButton
@@ -561,6 +562,27 @@ export default function CaseDetail() {
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" disabled={saving || !editForm.title} onClick={saveEdit}>{saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirm archive / unarchive */}
+      <Modal open={confirmArchive} onClose={() => setConfirmArchive(false)} title={c.archivedAt ? "استرجاع الملف؟" : "أرشفة الملف؟"}>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {c.archivedAt
+              ? "سيتم نقل هذا الملف من الأرشيف إلى قائمة الملفات الجارية."
+              : "سيتم نقل هذا الملف إلى الأرشيف. يمكنك استرجاعه في أي وقت."}
+          </p>
+          <div className="flex gap-3">
+            <Button className="flex-1" onClick={async () => {
+              await authFetch(`${BASE}/api/cases/${id}/archive`, { method: "PATCH" });
+              setConfirmArchive(false);
+              refetch();
+            }}>
+              {c.archivedAt ? "استرجاع الملف" : "أرشفة الملف"}
+            </Button>
+            <Button variant="outline" onClick={() => setConfirmArchive(false)} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>
