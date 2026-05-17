@@ -87,7 +87,7 @@ export default function Cases() {
           {!viewArchived && (
             <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
               <Archive className="h-4 w-4" />
-              المحفوظات
+              القضايا المؤرشفة
             </Button>
           )}
           <Button onClick={openNewModal} className="rounded-lg gap-2 px-5">
