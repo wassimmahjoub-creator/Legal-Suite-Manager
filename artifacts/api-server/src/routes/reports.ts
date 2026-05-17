@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, casesTable, invoicesTable, clientsTable, tasksTable } from "@workspace/db";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { db, casesTable, clientsTable, tasksTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -36,7 +36,7 @@ router.get("/reports/summary", async (req, res) => {
         sql`
           SELECT
             TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
-            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0)::float AS income
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN net_to_pay ELSE 0 END), 0)::float AS income
           FROM invoices
           WHERE created_at >= ${sevenMonthsAgo}
           GROUP BY month
@@ -55,7 +55,7 @@ router.get("/reports/summary", async (req, res) => {
             c.id,
             c.name,
             COUNT(DISTINCT cs.id)::int AS cases,
-            COALESCE(SUM(i.amount), 0)::float AS amount
+            COALESCE(SUM(i.net_to_pay), 0)::float AS amount
           FROM clients c
           LEFT JOIN cases cs ON cs.client_id = c.id
           LEFT JOIN invoices i ON i.client_id = c.id
@@ -69,23 +69,22 @@ router.get("/reports/summary", async (req, res) => {
         sql`
           SELECT
             SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END)::int AS paid_count,
-            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0)::float AS paid_amount,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END)::int AS pending_count,
-            COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0)::float AS pending_amount
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN net_to_pay ELSE 0 END), 0)::float AS paid_amount,
+            SUM(CASE WHEN status IN ('issued', 'partially_paid') THEN 1 ELSE 0 END)::int AS pending_count,
+            COALESCE(SUM(CASE WHEN status IN ('issued', 'partially_paid') THEN net_to_pay ELSE 0 END), 0)::float AS pending_amount
           FROM invoices
         `
       ),
 
-      db
-        .select({
-          done: tasksTable.done,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(tasksTable)
-        .groupBy(tasksTable.done),
+      db.execute(
+        sql`
+          SELECT done, count(*)::int AS count
+          FROM tasks
+          GROUP BY done
+        `
+      ),
     ]);
 
-  // Build a full 7-month array filling gaps with 0
   const monthMap: Record<string, number> = {};
   for (const row of monthlyRows.rows as { month: string; income: number }[]) {
     monthMap[row.month] = Number(row.income);
@@ -125,8 +124,9 @@ router.get("/reports/summary", async (req, res) => {
     pendingAmount: Number(b.pending_amount ?? 0),
   };
 
-  const tasksDone = tasksRows.find((r) => r.done === true)?.count ?? 0;
-  const tasksPending = tasksRows.find((r) => r.done === false)?.count ?? 0;
+  const taskRows = tasksRows.rows as { done: boolean; count: number }[];
+  const tasksDone    = taskRows.find((r) => r.done === true)?.count  ?? 0;
+  const tasksPending = taskRows.find((r) => r.done === false)?.count ?? 0;
 
   res.json({ monthly, caseStatus, topClients, billing, tasks: { done: tasksDone, pending: tasksPending } });
 });

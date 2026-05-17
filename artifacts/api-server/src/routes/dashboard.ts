@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, casesTable, invoicesTable, eventsTable, tasksTable, clientsTable } from "@workspace/db";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, isNull, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -11,17 +11,17 @@ router.get("/dashboard/summary", async (req, res) => {
   const [activeCasesRow] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(casesTable)
-    .where(eq(casesTable.status, "active"));
+    .where(and(eq(casesTable.status, "active"), isNull(casesTable.deletedAt)));
 
   const [monthIncomeRow] = await db
-    .select({ total: sql<string>`coalesce(sum(amount), 0)` })
+    .select({ total: sql<string>`coalesce(sum(net_to_pay), 0)` })
     .from(invoicesTable)
     .where(and(eq(invoicesTable.status, "paid"), gte(invoicesTable.createdAt, new Date(firstOfMonth))));
 
   const [pendingInvoicesRow] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(invoicesTable)
-    .where(eq(invoicesTable.status, "pending"));
+    .where(sql`status IN ('issued', 'partially_paid')`);
 
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
@@ -99,14 +99,14 @@ router.get("/dashboard/alerts", async (req, res) => {
   const pendingInvoices = await db
     .select({
       id: invoicesTable.id,
-      amount: invoicesTable.amount,
+      netToPay: invoicesTable.netToPay,
       dueDate: invoicesTable.dueDate,
       caseId: invoicesTable.caseId,
       caseName: casesTable.title,
     })
     .from(invoicesTable)
     .leftJoin(casesTable, eq(invoicesTable.caseId, casesTable.id))
-    .where(eq(invoicesTable.status, "pending"));
+    .where(sql`${invoicesTable.status} IN ('issued', 'partially_paid')`);
 
   const alerts = [
     ...upcomingEvents.map((e) => ({
@@ -121,7 +121,7 @@ router.get("/dashboard/alerts", async (req, res) => {
       .filter((i) => i.dueDate)
       .map((i) => ({
         id: i.id + 10000,
-        message: `فاتورة معلقة: ${Number(i.amount).toFixed(2)} دينار`,
+        message: `فاتورة معلقة: ${Number(i.netToPay).toFixed(2)} دينار`,
         type: "payment" as const,
         dueDate: i.dueDate!,
         caseId: i.caseId,
