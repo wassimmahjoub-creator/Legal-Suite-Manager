@@ -310,11 +310,11 @@ export default function ClientPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+            <Button size="sm" className="gap-1.5 text-xs"
               onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
               <Plus className="h-3.5 w-3.5" /> ملف جديد
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+            <Button size="sm" className="gap-1.5 text-xs"
               onClick={() => { setInvForm({ description: "", unitPriceHt: "", vatRate: "19", dueDate: "", caseId: "" }); setInvoiceModal(true); }}>
               <Receipt className="h-3.5 w-3.5" /> فاتورة جديدة
             </Button>
@@ -519,7 +519,7 @@ export default function ClientPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">الوثائق المرفقة</h2>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+              <Button size="sm" className="gap-1.5 text-xs"
                 onClick={() => { setDocForm({ name: "", fileType: "عقد", caseId: "", url: "" }); setDocModal(true); }}>
                 <Upload className="h-3.5 w-3.5" /> رفع وثيقة
               </Button>
