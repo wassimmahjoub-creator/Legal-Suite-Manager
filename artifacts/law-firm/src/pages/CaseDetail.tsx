@@ -48,7 +48,7 @@ type TeamMember = { id: number; userId: number; role: string; userName: string |
 type ConfNote = { id: number; content: string; createdBy: string | null; createdAt: string; };
 type Relation = { id: number; relatedCaseId: number; relationType: string; relatedTitle: string | null; };
 type UserItem = { id: number; name: string; email: string; role: string; };
-type Opponent = { id: number; name: string; lawyerName: string | null; phone: string | null; address: string | null; notes: string | null; caseId: number | null; };
+type Opponent = { id: number; name: string; lawyerName: string | null; phone: string | null; address: string | null; notes: string | null; caseId: number | null; capacity: string | null; opponentLawyerPhone: string | null; };
 
 export default function CaseDetail() {
   const { id } = useParams();
@@ -62,7 +62,7 @@ export default function CaseDetail() {
   const [confNotes, setConfNotes] = useState<ConfNote[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
-  const [oppForm, setOppForm] = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "" });
+  const [oppForm, setOppForm] = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" });
   const [confirmOppId, setConfirmOppId] = useState<number | null>(null);
   const [allCases, setAllCases] = useState<Array<{ id: number; title: string }>>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
@@ -105,7 +105,17 @@ export default function CaseDetail() {
   }, [id]);
 
   async function openEdit() {
-    const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };
+    const c = caseData as typeof caseData & {
+    caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string;
+    division?: string; procedureStage?: string; archivedAt?: string | null;
+    opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null;
+    caseType?: string | null; litigationDegree?: string | null; procedureType?: string | null;
+    casePriority?: string | null; feeMethod?: string | null; agreedFees?: number | null;
+    hourlyRate?: number | null; percentage?: number | null; percentageBasis?: string | null;
+    disputeValue?: number | null; clientSource?: string | null; judgeName?: string | null;
+    firstHearingDate?: string | null; openedAt?: string | null;
+    confidentialityLevel?: string | null; internalNotes?: string | null;
+  };
     setEditForm({
       title: caseData.title ?? "",
       clientId: String(caseData.clientId ?? ""),
@@ -143,7 +153,17 @@ export default function CaseDetail() {
   if (isLoading) return <SkeletonClientPage tabs={6} />;
   if (!caseData) return <div className="text-center py-20 text-muted-foreground">القضية غير موجودة</div>;
 
-  const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };
+  const c = caseData as typeof caseData & {
+    caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string;
+    division?: string; procedureStage?: string; archivedAt?: string | null;
+    opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null;
+    caseType?: string | null; litigationDegree?: string | null; procedureType?: string | null;
+    casePriority?: string | null; feeMethod?: string | null; agreedFees?: number | null;
+    hourlyRate?: number | null; percentage?: number | null; percentageBasis?: string | null;
+    disputeValue?: number | null; clientSource?: string | null; judgeName?: string | null;
+    firstHearingDate?: string | null; openedAt?: string | null;
+    confidentialityLevel?: string | null; internalNotes?: string | null;
+  };
   const today = new Date().toISOString().slice(0, 10);
   const overdueCount = deadlines.filter(d => !d.completedAt && d.dueDate < today).length;
 
@@ -165,6 +185,9 @@ export default function CaseDetail() {
                   <StatusBadge status={caseData.status} />
                   {c.archivedAt && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
+                  {c.caseType && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full flex items-center gap-1"><FileText className="h-3 w-3" />{c.caseType}</span>}
+                  {c.casePriority && c.casePriority !== "عادية" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "حرجة" ? "bg-red-500/10 text-red-400" : "bg-orange-500/10 text-orange-400"}`}><AlertTriangle className="h-3 w-3" />{c.casePriority}</span>}
+                  {c.confidentialityLevel && c.confidentialityLevel !== "عادي" && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{c.confidentialityLevel}</span>}
                 </div>
                 <h1 className="text-xl font-bold mb-1">{caseData.title}</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -172,9 +195,24 @@ export default function CaseDetail() {
                   {caseData.court && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
                   {caseData.lawyer && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
                   {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDateTN(caseData.nextHearing)}</span>}
+                  {c.litigationDegree && <span className="flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5" />{c.litigationDegree}</span>}
+                  {c.procedureType && <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" />{c.procedureType}</span>}
+                  {c.judgeName && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />ق. {c.judgeName}</span>}
+                  {c.openedAt && <span className="flex items-center gap-1.5 text-xs"><Calendar className="h-3 w-3" />فُتح: {formatDateTN(c.openedAt)}</span>}
                   {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-orange-400"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
                   {c.opponentName && <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" />{c.opponentName}{c.opponentLawyer ? ` — ذ. ${c.opponentLawyer}` : ""}</span>}
                 </div>
+                {/* Financial info strip */}
+                {(c.feeMethod || c.agreedFees || c.disputeValue) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground border-t border-border/50 pt-2">
+                    {c.feeMethod && <span className="flex items-center gap-1"><Briefcase className="h-3 w-3 text-primary/60" />الأتعاب: {c.feeMethod}</span>}
+                    {c.feeMethod === "جزافية" && c.agreedFees && <span className="text-primary font-semibold">{Number(c.agreedFees).toLocaleString()} د.ت</span>}
+                    {c.feeMethod === "بالساعة" && c.hourlyRate && <span className="text-primary font-semibold">{Number(c.hourlyRate).toLocaleString()} د.ت/ساعة</span>}
+                    {c.feeMethod === "نسبة مئوية" && c.percentage && <span className="text-primary font-semibold">{c.percentage}%{c.percentageBasis ? ` من ${c.percentageBasis}` : ""}</span>}
+                    {c.disputeValue && <span className="flex items-center gap-1">قيمة النزاع: <span className="text-foreground font-medium">{Number(c.disputeValue).toLocaleString()} د.ت</span></span>}
+                    {c.clientSource && <span className="flex items-center gap-1">مصدر الحريف: {c.clientSource}</span>}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex gap-2 flex-wrap shrink-0">
@@ -241,8 +279,16 @@ export default function CaseDetail() {
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">الإجراءات القانونية</h3>
-              <Button size="sm" onClick={() => { setProcForm({ stage: "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" }); setModal("procedure"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />إجراء جديد</Button>
+              <Button size="sm" onClick={() => { setProcForm({ stage: c.litigationDegree ?? "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" }); setModal("procedure"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />إجراء جديد</Button>
             </div>
+            {(c.litigationDegree || c.procedureType) && (
+              <div className="flex flex-wrap gap-2 mb-4 p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-xl text-xs">
+                <span className="text-muted-foreground">من الملف:</span>
+                {c.litigationDegree && <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full"><GitBranch className="h-3 w-3" />درجة التقاضي: {c.litigationDegree}</span>}
+                {c.procedureType && <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full"><CheckCircle2 className="h-3 w-3" />نوع الإجراء: {c.procedureType}</span>}
+                {c.firstHearingDate && <span className="flex items-center gap-1 px-2 py-0.5 bg-muted text-muted-foreground rounded-full"><Calendar className="h-3 w-3" />أول جلسة: {formatDateTN(c.firstHearingDate)}</span>}
+              </div>
+            )}
             {procedures.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><GitBranch className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد إجراءات</p></div>
             ) : (
@@ -384,9 +430,18 @@ export default function CaseDetail() {
               </div>
               <Button size="sm" onClick={() => { setConfForm({ content: "" }); setModal("conf-note"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />ملاحظة جديدة</Button>
             </div>
-            {confNotes.length === 0 ? (
+            {c.internalNotes && (
+              <div className="mb-4 p-4 bg-orange-500/5 border border-orange-500/30 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+                  <span className="text-xs font-semibold text-orange-400">ملاحظات من الملف (الإدخال الأولي)</span>
+                </div>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{c.internalNotes}</p>
+              </div>
+            )}
+            {confNotes.length === 0 && !c.internalNotes ? (
               <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><Lock className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد ملاحظات سرية</p></div>
-            ) : (
+            ) : confNotes.length === 0 ? null : (
               <div className="space-y-3">
                 {confNotes.map(n => (
                   <div key={n.id} className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl">
@@ -410,7 +465,7 @@ export default function CaseDetail() {
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">الخصوم</h3>
-              <Button size="sm" onClick={() => { setOppForm({ name: "", lawyerName: "", phone: "", address: "", notes: "" }); setModal("opponent"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />خصم جديد</Button>
+              <Button size="sm" onClick={() => { setOppForm({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" }); setModal("opponent"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />خصم جديد</Button>
             </div>
             {opponents.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><Shield className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا خصوم مسجلين لهذه القضية</p></div>
@@ -421,9 +476,13 @@ export default function CaseDetail() {
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center font-bold shrink-0">{o.name.charAt(0)}</div>
                       <div>
-                        <p className="font-semibold text-sm">{o.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-sm">{o.name}</p>
+                          {o.capacity && <span className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full">{o.capacity}</span>}
+                        </div>
                         <div className="space-y-0.5 mt-0.5">
-                          {o.lawyerName && <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" />{o.lawyerName}</p>}
+                          {o.lawyerName && <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" />ذ. {o.lawyerName}</p>}
+                          {o.opponentLawyerPhone && <p className="text-xs text-muted-foreground flex items-center gap-1"><span>📞</span>محامي: {o.opponentLawyerPhone}</p>}
                           {o.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><span>📞</span>{o.phone}</p>}
                           {o.address && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" />{o.address}</p>}
                           {o.notes && <p className="text-xs text-muted-foreground mt-1 italic">{o.notes}</p>}
@@ -445,13 +504,59 @@ export default function CaseDetail() {
               <h3 className="font-semibold">ملاحظات الملف</h3>
               <Button size="sm" onClick={() => { setNoteText(""); setNoteModal(true); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />إضافة ملاحظة</Button>
             </div>
+
+            {/* Financial & wizard info block */}
+            {(c.feeMethod || c.agreedFees || c.disputeValue || c.clientSource || c.judgeName || c.firstHearingDate || c.openedAt || c.caseType || c.litigationDegree || c.procedureType) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-muted/20 border border-border rounded-xl">
+                {c.caseType && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">نوع القضية</p><p className="text-sm font-medium">{c.caseType}</p></div>
+                )}
+                {c.litigationDegree && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">درجة التقاضي</p><p className="text-sm font-medium">{c.litigationDegree}</p></div>
+                )}
+                {c.procedureType && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">نوع الإجراء</p><p className="text-sm font-medium">{c.procedureType}</p></div>
+                )}
+                {c.feeMethod && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">طريقة الأتعاب</p><p className="text-sm font-medium">{c.feeMethod}</p></div>
+                )}
+                {c.feeMethod === "جزافية" && c.agreedFees && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">الأتعاب المتفق عليها</p><p className="text-sm font-semibold text-primary">{Number(c.agreedFees).toLocaleString()} د.ت</p></div>
+                )}
+                {c.feeMethod === "بالساعة" && c.hourlyRate && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">الأجرة بالساعة</p><p className="text-sm font-semibold text-primary">{Number(c.hourlyRate).toLocaleString()} د.ت/ساعة</p></div>
+                )}
+                {c.feeMethod === "نسبة مئوية" && c.percentage && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">النسبة المئوية</p><p className="text-sm font-semibold text-primary">{c.percentage}%{c.percentageBasis ? ` من ${c.percentageBasis}` : ""}</p></div>
+                )}
+                {c.disputeValue && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">قيمة النزاع</p><p className="text-sm font-medium">{Number(c.disputeValue).toLocaleString()} د.ت</p></div>
+                )}
+                {c.judgeName && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">اسم القاضي</p><p className="text-sm font-medium">{c.judgeName}</p></div>
+                )}
+                {c.firstHearingDate && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">أول جلسة</p><p className="text-sm font-medium">{formatDateTN(c.firstHearingDate)}</p></div>
+                )}
+                {c.openedAt && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">تاريخ فتح الملف</p><p className="text-sm font-medium">{formatDateTN(c.openedAt)}</p></div>
+                )}
+                {c.clientSource && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">مصدر الحريف</p><p className="text-sm font-medium">{c.clientSource}</p></div>
+                )}
+                {c.confidentialityLevel && (
+                  <div><p className="text-[10px] text-muted-foreground mb-0.5">مستوى السرية</p><p className="text-sm font-medium">{c.confidentialityLevel}</p></div>
+                )}
+              </div>
+            )}
+
             {caseData.description && (
               <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">الوصف</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl">{caseData.description}</p></div>
             )}
             {caseData.notes && (
               <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">ملاحظات</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl whitespace-pre-wrap">{caseData.notes}</p></div>
             )}
-            {!caseData.description && !caseData.notes && (
+            {!caseData.description && !caseData.notes && !c.feeMethod && !c.caseType && !c.litigationDegree && (
               <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl"><StickyNote className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد ملاحظات</p></div>
             )}
           </CardContent></Card>
@@ -463,14 +568,27 @@ export default function CaseDetail() {
       {/* MODAL: Opponent */}
       <Modal open={modal === "opponent"} onClose={() => setModal(null)} title="إضافة خصم">
         <div className="space-y-4">
-          <FormField label="الاسم *" htmlFor="opp-name">
-            <Input id="opp-name" value={oppForm.name} onChange={e => setOppForm({...oppForm, name: e.target.value})} placeholder="اسم الخصم" className={inputCls} />
-          </FormField>
-          <FormField label="محامي الخصم" htmlFor="opp-lawyer">
-            <Input id="opp-lawyer" value={oppForm.lawyerName} onChange={e => setOppForm({...oppForm, lawyerName: e.target.value})} placeholder="اسم المحامي" className={inputCls} />
-          </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="الهاتف" htmlFor="opp-phone">
+            <FormField label="الاسم *" htmlFor="opp-name">
+              <Input id="opp-name" value={oppForm.name} onChange={e => setOppForm({...oppForm, name: e.target.value})} placeholder="اسم الخصم" className={inputCls} />
+            </FormField>
+            <FormField label="الصفة" htmlFor="opp-capacity">
+              <SelectNative id="opp-capacity" value={oppForm.capacity} onChange={e => setOppForm({...oppForm, capacity: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">اختر صفة...</option>
+                {["شخص طبيعي", "شخص معنوي", "ورثة", "مجهول"].map(s => <option key={s} value={s}>{s}</option>)}
+              </SelectNative>
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="محامي الخصم" htmlFor="opp-lawyer">
+              <Input id="opp-lawyer" value={oppForm.lawyerName} onChange={e => setOppForm({...oppForm, lawyerName: e.target.value})} placeholder="اسم المحامي" className={inputCls} />
+            </FormField>
+            <FormField label="هاتف محامي الخصم" htmlFor="opp-lawyer-phone">
+              <Input id="opp-lawyer-phone" value={oppForm.opponentLawyerPhone} onChange={e => setOppForm({...oppForm, opponentLawyerPhone: e.target.value})} placeholder="2X XXX XXX" className={inputCls} dir="ltr" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="هاتف الخصم" htmlFor="opp-phone">
               <Input id="opp-phone" value={oppForm.phone} onChange={e => setOppForm({...oppForm, phone: e.target.value})} placeholder="2X XXX XXX" className={inputCls} dir="ltr" />
             </FormField>
             <FormField label="العنوان" htmlFor="opp-addr">
@@ -482,7 +600,11 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !oppForm.name.trim()} onClick={() => withSave(async () => {
-              await authFetch(`${BASE}/api/opponents`, { method: "POST", body: JSON.stringify({ ...oppForm, caseId: Number(id) }) });
+              await authFetch(`${BASE}/api/opponents`, { method: "POST", body: JSON.stringify({
+                name: oppForm.name, lawyerName: oppForm.lawyerName, phone: oppForm.phone,
+                address: oppForm.address, notes: oppForm.notes, caseId: Number(id),
+                capacity: oppForm.capacity || undefined, opponentLawyerPhone: oppForm.opponentLawyerPhone || undefined,
+              }) });
             }, load.opponents)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
