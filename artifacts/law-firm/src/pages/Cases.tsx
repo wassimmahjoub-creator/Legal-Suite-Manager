@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
+import { CourtSelect } from "@/components/CourtSelect";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -27,18 +28,13 @@ export default function Cases() {
     opponentName: "", opponentLawyer: "",
   });
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
-  const [courts, setCourts] = useState<Array<{ id: number; name: string; division?: string | null; city?: string | null }>>([]);
   const [saving, setSaving] = useState(false);
   const [, navigate] = useLocation();
   const { data: cases, isLoading, refetch } = useListCases();
 
   async function openNewModal() {
-    const [rc, rco] = await Promise.all([
-      authFetch(`${BASE}/api/clients`),
-      authFetch(`${BASE}/api/courts`),
-    ]);
+    const rc = await authFetch(`${BASE}/api/clients`);
     if (rc.ok) setClients(await rc.json());
-    if (rco.ok) setCourts(await rco.json());
     setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" });
     setShowModal(true);
   }
@@ -238,26 +234,10 @@ export default function Cases() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="المحكمة" htmlFor="case-court">
-              <select
-                id="case-court"
+              <CourtSelect
                 value={form.court}
-                onChange={e => {
-                  const selected = courts.find(c => c.name === e.target.value);
-                  setForm(f => ({
-                    ...f,
-                    court: e.target.value,
-                    division: selected?.division ?? f.division,
-                  }));
-                }}
-                className={inputCls + " px-3 cursor-pointer"}
-              >
-                <option value="">اختر محكمة...</option>
-                {courts.map(c => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}{c.city ? ` — ${c.city}` : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={v => setForm(f => ({ ...f, court: v }))}
+              />
             </FormField>
             <FormField label="الدائرة" htmlFor="case-div">
               <Input id="case-div" placeholder="الدائرة الأولى" className={inputCls}

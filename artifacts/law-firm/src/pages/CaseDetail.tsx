@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
+import { CourtSelect } from "@/components/CourtSelect";
 import {
   Plus, MapPin, User, Calendar, FileText, CheckCircle2,
   Clock, Briefcase, ArrowRight, Trash2,
@@ -57,7 +58,6 @@ export default function CaseDetail() {
   const [allCases, setAllCases] = useState<Array<{ id: number; title: string }>>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
 
-  const [courts, setCourts] = useState<Array<{ id: number; name: string; division?: string | null; city?: string | null }>>([]);
   const [editForm, setEditForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
@@ -89,8 +89,6 @@ export default function CaseDetail() {
 
   async function openEdit() {
     const c = caseData as typeof caseData & { caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; officeRef?: string; division?: string; procedureStage?: string; archivedAt?: string | null; opponentName?: string | null; opponentLawyer?: string | null; judgmentText?: string | null; };
-    const rco = await authFetch(`${BASE}/api/courts`);
-    if (rco.ok) setCourts(await rco.json());
     setEditForm({
       title: caseData.title ?? "",
       clientId: String(caseData.clientId ?? ""),
@@ -508,13 +506,10 @@ export default function CaseDetail() {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="المحكمة" htmlFor="ed-court">
-              <select id="ed-court" value={editForm.court} onChange={e => {
-                const sel = courts.find(c => c.name === e.target.value);
-                setEditForm(f => ({ ...f, court: e.target.value, division: sel?.division ?? f.division }));
-              }} className={inputCls + " px-3 cursor-pointer"}>
-                <option value="">اختر محكمة...</option>
-                {courts.map(c => <option key={c.id} value={c.name}>{c.name}{c.city ? ` — ${c.city}` : ""}</option>)}
-              </select>
+              <CourtSelect
+                value={editForm.court}
+                onChange={v => setEditForm(f => ({ ...f, court: v }))}
+              />
             </FormField>
             <FormField label="الدائرة" htmlFor="ed-div">
               <Input id="ed-div" value={editForm.division} onChange={e => setEditForm(f => ({ ...f, division: e.target.value }))} className={inputCls} placeholder="الدائرة الأولى" />

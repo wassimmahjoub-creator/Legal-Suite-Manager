@@ -1,0 +1,39 @@
+Implémente la gestion des juridictions tunisiennes (محاكم) avec seeding initial.
+
+SCHÉMA :
+Crée une migration pour la table `courts` avec les colonnes suivantes :
+- id (uuid, PK)
+- name_ar (text, not null) — nom en arabe ex: "المحكمة الابتدائية بتونس"
+- name_fr (text, not null) — nom en français ex: "Tribunal de première instance de Tunis"
+- type (enum) : cassation | appel | premiere_instance | cantonal | administratif | immobilier | prudhommes | autre
+- parent_court_id (uuid, nullable, FK vers courts.id) — pour rattachement hiérarchique
+- governorate (text) — gouvernorat
+- address (text, nullable)
+- phone (text, nullable)
+- chambers (jsonb, default '[]') — liste de {id, name_ar, name_fr, specialty}
+- created_at, updated_at (timestamps)
+
+SEEDING :
+Crée un script de seed `seeds/courts.ts` qui pré-remplit AU MINIMUM :
+- 1× Cour de cassation (محكمة التعقيب) — Tunis
+- 4× Cours d'appel : Tunis, Sousse, Sfax, Médenine (محاكم الاستئناف)
+- 1× Tribunal administratif (المحكمة الإدارية) — Tunis
+- 1× Tribunal immobilier (المحكمة العقارية) — Tunis
+- 24× Tribunaux de première instance, un par gouvernorat tunisien (المحاكم الابتدائية)
+Si tu n'es pas certain des noms exacts ou adresses, marque la valeur avec un préfixe "TODO_VERIFY:" pour que je puisse les compléter manuellement ensuite. Le seed doit être idempotent (ON CONFLICT DO NOTHING ou équivalent).
+
+UI :
+- Page `/courts` :
+  - Table avec colonnes : Nom (FR/AR selon langue active), Type, Gouvernorat, Adresse, Actions.
+  - Barre de recherche full-text sur name_ar + name_fr + governorate.
+  - Filtres : par type, par gouvernorat.
+  - Bouton "Ajouter une juridiction" → modale/page de création.
+  - Bouton "Importer CSV" → upload + preview + import en masse.
+- Composant <CourtSelect /> : autocomplete réutilisable qui interroge l'API /courts. À brancher sur le champ "محكمة" du formulaire de création de qadhiya en remplaçant la saisie libre actuelle.
+
+LIVRABLES :
+- Migration SQL
+- Script de seed exécuté
+- Composant <CourtSelect /> documenté avec props
+- Diff du formulaire de qadhiya
+- Capture d'écran de /courts après seed
