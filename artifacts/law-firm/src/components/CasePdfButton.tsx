@@ -103,7 +103,7 @@ async function archiveDocument(
 ) {
   try {
     const label = caseNumber ?? caseTitle ?? `case-${caseId}`;
-    const name = `فيشة القضية — ${label} — ${formatDateTN(new Date())}`;
+    const name = `بطاقة القضية — ${label} — ${formatDateTN(new Date())}`;
     await authFetch(`${BASE}/api/documents`, {
       method: "POST",
       body: JSON.stringify({ caseId: Number(caseId), name, fileType: "pdf", url: null }),

@@ -84,8 +84,8 @@ const EVENT_LABELS: Record<string, string> = {
 
 const TABS = [
   { id: "info",        label: "المعلومات",         icon: <User className="h-4 w-4" /> },
-  { id: "cases",       label: "الدوسيهات الجارية", icon: <Briefcase className="h-4 w-4" /> },
-  { id: "archived",    label: "الدوسيهات المؤرشفة", icon: <BookOpen className="h-4 w-4" /> },
+  { id: "cases",       label: "الملفات الجارية", icon: <Briefcase className="h-4 w-4" /> },
+  { id: "archived",    label: "الملفات المؤرشفة", icon: <BookOpen className="h-4 w-4" /> },
   { id: "billing",     label: "الجدول المالي",     icon: <CreditCard className="h-4 w-4" /> },
   { id: "hours",       label: "الساعات",           icon: <Clock className="h-4 w-4" /> },
   { id: "documents",   label: "الوثائق",           icon: <FileText className="h-4 w-4" /> },
@@ -295,7 +295,7 @@ export default function ClientPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="outline" className="gap-1.5 text-xs"
               onClick={() => navigate(`/cases?clientId=${clientId}`)}>
-              <Plus className="h-3.5 w-3.5" /> دوسيه جديد
+              <Plus className="h-3.5 w-3.5" /> ملف جديد
             </Button>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs"
               onClick={() => navigate(`/billing?clientId=${clientId}`)}>
@@ -446,12 +446,12 @@ export default function ClientPage() {
 
         {/* DOSSIERS EN COURS */}
         {activeTab === "cases" && (
-          <CasesTab cases={activeCases} label="الدوسيهات الجارية" navigate={navigate} />
+          <CasesTab cases={activeCases} label="الملفات الجارية" navigate={navigate} />
         )}
 
-        {/* DOSSIERS ARCHIVÉS */}
+        {/* ملفات مؤرشفة */}
         {activeTab === "archived" && (
-          <CasesTab cases={archivedCases} label="الدوسيهات المؤرشفة" navigate={navigate} />
+          <CasesTab cases={archivedCases} label="الملفات المؤرشفة" navigate={navigate} />
         )}
 
         {/* ÉCHÉANCIER FINANCIER */}

@@ -88,7 +88,7 @@ export interface CasePdfProps {
 
 const LABELS = {
   ar: {
-    docTitle: "فيشة القضية",
+    docTitle: "بطاقة القضية",
     caseFile: "ملف القضية",
     client: "الحريف",
     clientType: "صنف الحريف",
