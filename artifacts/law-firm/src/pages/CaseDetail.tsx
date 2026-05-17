@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
@@ -74,6 +75,9 @@ export default function CaseDetail() {
   const [relForm, setRelForm] = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
   const [saving, setSaving] = useState(false);
+  const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
+  const [confirmProcId, setConfirmProcId] = useState<number | null>(null);
+  const [confirmDeadlineId, setConfirmDeadlineId] = useState<number | null>(null);
 
   const load = {
     procedures: async () => { const r = await authFetch(`${BASE}/api/cases/${id}/procedures`); if (r.ok) setProcedures(await r.json()); },
@@ -180,7 +184,7 @@ export default function CaseDetail() {
                 caseTitle={caseData?.title}
                 caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber}
               />
-              <Button variant="destructive" size="sm" onClick={async () => { if (!confirm("نقل إلى سلة المحذوفات؟")) return; await authFetch(`${BASE}/api/cases/${id}/soft-delete`, { method: "PATCH" }); navigate("/cases"); }} className="gap-1.5 text-xs">
+              <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs">
                 <Trash2 className="h-3.5 w-3.5" /> حذف
               </Button>
             </div>
@@ -224,7 +228,7 @@ export default function CaseDetail() {
                             <p className="font-semibold">{p.stage}</p>
                             <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${p.status === "مكتملة" ? "bg-green-500/10 text-green-400" : p.status === "موقوفة" ? "bg-orange-500/10 text-orange-400" : "bg-blue-500/10 text-blue-400"}`}>{p.status}</span>
                           </div>
-                          <button onClick={async () => { if (!confirm("حذف هذا الإجراء؟")) return; await authFetch(`${BASE}/api/procedures/${p.id}`, { method: "DELETE" }); load.procedures(); }} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                          <button onClick={() => setConfirmProcId(p.id)} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                         </div>
                         {p.notes && <p className="text-sm text-muted-foreground mt-2">{p.notes}</p>}
                         {(p.startedAt || p.endedAt) && (
@@ -271,7 +275,7 @@ export default function CaseDetail() {
                             </div>
                           </div>
                         </div>
-                        <button onClick={async () => { if (!confirm("حذف هذا الأجل؟")) return; await authFetch(`${BASE}/api/deadlines/${d.id}`, { method: "DELETE" }); load.deadlines(); }} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                        <button onClick={() => setConfirmDeadlineId(d.id)} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                       </div>
                     </div>
                   );
@@ -560,6 +564,51 @@ export default function CaseDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Confirm case soft-delete */}
+      <ConfirmDestructive
+        open={confirmCaseDelete}
+        onClose={() => setConfirmCaseDelete(false)}
+        onConfirm={async () => {
+          await authFetch(`${BASE}/api/cases/${id}/soft-delete`, { method: "PATCH" });
+          navigate("/cases");
+        }}
+        title="نقل الملف إلى سلة المحذوفات؟"
+        description="سيتم نقل الملف إلى سلة المحذوفات لمدة 30 يوماً ثم يُحذف نهائياً."
+        consequenceList={[
+          "جميع الوثائق المرتبطة ستصبح غير متاحة",
+          "السجل المالي يُحفظ لكن منفصلاً عن الملف",
+          "الجلسات الماضية تبقى مرئية في الرزنامة",
+        ]}
+        confirmationText={c.caseNumber ?? undefined}
+        confirmLabel="نقل إلى سلة المحذوفات"
+      />
+
+      {/* Confirm procedure delete */}
+      <ConfirmDestructive
+        open={confirmProcId !== null}
+        onClose={() => setConfirmProcId(null)}
+        onConfirm={async () => {
+          await authFetch(`${BASE}/api/procedures/${confirmProcId}`, { method: "DELETE" });
+          await load.procedures();
+        }}
+        title="حذف الإجراء نهائياً؟"
+        description="سيتم حذف هذا الإجراء القانوني بشكل نهائي ولا يمكن التراجع عنه."
+        confirmLabel="حذف الإجراء"
+      />
+
+      {/* Confirm deadline delete */}
+      <ConfirmDestructive
+        open={confirmDeadlineId !== null}
+        onClose={() => setConfirmDeadlineId(null)}
+        onConfirm={async () => {
+          await authFetch(`${BASE}/api/deadlines/${confirmDeadlineId}`, { method: "DELETE" });
+          await load.deadlines();
+        }}
+        title="حذف الأجل نهائياً؟"
+        description="سيتم حذف هذا الأجل القانوني بشكل نهائي ولا يمكن التراجع عنه."
+        confirmLabel="حذف الأجل"
+      />
 
       {/* MODAL: Relation */}
       <Modal open={modal === "relation"} onClose={() => setModal(null)} title="ربط قضية">

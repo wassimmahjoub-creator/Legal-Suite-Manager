@@ -11,6 +11,7 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -39,6 +40,8 @@ export default function Clients() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [deleteBlock, setDeleteBlock] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
   async function load() {
@@ -95,10 +98,15 @@ export default function Clients() {
     setModal(false);
   }
 
-  async function remove(id: number) {
-    if (!confirm("حذف هذا الحريف؟")) return;
-    await authFetch(`${BASE}/api/clients/${id}`, { method: "DELETE" });
-    await load();
+  async function remove(client: Client) {
+    const r = await authFetch(`${BASE}/api/clients/${client.id}/delete-check`);
+    if (!r.ok) return;
+    const chk = await r.json() as { canDelete: boolean; reason: string | null };
+    if (!chk.canDelete) {
+      setDeleteBlock(chk.reason ?? "لا يمكن الحذف");
+      return;
+    }
+    setClientToDelete(client);
   }
 
   const filtered = clients.filter(c =>
@@ -169,7 +177,7 @@ export default function Clients() {
                       className="p-1.5 hover:bg-muted rounded-lg">
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
-                    <button onClick={e => { e.stopPropagation(); remove(client.id); }}
+                    <button onClick={e => { e.stopPropagation(); remove(client); }}
                       className="p-1.5 hover:bg-destructive/10 rounded-lg">
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </button>
@@ -252,6 +260,39 @@ export default function Clients() {
           </div>
         </div>
       </Modal>
+
+      {/* Block alert — client has active cases or unpaid invoices */}
+      <Modal open={!!deleteBlock} onClose={() => setDeleteBlock(null)} title="لا يمكن الحذف">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">{deleteBlock}</p>
+          <div className="flex justify-end">
+            <button
+              className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              onClick={() => setDeleteBlock(null)}
+            >
+              حسناً
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirm client soft-delete */}
+      <ConfirmDestructive
+        open={!!clientToDelete}
+        onClose={() => setClientToDelete(null)}
+        onConfirm={async () => {
+          await authFetch(`${BASE}/api/clients/${clientToDelete!.id}/soft-delete`, { method: "PATCH" });
+          await load();
+        }}
+        title={`نقل الحريف "${clientToDelete?.name}" إلى سلة المحذوفات؟`}
+        description="سيتم نقل الحريف إلى سلة المحذوفات لمدة 30 يوماً ثم يُحذف نهائياً."
+        consequenceList={[
+          "جميع ملفاته المرتبطة ستصبح غير متاحة",
+          "السجل المالي يُحفظ لكن منفصلاً عن الحريف",
+        ]}
+        confirmationText={clientToDelete?.name}
+        confirmLabel="نقل إلى سلة المحذوفات"
+      />
 
     </div>
   );

@@ -75,6 +75,29 @@ router.put("/clients/:id", async (req, res) => {
   res.json(client);
 });
 
+router.get("/clients/:id/delete-check", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const activeCases = await db.select({ id: casesTable.id })
+    .from(casesTable)
+    .where(and(eq(casesTable.clientId, id), isNull(casesTable.deletedAt)));
+  if (activeCases.length > 0) {
+    res.json({ canDelete: false, reason: `لا يمكن الحذف: لدى الحريف ${activeCases.length} قضية نشطة. أرشف القضايا أولاً.` });
+    return;
+  }
+  const unpaidInvoices = await db.select({ id: invoicesTable.id })
+    .from(invoicesTable)
+    .where(and(
+      eq(invoicesTable.clientId, id),
+      isNull(invoicesTable.deletedAt),
+      sql`${invoicesTable.status} NOT IN ('paid', 'cancelled')`
+    ));
+  if (unpaidInvoices.length > 0) {
+    res.json({ canDelete: false, reason: `لا يمكن الحذف: لدى الحريف ${unpaidInvoices.length} فاتورة غير مسددة. سدّد الفواتير أولاً.` });
+    return;
+  }
+  res.json({ canDelete: true, reason: null });
+});
+
 router.patch("/clients/:id/soft-delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   await db.update(clientsTable).set({ deletedAt: new Date() }).where(eq(clientsTable.id, id));

@@ -1,0 +1,72 @@
+Renforce les confirmations de suppression pour éviter les pertes accidentelles.
+
+COMPOSANT
+Crée src/components/ui/ConfirmDestructive.tsx :
+
+interface ConfirmDestructiveProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  title: string;
+  description: string;
+  confirmationText?: string;        // si fourni, l'utilisateur doit retaper cette chaîne
+  confirmLabel?: string;            // texte du bouton (default: "Supprimer définitivement")
+  consequenceList?: string[];       // liste des conséquences à afficher
+}
+
+UI :
+- Modal avec header rouge.
+- Icône warning ⚠️ en haut.
+- Titre.
+- Description.
+- Liste à puces des conséquences si fournie.
+- Si confirmationText fourni :
+  - Texte : "Pour confirmer, tapez : <strong>{confirmationText}</strong>"
+  - Input contrôlé
+  - Bouton "Supprimer définitivement" DISABLED tant que l'input !== confirmationText (strict, case-sensitive)
+- Si pas de confirmationText : simple bouton actif.
+- Bouton "Annuler" toujours actif.
+
+INTÉGRATION
+
+1. Suppression de dossier :
+   <ConfirmDestructive
+     title="Supprimer le dossier {numéro} ?"
+     description="Cette action déplacera le dossier dans la corbeille pour 30 jours puis le supprimera définitivement."
+     consequenceList={[
+       "Tous les documents rattachés deviendront inaccessibles",
+       "L'historique financier sera conservé mais détaché",
+       "Les audiences passées resteront visibles dans l'agenda"
+     ]}
+     confirmationText={case.case_number}
+   />
+   Implémente côté API un soft delete : UPDATE cases SET deleted_at = now() WHERE id = ?
+
+2. Suppression de client :
+   confirmationText = client.name_fr (ou name_ar selon locale)
+   Vérification préalable : si le client a des factures non payées ou des dossiers actifs, bloque avec un message explicite ("Réglez d'abord les factures impayées" / "Archivez d'abord les dossiers actifs").
+
+3. Suppression de facture brouillon :
+   confirmationText = invoice.invoice_number
+   Note : factures en statut "issued" ou ultérieur ne peuvent PAS être supprimées. Le bouton "Supprimer" est masqué — remplacé par "Générer un avoir" (déjà fait en T4).
+
+4. Suppression mineure (note, tâche, événement agenda, ligne de facture brouillon) :
+   Pas de retape. Simple message "Êtes-vous sûr ?" + bouton "Supprimer".
+
+SOFT DELETE
+Migrations :
+- ALTER TABLE cases ADD COLUMN deleted_at timestamp NULL;
+- ALTER TABLE clients ADD COLUMN deleted_at timestamp NULL;
+- Toutes les queries existantes sur ces tables doivent maintenant filtrer WHERE deleted_at IS NULL.
+- Crée une page admin /admin/trash listant les éléments soft-deletés des 30 derniers jours, avec bouton "Restaurer".
+- Tâche cron quotidienne : DELETE WHERE deleted_at < now() - interval '30 days' (hard delete au-delà).
+
+CAS D'USAGE EN AR
+Si la locale est AR, le retape utilise le nom AR du client ou le numéro de dossier (qui contient des chiffres latins de toute façon). Documentation utilisateur claire dans la modale.
+
+LIVRABLES :
+- <ConfirmDestructive />
+- Migrations soft delete
+- Page /admin/trash
+- Tâche cron documentée
+- Diff des appels à confirm() dans les pages détail

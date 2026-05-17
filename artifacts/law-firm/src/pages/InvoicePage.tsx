@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { FormField, Modal } from "@/components/Modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowRight, Lock, Edit2, FileX, CreditCard, Download, Loader2,
+  ArrowRight, Lock, Edit2, FileX, CreditCard, Download, Loader2, Trash2,
 } from "lucide-react";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { InvoicePdfButton } from "@/components/InvoicePdf";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
@@ -45,6 +46,8 @@ export default function InvoicePage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
   const [creditLoading, setCreditLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCreditNote, setConfirmCreditNote] = useState(false);
 
   async function load() {
     const [invRes, cabRes] = await Promise.all([
@@ -72,9 +75,8 @@ export default function InvoicePage() {
     setPaymentAmount("");
   }
 
-  async function generateCreditNote() {
+  async function doCreditNote() {
     if (!inv) return;
-    if (!confirm("هل تريد إنشاء فاتورة تصحيحية؟ سيتم إلغاء هذه الفاتورة.")) return;
     setCreditLoading(true);
     const r = await authFetch(`${BASE}/api/invoices/${inv.id}/credit-note`, { method: "POST" });
     if (r.ok) {
@@ -82,6 +84,12 @@ export default function InvoicePage() {
       navigate(`/billing/${credit.id}`);
     }
     setCreditLoading(false);
+  }
+
+  async function deleteInvoice() {
+    if (!inv) return;
+    await authFetch(`${BASE}/api/invoices/${inv.id}/soft-delete`, { method: "PATCH" });
+    navigate("/billing");
   }
 
   function printPdf() {
@@ -127,6 +135,12 @@ export default function InvoicePage() {
               <Edit2 className="h-4 w-4" /> تعديل
             </Button>
           )}
+          {!isLocked && (
+            <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="h-4 w-4" /> حذف المسودة
+            </Button>
+          )}
           {isLocked && inv.status !== "cancelled" && (
             <>
               <Button variant="outline" size="sm" className="gap-2"
@@ -134,7 +148,7 @@ export default function InvoicePage() {
                 <CreditCard className="h-4 w-4" /> تسجيل دفعة
               </Button>
               <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive"
-                onClick={generateCreditNote} disabled={creditLoading}>
+                onClick={() => setConfirmCreditNote(true)} disabled={creditLoading}>
                 {creditLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileX className="h-4 w-4" />}
                 إصدار فاتورة تصحيحية
               </Button>
@@ -285,6 +299,27 @@ export default function InvoicePage() {
           )}
         </div>
       </div>
+
+      {/* Confirm draft invoice delete */}
+      <ConfirmDestructive
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={deleteInvoice}
+        title={`حذف المسودة ${inv?.invoiceNumber ?? ""}؟`}
+        description="سيتم نقل هذه المسودة إلى سلة المحذوفات."
+        confirmationText={inv?.invoiceNumber ?? undefined}
+        confirmLabel="حذف المسودة"
+      />
+
+      {/* Confirm credit note */}
+      <ConfirmDestructive
+        open={confirmCreditNote}
+        onClose={() => setConfirmCreditNote(false)}
+        onConfirm={doCreditNote}
+        title="إصدار فاتورة تصحيحية؟"
+        description="سيتم إلغاء هذه الفاتورة وإنشاء فاتورة تصحيحية (avoir) مرتبطة بها. لا يمكن التراجع عن هذه العملية."
+        confirmLabel="إصدار الفاتورة التصحيحية"
+      />
 
       {/* Payment modal */}
       <Modal open={paymentModal} onClose={() => setPaymentModal(false)} title="تسجيل دفعة">
