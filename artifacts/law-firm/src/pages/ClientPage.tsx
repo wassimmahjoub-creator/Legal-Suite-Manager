@@ -15,7 +15,7 @@ import {
   User, Building2, Phone, Mail, MapPin, Plus, Pencil, Trash2,
   Briefcase, FileText, Clock, MessageSquare, BookOpen,
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
-  CheckCircle2, AlertCircle, Calendar, Hash,
+  CheckCircle2, AlertCircle, Calendar, Hash, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +119,11 @@ export default function ClientPage() {
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [tabLoaded, setTabLoaded] = useState<Set<string>>(new Set());
+
+  // Quick invoice modal
+  const [invoiceModal, setInvoiceModal] = useState(false);
+  const [invForm, setInvForm] = useState({ description: "", unitPriceHt: "", vatRate: "19", dueDate: "", caseId: "" });
+  const [savingInv, setSavingInv] = useState(false);
 
   // Note modal
   const [noteModal, setNoteModal] = useState(false);
@@ -296,7 +301,7 @@ export default function ClientPage() {
               <Plus className="h-3.5 w-3.5" /> ملف جديد
             </Button>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-              onClick={() => navigate(`/billing?clientId=${clientId}`)}>
+              onClick={() => { setInvForm({ description: "", unitPriceHt: "", vatRate: "19", dueDate: "", caseId: "" }); setInvoiceModal(true); }}>
               <Receipt className="h-3.5 w-3.5" /> فاتورة جديدة
             </Button>
             <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
@@ -562,6 +567,141 @@ export default function ClientPage() {
           </div>
         )}
       </div>
+
+      {/* Quick Invoice Modal */}
+      <Modal open={invoiceModal} onClose={() => setInvoiceModal(false)} title="فاتورة جديدة" size="lg">
+        <div className="space-y-4">
+          {/* Client banner */}
+          <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl text-sm">
+            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div>
+              <p className="font-semibold">{client?.name}</p>
+              {client?.taxId && <p className="text-xs text-muted-foreground" dir="ltr">م.ج: {client.taxId}</p>}
+            </div>
+          </div>
+
+          {/* Case selector */}
+          {cases.length > 0 && (
+            <FormField label="الملف المرتبط" htmlFor="inv-case">
+              <select id="inv-case" value={invForm.caseId}
+                onChange={e => setInvForm(f => ({ ...f, caseId: e.target.value }))}
+                className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">بدون ملف</option>
+                {cases.map(c => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          )}
+
+          {/* Description */}
+          <FormField label="الخدمة / الوصف *" htmlFor="inv-desc">
+            <textarea
+              id="inv-desc"
+              className={inputCls + " min-h-[80px] p-3 resize-none"}
+              placeholder="مثال: أتعاب المحاماة في قضية رقم..."
+              value={invForm.description}
+              onChange={e => setInvForm(f => ({ ...f, description: e.target.value }))}
+              autoFocus
+            />
+          </FormField>
+
+          {/* Amount + VAT */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="المبلغ قبل الضريبة (د.ت) *" htmlFor="inv-ht">
+              <Input id="inv-ht" type="number" min="0" step="0.001" dir="ltr"
+                placeholder="0.000"
+                value={invForm.unitPriceHt}
+                onChange={e => setInvForm(f => ({ ...f, unitPriceHt: e.target.value }))}
+                className={inputCls} />
+            </FormField>
+            <FormField label="نسبة الضريبة (TVA)" htmlFor="inv-vat">
+              <select id="inv-vat" value={invForm.vatRate}
+                onChange={e => setInvForm(f => ({ ...f, vatRate: e.target.value }))}
+                className={inputCls + " px-3 cursor-pointer"}>
+                <option value="0">0 %</option>
+                <option value="7">7 %</option>
+                <option value="13">13 %</option>
+                <option value="19">19 %</option>
+              </select>
+            </FormField>
+          </div>
+
+          {/* Live total preview */}
+          {!!invForm.unitPriceHt && parseFloat(invForm.unitPriceHt) > 0 && (() => {
+            const ht = parseFloat(invForm.unitPriceHt) || 0;
+            const vat = parseFloat(invForm.vatRate) || 0;
+            const vatAmt = ht * vat / 100;
+            const ttc = ht + vatAmt;
+            const whRate = client?.withholdingExempt ? 0 : (parseFloat(String(client?.withholdingRate ?? 0)) || 0);
+            const whAmt = ht * whRate / 100;
+            const net = ttc - whAmt;
+            return (
+              <div className="p-3 bg-muted/40 rounded-xl text-sm space-y-1.5">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>المجموع قبل الضريبة</span><span dir="ltr">{ht.toFixed(3)} د.ت</span>
+                </div>
+                {vatAmt > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>TVA {vat}%</span><span dir="ltr">{vatAmt.toFixed(3)} د.ت</span>
+                  </div>
+                )}
+                {whAmt > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>خصم المورد {whRate}%</span><span dir="ltr">−{whAmt.toFixed(3)} د.ت</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold border-t border-border pt-1.5">
+                  <span>الصافي للدفع</span><span dir="ltr">{net.toFixed(3)} د.ت</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Due date */}
+          <FormField label="تاريخ الاستحقاق" htmlFor="inv-due">
+            <Input id="inv-due" type="date" dir="ltr"
+              value={invForm.dueDate}
+              onChange={e => setInvForm(f => ({ ...f, dueDate: e.target.value }))}
+              className={inputCls} />
+          </FormField>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <Button className="flex-1"
+              disabled={savingInv || !invForm.description.trim() || !invForm.unitPriceHt || parseFloat(invForm.unitPriceHt) <= 0}
+              onClick={async () => {
+                setSavingInv(true);
+                const r = await authFetch(`${BASE}/api/invoices`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    clientId,
+                    caseId: invForm.caseId ? Number(invForm.caseId) : null,
+                    dueDate: invForm.dueDate || null,
+                    lines: [{
+                      description: invForm.description.trim(),
+                      unit: "forfait",
+                      quantity: 1,
+                      unitPriceHt: parseFloat(invForm.unitPriceHt) || 0,
+                      vatRate: parseFloat(invForm.vatRate) || 19,
+                      position: 0,
+                    }],
+                  }),
+                });
+                const inv = await r.json();
+                setSavingInv(false);
+                navigate(`/billing/${inv.id}`);
+              }}>
+              {savingInv
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> جارٍ الإنشاء...</>
+                : "إنشاء الفاتورة"}
+            </Button>
+            <Button variant="outline" onClick={() => setInvoiceModal(false)} className="px-6">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Add Note Modal */}
       <Modal open={noteModal} onClose={() => setNoteModal(false)} title="إضافة ملاحظة">
