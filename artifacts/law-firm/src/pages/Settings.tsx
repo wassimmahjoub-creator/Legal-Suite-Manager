@@ -15,7 +15,7 @@ const tabs = [
   { id: "notifications",label: "الإشعارات",      icon: Bell },
   { id: "security",     label: "الأمان",          icon: Shield },
   { id: "display",      label: "العرض",           icon: Palette },
-  { id: "agenda",       label: "الأجندة",         icon: CalendarIcon },
+  { id: "agenda",       label: "الرزنامة",         icon: CalendarIcon },
 ];
 
 type Status = { type: "success" | "error"; msg: string } | null;
@@ -329,7 +329,7 @@ export default function Settings() {
               <Card className="border-none shadow-sm">
                 <CardHeader className="border-b border-border pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5 text-primary" /> إعدادات الأجندة
+                    <CalendarIcon className="h-5 w-5 text-primary" /> إعدادات الرزنامة
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-5">

@@ -82,7 +82,7 @@ export default function Cases() {
             className="gap-2"
           >
             <Archive className="h-4 w-4" />
-            {viewArchived ? "العودة للنشطة" : "الأرشيف"}
+            {viewArchived ? "العودة للنشطة" : "المحفوظات"}
           </Button>
           <Button onClick={openNewModal} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />

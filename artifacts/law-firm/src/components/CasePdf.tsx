@@ -99,7 +99,7 @@ const LABELS = {
     opponentLawyer: "محامي الخصم",
     court: "المحكمة",
     division: "الدائرة",
-    courtRef: "رقم الرول",
+    courtRef: "رقم القائمة",
     nextHearing: "الجلسة القادمة",
     stage: "مرحلة الإجراء",
     openedOn: "تاريخ الفتح",

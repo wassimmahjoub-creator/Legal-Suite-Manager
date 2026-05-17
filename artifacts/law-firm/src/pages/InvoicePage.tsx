@@ -74,7 +74,7 @@ export default function InvoicePage() {
 
   async function generateCreditNote() {
     if (!inv) return;
-    if (!confirm("هل تريد إنشاء فاتورة تصحيحية (avoir)؟ سيتم إلغاء هذه الفاتورة.")) return;
+    if (!confirm("هل تريد إنشاء فاتورة تصحيحية؟ سيتم إلغاء هذه الفاتورة.")) return;
     setCreditLoading(true);
     const r = await authFetch(`${BASE}/api/invoices/${inv.id}/credit-note`, { method: "POST" });
     if (r.ok) {
