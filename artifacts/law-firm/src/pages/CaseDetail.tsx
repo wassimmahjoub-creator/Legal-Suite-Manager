@@ -5,6 +5,7 @@ import { useGetCase } from "@workspace/api-client-react";
 import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
+import { useLocale } from "@/context/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { CourtSelect } from "@/components/CourtSelect";
+import { Money } from "@/components/Money";
 import {
   Plus, MapPin, User, Calendar, FileText, CheckCircle2,
   Clock, Briefcase, ArrowRight, Trash2,
@@ -20,7 +22,7 @@ import {
   Users, AlertTriangle, Lock, Link2, GitBranch,
   Archive, Hash, Layers, Shield, Pencil, DollarSign,
   BarChart2, Timer, FolderOpen, Receipt, ArrowUpRight,
-  ExternalLink, Scale, Upload,
+  ExternalLink, Scale, Upload, Banknote, TrendingDown,
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
@@ -70,6 +72,20 @@ const DEADLINE_TYPES = [
   { value: "response",  label: "أجل الرد (20 يوم)" },
   { value: "custom",    label: "أجل مخصص" },
 ];
+
+const EXPENSE_TYPES = [
+  { value: "court_fees",  ar: "حقوق الكتابة",          fr: "Droits de greffe"       },
+  { value: "expert_fees", ar: "رسوم الخبير",            fr: "Frais d'expertise"      },
+  { value: "bailiff",     ar: "رسوم الأعوان القضائيين", fr: "Frais d'huissier"       },
+  { value: "travel",      ar: "مصاريف السفر والتنقل",   fr: "Frais de déplacement"   },
+  { value: "stamps",      ar: "طوابع فسكالية",          fr: "Timbres fiscaux"        },
+  { value: "postage",     ar: "مصاريف المراسلة",        fr: "Frais de courrier"      },
+  { value: "process",     ar: "رسوم المحضر",            fr: "Frais de signification" },
+  { value: "translation", ar: "رسوم الترجمة",           fr: "Frais de traduction"    },
+  { value: "corr_lawyer", ar: "أتعاب محامي مراسل",     fr: "Honoraires confrère"    },
+  { value: "other",       ar: "أخرى",                   fr: "Autres"                 },
+];
+type ExpenseItem = { id: number; date: string; typeValue: string; description: string; amount: number; reimbursable: boolean; };
 const URGENCY_COLORS: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/20",
   high:     "bg-orange-500/10 text-orange-400 border-orange-500/20",
@@ -128,6 +144,8 @@ export default function CaseDetail() {
     window.history.replaceState(null, "", `?tab=${t}`);
   }, []);
 
+  const locale = useLocale();
+
   // Data state
   const [procedures,  setProcedures]  = useState<Procedure[]>([]);
   const [deadlines,   setDeadlines]   = useState<Deadline[]>([]);
@@ -140,6 +158,9 @@ export default function CaseDetail() {
   const [auditLogs,   setAuditLogs]   = useState<AuditLog[]>([]);
   const [allCases,    setAllCases]    = useState<Array<{ id: number; title: string }>>([]);
   const [allUsers,    setAllUsers]    = useState<UserItem[]>([]);
+  const [expenses,    setExpenses]    = useState<ExpenseItem[]>([]);
+  const [showExpModal, setShowExpModal] = useState(false);
+  const [expForm, setExpForm] = useState({ date: new Date().toISOString().slice(0, 10), typeValue: EXPENSE_TYPES[0].value, description: "", amount: "", reimbursable: true });
 
   // Forms
   const [oppForm,  setOppForm]  = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" });
@@ -596,6 +617,90 @@ export default function CaseDetail() {
     );
   }
 
+  function renderExpenses() {
+    const total        = expenses.reduce((s, e) => s + e.amount, 0);
+    const reimbursable = expenses.filter(e => e.reimbursable).reduce((s, e) => s + e.amount, 0);
+    const office       = total - reimbursable;
+    const getLabel = (v: string) => { const t = EXPENSE_TYPES.find(x => x.value === v); return t ? (locale === "ar" ? t.ar : t.fr) : v; };
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-red-500/10 rounded-xl"><TrendingDown className="h-4 w-4 text-red-400" /></div>
+            <div><p className="text-[11px] text-muted-foreground">إجمالي المصاريف</p><Money amount={total} className="text-lg font-bold" /></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-green-500/10 rounded-xl"><Banknote className="h-4 w-4 text-green-500" /></div>
+            <div><p className="text-[11px] text-muted-foreground">قابلة للاسترجاع</p><Money amount={reimbursable} className="text-lg font-bold" /></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-orange-500/10 rounded-xl"><Scale className="h-4 w-4 text-orange-500" /></div>
+            <div><p className="text-[11px] text-muted-foreground">مصاريف المكتب</p><Money amount={office} className="text-lg font-bold" /></div>
+          </CardContent></Card>
+        </div>
+
+        {/* List */}
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="font-semibold text-sm">قائمة المصاريف</h3>
+              <Button size="sm" onClick={() => { setExpForm({ date: new Date().toISOString().slice(0, 10), typeValue: EXPENSE_TYPES[0].value, description: "", amount: "", reimbursable: true }); setShowExpModal(true); }} className="gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" /> إضافة مصروف
+              </Button>
+            </div>
+            {expenses.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <Receipt className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد مصاريف مسجلة لهذا الملف</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="text-right py-2 px-4 font-medium">التاريخ</th>
+                    <th className="text-right py-2 px-4 font-medium">النوع</th>
+                    <th className="text-right py-2 px-4 font-medium hidden md:table-cell">الوصف</th>
+                    <th className="text-right py-2 px-4 font-medium">المبلغ</th>
+                    <th className="text-center py-2 px-4 font-medium">استرجاع</th>
+                    <th className="py-2 px-2 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {expenses.map(e => (
+                    <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">{formatDateTN(e.date)}</td>
+                      <td className="py-2.5 px-4"><span className="bg-muted/60 px-2 py-0.5 rounded text-xs">{getLabel(e.typeValue)}</span></td>
+                      <td className="py-2.5 px-4 text-muted-foreground hidden md:table-cell">{e.description}</td>
+                      <td className="py-2.5 px-4 font-semibold" dir="ltr"><Money amount={e.amount} /></td>
+                      <td className="py-2.5 px-4 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${e.reimbursable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>{e.reimbursable ? "نعم" : "لا"}</span>
+                      </td>
+                      <td className="py-2.5 px-2 text-center">
+                        <button onClick={() => setExpenses(es => es.filter(x => x.id !== e.id))} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {expenses.length > 0 && (
+                  <tfoot className="bg-muted/20 border-t border-border">
+                    <tr>
+                      <td colSpan={3} className="py-2.5 px-4 font-semibold text-muted-foreground text-xs">المجموع</td>
+                      <td className="py-2.5 px-4 font-bold text-primary" dir="ltr"><Money amount={total} /></td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   function renderPlaceholder(icon: React.ReactNode, title: string, subtitle: string) {
     return (
       <Card className="border-none shadow-sm"><CardContent className="p-10 flex flex-col items-center justify-center text-center gap-3">
@@ -793,7 +898,7 @@ export default function CaseDetail() {
           {activeTab === "judgment"   && renderJudgment()}
           {activeTab === "documents"  && renderDocuments()}
           {activeTab === "invoicing"  && renderInvoicing()}
-          {activeTab === "expenses"   && renderPlaceholder(<DollarSign className="h-7 w-7" />, "المصاريف", "إدارة مصاريف الملف ستُضاف في الإصدار القادم")}
+          {activeTab === "expenses"   && renderExpenses()}
           {activeTab === "time"       && renderPlaceholder(<Timer className="h-7 w-7" />, "الوقت", "تتبع ساعات العمل وتحديد التعرفة بالساعة — قيد التطوير")}
           {activeTab === "notes"      && renderNotes()}
         </div>
@@ -951,6 +1056,52 @@ export default function CaseDetail() {
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Expense modal */}
+      <Modal open={showExpModal} onClose={() => setShowExpModal(false)} title="إضافة مصروف قضائي">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="التاريخ *" htmlFor="exp-date">
+              <Input id="exp-date" type="date" className={inputCls} dir="ltr"
+                value={expForm.date} onChange={e => setExpForm(f => ({ ...f, date: e.target.value }))} />
+            </FormField>
+            <FormField label="نوع المصروف *" htmlFor="exp-type">
+              <SelectNative id="exp-type" className={inputCls + " px-3 cursor-pointer"}
+                value={expForm.typeValue} onChange={e => setExpForm(f => ({ ...f, typeValue: e.target.value }))}>
+                {EXPENSE_TYPES.map(t => (
+                  <option key={t.value} value={t.value}>{locale === "ar" ? t.ar : t.fr} — {locale === "ar" ? t.fr : t.ar}</option>
+                ))}
+              </SelectNative>
+            </FormField>
+          </div>
+          <FormField label="الوصف" htmlFor="exp-desc">
+            <Input id="exp-desc" placeholder="تفاصيل المصروف..." className={inputCls}
+              value={expForm.description} onChange={e => setExpForm(f => ({ ...f, description: e.target.value }))} />
+          </FormField>
+          <FormField label="المبلغ (د.ت) *" htmlFor="exp-amount">
+            <Input id="exp-amount" type="number" step="0.001" placeholder="0.000" className={inputCls} dir="ltr"
+              value={expForm.amount} onChange={e => setExpForm(f => ({ ...f, amount: e.target.value }))} />
+          </FormField>
+          <label className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg cursor-pointer">
+            <input type="checkbox" checked={expForm.reimbursable}
+              onChange={e => setExpForm(f => ({ ...f, reimbursable: e.target.checked }))}
+              className="h-4 w-4 accent-primary" />
+            <div>
+              <p className="text-sm font-medium">قابل للاسترجاع من الحريف</p>
+              <p className="text-xs text-muted-foreground">سيتم إضافة هذا المصروف إلى فاتورة الحريف</p>
+            </div>
+          </label>
+          <div className="flex gap-3">
+            <Button className="flex-1" disabled={!expForm.amount || parseFloat(expForm.amount) <= 0}
+              onClick={() => {
+                if (!expForm.amount || parseFloat(expForm.amount) <= 0) return;
+                setExpenses(es => [{ id: Date.now(), date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }, ...es]);
+                setShowExpModal(false);
+              }}>حفظ المصروف</Button>
+            <Button variant="outline" onClick={() => setShowExpModal(false)} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
