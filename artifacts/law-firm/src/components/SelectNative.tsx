@@ -38,7 +38,7 @@ export function SelectNative({ value, onChange, children, className, id }: Selec
       <SelectTrigger id={id} className={cn("cursor-pointer", className)}>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="z-[10000]">
         {options.map(opt => (
           <SelectItem
             key={opt.value === "" ? EMPTY : opt.value}
