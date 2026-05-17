@@ -29,6 +29,39 @@ import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
+// ── Translation maps (English DB values → Arabic display) ──────────────
+const TR_CASE_TYPE: Record<string, string> = {
+  civil: "مدني", commercial: "تجاري", real_estate: "عقاري",
+  labor: "شغل", criminal: "جزائي", administrative: "إداري",
+  tax: "جبائي", family: "أحوال شخصية",
+};
+const TR_LITIGATION_DEGREE: Record<string, string> = {
+  first_instance: "ابتدائي", appeal: "استئناف", cassation: "تعقيب",
+};
+const TR_PROCEDURE_TYPE: Record<string, string> = {
+  main_action: "دعوى أصلية", urgent_request: "مطلب استعجالي",
+  petition_order: "إذن على عريضة", opposition: "اعتراض",
+  appeal: "استئناف", cassation: "تعقيب", execution: "تنفيذ",
+};
+const TR_PRIORITY: Record<string, string> = {
+  normal: "عادية", important: "مهمة", urgent: "عاجلة",
+};
+const TR_CLIENT_SOURCE: Record<string, string> = {
+  referral: "توصية", returning_client: "عميل سابق",
+  facebook: "Facebook", google: "Google", partner: "شريك", other: "آخر",
+};
+const TR_FEE_METHOD: Record<string, string> = {
+  fixed: "مبلغ قار", per_hearing: "بالجلسة",
+  percentage: "بالنسبة", hourly: "بالساعة",
+};
+const TR_CONFIDENTIALITY: Record<string, string> = {
+  normal: "عادي", confidential: "سري", sensitive: "حساس",
+};
+function tr(map: Record<string, string>, val: string | null | undefined): string | null {
+  if (!val) return null;
+  return map[val] ?? val;
+}
+
 const DEADLINE_TYPES = [
   { value: "appeal",    label: "أجل الاستئناف (30 يوم)" },
   { value: "cassation", label: "أجل التعقيب (60 يوم)" },
@@ -267,12 +300,12 @@ export default function CaseDetail() {
             <CardContent className="p-5 space-y-3">
               <h3 className="font-semibold text-sm border-b border-border pb-2">ملخص الملف</h3>
               {[
-                ["نوع الملف",       c.caseType],
-                ["درجة التقاضي",    c.litigationDegree],
-                ["نوع الإجراء",     c.procedureType],
-                ["الأولوية",        c.casePriority],
+                ["نوع الملف",       tr(TR_CASE_TYPE,         c.caseType)],
+                ["درجة التقاضي",    tr(TR_LITIGATION_DEGREE, c.litigationDegree)],
+                ["نوع الإجراء",     tr(TR_PROCEDURE_TYPE,    c.procedureType)],
+                ["الأولوية",        tr(TR_PRIORITY,          c.casePriority)],
                 ["قيمة النزاع",     c.disputeValue ? `${Number(c.disputeValue).toLocaleString()} د.ت` : null],
-                ["مصدر الحريف",    c.clientSource],
+                ["مصدر الحريف",    tr(TR_CLIENT_SOURCE, c.clientSource)],
                 ["اسم القاضي",     c.judgeName],
                 ["تاريخ فتح الملف", c.openedAt ? formatDateTN(c.openedAt) : null],
                 ["أول جلسة",       c.firstHearingDate ? formatDateTN(c.firstHearingDate) : null],
@@ -532,10 +565,10 @@ export default function CaseDetail() {
               <h3 className="font-semibold text-sm">الأتعاب المتفق عليها</h3>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div><p className="text-[10px] text-muted-foreground mb-0.5">طريقة الاحتساب</p><p className="text-sm font-medium">{c.feeMethod}</p></div>
-              {c.feeMethod === "جزافية" && c.agreedFees && <div><p className="text-[10px] text-muted-foreground mb-0.5">الأتعاب المتفق عليها</p><p className="text-sm font-semibold text-primary">{Number(c.agreedFees).toLocaleString()} د.ت</p></div>}
-              {c.feeMethod === "بالساعة" && c.hourlyRate && <div><p className="text-[10px] text-muted-foreground mb-0.5">التعرفة بالساعة</p><p className="text-sm font-semibold text-primary">{Number(c.hourlyRate).toLocaleString()} د.ت/ساعة</p></div>}
-              {c.feeMethod === "نسبة مئوية" && c.percentage && <div><p className="text-[10px] text-muted-foreground mb-0.5">النسبة</p><p className="text-sm font-semibold text-primary">{c.percentage}%{c.percentageBasis ? ` من ${c.percentageBasis}` : ""}</p></div>}
+              <div><p className="text-[10px] text-muted-foreground mb-0.5">طريقة الاحتساب</p><p className="text-sm font-medium">{tr(TR_FEE_METHOD, c.feeMethod) ?? c.feeMethod}</p></div>
+              {(c.feeMethod === "fixed" || c.feeMethod === "per_hearing") && c.agreedFees && <div><p className="text-[10px] text-muted-foreground mb-0.5">الأتعاب المتفق عليها</p><p className="text-sm font-semibold text-primary">{Number(c.agreedFees).toLocaleString()} د.ت</p></div>}
+              {c.feeMethod === "hourly" && c.hourlyRate && <div><p className="text-[10px] text-muted-foreground mb-0.5">التعرفة بالساعة</p><p className="text-sm font-semibold text-primary">{Number(c.hourlyRate).toLocaleString()} د.ت/ساعة</p></div>}
+              {c.feeMethod === "percentage" && c.percentage && <div><p className="text-[10px] text-muted-foreground mb-0.5">النسبة</p><p className="text-sm font-semibold text-primary">{c.percentage}%{c.percentageBasis ? ` من ${c.percentageBasis}` : ""}</p></div>}
               {c.disputeValue && <div><p className="text-[10px] text-muted-foreground mb-0.5">قيمة النزاع</p><p className="text-sm font-medium">{Number(c.disputeValue).toLocaleString()} د.ت</p></div>}
             </div>
           </CardContent></Card>
@@ -732,9 +765,9 @@ export default function CaseDetail() {
                   <StatusBadge status={caseData.status} />
                   {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
-                  {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{c.caseType}</span>}
-                  {c.casePriority && c.casePriority !== "عادية" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "حرجة" ? "bg-red-500/10 text-red-400" : "bg-orange-500/10 text-orange-400"}`}><AlertTriangle className="h-3 w-3" />{c.casePriority}</span>}
-                  {c.confidentialityLevel && c.confidentialityLevel !== "عادي" && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{c.confidentialityLevel}</span>}
+                  {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{tr(TR_CASE_TYPE, c.caseType)}</span>}
+                  {c.casePriority && c.casePriority !== "normal" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "urgent" ? "bg-red-500/10 text-red-400" : "bg-orange-500/10 text-orange-400"}`}><AlertTriangle className="h-3 w-3" />{tr(TR_PRIORITY, c.casePriority)}</span>}
+                  {c.confidentialityLevel && c.confidentialityLevel !== "normal" && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{tr(TR_CONFIDENTIALITY, c.confidentialityLevel)}</span>}
                 </div>
                 <h1 className="text-xl font-bold mb-1">{caseData.title}</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
