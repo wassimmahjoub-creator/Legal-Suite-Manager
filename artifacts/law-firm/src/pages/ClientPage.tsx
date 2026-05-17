@@ -15,7 +15,8 @@ import {
   User, Building2, Phone, Mail, MapPin, Plus, Pencil, Trash2,
   Briefcase, FileText, Clock, MessageSquare, BookOpen,
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
-  CheckCircle2, AlertCircle, Calendar, Hash, Loader2,
+  CheckCircle2, AlertCircle, Calendar, Hash, Loader2, Upload,
+  FileImage, File, FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CourtSelect } from "@/components/CourtSelect";
@@ -66,7 +67,7 @@ interface ClientEvent {
 
 interface CaseRow { id: number; title: string; status: string; court: string | null; caseNumber: string | null; archivedAt: string | null; createdAt: string; }
 interface InvoiceRow { id: number; description: string; amount: string; status: string; dueDate: string | null; createdAt: string; }
-interface DocRow { id: number; name: string; type: string | null; createdAt: string; }
+interface DocRow { id: number; name: string; fileType: string | null; caseId: number | null; url: string | null; createdAt: string; }
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
   case_created: <Briefcase className="h-4 w-4 text-blue-400" />,
@@ -122,6 +123,11 @@ export default function ClientPage() {
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [tabLoaded, setTabLoaded] = useState<Set<string>>(new Set());
+
+  // Doc upload modal
+  const [docModal, setDocModal] = useState(false);
+  const [docForm, setDocForm] = useState({ name: "", fileType: "عقد", caseId: "", url: "" });
+  const [savingDoc, setSavingDoc] = useState(false);
 
   // Quick case modal
   const [caseModal, setCaseModal] = useState(false);
@@ -511,21 +517,43 @@ export default function ClientPage() {
         {/* DOCUMENTS */}
         {activeTab === "documents" && (
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">الوثائق المرفقة</h2>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+                onClick={() => { setDocForm({ name: "", fileType: "عقد", caseId: "", url: "" }); setDocModal(true); }}>
+                <Upload className="h-3.5 w-3.5" /> رفع وثيقة
+              </Button>
+            </div>
             {docs.length === 0 ? (
               <EmptyState icon={<FileText className="h-12 w-12 opacity-20" />} label="لا توجد وثائق" />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {docs.map(d => (
-                  <Card key={d.id} className="border-none shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-muted-foreground shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{d.name}</p>
-                        <p className="text-xs text-muted-foreground">{fmt(d.createdAt)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {docs.map(d => {
+                  const ext = d.name?.split(".").pop()?.toLowerCase();
+                  const DocIcon = ["jpg","jpeg","png","gif","webp"].includes(ext || "")
+                    ? <FileImage className="h-8 w-8 text-purple-400 shrink-0" />
+                    : ["xls","xlsx","csv"].includes(ext || "")
+                    ? <FileSpreadsheet className="h-8 w-8 text-green-400 shrink-0" />
+                    : ext === "pdf"
+                    ? <FileText className="h-8 w-8 text-red-400 shrink-0" />
+                    : <File className="h-8 w-8 text-blue-400 shrink-0" />;
+                  return (
+                    <Card key={d.id} className="border-none shadow-sm hover:shadow-md transition-all duration-200 rounded-xl group">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="p-2 bg-muted/50 rounded-xl group-hover:bg-muted transition-colors shrink-0">
+                          {DocIcon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{d.name}</p>
+                          {d.fileType && (
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">{d.fileType}</span>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-0.5">{fmt(d.createdAt)}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -814,6 +842,115 @@ export default function ClientPage() {
                 : "إنشاء الفاتورة"}
             </Button>
             <Button variant="outline" onClick={() => setInvoiceModal(false)} className="px-6">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Doc Upload Modal */}
+      <Modal open={docModal} onClose={() => setDocModal(false)} title="رفع وثيقة جديدة">
+        <div className="space-y-4">
+          {/* Drop zone — visual only, no binary upload in current infra */}
+          <label
+            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+            htmlFor="doc-file-input"
+          >
+            <Upload className="h-10 w-10 text-muted-foreground/40" />
+            <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
+            <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
+            <input
+              id="doc-file-input"
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file && !docForm.name) {
+                  setDocForm(f => ({ ...f, name: file.name }));
+                }
+              }}
+            />
+          </label>
+
+          <FormField label="اسم الوثيقة *" htmlFor="doc-name">
+            <Input
+              id="doc-name"
+              placeholder="مثال: عقد شراكة بتاريخ 2026"
+              className={inputCls}
+              value={docForm.name}
+              onChange={e => setDocForm(f => ({ ...f, name: e.target.value }))}
+              autoFocus
+            />
+          </FormField>
+
+          <FormField label="نوع الوثيقة" htmlFor="doc-ftype">
+            <select id="doc-ftype" className={inputCls + " px-3 cursor-pointer"}
+              value={docForm.fileType}
+              onChange={e => setDocForm(f => ({ ...f, fileType: e.target.value }))}>
+              {["عقد","وثيقة رسمية","مراسلة","حكم قضائي","تقرير خبرة","وكالة","أخرى"].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField label="الملف المرتبط *" htmlFor="doc-case">
+            {cases.filter(c => !c.archivedAt).length === 0 ? (
+              <p className="text-xs text-amber-400 p-2">يجب إنشاء ملف أولاً لربط الوثيقة به</p>
+            ) : (
+              <select id="doc-case" className={inputCls + " px-3 cursor-pointer"}
+                value={docForm.caseId}
+                onChange={e => setDocForm(f => ({ ...f, caseId: e.target.value }))}>
+                <option value="">— اختر الملف —</option>
+                {cases.filter(c => !c.archivedAt).map(c => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </FormField>
+
+          <FormField label="رابط خارجي (اختياري)" htmlFor="doc-url">
+            <Input
+              id="doc-url"
+              placeholder="https://drive.google.com/..."
+              className={inputCls}
+              dir="ltr"
+              value={docForm.url}
+              onChange={e => setDocForm(f => ({ ...f, url: e.target.value }))}
+            />
+          </FormField>
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              className="flex-1"
+              disabled={savingDoc || !docForm.name.trim() || !docForm.caseId}
+              onClick={async () => {
+                setSavingDoc(true);
+                try {
+                  const r = await authFetch(`${BASE}/api/documents`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                      name: docForm.name.trim(),
+                      caseId: Number(docForm.caseId),
+                      fileType: docForm.fileType || null,
+                      url: docForm.url.trim() || null,
+                    }),
+                  });
+                  if (r.ok) {
+                    const dr = await authFetch(`${BASE}/api/clients/${clientId}/documents`);
+                    if (dr.ok) setDocs(await dr.json());
+                    setDocModal(false);
+                  }
+                } finally {
+                  setSavingDoc(false);
+                }
+              }}
+            >
+              {savingDoc
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> جارٍ الحفظ...</>
+                : <><Upload className="h-4 w-4" /> حفظ الوثيقة</>}
+            </Button>
+            <Button variant="outline" onClick={() => setDocModal(false)} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>
