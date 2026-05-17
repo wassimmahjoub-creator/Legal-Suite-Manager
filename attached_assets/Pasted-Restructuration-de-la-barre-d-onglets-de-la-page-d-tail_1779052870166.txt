@@ -1,0 +1,220 @@
+Restructuration de la barre d'onglets de la page détail dossier après livraison de T17.
+
+ÉTAT ACTUEL :
+La page /cases/:id affiche 7 onglets : الإجراءات, الآجال, الفريق, قضايا مرتبطة, ملاحظات سرية, الخصوم, ملاحظات.
+
+Cette structure :
+- Contient des doublons (deux onglets "ملاحظات" et "ملاحظات سرية")
+- Contient un onglet hors sujet (قضايا مرتبطة n'a pas de sens sur la page dossier)
+- Ne reflète pas les enrichissements de T17 (case_type, financier, confidentialité)
+- Manque les onglets fondamentaux (Vue d'ensemble, Documents, Factures, Frais, Temps)
+
+TÂCHE :
+
+Refonds la barre d'onglets de /cases/:id pour avoir exactement 9 onglets dans cet ordre (lecture RTL en arabe = ordre de la droite vers la gauche dans l'UI) :
+
+1. نظرة عامة            (default actif au load)
+2. التسلسل الإجرائي
+3. الجلسات والآجال
+4. الحكم والتنفيذ
+5. المؤيدات والوثائق
+6. الأتعاب والفواتير
+7. المصاريف
+8. الوقت
+9. الملاحظات والسجل
+
+IMPORTANT : ne supprime AUCUNE donnée. Tu ne fais que réorganiser l'UI. Les données affichées par les anciens onglets continuent d'être accessibles, juste regroupées différemment.
+
+═══════════════════════════════════════════════════════
+CONTENU DÉTAILLÉ DE CHAQUE ONGLET
+═══════════════════════════════════════════════════════
+
+ONGLET 1 — نظرة عامة (Vue d'ensemble)
+
+Layout 2 colonnes (desktop) / 1 colonne (mobile).
+
+Colonne gauche : 4 KPI cards
+- "الرصيد المستحق" (solde dû) : montant + flèche vers onglet 6
+- "ساعات العمل" (heures cumulées) : décimal + flèche vers onglet 8
+- "الموعد القادم" (next deadline) : date relative + nature
+- "عدد الوثائق" : count + flèche vers onglet 5
+
+Colonne droite, sections empilées :
+
+Section "ملخص الملف" :
+- نوع الملف (case_type) avec libellé AR
+- درجة التقاضي (litigation_degree)
+- نوع الإجراء (procedure_type)
+- قيمة النزاع (dispute_value) si renseignée
+- مصدر الحريف (client_source)
+
+Section "الأطراف" (anciennement onglet "الخصوم") :
+- Bloc client en haut : nom, type, lien vers /clients/:id
+- Pour chaque case_opponent : carte avec
+  - اسم الخصم
+  - صفة الخصم (capacity)
+  - المحامي : opponent_lawyer_name
+  - هاتف : opponent_lawyer_phone
+  - Lien vers /opponents/:id si l'opponent est en base
+- Bouton "+ إضافة خصم" qui ouvre une modale d'ajout in-place
+
+Section "الفريق الداخلي" (anciennement onglet "الفريق") :
+- Carte "المحامي المسؤول" avec avatar
+- Carte "المكلف بالملف" avec avatar (si renseigné)
+- Liste compacte "الفريق المتابع" avec avatars superposés
+
+ONGLET 2 — التسلسل الإجرائي
+
+Si T18 n'est pas encore livré :
+- Empty state : "سيتم تفعيل هذا القسم قريباً مع نظام تتبع المراحل الإجرائية"
+- Illustration timeline grise
+- Pas de bouton d'action.
+
+Si T18 livré, intégrer <CaseTimeline />.
+
+ONGLET 3 — الجلسات والآجال
+
+Fusion ancien onglet "الآجال" + audiences.
+
+En haut, deux boutons d'action :
+- "+ تسجيل جلسة"
+- "+ أجل قانوني"
+
+Vue chronologique unifiée :
+- Filtre par type (audiences / délais / tout)
+- Filtre par période (à venir / passé / tout)
+- Tri : à venir en haut, plus récent en haut pour le passé
+
+Pour chaque entrée :
+- Date au format enrichi avec jour de la semaine (livré en T11) ex: "الجمعة ١٤ ماي ٢٠٢٦"
+- Icône selon type
+- Libellé + description
+- Pour audience : juridiction + chambre (depuis cases.court_id et chamber)
+- Pour délai : nombre de jours restants avec couleur (vert >30j, orange 7-30j, rouge <7j, gris dépassé)
+
+Si la table legal_deadlines n'existe pas encore, affiche seulement les audiences et un placeholder "الآجال القانونية ستضاف قريبا".
+
+ONGLET 4 — الحكم والتنفيذ
+
+Si T18 pas livré : placeholder "سيتم تفعيل هذا القسم مع نظام تتبع المراحل الإجرائية".
+
+Si T18 livré : carte par case_stage avec decision_date, lien document, statut d'exécution.
+
+ONGLET 5 — المؤيدات والوثائق
+
+Affichage des documents liés au dossier.
+
+Filtres en haut :
+- Par type de document (placeholder si pas encore catégorisé)
+- Recherche par nom
+
+Vue grille (cards) :
+- Icône PDF/image/word
+- Nom
+- Date
+- Auteur
+- Taille
+- Actions : aperçu, télécharger, renommer, supprimer (confirmation T15)
+
+Bouton "+ رفع وثيقة" en haut.
+
+ONGLET 6 — الأتعاب والفواتير
+
+Section "الأتعاب المتفق عليها" (lecture seule + bouton "تعديل") :
+- طريقة الاحتساب (fee_method) : libellé AR
+- الأتعاب المتفق عليها (agreed_fees) si applicable
+- التعرفة بالساعة (hourly_rate) si fee_method = hourly
+- النسبة (percentage) si fee_method = percentage
+
+Section "الإجمالي" — 3 KPI :
+- المفوتر
+- المقبوض
+- الرصيد المستحق
+
+Section "الفواتير" :
+- Table : numéro, date, montant TTC, payé, solde, statut
+- Bouton "+ فاتورة جديدة" qui pré-remplit avec ce dossier
+
+Section "المدفوعات" : timeline des paiements.
+
+ONGLET 7 — المصاريف
+
+Table existante des expenses, filtrée WHERE case_id = current.id.
+Bouton "+ مصروف".
+KPI en haut : total + total remboursé + reste à rembourser.
+
+ONGLET 8 — الوقت
+
+Table des time-entries du dossier + chronomètre intégré.
+KPI : total heures + valorisation au taux horaire si fee_method = hourly.
+
+ONGLET 9 — الملاحظات والسجل
+
+Section "درجة الحساسية" :
+- Niveau actuel (عادي / سري / حساس) avec badge coloré et icône cadenas
+- Bouton "تعديل" → modal avec log audit
+
+Section "الملاحظات الداخلية" (anciennement onglet ملاحظات سرية) :
+- internal_notes en editor
+- Mention en haut : "⚠️ هذه الملاحظات لا تظهر للحريف في بوابة العميل"
+- Auto-save toutes les 5 secondes
+- Indicateur "آخر تعديل: {date relative}"
+
+Section "السجل" :
+- Journal automatique horodaté
+- Événements à logguer : création dossier, modifications, transitions de stade, ajout de partie, ajout de document, émission facture, paiement reçu
+- Filtre par type d'événement et par utilisateur
+- Tri reverse chronological
+
+═══════════════════════════════════════════════════════
+COMPTEURS ET BADGES SUR LES ONGLETS
+═══════════════════════════════════════════════════════
+
+Ajoute des indicateurs sur les onglets pertinents :
+
+- "الجلسات والآجال" : badge avec count items à venir dans 30 jours, couleur orange si <7j, rouge si <3j
+- "المؤيدات والوثائق" : count total documents
+- "الأتعاب والفواتير" : badge rouge si solde dû > 0 et factures en retard
+- "الملاحظات والسجل" : icône cadenas si confidentiality_level != 'normal'
+
+Format : nombre dans pastille colorée à côté du nom de l'onglet.
+
+═══════════════════════════════════════════════════════
+SUPPRESSIONS
+═══════════════════════════════════════════════════════
+
+- Supprime "قضايا مرتبطة". Si des données y étaient stockées, vérifie qu'elles ne sont pas perdues — déplace vers un endroit pertinent ou laisse en DB sans UI pour l'instant.
+- Fusionne "ملاحظات" et "ملاحظات سرية" dans l'onglet 9.
+- Supprime "الإجراءات" — son contenu va vers "التسلسل الإجرائي" (onglet 2) et "الجلسات والآجال" (onglet 3).
+
+═══════════════════════════════════════════════════════
+COMPORTEMENT UI
+═══════════════════════════════════════════════════════
+
+- Onglet par défaut au chargement : "نظرة عامة"
+- Lazy loading : React.lazy + Suspense sur chaque onglet
+- État de l'onglet actif persisté dans l'URL : /cases/:id?tab=overview, ?tab=hearings, etc.
+- Skeleton loader (livré en T10) pendant le fetch initial
+- RTL préservé sur toute la barre
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. Composant <CaseDetailTabs /> avec 9 onglets configurés.
+2. 9 sous-composants lazy-loaded : <CaseOverview />, <CaseTimeline />, <CaseHearingsAndDeadlines />, <CaseJudgment />, <CaseDocuments />, <CaseInvoicing />, <CaseExpenses />, <CaseTimeTracking />, <CaseNotesAndLog />.
+3. Hook useURLTab pour synchroniser l'onglet actif avec query string.
+4. Migration douce : si données existaient sur "قضايا مرتبطة", déplacer ou archiver (rapport en sortie).
+5. Tests : navigation entre onglets, lazy loading, URL sync, compteurs.
+6. Captures d'écran avec différents onglets actifs (au moins 4).
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Tous les champs T17 sont accessibles via la nouvelle structure : case_type, litigation_degree, fee_method, agreed_fees, dispute_value, client_source, confidentiality_level, internal_notes, opponent_lawyer_name, etc.
+- Modale d'édition du dossier continue de fonctionner.
+- Liens depuis la liste vers la page détail OK.
+- Exports PDF (T8 P1) continuent de produire la sortie attendue.
+- Aucun crash sur les dossiers anciens dont certains champs sont NULL — afficher placeholder "غير محدد".
+- RTL et i18n préservés.
