@@ -396,7 +396,7 @@ export default function ClientPage() {
                 {tab.icon}
                 {tab.label}
                 {badge > 0 && (
-                  <span className="text-[10px] bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-bold leading-none">
+                  <span className="text-[10px] bg-primary text-white rounded-full px-1.5 py-0.5 font-bold leading-none">
                     {badge}
                   </span>
                 )}
