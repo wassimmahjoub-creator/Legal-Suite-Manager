@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp, Briefcase, Users, CreditCard, Download,
-  BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw
+  BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw, ArrowRight
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
@@ -119,6 +119,10 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          <button onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+          </button>
           <h1 className="text-2xl font-bold">التقارير والإحصائيات</h1>
           <p className="text-muted-foreground text-sm mt-0.5">نظرة شاملة على أداء المكتب والوضع المالي</p>
         </div>
