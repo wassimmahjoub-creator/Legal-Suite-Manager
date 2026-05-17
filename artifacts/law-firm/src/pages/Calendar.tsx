@@ -8,6 +8,7 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "@/styles/big-calendar.css";
 
 import { authFetch } from "@/lib/authFetch";
+import { CourtSelect } from "@/components/CourtSelect";
 import { formatDateTN, formatDateLongTN, formatPeriodTitleTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -561,8 +562,11 @@ export default function CalendarView() {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="المحكمة" htmlFor="ev-court">
-              <Input id="ev-court" placeholder="المحكمة الابتدائية بتونس" className={inputCls}
-                value={form.court} onChange={e => setForm(f => ({ ...f, court: e.target.value }))} />
+              <CourtSelect
+                value={form.court}
+                onChange={v => setForm(f => ({ ...f, court: v }))}
+                placeholder="اختر المحكمة..."
+              />
             </FormField>
             <FormField label="الدائرة" htmlFor="ev-div">
               <Input id="ev-div" placeholder="الدائرة الأولى" className={inputCls}
