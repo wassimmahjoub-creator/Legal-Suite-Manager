@@ -254,12 +254,12 @@ export default function InvoiceForm() {
               </FormField>
 
               <FormField label="تاريخ الإصدار" htmlFor={`${uid}-issue`}>
-                <Input id={`${uid}-issue`} type="date" className={inputCls + " w-full"} dir="ltr"
+                <Input id={`${uid}-issue`} type="date" className={inputCls + " w-full"} dir="ltr" lang="ar-TN"
                   value={issueDate} onChange={e => setIssueDate(e.target.value)} />
               </FormField>
 
               <FormField label="تاريخ الاستحقاق" htmlFor={`${uid}-due`}>
-                <Input id={`${uid}-due`} type="date" className={inputCls + " w-full"} dir="ltr"
+                <Input id={`${uid}-due`} type="date" className={inputCls + " w-full"} dir="ltr" lang="ar-TN"
                   value={dueDate} onChange={e => setDueDate(e.target.value)} />
               </FormField>
             </CardContent>
