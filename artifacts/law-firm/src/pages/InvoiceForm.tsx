@@ -406,7 +406,7 @@ export default function InvoiceForm() {
           {/* Actions */}
           <Card className="border-none shadow-md">
             <CardContent className="pt-5 space-y-3">
-              <Button className="w-full gap-2" variant="outline" onClick={saveDraft} disabled={saving || !clientId}>
+              <Button className="w-full gap-2" onClick={saveDraft} disabled={saving || !clientId}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 حفظ كمسودة
               </Button>
