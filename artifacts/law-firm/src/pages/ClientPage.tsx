@@ -328,16 +328,6 @@ export default function ClientPage() {
               onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
               <Plus className="h-3.5 w-3.5" /> ملف جديد
             </Button>
-            <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
-              <Pencil className="h-3.5 w-3.5" /> تعديل
-            </Button>
-            <button
-              onClick={deleteClient}
-              className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-              title="حذف الحريف"
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </button>
           </div>
         </div>
       </div>
@@ -379,6 +369,22 @@ export default function ClientPage() {
       <div>
         {/* INFORMATIONS */}
         {activeTab === "info" && (
+          <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">بيانات الحريف</h2>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
+                <Pencil className="h-3.5 w-3.5" /> تعديل
+              </Button>
+              <button
+                onClick={deleteClient}
+                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                title="حذف الحريف"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </button>
+            </div>
+          </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Identité */}
             <Card className="border-none shadow-sm">
@@ -468,6 +474,7 @@ export default function ClientPage() {
                 )}
               </CardContent>
             </Card>
+          </div>
           </div>
         )}
 
