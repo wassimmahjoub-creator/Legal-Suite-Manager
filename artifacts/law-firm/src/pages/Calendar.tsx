@@ -419,7 +419,6 @@ export default function CalendarView() {
                 illustration={<EmptyCalendarIllustration />}
                 title="لا مواعيد لهذه الفترة"
                 description="أضف جلسة، موعدًا أو تذكيرًا وسيظهر تلقائيًا في الرزنامة"
-                primaryAction={{ label: "+ موعد جديد", onClick: () => openNew() }}
               />
             </div>
           ) : (

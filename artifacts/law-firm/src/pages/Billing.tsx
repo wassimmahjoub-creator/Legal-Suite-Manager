@@ -149,7 +149,6 @@ export default function Billing() {
                         illustration={<EmptyInvoicesIllustration />}
                         title="لا فواتير بعد"
                         description="أصدر فاتورتك الأولى انطلاقًا من قضية أو حريف موجود وتتبع مستحقاتك"
-                        primaryAction={{ label: "+ فاتورة جديدة", onClick: () => navigate("/billing/new") }}
                       />
                     </TableCell>
                   </TableRow>

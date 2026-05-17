@@ -93,7 +93,6 @@ export default function Opponents() {
             illustration={<EmptyClientsIllustration />}
             title="لا خصوم مسجلين"
             description="سيظهر الخصوم تلقائيًا عند إنشاء القضايا، أو يمكنك إضافتهم يدويًا"
-            primaryAction={{ label: "+ إضافة خصم", onClick: openNew }}
           />
         </div>
       ) : (

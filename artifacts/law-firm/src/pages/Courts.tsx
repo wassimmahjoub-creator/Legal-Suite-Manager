@@ -267,14 +267,8 @@ export default function Courts() {
             illustration={<EmptyDocumentsIllustration />}
             title="قائمة المحاكم فارغة"
             description={data.length === 0
-              ? "المحاكم التونسية متاحة للتهيئة التلقائية — اضغط الزر أدناه لإضافتها دفعة واحدة"
+              ? "استعمل زر «تهيئة المحاكم الافتراضية» لإضافة جميع المحاكم التونسية دفعة واحدة"
               : "لا توجد محاكم مطابقة للبحث"}
-            primaryAction={data.length === 0
-              ? { label: "تهيئة المحاكم الافتراضية", onClick: runSeed }
-              : { label: "+ إضافة محكمة", onClick: openNew }}
-            secondaryAction={data.length === 0
-              ? { label: "+ إضافة يدوية", onClick: openNew }
-              : undefined}
           />
         </div>
       ) : (

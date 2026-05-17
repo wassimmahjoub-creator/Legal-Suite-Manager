@@ -140,7 +140,6 @@ export default function Clients() {
             illustration={<EmptyClientsIllustration />}
             title="لا حرفاء بعد"
             description="أضف حرفاءك واحدًا واحدًا وتتبع ملفاتهم وفواتيرهم من مكان واحد"
-            primaryAction={{ label: "+ إضافة حريف", onClick: openNew }}
           />
         </div>
       ) : (

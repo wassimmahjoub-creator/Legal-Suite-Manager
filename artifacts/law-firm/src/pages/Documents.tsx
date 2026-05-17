@@ -74,7 +74,6 @@ export default function Documents() {
             illustration={<EmptyDocumentsIllustration />}
             title="لا توجد وثائق"
             description="ارفع عقودًا، محاضر جلسات أو أي وثيقة متعلقة بالقضية وستظهر هنا"
-            primaryAction={{ label: "↑ رفع وثيقة", onClick: () => setShowModal(true) }}
           />
         </div>
       ) : (

@@ -165,10 +165,6 @@ export default function Cases() {
                         description={viewArchived
                           ? "لم يتم أرشفة أي قضية بعد"
                           : "ابدأ بإنشاء قضيتك الأولى وتتبع ملفاتك القانونية بسهولة"}
-                        primaryAction={viewArchived ? undefined : {
-                          label: "+ إنشاء قضية",
-                          onClick: openNewModal,
-                        }}
                       />
                     </TableCell>
                   </TableRow>
