@@ -173,13 +173,16 @@
 .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
 .rbc-time-content::-webkit-scrollbar-thumb { background: rgba(212,160,23,0.3); border-radius: 2px; }
 
-/* Equal column widths in week/day view */
+/* Equal column widths in week/day view + vertical centering */
 .rbc-time-header-content .rbc-header {
   flex: 1 1 0% !important;
   padding: 0 !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   white-space: normal !important;
   text-overflow: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* ── RTL: لنده أقصى اليمين، الأحد أقصى اليسار ──────────── */

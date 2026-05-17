@@ -131,7 +131,8 @@ function WeekDayHeader({ date }: { date: Date }) {
         alignItems: "center",
         justifyContent: "center",
         gap: "5px",
-        padding: "8px 4px",
+        padding: "6px 4px",
+        width: "100%",
         borderBottom: isToday ? "2px solid #d4a017" : "2px solid transparent",
         boxSizing: "border-box",
       }}
