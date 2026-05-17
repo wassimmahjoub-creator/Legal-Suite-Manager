@@ -172,3 +172,35 @@
 .rbc-time-content::-webkit-scrollbar { width: 4px; }
 .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
 .rbc-time-content::-webkit-scrollbar-thumb { background: rgba(212,160,23,0.3); border-radius: 2px; }
+
+/* ── RTL: لنده أقصى اليمين، الأحد أقصى اليسار ──────────── */
+
+/* vue mois — entête des jours */
+.rbc-month-header {
+  flex-direction: row-reverse;
+}
+
+/* vue mois — fond des cellules jour */
+.rbc-row-bg {
+  flex-direction: row-reverse;
+}
+
+/* vue mois — chiffres et événements */
+.rbc-row-content .rbc-row {
+  flex-direction: row-reverse;
+}
+
+/* vue semaine/jour — bandeau d'entête (gutter + colonnes jours) */
+.rbc-time-header {
+  flex-direction: row-reverse;
+}
+
+/* vue semaine/jour — entêtes des jours dans le contenu */
+.rbc-time-header-content .rbc-row {
+  flex-direction: row-reverse;
+}
+
+/* vue semaine/jour — colonnes horaires (gutter + créneaux) */
+.rbc-time-content {
+  flex-direction: row-reverse;
+}
