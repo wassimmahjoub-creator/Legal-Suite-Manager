@@ -419,7 +419,7 @@ export default function ClientPage() {
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">جهات الاتصال</h2>
-                  <Button size="sm" variant="outline" onClick={openNewContact} className="gap-1 text-xs h-7 px-2">
+                  <Button size="sm" onClick={openNewContact} className="gap-1 text-xs h-7 px-2">
                     <Plus className="h-3 w-3" /> إضافة
                   </Button>
                 </div>
