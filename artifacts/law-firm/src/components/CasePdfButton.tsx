@@ -79,7 +79,6 @@ export function CasePdfButton({ caseId, caseTitle, caseNumber }: Props) {
 
   return (
     <Button
-      variant="outline"
       size="sm"
       onClick={handlePrint}
       disabled={loading}

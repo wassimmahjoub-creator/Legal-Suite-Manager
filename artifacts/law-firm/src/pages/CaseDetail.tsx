@@ -174,10 +174,10 @@ export default function CaseDetail() {
                   <AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر
                 </span>
               )}
-              <Button variant="outline" size="sm" onClick={openEdit} className="gap-1.5 text-xs">
+              <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
                 <Pencil className="h-3.5 w-3.5" /> تعديل
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs">
+              <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs">
                 <Archive className="h-3.5 w-3.5" /> {c.archivedAt ? "استرجاع" : "أرشفة"}
               </Button>
               <CasePdfButton
