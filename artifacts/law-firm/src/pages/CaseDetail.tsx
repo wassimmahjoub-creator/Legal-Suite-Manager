@@ -1090,7 +1090,7 @@ export default function CaseDetail() {
                 {tab.label}
                 {tab.badgeIcon}
                 {tab.badge != null && tab.badge > 0 && (
-                  <span className={`text-[10px] ${tab.badgeColor ?? "bg-primary/20 text-primary"} ${tab.badgeColor ? "text-white" : ""} rounded-full px-1.5 py-0.5 font-bold leading-none`}>
+                  <span className={`text-[10px] ${tab.badgeColor ?? "bg-primary text-primary-foreground"} rounded-full px-1.5 py-0.5 font-bold leading-none`}>
                     {tab.badge}
                   </span>
                 )}
