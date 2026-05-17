@@ -120,6 +120,11 @@ export default function ClientPage() {
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [tabLoaded, setTabLoaded] = useState<Set<string>>(new Set());
 
+  // Note modal
+  const [noteModal, setNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
   // Contact modal
   const [contactModal, setContactModal] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -524,16 +529,7 @@ export default function ClientPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">السجل الزمني</h2>
               <Button size="sm" variant="outline" className="gap-1.5 text-xs"
-                onClick={async () => {
-                  const note = prompt("محتوى الملاحظة:");
-                  if (!note) return;
-                  await authFetch(`${BASE}/api/clients/${clientId}/events`, {
-                    method: "POST",
-                    body: JSON.stringify({ eventType: "note_added", payload: { note }, createdBy: "مستخدم" }),
-                  });
-                  const r = await authFetch(`${BASE}/api/clients/${clientId}/events`);
-                  if (r.ok) setEvents(await r.json());
-                }}>
+                onClick={() => { setNoteText(""); setNoteModal(true); }}>
                 <Plus className="h-3.5 w-3.5" /> إضافة ملاحظة
               </Button>
             </div>
@@ -566,6 +562,39 @@ export default function ClientPage() {
           </div>
         )}
       </div>
+
+      {/* Add Note Modal */}
+      <Modal open={noteModal} onClose={() => setNoteModal(false)} title="إضافة ملاحظة">
+        <div className="space-y-4">
+          <textarea
+            className={inputCls + " min-h-[120px] p-3 resize-none"}
+            placeholder="اكتب ملاحظتك هنا..."
+            value={noteText}
+            onChange={e => setNoteText(e.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-3 pt-1">
+            <Button
+              className="flex-1"
+              disabled={savingNote || !noteText.trim()}
+              onClick={async () => {
+                setSavingNote(true);
+                await authFetch(`${BASE}/api/clients/${clientId}/events`, {
+                  method: "POST",
+                  body: JSON.stringify({ eventType: "note_added", payload: { note: noteText.trim() }, createdBy: "مستخدم" }),
+                });
+                const r = await authFetch(`${BASE}/api/clients/${clientId}/events`);
+                if (r.ok) setEvents(await r.json());
+                setSavingNote(false);
+                setNoteModal(false);
+              }}
+            >
+              {savingNote ? "جارٍ الحفظ..." : "حفظ الملاحظة"}
+            </Button>
+            <Button variant="outline" onClick={() => setNoteModal(false)} className="px-6">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Edit Client Modal */}
       <Modal open={editModal} onClose={() => setEditModal(false)} title="تعديل بيانات الحريف" size="lg">
