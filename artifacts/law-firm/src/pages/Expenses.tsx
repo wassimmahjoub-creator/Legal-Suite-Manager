@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Money } from "@/components/Money";
 import { formatDateTN } from "@/lib/date";
@@ -13,12 +14,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useLocale } from "@/context/LocaleContext";
+import { authFetch } from "@/lib/authFetch";
 
-const CASES = [
-  "قضية ميراث عائلة بن علي",
-  "قضية عقار الزهراء",
-  "قضية عقد شراكة التريكي",
-];
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
+interface CaseOption { id: number; title: string; caseNumber: string | null; }
 
 interface ExpenseType {
   value: string;
@@ -27,25 +27,28 @@ interface ExpenseType {
 }
 
 const EXPENSE_TYPES: ExpenseType[] = [
-  { value: "court_fees",    ar: "حقوق الكتابة",          fr: "Droits de greffe"          },
-  { value: "expert_fees",   ar: "رسوم الخبير",            fr: "Frais d'expertise"          },
-  { value: "bailiff",       ar: "رسوم الأعوان القضائيين", fr: "Frais d'huissier"           },
-  { value: "travel",        ar: "مصاريف السفر والتنقل",   fr: "Frais de déplacement"       },
-  { value: "stamps",        ar: "طوابع فسكالية",          fr: "Timbres fiscaux"            },
-  { value: "postage",       ar: "مصاريف المراسلة",        fr: "Frais de courrier"          },
-  { value: "process",       ar: "رسوم المحضر",            fr: "Frais de signification"     },
-  { value: "translation",   ar: "رسوم الترجمة",           fr: "Frais de traduction"        },
-  { value: "corr_lawyer",   ar: "أتعاب محامي مراسل",     fr: "Honoraires confrère"        },
-  { value: "other",         ar: "أخرى",                   fr: "Autres"                     },
+  { value: "court_fees",    ar: "حقوق الكتابة",          fr: "Droits de greffe"       },
+  { value: "expert_fees",   ar: "رسوم الخبير",            fr: "Frais d'expertise"      },
+  { value: "bailiff",       ar: "رسوم الأعوان القضائيين", fr: "Frais d'huissier"       },
+  { value: "travel",        ar: "مصاريف السفر والتنقل",   fr: "Frais de déplacement"   },
+  { value: "stamps",        ar: "طوابع فسكالية",          fr: "Timbres fiscaux"        },
+  { value: "postage",       ar: "مصاريف المراسلة",        fr: "Frais de courrier"      },
+  { value: "process",       ar: "رسوم المحضر",            fr: "Frais de signification" },
+  { value: "translation",   ar: "رسوم الترجمة",           fr: "Frais de traduction"    },
+  { value: "corr_lawyer",   ar: "أتعاب محامي مراسل",     fr: "Honoraires confrère"    },
+  { value: "other",         ar: "أخرى",                   fr: "Autres"                 },
 ];
 
-const INITIAL = [
-  { id: 1, date: "2026-05-03", case: "قضية ميراث عائلة بن علي",   typeValue: "court_fees",   description: "دفع حقوق تسجيل الدعوى",            amount: 120, reimbursable: true  },
-  { id: 2, date: "2026-05-01", case: "قضية عقار الزهراء",          typeValue: "expert_fees",  description: "أتعاب خبير عقاري",                  amount: 800, reimbursable: true  },
-  { id: 3, date: "2026-04-28", case: "قضية عقد شراكة التريكي",    typeValue: "bailiff",      description: "تبليغ استدعاء",                      amount: 45,  reimbursable: true  },
-  { id: 4, date: "2026-04-25", case: "قضية ميراث عائلة بن علي",   typeValue: "travel",       description: "تنقل للمحكمة الابتدائية تونس",       amount: 30,  reimbursable: false },
-  { id: 5, date: "2026-04-20", case: "قضية عقار الزهراء",          typeValue: "stamps",       description: "طوابع الطعن بالاستئناف",             amount: 15,  reimbursable: true  },
-];
+interface Expense {
+  id: number;
+  date: string;
+  caseId: number | null;
+  caseTitle: string;
+  typeValue: string;
+  description: string;
+  amount: number;
+  reimbursable: boolean;
+}
 
 function getTypeLabel(value: string, locale: "ar" | "fr"): string {
   const t = EXPENSE_TYPES.find(t => t.value === value);
@@ -61,24 +64,54 @@ function getTypeAlt(value: string, locale: "ar" | "fr"): string {
 
 export default function Expenses() {
   const locale = useLocale();
-  const [expenses, setExpenses] = useState(INITIAL);
+  const [, navigate] = useLocation();
+
+  const [cases, setCases] = useState<CaseOption[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [filterCase, setFilterCase] = useState("all");
+  const [filterCase, setFilterCase] = useState<string>("all");
+
   const [form, setForm] = useState({
     date: new Date().toISOString().split("T")[0],
-    case: CASES[0],
+    caseId: "",
     typeValue: EXPENSE_TYPES[0].value,
     description: "",
     amount: "",
     reimbursable: true,
   });
 
-  const filtered = filterCase === "all" ? expenses : expenses.filter(e => e.case === filterCase);
-  const total = filtered.reduce((s, e) => s + e.amount, 0);
-  const reimbursable = filtered.filter(e => e.reimbursable).reduce((s, e) => s + e.amount, 0);
+  useEffect(() => {
+    authFetch(`${BASE}/api/cases`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: CaseOption[]) => {
+        const active = data.filter((c: any) => !c.deletedAt);
+        setCases(active);
+        if (active.length > 0 && !form.caseId) {
+          setForm(f => ({ ...f, caseId: String(active[0].id) }));
+        }
+        setExpenses([
+          { id: 1, date: "2026-05-03", caseId: active[0]?.id ?? null, caseTitle: active[0]?.title ?? "—", typeValue: "court_fees",  description: "دفع حقوق تسجيل الدعوى",      amount: 120, reimbursable: true  },
+          { id: 2, date: "2026-05-01", caseId: active[1]?.id ?? null, caseTitle: active[1]?.title ?? "—", typeValue: "expert_fees", description: "أتعاب خبير عقاري",            amount: 800, reimbursable: true  },
+          { id: 3, date: "2026-04-28", caseId: active[2]?.id ?? null, caseTitle: active[2]?.title ?? "—", typeValue: "bailiff",     description: "تبليغ استدعاء",               amount: 45,  reimbursable: true  },
+          { id: 4, date: "2026-04-25", caseId: active[0]?.id ?? null, caseTitle: active[0]?.title ?? "—", typeValue: "travel",      description: "تنقل للمحكمة الابتدائية",    amount: 30,  reimbursable: false },
+          { id: 5, date: "2026-04-20", caseId: active[1]?.id ?? null, caseTitle: active[1]?.title ?? "—", typeValue: "stamps",      description: "طوابع الطعن بالاستئناف",      amount: 15,  reimbursable: true  },
+        ]);
+      });
+  }, []);
+
+  const filtered = filterCase === "all"
+    ? expenses
+    : expenses.filter(e => String(e.caseId) === filterCase);
+
+  const total           = filtered.reduce((s, e) => s + e.amount, 0);
+  const reimbursable    = filtered.filter(e => e.reimbursable).reduce((s, e) => s + e.amount, 0);
   const notReimbursable = total - reimbursable;
 
   const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
+
+  function caseLabel(c: CaseOption) {
+    return c.caseNumber ? `${c.caseNumber} — ${c.title}` : c.title;
+  }
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -126,10 +159,10 @@ export default function Expenses() {
 
         {/* Filter */}
         <div className="flex items-center gap-3">
-          <select className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-64"
+          <select className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-72"
             value={filterCase} onChange={e => setFilterCase(e.target.value)}>
             <option value="all">كل القضايا</option>
-            {CASES.map(c => <option key={c} value={c}>{c}</option>)}
+            {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}
           </select>
         </div>
 
@@ -161,12 +194,20 @@ export default function Expenses() {
                     const label = getTypeLabel(e.typeValue, locale);
                     const alt   = getTypeAlt(e.typeValue, locale);
                     return (
-                      <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                      <tr
+                        key={e.id}
+                        className="hover:bg-muted/20 transition-colors cursor-pointer"
+                        onClick={() => e.caseId && navigate(`/cases/${e.caseId}`)}
+                      >
                         <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
                           {formatDateTN(e.date)}
                         </td>
-                        <td className="py-3 px-4 font-medium max-w-[160px] truncate">{e.case}</td>
-                        <td className="py-3 px-4 w-[200px]">
+                        <td className="py-3 px-4 font-medium max-w-[160px] truncate">
+                          <span className="text-primary hover:underline">
+                            {e.caseTitle}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 w-[200px]" onClick={ev => ev.stopPropagation()}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="bg-muted/60 px-2 py-1 rounded-md text-xs block max-w-[184px] whitespace-nowrap overflow-hidden text-ellipsis cursor-default">
@@ -185,7 +226,7 @@ export default function Expenses() {
                             {e.reimbursable ? "نعم" : "لا"}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-4 text-center" onClick={ev => ev.stopPropagation()}>
                           <button
                             onClick={() => setExpenses(es => es.filter(x => x.id !== e.id))}
                             className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
@@ -221,8 +262,8 @@ export default function Expenses() {
               </FormField>
               <FormField label="القضية *" htmlFor="exp-case">
                 <select id="exp-case" className={inputCls + " px-3 cursor-pointer"}
-                  value={form.case} onChange={e => setForm(f => ({ ...f, case: e.target.value }))}>
-                  {CASES.map(c => <option key={c} value={c}>{c}</option>)}
+                  value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}>
+                  {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}
                 </select>
               </FormField>
             </div>
@@ -255,17 +296,19 @@ export default function Expenses() {
             </label>
             <div className="flex gap-3 pt-2">
               <Button className="flex-1" onClick={() => {
-                if (form.description && form.amount) {
+                if (form.description && form.amount && form.caseId) {
+                  const c = cases.find(c => String(c.id) === form.caseId);
                   setExpenses(es => [{
                     id: Date.now(),
                     date: form.date,
-                    case: form.case,
+                    caseId: Number(form.caseId),
+                    caseTitle: c?.title ?? "—",
                     typeValue: form.typeValue,
                     description: form.description,
                     amount: parseFloat(form.amount),
                     reimbursable: form.reimbursable,
                   }, ...es]);
-                  setForm({ date: new Date().toISOString().split("T")[0], case: CASES[0], typeValue: EXPENSE_TYPES[0].value, description: "", amount: "", reimbursable: true });
+                  setForm(f => ({ ...f, description: "", amount: "" }));
                 }
                 setShowModal(false);
               }}>حفظ المصروف</Button>
