@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Eye, Filter, Briefcase, Archive, Hash } from "lucide-react";
+import { Plus, Search, Eye, Filter, Briefcase, Archive, Hash, ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,14 +77,17 @@ export default function Cases() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => setViewArchived(v => !v)}
-            className="gap-2"
-          >
-            <Archive className="h-4 w-4" />
-            {viewArchived ? "العودة للنشطة" : "المحفوظات"}
-          </Button>
+          {viewArchived ? (
+            <Button size="sm" onClick={() => setViewArchived(false)} className="gap-2">
+              <ArrowRight className="h-4 w-4" />
+              رجوع
+            </Button>
+          ) : (
+            <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
+              <Archive className="h-4 w-4" />
+              المحفوظات
+            </Button>
+          )}
           <Button onClick={openNewModal} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />
             قضية جديدة
