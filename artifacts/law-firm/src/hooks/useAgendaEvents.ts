@@ -45,7 +45,7 @@ export function useAgendaEvents() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await authFetch(`${BASE}/api/events`);
+    const r = await authFetch(`${BASE}/api/events`, { cache: "no-store" });
     if (r.ok) setEvents(await r.json());
     setLoading(false);
   }, []);
