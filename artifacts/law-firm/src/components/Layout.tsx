@@ -6,14 +6,12 @@ import {
   Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
-  Plus, Star, ChevronDown, ChevronLeft, Languages,
+  Plus, Star, ChevronDown, ChevronLeft,
   MoreHorizontal, X, Crown, AlertTriangle,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { LocaleToggle } from "@/components/LocaleToggle";
 import { useAuth } from "@/context/AuthContext";
-import { useLocale } from "@/context/LocaleContext";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
 import { FEATURE_DICTATION } from "@/config/features";
@@ -233,7 +231,6 @@ function ExpandableSection({
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const locale = useLocale();
 
   const [collapsed, setCollapsed] = useState(() =>
     localStorage.getItem("sidebar_collapsed") === "true"
@@ -540,12 +537,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       )} />
                     </span>
                   </button>
-                  {/* Locale toggle row */}
-                  <div className="flex items-center gap-2.5 px-3.5 py-2 text-[13px]">
-                    <Languages className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                    <span className="flex-1 text-start text-foreground/70">اللغة / Langue</span>
-                    <LocaleToggle />
-                  </div>
                   <div className="my-1 h-px bg-border/40 mx-2" />
                   <button
                     onClick={() => { logout(); setUserMenuOpen(false); }}
@@ -564,7 +555,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   /* ─────────── render ─────────── */
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <div className="min-h-screen bg-background text-foreground font-sans" dir="rtl">
       <div className="flex min-h-screen">
 
         {/* Desktop Sidebar */}
