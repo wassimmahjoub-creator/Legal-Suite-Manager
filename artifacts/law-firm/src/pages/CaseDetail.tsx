@@ -20,7 +20,7 @@ import {
   Users, AlertTriangle, Lock, Link2, GitBranch,
   Archive, Hash, Layers, Shield, Pencil, DollarSign,
   BarChart2, Timer, FolderOpen, Receipt, ArrowUpRight,
-  ExternalLink, Scale,
+  ExternalLink, Scale, Upload,
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
@@ -153,6 +153,7 @@ export default function CaseDetail() {
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
     clientFileRef: "", opponentName: "", opponentLawyer: "", judgmentText: "",
   });
+  const [docForm,   setDocForm]   = useState({ name: "", fileType: "عقد", url: "" });
   const [noteText,  setNoteText]  = useState("");
   const [noteModal, setNoteModal] = useState(false);
   const [modal,     setModal]     = useState<string | null>(null);
@@ -943,6 +944,80 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !confForm.content.trim()} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/confidential-notes`, { method: "POST", body: JSON.stringify({ content: confForm.content, createdBy: user?.name }) }); }, load.confNotes)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Upload Document modal */}
+      <Modal open={modal === "upload-doc"} onClose={() => setModal(null)} title="رفع وثيقة جديدة">
+        <div className="space-y-4">
+          <label
+            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+            htmlFor="cd-doc-file"
+          >
+            <Upload className="h-10 w-10 text-muted-foreground/40" />
+            <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
+            <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
+            <input
+              id="cd-doc-file"
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file && !docForm.name) setDocForm(f => ({ ...f, name: file.name }));
+              }}
+            />
+          </label>
+          <FormField label="اسم الوثيقة *" htmlFor="cd-doc-name">
+            <Input
+              id="cd-doc-name"
+              placeholder="مثال: عقد شراكة بتاريخ 2026"
+              className={inputCls}
+              value={docForm.name}
+              onChange={e => setDocForm(f => ({ ...f, name: e.target.value }))}
+              autoFocus
+            />
+          </FormField>
+          <FormField label="نوع الوثيقة" htmlFor="cd-doc-type">
+            <SelectNative id="cd-doc-type" className={inputCls + " px-3 cursor-pointer"}
+              value={docForm.fileType}
+              onChange={e => setDocForm(f => ({ ...f, fileType: e.target.value }))}>
+              {["عقد","وثيقة رسمية","مراسلة","حكم قضائي","تقرير خبرة","وكالة","أخرى"].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </SelectNative>
+          </FormField>
+          <FormField label="رابط خارجي (اختياري)" htmlFor="cd-doc-url">
+            <Input
+              id="cd-doc-url"
+              placeholder="https://..."
+              className={inputCls}
+              dir="ltr"
+              value={docForm.url}
+              onChange={e => setDocForm(f => ({ ...f, url: e.target.value }))}
+            />
+          </FormField>
+          <div className="flex gap-3">
+            <Button
+              className="flex-1"
+              disabled={saving || !docForm.name.trim()}
+              onClick={() => withSave(async () => {
+                await authFetch(`${BASE}/api/documents`, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    name: docForm.name.trim(),
+                    caseId: Number(id),
+                    fileType: docForm.fileType || null,
+                    url: docForm.url.trim() || null,
+                  }),
+                });
+                setDocForm({ name: "", fileType: "عقد", url: "" });
+              }, load.docs)}
+            >
+              {saving ? "جارٍ الحفظ..." : "حفظ الوثيقة"}
+            </Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
