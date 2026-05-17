@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { KeypadProvider } from "@/context/KeypadContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { LocaleProvider } from "@/context/LocaleContext";
 import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
 
@@ -153,16 +154,18 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <KeypadProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </KeypadProvider>
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <KeypadProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </KeypadProvider>
+        </AuthProvider>
+      </LocaleProvider>
     </QueryClientProvider>
   );
 }

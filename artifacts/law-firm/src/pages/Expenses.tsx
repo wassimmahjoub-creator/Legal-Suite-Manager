@@ -173,11 +173,11 @@ export default function Expenses() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
-                    <th className="text-right py-3 px-4 font-semibold">التاريخ</th>
-                    <th className="text-right py-3 px-4 font-semibold">القضية</th>
-                    <th className="text-right py-3 px-4 font-semibold w-[200px]">نوع المصروف</th>
-                    <th className="text-right py-3 px-4 font-semibold hidden md:table-cell">الوصف</th>
-                    <th className="text-right py-3 px-4 font-semibold">المبلغ</th>
+                    <th className="text-start py-3 px-4 font-semibold">التاريخ</th>
+                    <th className="text-start py-3 px-4 font-semibold">القضية</th>
+                    <th className="text-start py-3 px-4 font-semibold w-[200px]">نوع المصروف</th>
+                    <th className="text-start py-3 px-4 font-semibold hidden md:table-cell">الوصف</th>
+                    <th className="text-start py-3 px-4 font-semibold">المبلغ</th>
                     <th className="text-center py-3 px-4 font-semibold">قابل للاسترجاع</th>
                     <th className="text-center py-3 px-4 font-semibold w-12"></th>
                   </tr>

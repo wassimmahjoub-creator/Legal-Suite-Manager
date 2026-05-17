@@ -170,12 +170,12 @@ export default function TimeTracking() {
             <table className="w-full text-sm">
               <thead className="bg-muted/40">
                 <tr>
-                  <th className="text-right py-3 px-4 font-semibold">التاريخ</th>
-                  <th className="text-right py-3 px-4 font-semibold">القضية</th>
-                  <th className="text-right py-3 px-4 font-semibold">الوصف</th>
-                  <th className="text-right py-3 px-4 font-semibold">الساعات</th>
-                  <th className="text-right py-3 px-4 font-semibold">المعدل</th>
-                  <th className="text-right py-3 px-4 font-semibold">المبلغ</th>
+                  <th className="text-start py-3 px-4 font-semibold">التاريخ</th>
+                  <th className="text-start py-3 px-4 font-semibold">القضية</th>
+                  <th className="text-start py-3 px-4 font-semibold">الوصف</th>
+                  <th className="text-start py-3 px-4 font-semibold">الساعات</th>
+                  <th className="text-start py-3 px-4 font-semibold">المعدل</th>
+                  <th className="text-start py-3 px-4 font-semibold">المبلغ</th>
                   <th className="text-center py-3 px-4 font-semibold">فاتورة</th>
                 </tr>
               </thead>

@@ -6,11 +6,12 @@ import {
   Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
-  Plus, Star, ChevronDown, ChevronLeft,
+  Plus, Star, ChevronDown, ChevronLeft, Languages,
   MoreHorizontal, X, Crown, AlertTriangle,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { LocaleToggle } from "@/components/LocaleToggle";
 import { useAuth } from "@/context/AuthContext";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
@@ -120,7 +121,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
           collapsed
             ? "justify-center py-2 w-9 mx-auto"
             : indent
-              ? "px-2 py-[5px] mr-1"
+              ? "px-2 py-[5px] me-1"
               : "px-2.5 py-[5px]",
           active
             ? "text-primary font-semibold"
@@ -128,9 +129,9 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
         )}
         style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
       >
-        {/* Right-side accent for active */}
+        {/* Start-side accent for active — rounded-l-full intentional-ltr: no TW4 logical equiv */}
         {active && !collapsed && (
-          <span className="absolute right-0 top-1/2 -translate-y-1/2 h-[18px] w-[2.5px] bg-primary rounded-l-full" />
+          <span className="absolute end-0 top-1/2 -translate-y-1/2 h-[18px] w-[2.5px] bg-primary rounded-l-full" />
         )}
         <Icon className={cn(
           "shrink-0 transition-colors duration-150",
@@ -142,7 +143,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
         )}
         {/* Collapsed tooltip */}
         {collapsed && hov && (
-          <span className="absolute right-full mr-3 px-2.5 py-1.5 bg-popover/95 text-popover-foreground text-xs rounded-lg shadow-xl whitespace-nowrap border border-border z-50 pointer-events-none backdrop-blur-sm">
+          <span className="absolute end-full me-3 px-2.5 py-1.5 bg-popover/95 text-popover-foreground text-xs rounded-lg shadow-xl whitespace-nowrap border border-border z-50 pointer-events-none backdrop-blur-sm">
             {label}
           </span>
         )}
@@ -153,7 +154,7 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
         <button
           onClick={e => { e.preventDefault(); onToggleFav(href); }}
           className={cn(
-            "absolute left-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-all duration-100",
+            "absolute start-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-all duration-100",
             favorited ? "text-primary" : "text-muted-foreground/30 hover:text-muted-foreground/60"
           )}
           title={favorited ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
@@ -218,7 +219,7 @@ function ExpandableSection({
         )} />
       </button>
       {open && (
-        <div className="mt-px mr-3 border-r border-border/30 pr-1 space-y-px">
+        <div className="mt-px me-3 border-e border-border/30 pe-1 space-y-px">
           {children}
         </div>
       )}
@@ -503,7 +504,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {userMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-              <div className="absolute bottom-full mb-1.5 right-0 w-52 bg-card/95 backdrop-blur-md border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute bottom-full mb-1.5 end-0 w-52 bg-card/95 backdrop-blur-md border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
                 <div className="px-3.5 py-2.5 border-b border-border/60">
                   <p className="font-semibold text-[13px] leading-tight">{user?.name}</p>
                   <p className="text-[11px] text-muted-foreground/60 mt-0.5">{user?.email}</p>
@@ -525,7 +526,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     {isDark
                       ? <Sun className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                       : <Moon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />}
-                    <span className="flex-1 text-right">الوضع الداكن</span>
+                    <span className="flex-1 text-start">الوضع الداكن</span>
                     {/* Toggle pill */}
                     <span className={cn(
                       "relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-200",
@@ -537,6 +538,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       )} />
                     </span>
                   </button>
+                  {/* Locale toggle row */}
+                  <div className="flex items-center gap-2.5 px-3.5 py-2 text-[13px]">
+                    <Languages className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                    <span className="flex-1 text-start text-foreground/70">اللغة / Langue</span>
+                    <LocaleToggle />
+                  </div>
                   <div className="my-1 h-px bg-border/40 mx-2" />
                   <button
                     onClick={() => { logout(); setUserMenuOpen(false); }}
@@ -555,12 +562,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   /* ─────────── render ─────────── */
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       <div className="flex min-h-screen">
 
         {/* Desktop Sidebar */}
         <aside className={cn(
-          "hidden lg:flex flex-col fixed top-0 right-0 h-full bg-card border-l border-border/60 z-30 transition-all duration-300 ease-in-out",
+          "hidden lg:flex flex-col fixed top-0 start-0 h-full bg-card border-e border-border/60 z-30 transition-all duration-300 ease-in-out",
           collapsed ? "w-[52px]" : "w-[212px]"
         )}>
           <SidebarContent />
@@ -568,7 +575,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Collapse button */}
           <button
             onClick={() => setCollapsed(c => !c)}
-            className="absolute -left-[11px] top-[68px] h-[22px] w-[22px] bg-card border border-border/80 rounded-full flex items-center justify-center shadow-md hover:bg-muted transition-colors z-10"
+            className="absolute -end-[11px] top-[68px] h-[22px] w-[22px] bg-card border border-border/80 rounded-full flex items-center justify-center shadow-md hover:bg-muted transition-colors z-10"
             title={collapsed ? "توسيع القائمة" : "طي القائمة"}
           >
             <ChevronLeft className={cn(
@@ -679,7 +686,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Main area */}
         <div className={cn(
           "flex-1 flex flex-col min-h-screen transition-all duration-300",
-          collapsed ? "lg:mr-[52px]" : "lg:mr-[212px]"
+          collapsed ? "lg:ms-[52px]" : "lg:ms-[212px]"
         )}>
 
           {/* Topbar */}
@@ -694,8 +701,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
 
               {/* Desktop breadcrumb */}
+              {/* intentional-ltr: ChevronLeft = "precedes page name" separator, mirrored in LTR */}
               <div className="hidden lg:flex items-center gap-1.5 text-[12px] text-muted-foreground/50">
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-3 w-3 rtl:rotate-0 ltr:rotate-180" />
                 <span className="font-medium text-foreground/70">{currentLabel}</span>
               </div>
 
@@ -751,9 +759,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Quick Actions FAB — desktop */}
-      <div ref={quickRef} className="fixed bottom-5 left-5 z-40 hidden lg:block">
+      <div ref={quickRef} className="fixed bottom-5 end-5 z-40 hidden lg:block">
         {quickOpen && (
-          <div className="absolute bottom-11 left-0 mb-1 bg-card/95 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl overflow-hidden w-40">
+          <div className="absolute bottom-11 start-0 mb-1 bg-card/95 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl overflow-hidden w-40">
             {QUICK_ACTIONS.map(a => {
               const Icon = a.icon;
               return (

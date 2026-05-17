@@ -13,6 +13,7 @@ export const usersTable = pgTable("users", {
   orgId: integer("org_id"),
   permissions: jsonb("permissions"),
   icalToken: text("ical_token").unique(),
+  preferredLocale: text("preferred_locale").default("ar"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

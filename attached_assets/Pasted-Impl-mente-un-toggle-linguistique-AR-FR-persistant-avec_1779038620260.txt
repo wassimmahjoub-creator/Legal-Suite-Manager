@@ -1,0 +1,61 @@
+Implémente un toggle linguistique AR/FR persistant avec bascule RTL/LTR complète.
+
+ÉTAPE 1 — STATE GLOBAL
+Si i18n n'est pas déjà branché, utilise i18next + react-i18next. Sinon, branche-toi dessus.
+
+Ajoute au store global (Zustand/Context) une slice `locale` :
+- current : 'ar' | 'fr'
+- setLocale(locale) : met à jour le state, persiste en localStorage sous 'app.locale', PATCH /api/me { preferred_locale }.
+
+Au montage de l'app :
+1. Lis localStorage.
+2. Si non présent, fetch /api/me et prends preferred_locale.
+3. Si toujours non présent, fallback navigateur (Accept-Language).
+4. Applique : document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr', et document.documentElement.lang = locale.
+
+ÉTAPE 2 — TOGGLE UI
+Dans la TopBar, ajoute un composant <LocaleToggle /> :
+- Pill switch avec deux états AR | FR
+- Animé (slide), pas de reload
+- Au clic, appelle setLocale
+- Position : toujours visible, à côté de l'avatar utilisateur
+
+ÉTAPE 3 — SCHÉMA UTILISATEUR
+Ajoute une colonne preferred_locale (text, default 'fr') sur la table users. Migration + endpoint PATCH /api/me.
+
+ÉTAPE 4 — AUDIT TAILWIND
+grep dans src/ pour repérer les usages de classes spatiales non-logiques :
+- ml-* → ms-* (margin-inline-start)
+- mr-* → me-* (margin-inline-end)
+- pl-* → ps-*
+- pr-* → pe-*
+- text-left → text-start
+- text-right → text-end
+- left-* → start-*
+- right-* → end-*
+- border-l-* → border-s-*
+- border-r-* → border-e-*
+
+Remplace systématiquement. Pour les cas où la directionnalité est SÉMANTIQUE (ex: un graphique qui montre toujours le temps de gauche à droite), garde ml-*/mr-* et documente-le par un commentaire // intentional-ltr.
+
+ÉTAPE 5 — ICÔNES DIRECTIONNELLES
+Crée un composant <DirectionalIcon /> qui prend une icône lucide-react (ChevronLeft, ChevronRight, ArrowLeft, ArrowRight) et l'inverse selon la direction :
+- En LTR : ChevronRight = "suivant"
+- En RTL : ChevronLeft = "suivant" (l'icône est miroir)
+
+Utilise-le partout où une icône a un sens directionnel (navigation breadcrumb, pagination, "next" dans un wizard).
+
+ÉTAPE 6 — AUDIT VISUEL
+Capture 5 écrans en AR et en FR pour vérification :
+1. Dashboard
+2. Liste qadhiyat
+3. Page détail client
+4. Formulaire de facture
+5. Agenda vue semaine
+
+LIVRABLES :
+- Migration users.preferred_locale
+- <LocaleToggle /> dans la TopBar
+- <DirectionalIcon />
+- Diff de l'audit Tailwind
+- Captures avant/après sur les 5 écrans
