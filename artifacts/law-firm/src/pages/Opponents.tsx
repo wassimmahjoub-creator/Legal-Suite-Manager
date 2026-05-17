@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -149,10 +150,10 @@ export default function Opponents() {
               <Input id="op-phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="2X XXX XXX" className={inputCls} dir="ltr" />
             </FormField>
             <FormField label="القضية المرتبطة" htmlFor="op-case">
-              <select id="op-case" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="op-case" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="">بدون ربط...</option>
                 {allCases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <FormField label="العنوان" htmlFor="op-address">

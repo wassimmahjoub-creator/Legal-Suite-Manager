@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState } from "react";
 import { useListDocuments } from "@workspace/api-client-react";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -122,10 +123,10 @@ export default function Documents() {
               value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
           </FormField>
           <FormField label="نوع الوثيقة" htmlFor="doc-type">
-            <select id="doc-type" className={inputCls + " px-3 cursor-pointer"}
+            <SelectNative id="doc-type" className={inputCls + " px-3 cursor-pointer"}
               value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               {docTypes.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <FormField label="القضية المرتبطة" htmlFor="doc-case">
             <Input id="doc-case" placeholder="اسم القضية (اختياري)" className={inputCls}

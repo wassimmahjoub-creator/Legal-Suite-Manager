@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useRef } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
@@ -369,7 +370,7 @@ export default function Courts() {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="النوع" htmlFor="ct-type">
-              <select
+              <SelectNative
                 id="ct-type"
                 value={form.type}
                 onChange={e => setForm({ ...form, type: e.target.value as CourtType })}
@@ -378,7 +379,7 @@ export default function Courts() {
                 {(Object.keys(TYPE_LABELS) as CourtType[]).map(t => (
                   <option key={t} value={t}>{TYPE_LABELS[t]}</option>
                 ))}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الولاية" htmlFor="ct-gov">
               <Input

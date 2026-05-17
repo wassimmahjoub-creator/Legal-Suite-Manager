@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatCurrency } from "@/lib/currency";
 import { formatDateTN } from "@/lib/date";
@@ -609,11 +610,11 @@ export default function ClientPage() {
                     </div>
                     <div className="flex-1 space-y-2.5 w-full">
                       {activeCasesList.length > 0 ? (
-                        <select className={inputCls + " px-3 cursor-pointer"}
+                        <SelectNative className={inputCls + " px-3 cursor-pointer"}
                           value={timerCaseId} onChange={e => setTimerCaseId(e.target.value)}>
                           <option value="">بدون ملف محدد</option>
                           {activeCasesList.map(c => <option key={c.id} value={String(c.id)}>{c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}</option>)}
-                        </select>
+                        </SelectNative>
                       ) : (
                         <p className="text-xs text-muted-foreground p-2">لا توجد ملفات جارية</p>
                       )}
@@ -857,13 +858,13 @@ export default function ClientPage() {
                 value={caseForm.lawyer} onChange={e => setCaseForm(f => ({ ...f, lawyer: e.target.value }))} />
             </FormField>
             <FormField label="الحالة" htmlFor="c-status">
-              <select id="c-status" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="c-status" className={inputCls + " px-3 cursor-pointer"}
                 value={caseForm.status} onChange={e => setCaseForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="active">نشطة</option>
                 <option value="pending">في الانتظار</option>
                 <option value="suspended">موقوفة</option>
                 <option value="closed">مغلقة</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -879,10 +880,10 @@ export default function ClientPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="المرحلة الإجرائية" htmlFor="c-stage">
-              <select id="c-stage" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="c-stage" className={inputCls + " px-3 cursor-pointer"}
                 value={caseForm.procedureStage} onChange={e => setCaseForm(f => ({ ...f, procedureStage: e.target.value }))}>
                 {CASE_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="عدد القضية بالمحكمة" htmlFor="c-court-num">
               <Input id="c-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
@@ -956,7 +957,7 @@ export default function ClientPage() {
           {/* Case selector */}
           {cases.length > 0 && (
             <FormField label="الملف المرتبط" htmlFor="inv-case">
-              <select id="inv-case" value={invForm.caseId}
+              <SelectNative id="inv-case" value={invForm.caseId}
                 onChange={e => setInvForm(f => ({ ...f, caseId: e.target.value }))}
                 className={inputCls + " px-3 cursor-pointer"}>
                 <option value="">بدون ملف</option>
@@ -965,7 +966,7 @@ export default function ClientPage() {
                     {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </FormField>
           )}
 
@@ -991,14 +992,14 @@ export default function ClientPage() {
                 className={inputCls} />
             </FormField>
             <FormField label="نسبة الضريبة (TVA)" htmlFor="inv-vat">
-              <select id="inv-vat" value={invForm.vatRate}
+              <SelectNative id="inv-vat" value={invForm.vatRate}
                 onChange={e => setInvForm(f => ({ ...f, vatRate: e.target.value }))}
                 className={inputCls + " px-3 cursor-pointer"}>
                 <option value="0">0 %</option>
                 <option value="7">7 %</option>
                 <option value="13">13 %</option>
                 <option value="19">19 %</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -1085,13 +1086,13 @@ export default function ClientPage() {
                 value={timeForm.date} onChange={e => setTimeForm(f => ({ ...f, date: e.target.value }))} />
             </FormField>
             <FormField label="الملف المرتبط" htmlFor="te-case">
-              <select id="te-case" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="te-case" className={inputCls + " px-3 cursor-pointer"}
                 value={timeForm.caseId} onChange={e => setTimeForm(f => ({ ...f, caseId: e.target.value }))}>
                 <option value="">بدون ملف</option>
                 {cases.filter(c => !c.archivedAt).map(c => (
                   <option key={c.id} value={String(c.id)}>{c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}</option>
                 ))}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <FormField label="وصف النشاط *" htmlFor="te-desc">
@@ -1160,21 +1161,21 @@ export default function ClientPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="نوع المراسلة" htmlFor="corr-type">
-              <select id="corr-type" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-type" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.type} onChange={e => setCorrForm(f => ({ ...f, type: e.target.value }))}>
                 <option value="letter">رسالة رسمية</option>
                 <option value="email">بريد إلكتروني</option>
                 <option value="fax">فاكس</option>
                 <option value="notice">إشعار / إعلام</option>
                 <option value="other">أخرى</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الاتجاه" htmlFor="corr-dir">
-              <select id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.direction} onChange={e => setCorrForm(f => ({ ...f, direction: e.target.value }))}>
                 <option value="outgoing">صادر (من المكتب)</option>
                 <option value="incoming">وارد (من الحريف)</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -1184,19 +1185,19 @@ export default function ClientPage() {
                 value={corrForm.date} onChange={e => setCorrForm(f => ({ ...f, date: e.target.value }))} />
             </FormField>
             <FormField label="الحالة" htmlFor="corr-status">
-              <select id="corr-status" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-status" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.status} onChange={e => setCorrForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="draft">مسودة</option>
                 <option value="sent">مُرسلة</option>
                 <option value="received">مُستلمة</option>
                 <option value="acknowledged">مُؤكدة</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
           {cases.filter(c => !c.archivedAt).length > 0 && (
             <FormField label="القضية المرتبطة" htmlFor="corr-case">
-              <select id="corr-case" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-case" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.caseId} onChange={e => setCorrForm(f => ({ ...f, caseId: e.target.value }))}>
                 <option value="">بدون قضية (اختياري)</option>
                 {cases.filter(c => !c.archivedAt).map(c => (
@@ -1204,7 +1205,7 @@ export default function ClientPage() {
                     {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </FormField>
           )}
 
@@ -1302,20 +1303,20 @@ export default function ClientPage() {
           </FormField>
 
           <FormField label="نوع الوثيقة" htmlFor="doc-ftype">
-            <select id="doc-ftype" className={inputCls + " px-3 cursor-pointer"}
+            <SelectNative id="doc-ftype" className={inputCls + " px-3 cursor-pointer"}
               value={docForm.fileType}
               onChange={e => setDocForm(f => ({ ...f, fileType: e.target.value }))}>
               {["عقد","وثيقة رسمية","مراسلة","حكم قضائي","تقرير خبرة","وكالة","أخرى"].map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
-            </select>
+            </SelectNative>
           </FormField>
 
           <FormField label="الملف المرتبط *" htmlFor="doc-case">
             {cases.filter(c => !c.archivedAt).length === 0 ? (
               <p className="text-xs text-amber-400 p-2">يجب إنشاء ملف أولاً لربط الوثيقة به</p>
             ) : (
-              <select id="doc-case" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="doc-case" className={inputCls + " px-3 cursor-pointer"}
                 value={docForm.caseId}
                 onChange={e => setDocForm(f => ({ ...f, caseId: e.target.value }))}>
                 <option value="">— اختر الملف —</option>
@@ -1324,7 +1325,7 @@ export default function ClientPage() {
                     {c.title}{c.caseNumber ? ` — ${c.caseNumber}` : ""}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             )}
           </FormField>
 
@@ -1412,12 +1413,12 @@ export default function ClientPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FormField label="نوع الحريف" htmlFor="e-cl-type">
-              <select id="e-cl-type" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="e-cl-type" className={inputCls + " px-3 cursor-pointer"}
                 value={editForm.clientType ?? "individual"}
                 onChange={e => setEditForm(f => ({ ...f, clientType: e.target.value }))}>
                 <option value="individual">شخص طبيعي</option>
                 <option value="company">شخص معنوي / شركة</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الاسم الكامل *" htmlFor="e-cl-name">
               <Input id="e-cl-name" value={editForm.name ?? ""} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className={inputCls} />
@@ -1461,13 +1462,13 @@ export default function ClientPage() {
           </FormField>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="نسبة الخصم من المورد" htmlFor="e-cl-wh">
-              <select id="e-cl-wh" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="e-cl-wh" className={inputCls + " px-3 cursor-pointer"}
                 value={editForm.withholdingRate ?? "0"}
                 onChange={e => setEditForm(f => ({ ...f, withholdingRate: e.target.value }))}>
                 <option value="0">0 % — غير خاضع</option>
                 <option value="3">3 %</option>
                 <option value="5">5 %</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="إعفاء من الخصم" htmlFor="e-cl-exempt">
               <div className="flex items-center h-10 gap-3">

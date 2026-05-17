@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -214,11 +215,11 @@ export default function Clients() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FormField label="نوع الحريف" htmlFor="cl-type">
-              <select id="cl-type" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="cl-type" className={inputCls + " px-3 cursor-pointer"}
                 value={form.clientType} onChange={e => setForm(f => ({ ...f, clientType: e.target.value }))}>
                 <option value="individual">شخص طبيعي</option>
                 <option value="company">شخص معنوي / شركة</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الاسم الكامل *" htmlFor="cl-name">
               <Input id="cl-name" placeholder="مثال: محمد بن علي" className={inputCls}

@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
@@ -307,10 +308,10 @@ export default function UserManagement() {
           ))}
           <div className="space-y-1">
             <label className="text-sm font-medium">الدور</label>
-            <select value={addForm.role} onChange={e => setAddForm(f => ({ ...f, role: e.target.value }))}
+            <SelectNative value={addForm.role} onChange={e => setAddForm(f => ({ ...f, role: e.target.value }))}
               className="w-full h-10 bg-muted/50 border border-border rounded-lg px-3 text-sm text-right">
               {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            </SelectNative>
           </div>
           <div className="flex gap-2 pt-2">
             <Button onClick={addUser} disabled={saving} className="flex-1">{saving ? "جارٍ الإضافة..." : "إضافة"}</Button>
@@ -331,10 +332,10 @@ export default function UserManagement() {
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">الدور</label>
-                <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))}
+                <SelectNative value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full h-10 bg-muted/50 border border-border rounded-lg px-3 text-sm text-right">
                   {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                </SelectNative>
               </div>
               <div className="flex gap-2">
                 <Button onClick={sendInvite} disabled={saving} className="flex-1">{saving ? "جارٍ الإرسال..." : "إنشاء رابط الدعوة"}</Button>
@@ -376,10 +377,10 @@ export default function UserManagement() {
           ))}
           <div className="space-y-1">
             <label className="text-sm font-medium">الدور</label>
-            <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
+            <SelectNative value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
               className="w-full h-10 bg-muted/50 border border-border rounded-lg px-3 text-sm text-right">
               {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            </SelectNative>
           </div>
           <div className="flex gap-2 pt-2">
             <Button onClick={saveEdit} disabled={saving} className="flex-1">{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>

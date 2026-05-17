@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { formatDateTN } from "@/lib/date";
@@ -93,13 +94,13 @@ export default function TimeTracking() {
               </p>
             </div>
             <div className="flex-1 space-y-3 w-full">
-              <select
+              <SelectNative
                 className={inputCls + " px-3 cursor-pointer"}
                 value={timerCase}
                 onChange={e => setTimerCase(e.target.value)}
               >
                 {CASES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              </SelectNative>
               <Input
                 placeholder="وصف النشاط (اختياري)..."
                 className={inputCls}
@@ -151,11 +152,11 @@ export default function TimeTracking() {
 
       {/* Filter */}
       <div className="flex items-center gap-3">
-        <select className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-64"
+        <SelectNative className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-64"
           value={filterCase} onChange={e => setFilterCase(e.target.value)}>
           <option value="all">كل القضايا</option>
           {CASES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        </SelectNative>
         {filterCase !== "all" && (
           <Button size="sm" variant="outline" className="gap-2 h-10" onClick={() => navigate("/billing")}>
             <Receipt className="h-4 w-4" /> تحويل إلى فاتورة
@@ -210,10 +211,10 @@ export default function TimeTracking() {
                 value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </FormField>
             <FormField label="القضية *" htmlFor="te-case">
-              <select id="te-case" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="te-case" className={inputCls + " px-3 cursor-pointer"}
                 value={form.case} onChange={e => setForm(f => ({ ...f, case: e.target.value }))}>
                 {CASES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <FormField label="وصف النشاط *" htmlFor="te-desc">

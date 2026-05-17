@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -222,10 +223,10 @@ export default function Cases() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الحريف *" htmlFor="case-client">
-              <select id="case-client" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="case-client" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="">اختر حريفاً...</option>
                 {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="المحامي المسؤول" htmlFor="case-lawyer">
               <Input id="case-lawyer" placeholder="اسم المحامي" className={inputCls}
@@ -276,19 +277,19 @@ export default function Cases() {
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الحالة" htmlFor="case-status">
-              <select id="case-status" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="case-status" className={inputCls + " px-3 cursor-pointer"}
                 value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="active">نشطة</option>
                 <option value="pending">في الانتظار</option>
                 <option value="suspended">موقوفة</option>
                 <option value="closed">مغلقة</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="المرحلة الإجرائية" htmlFor="case-stage">
-              <select id="case-stage" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="case-stage" className={inputCls + " px-3 cursor-pointer"}
                 value={form.procedureStage} onChange={e => setForm(f => ({ ...f, procedureStage: e.target.value }))}>
                 {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 

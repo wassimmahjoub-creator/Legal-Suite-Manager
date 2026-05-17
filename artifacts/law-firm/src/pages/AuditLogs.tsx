@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Input } from "@/components/ui/input";
@@ -60,10 +61,10 @@ export default function AuditLogs() {
         </div>
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">نوع السجل</label>
-          <select value={entityType} onChange={e => setEntityType(e.target.value)} className="h-9 px-3 bg-muted/50 border border-border rounded-lg text-sm cursor-pointer w-36">
+          <SelectNative value={entityType} onChange={e => setEntityType(e.target.value)} className="h-9 px-3 bg-muted/50 border border-border rounded-lg text-sm cursor-pointer w-36">
             <option value="">الكل</option>
             {Object.entries(ENTITY_AR).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+          </SelectNative>
         </div>
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">من</label>

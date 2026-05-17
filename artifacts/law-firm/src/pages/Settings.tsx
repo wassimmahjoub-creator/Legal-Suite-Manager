@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -314,9 +315,9 @@ export default function Settings() {
                 </div>
                 <div>
                   <p className="text-sm font-medium mb-3">اللغة</p>
-                  <select className={inputCls + " px-3 cursor-pointer max-w-xs"}>
+                  <SelectNative value="ar" onChange={() => {}} className={inputCls + " px-3 cursor-pointer max-w-xs"}>
                     <option value="ar">العربية (الدارجة التونسية)</option>
-                  </select>
+                  </SelectNative>
                 </div>
               </CardContent>
             </Card>
@@ -334,13 +335,13 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-5">
                   <FormField label="العرض الافتراضي" htmlFor="ag-view">
-                    <select id="ag-view" value={agendaView} onChange={e => setAgendaView(e.target.value)}
+                    <SelectNative id="ag-view" value={agendaView} onChange={e => setAgendaView(e.target.value)}
                       className={inputCls + " px-3 cursor-pointer max-w-xs"}>
                       <option value="month">شهر</option>
                       <option value="week">أسبوع</option>
                       <option value="day">يوم</option>
                       <option value="list">قائمة</option>
-                    </select>
+                    </SelectNative>
                   </FormField>
                   <Button onClick={saveAgendaSettings} className="gap-2">
                     <Save className="h-4 w-4" /> حفظ الإعدادات

@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
@@ -110,9 +111,9 @@ export default function LegalConfig() {
         <div className="space-y-4">
           {!editing && (
             <FormField label="الفئة" htmlFor="lc-cat">
-              <select id="lc-cat" value={form.category} onChange={e => setForm({...form, category: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="lc-cat" value={form.category} onChange={e => setForm({...form, category: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 {Object.entries(CATEGORIES).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           )}
           {!editing && (

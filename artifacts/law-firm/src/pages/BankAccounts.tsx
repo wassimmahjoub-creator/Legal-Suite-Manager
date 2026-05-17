@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
@@ -100,11 +101,11 @@ export default function BankAccounts() {
           <div className="grid grid-cols-2 gap-3">
             <FormField label="الرصيد" htmlFor="ba-bal"><Input id="ba-bal" type="number" value={form.balance} onChange={e => setForm({...form, balance: e.target.value})} className={inputCls} dir="ltr" /></FormField>
             <FormField label="العملة" htmlFor="ba-cur">
-              <select id="ba-cur" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="ba-cur" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="TND">TND — دينار تونسي</option>
                 <option value="EUR">EUR — يورو</option>
                 <option value="USD">USD — دولار</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <div className="flex gap-3 pt-1">

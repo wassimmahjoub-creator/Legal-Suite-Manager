@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useCallback } from "react";
 import { Calendar, dateFnsLocalizer, type View, type ToolbarProps } from "react-big-calendar";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
@@ -593,16 +594,16 @@ export default function CalendarView() {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="نوع الحدث" htmlFor="ev-type">
-              <select id="ev-type" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+              <SelectNative id="ev-type" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                 className={inputCls + " px-3 cursor-pointer"}>
                 {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الحالة القانونية" htmlFor="ev-lstatus">
-              <select id="ev-lstatus" value={form.legalStatus} onChange={e => setForm(f => ({ ...f, legalStatus: e.target.value }))}
+              <SelectNative id="ev-lstatus" value={form.legalStatus} onChange={e => setForm(f => ({ ...f, legalStatus: e.target.value }))}
                 className={inputCls + " px-3 cursor-pointer"}>
                 {LEGAL_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -618,7 +619,7 @@ export default function CalendarView() {
           </div>
 
           <FormField label="مدة الحدث (دقيقة)" htmlFor="ev-duration">
-            <select id="ev-duration" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
+            <SelectNative id="ev-duration" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
               className={inputCls + " px-3 cursor-pointer"}>
               <option value="30">30 دقيقة</option>
               <option value="60">ساعة واحدة</option>
@@ -627,7 +628,7 @@ export default function CalendarView() {
               <option value="180">3 ساعات</option>
               <option value="240">4 ساعات</option>
               <option value="480">نهار كامل</option>
-            </select>
+            </SelectNative>
           </FormField>
 
           <div className="grid grid-cols-2 gap-3">
@@ -650,7 +651,7 @@ export default function CalendarView() {
           </FormField>
 
           <FormField label="القضية المرتبطة" htmlFor="ev-case">
-            <select id="ev-case" value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}
+            <SelectNative id="ev-case" value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}
               className={inputCls + " px-3 cursor-pointer"}>
               <option value="">— بدون قضية —</option>
               {cases.map(c => (
@@ -658,7 +659,7 @@ export default function CalendarView() {
                   {c.caseNumber ? `${c.caseNumber} — ` : ""}{c.title}
                 </option>
               ))}
-            </select>
+            </SelectNative>
           </FormField>
 
           <div className="grid grid-cols-1 gap-3">

@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
@@ -119,9 +120,9 @@ export default function Communications() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="النوع" htmlFor="cm-type">
-              <select id="cm-type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="cm-type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 {Object.entries(TYPE_MAP).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="التاريخ *" htmlFor="cm-date"><Input id="cm-date" type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className={inputCls} dir="ltr" /></FormField>
           </div>

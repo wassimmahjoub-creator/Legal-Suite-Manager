@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -107,13 +108,13 @@ export default function Billing() {
             placeholder="بحث بالحريف أو رقم الفاتورة..."
             className="h-10 pe-9 bg-muted/50 border-border rounded-lg" />
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+        <SelectNative value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="h-10 px-3 rounded-lg border border-border bg-muted/50 text-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary">
           <option value="">كل الحالات</option>
           {Object.entries(STATUS_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
-        </select>
+        </SelectNative>
       </div>
 
       {/* Table */}

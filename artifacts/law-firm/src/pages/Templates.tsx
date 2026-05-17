@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
@@ -169,9 +170,9 @@ export default function Templates() {
               <Input id="tpl-name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="مثال: عريضة استئناف" className={inputCls} />
             </FormField>
             <FormField label="النوع" htmlFor="tpl-type">
-              <select id="tpl-type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="tpl-type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <div>

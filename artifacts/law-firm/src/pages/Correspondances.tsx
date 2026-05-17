@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
@@ -159,17 +160,17 @@ export default function Correspondances() {
           value={search} onChange={e => setSearch(e.target.value)}
           className="h-9 w-56 bg-muted/50 border-border rounded-lg text-sm"
         />
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+        <SelectNative value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
           className="h-9 px-3 bg-muted/50 border border-border rounded-lg text-sm cursor-pointer">
           <option value="all">كل الأنواع</option>
           {Object.entries(TYPE_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select value={dirFilter} onChange={e => setDirFilter(e.target.value)}
+        </SelectNative>
+        <SelectNative value={dirFilter} onChange={e => setDirFilter(e.target.value)}
           className="h-9 px-3 bg-muted/50 border border-border rounded-lg text-sm cursor-pointer">
           <option value="all">صادر وارد</option>
           <option value="outgoing">صادر</option>
           <option value="incoming">وارد</option>
-        </select>
+        </SelectNative>
       </div>
 
       {/* List */}
@@ -251,34 +252,34 @@ export default function Correspondances() {
       >
         <div className="space-y-4">
           <FormField label="الحريف *" htmlFor="corr-client">
-            <select id="corr-client" className={inputCls + " px-3 cursor-pointer"}
+            <SelectNative id="corr-client" className={inputCls + " px-3 cursor-pointer"}
               value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, caseId: "" }))}>
               <option value="">اختر حريفاً...</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
 
           <FormField label="القضية المرتبطة" htmlFor="corr-case">
-            <select id="corr-case" className={inputCls + " px-3 cursor-pointer"}
+            <SelectNative id="corr-case" className={inputCls + " px-3 cursor-pointer"}
               value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}>
               <option value="">بدون قضية (اختياري)</option>
               {clientCases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField label="نوع المراسلة" htmlFor="corr-type">
-              <select id="corr-type" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-type" className={inputCls + " px-3 cursor-pointer"}
                 value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 {Object.entries(TYPE_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الاتجاه" htmlFor="corr-dir">
-              <select id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
                 value={form.direction} onChange={e => setForm(f => ({ ...f, direction: e.target.value }))}>
                 <option value="outgoing">صادر (من المكتب)</option>
                 <option value="incoming">وارد (من الحريف)</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -288,13 +289,13 @@ export default function Correspondances() {
                 value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </FormField>
             <FormField label="الحالة" htmlFor="corr-status">
-              <select id="corr-status" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="corr-status" className={inputCls + " px-3 cursor-pointer"}
                 value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="draft">مسودة</option>
                 <option value="sent">مُرسلة</option>
                 <option value="received">مُستلمة</option>
                 <option value="acknowledged">مُؤكدة</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 

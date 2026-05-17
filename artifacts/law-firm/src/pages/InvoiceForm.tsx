@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useMemo, useId } from "react";
 import { useLocation, useParams } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -188,16 +189,16 @@ export default function InvoiceForm() {
             <CardHeader className="pb-3"><CardTitle className="text-base">معلومات الفاتورة</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label="الحريف *" htmlFor={`${uid}-client`}>
-                <select id={`${uid}-client`} value={clientId}
+                <SelectNative id={`${uid}-client`} value={clientId}
                   onChange={e => { setClientId(e.target.value); setCaseId(""); }}
                   className={inputCls + " w-full px-2 cursor-pointer"}>
                   <option value="">— اختر حريفاً —</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                </SelectNative>
               </FormField>
 
               <FormField label="القضية (اختياري)" htmlFor={`${uid}-case`}>
-                <select id={`${uid}-case`} value={caseId}
+                <SelectNative id={`${uid}-case`} value={caseId}
                   onChange={e => setCaseId(e.target.value)}
                   className={inputCls + " w-full px-2 cursor-pointer"}>
                   <option value="">— بدون قضية —</option>
@@ -206,7 +207,7 @@ export default function InvoiceForm() {
                       {c.caseNumber ? `${c.caseNumber} — ` : ""}{c.title}
                     </option>
                   ))}
-                </select>
+                </SelectNative>
               </FormField>
 
               <FormField label="تاريخ الإصدار" htmlFor={`${uid}-issue`}>
@@ -255,10 +256,10 @@ export default function InvoiceForm() {
                             placeholder="وصف الخدمة..." className="h-8 border-0 bg-transparent focus-visible:ring-0 p-0 text-sm" />
                         </td>
                         <td className={cellCls}>
-                          <select value={line.unit} onChange={e => updateLine(idx, "unit", e.target.value)}
+                          <SelectNative value={line.unit} onChange={e => updateLine(idx, "unit", e.target.value)}
                             className="h-8 w-full bg-transparent border-0 text-xs cursor-pointer focus:outline-none">
                             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                          </select>
+                          </SelectNative>
                         </td>
                         <td className={cellCls}>
                           <Input value={line.quantity} onChange={e => updateLine(idx, "quantity", e.target.value)}
@@ -271,10 +272,10 @@ export default function InvoiceForm() {
                             className="h-8 border-0 bg-transparent focus-visible:ring-0 p-0 text-sm text-left w-24" />
                         </td>
                         <td className={cellCls}>
-                          <select value={line.vatRate} onChange={e => updateLine(idx, "vatRate", e.target.value)}
+                          <SelectNative value={line.vatRate} onChange={e => updateLine(idx, "vatRate", e.target.value)}
                             className="h-8 w-full bg-transparent border-0 text-xs cursor-pointer focus:outline-none" dir="ltr">
                             {VAT_RATES.map(r => <option key={r} value={r}>{r}%</option>)}
-                          </select>
+                          </SelectNative>
                         </td>
                         <td className={`${cellCls} text-left font-mono text-xs text-muted-foreground`} dir="ltr">
                           {computed.lineTotalHt.toFixed(3)}

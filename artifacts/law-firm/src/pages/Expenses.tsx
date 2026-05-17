@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -159,11 +160,11 @@ export default function Expenses() {
 
         {/* Filter */}
         <div className="flex items-center gap-3">
-          <select className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-72"
+          <SelectNative className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-72"
             value={filterCase} onChange={e => setFilterCase(e.target.value)}>
             <option value="all">كل القضايا</option>
             {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}
-          </select>
+          </SelectNative>
         </div>
 
         {/* Table */}
@@ -261,21 +262,21 @@ export default function Expenses() {
                   value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
               </FormField>
               <FormField label="القضية *" htmlFor="exp-case">
-                <select id="exp-case" className={inputCls + " px-3 cursor-pointer"}
+                <SelectNative id="exp-case" className={inputCls + " px-3 cursor-pointer"}
                   value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}>
                   {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}
-                </select>
+                </SelectNative>
               </FormField>
             </div>
             <FormField label="نوع المصروف *" htmlFor="exp-type">
-              <select id="exp-type" className={inputCls + " px-3 cursor-pointer"}
+              <SelectNative id="exp-type" className={inputCls + " px-3 cursor-pointer"}
                 value={form.typeValue} onChange={e => setForm(f => ({ ...f, typeValue: e.target.value }))}>
                 {EXPENSE_TYPES.map(t => (
                   <option key={t.value} value={t.value}>
                     {locale === "ar" ? t.ar : t.fr} — {locale === "ar" ? t.fr : t.ar}
                   </option>
                 ))}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الوصف" htmlFor="exp-desc">
               <Input id="exp-desc" placeholder="تفاصيل المصروف..." className={inputCls}

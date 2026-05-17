@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
@@ -524,14 +525,14 @@ export default function CaseDetail() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="المرحلة" htmlFor="pr-stage">
-              <select id="pr-stage" value={procForm.stage} onChange={e => setProcForm({...procForm, stage: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="pr-stage" value={procForm.stage} onChange={e => setProcForm({...procForm, stage: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 {PROCEDURE_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="الحالة" htmlFor="pr-status">
-              <select id="pr-status" value={procForm.status} onChange={e => setProcForm({...procForm, status: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="pr-status" value={procForm.status} onChange={e => setProcForm({...procForm, status: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 {["جارية", "مكتملة", "موقوفة"].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -552,9 +553,9 @@ export default function CaseDetail() {
       <Modal open={modal === "deadline"} onClose={() => setModal(null)} title="إضافة أجل قانوني">
         <div className="space-y-4">
           <FormField label="نوع الأجل" htmlFor="dl-type">
-            <select id="dl-type" value={dlForm.type} onChange={e => setDlForm({...dlForm, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+            <SelectNative id="dl-type" value={dlForm.type} onChange={e => setDlForm({...dlForm, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {DEADLINE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <FormField label="العنوان" htmlFor="dl-title"><Input id="dl-title" value={dlForm.title} onChange={e => setDlForm({...dlForm, title: e.target.value})} className={inputCls} placeholder="يُملأ تلقائياً حسب النوع" /></FormField>
           <div className="grid grid-cols-2 gap-3">
@@ -562,11 +563,11 @@ export default function CaseDetail() {
               <Input id="dl-due" type="date" value={dlForm.dueDate} onChange={e => setDlForm({...dlForm, dueDate: e.target.value})} className={inputCls} dir="ltr" />
             </FormField>
             <FormField label="الأهمية" htmlFor="dl-urg">
-              <select id="dl-urg" value={dlForm.urgency} onChange={e => setDlForm({...dlForm, urgency: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="dl-urg" value={dlForm.urgency} onChange={e => setDlForm({...dlForm, urgency: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="normal">عادي</option>
                 <option value="high">عالٍ</option>
                 <option value="critical">حرج</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <div className="flex gap-3">
@@ -580,15 +581,15 @@ export default function CaseDetail() {
       <Modal open={modal === "team"} onClose={() => setModal(null)} title="إضافة عضو للفريق">
         <div className="space-y-4">
           <FormField label="المستخدم" htmlFor="tm-user">
-            <select id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+            <SelectNative id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               <option value="">اختر مستخدماً...</option>
               {allUsers.filter(u => !team.some(t => t.userId === u.id)).map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <FormField label="الدور في القضية" htmlFor="tm-role">
-            <select id="tm-role" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+            <SelectNative id="tm-role" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {["مسؤول رئيسي", "مساعد", "متربص"].map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !teamForm.userId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) }); }, load.team)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
@@ -622,17 +623,17 @@ export default function CaseDetail() {
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="الحالة" htmlFor="ed-status">
-              <select id="ed-status" value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="ed-status" value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="active">نشطة</option>
                 <option value="pending">معلقة</option>
                 <option value="closed">مغلقة</option>
                 <option value="archived">مؤرشفة</option>
-              </select>
+              </SelectNative>
             </FormField>
             <FormField label="المرحلة الإجرائية" htmlFor="ed-stage">
-              <select id="ed-stage" value={editForm.procedureStage} onChange={e => setEditForm(f => ({ ...f, procedureStage: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="ed-stage" value={editForm.procedureStage} onChange={e => setEditForm(f => ({ ...f, procedureStage: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
                 {["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </SelectNative>
             </FormField>
           </div>
 
@@ -763,15 +764,15 @@ export default function CaseDetail() {
       <Modal open={modal === "relation"} onClose={() => setModal(null)} title="ربط قضية">
         <div className="space-y-4">
           <FormField label="القضية المرتبطة" htmlFor="rl-case">
-            <select id="rl-case" value={relForm.relatedCaseId} onChange={e => setRelForm({...relForm, relatedCaseId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+            <SelectNative id="rl-case" value={relForm.relatedCaseId} onChange={e => setRelForm({...relForm, relatedCaseId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               <option value="">اختر قضية...</option>
               {allCases.filter(cas => cas.id !== Number(id) && !relations.some(r => r.relatedCaseId === cas.id)).map(cas => <option key={cas.id} value={cas.id}>{cas.title}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <FormField label="نوع العلاقة" htmlFor="rl-type">
-            <select id="rl-type" value={relForm.relationType} onChange={e => setRelForm({...relForm, relationType: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+            <SelectNative id="rl-type" value={relForm.relationType} onChange={e => setRelForm({...relForm, relationType: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {["مرتبطة", "استئناف عن", "منبثقة عن", "موحدة مع", "مضمنة في"].map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            </SelectNative>
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !relForm.relatedCaseId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/relations`, { method: "POST", body: JSON.stringify({...relForm, relatedCaseId: Number(relForm.relatedCaseId)}) }); }, load.relations)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>

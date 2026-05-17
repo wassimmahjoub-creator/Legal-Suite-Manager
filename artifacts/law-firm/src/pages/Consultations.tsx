@@ -1,3 +1,4 @@
+import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
@@ -149,11 +150,11 @@ export default function Consultations() {
               <Input id="cs-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} placeholder="ID الحريف" className={inputCls} dir="ltr" />
             </FormField>
             <FormField label="الحالة" htmlFor="cs-status">
-              <select id="cs-status" value={form.status} onChange={e => setForm({...form, status: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <SelectNative id="cs-status" value={form.status} onChange={e => setForm({...form, status: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
                 <option value="pending">بانتظار</option>
                 <option value="done">مكتملة</option>
                 <option value="cancelled">ملغاة</option>
-              </select>
+              </SelectNative>
             </FormField>
           </div>
           <FormField label="ملاحظات" htmlFor="cs-notes">
