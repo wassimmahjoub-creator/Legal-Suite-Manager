@@ -19,6 +19,7 @@ export async function generateInvoiceNumber(): Promise<string> {
     `);
   });
 
-  const lastNumber = (rows[0] as { last_number: number }).last_number;
+  const row = (rows.rows?.[0] ?? (rows as unknown as { rows: { last_number: number }[] }).rows?.[0]) as { last_number: number } | undefined;
+  const lastNumber = row?.last_number ?? 1;
   return `F-${year}-${String(lastNumber).padStart(4, "0")}`;
 }

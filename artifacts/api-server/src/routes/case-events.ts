@@ -15,7 +15,18 @@ router.get("/cases/:caseId/events", async (req, res) => {
     to,
     search,
     isSystem,
+    count_only,
   } = req.query as Record<string, string>;
+
+  // Fast count-only path for state detection
+  if (count_only === "true") {
+    const all = await db
+      .select({ id: caseEventsTable.id })
+      .from(caseEventsTable)
+      .where(eq(caseEventsTable.caseId, caseId));
+    res.json({ count: all.length });
+    return;
+  }
 
   const limit = Math.min(Number(limitParam) || 50, 200);
 

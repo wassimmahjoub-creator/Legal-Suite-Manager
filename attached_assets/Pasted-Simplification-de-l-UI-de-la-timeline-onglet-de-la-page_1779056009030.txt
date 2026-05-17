@@ -1,0 +1,146 @@
+Simplification de l'UI de la timeline (onglet "التسلسل الإجرائي" de la page /cases/:id).
+
+IMPORTANT : Ne touche PAS au backend. La table case_events, le service CaseEventLogger, les hooks d'auto-log et l'endpoint GET /api/cases/:id/events restent intacts. C'est uniquement une refonte du composant <CaseTimeline />.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — SUPPRESSION DE L'UI ACTUELLE
+═══════════════════════════════════════════════════════
+
+Dans le composant <CaseTimeline /> actuel, supprime entièrement :
+
+- Le champ de recherche texte ("بحث...")
+- Les boutons de filtre type affichés par défaut (الكل, إجرائي, مالي, إداري, وثائق)
+- Le toggle source (الكل, تلقائي, يدوي)
+- Toute UI permettant de filtrer par utilisateur
+- Toute UI permettant de filtrer par période en mode affiché par défaut
+- La connexion WebSocket/SSE temps réel si présente
+- Le mode "compact par mois" si présent
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — TROIS ÉTATS VISUELS
+═══════════════════════════════════════════════════════
+
+Le composant doit gérer trois états basés sur le COUNT TOTAL d'événements du dossier.
+
+ÉTAT 1 — VIDE (count === 0)
+
+Layout : empty state centré, vertical, padding généreux (py-16).
+
+Composants :
+- Icône SVG (lucide-react Clock ou History) en gris clair, taille 64px
+- Titre h3 : "سيظهر هنا تاريخ هذا الملف" (text-lg, font-semibold)
+- Sous-titre : "كل جلسة، حكم، فاتورة، أو وثيقة تضاف تلقائياً" (text-sm, text-muted)
+- Bouton primaire centré : "+ تسجيل إجراء يدوي"
+  → Au clic, ouvre la modale d'ajout manuel existante
+
+AUCUN AUTRE ÉLÉMENT D'UI. Pas de filtres, pas de barre d'outils.
+
+ÉTAT 2 — FAIBLE ACTIVITÉ (count entre 1 et 10)
+
+Layout :
+- Header (flex justify-end) : juste le bouton "+ تسجيل إجراء يدوي" en haut à droite (variant secondary, discret)
+- Liste verticale d'événements
+
+Pour chaque événement, card compacte :
+- Regroupement par jour avec séparateur :
+  "─────────── الجمعة ١٤ ماي ٢٠٢٦ ──────────────"
+  (utiliser le formatDate de T11 P2)
+- Pour chaque entrée du jour :
+  - Icône à gauche (40x40, mapping lucide-react par event_type)
+  - Heure au format HH:mm
+  - Titre AR (title_ar du backend)
+  - Sous-titre : "بواسطة [nom acteur]" ou "تلقائي" si actor_user_id NULL
+  - Description si présente (text-sm, italic)
+  - Si related_entity_id : petit chevron "←" cliquable qui navigue vers l'entité
+
+PAS DE FILTRES VISIBLES.
+
+ÉTAT 3 — ACTIVITÉ SIGNIFICATIVE (count >= 11)
+
+Identique à État 2 PLUS :
+
+- Header (flex justify-between) :
+  - À gauche : bouton "🔍 تصفية" (variant ghost)
+  - À droite : bouton "+ تسجيل إجراء يدوي"
+- Au clic sur "🔍 تصفية", déplie un panel <FilterPanel /> SOUS le header :
+
+Panel de filtres MINIMAL (collapse animée) :
+- Section "النوع" : 4 chips multi-select :
+  - إجرائي (groupe : case_filed, case_updated, hearing_*, judgment_*, stage_transitioned, legal_deadline_*)
+  - مالي (invoice_*, payment_received, expense_recorded)
+  - إداري (opponent_*, team_member_*, responsible_changed, case_archived/closed/reopened, confidentiality_changed)
+  - وثائق (document_*)
+- Section "الفترة" : date range picker simple
+- Bouton "مسح المرشحات" si au moins un filtre actif
+- Bouton "إخفاء التصفية" pour replier le panel
+
+PAS DE :
+- Filtre par utilisateur
+- Toggle يدوي / تلقائي (cette distinction n'apparaît jamais à l'utilisateur)
+- Champ de recherche texte
+
+Pagination : 50 événements par page, scroll infini.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — DÉTECTION DE L'ÉTAT
+═══════════════════════════════════════════════════════
+
+Au mount du composant :
+
+1. Fetch GET /api/cases/:caseId/events?count_only=true pour récupérer le count total des événements du dossier.
+2. Si count === 0 → render État 1
+3. Si count >= 1 && count <= 10 → render État 2
+4. Si count >= 11 → render État 3
+
+État 3 doit gérer le cas où le filtrage ramène 0 résultat (affiche un message inline "لا نتائج لهذه التصفية. مسح المرشحات." avec lien cliquable, mais ne bascule pas vers État 1).
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — MODALE D'AJOUT MANUEL
+═══════════════════════════════════════════════════════
+
+Garde la modale d'ajout manuel existante. Si elle est complexe, simplifie-la :
+
+Champs MINIMUM :
+- نوع الإجراء (event_type) — select limité à : manual_entry (default), hearing_held, judgment_recorded
+- التاريخ والوقت (occurred_at) — datetime picker, default now()
+- العنوان (title_ar) — text — REQUIS
+- الوصف (description) — textarea — OPTIONNEL
+- الوثائق (documents) — multi-upload — OPTIONNEL
+
+À la sauvegarde, appelle l'endpoint POST /api/cases/:caseId/events existant avec is_system_generated = false.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 5 — VÉRIFICATION DU CÂBLAGE BACKEND (CRITIQUE)
+═══════════════════════════════════════════════════════
+
+Avant de marquer le ticket terminé, VÉRIFIE que les hooks d'auto-log fonctionnent. Pour chaque action ci-dessous, exécute-la et confirme qu'un événement apparaît dans la timeline :
+
+1. Créer un nouveau dossier → doit apparaître "تم رفع الدعوى" (case_filed)
+2. Uploader un document sur ce dossier → doit apparaître "إضافة وثيقة : ..." (document_added)
+3. Émettre une facture liée → doit apparaître "إصدار الفاتورة ..." (invoice_issued)
+4. Ajouter un adversaire au dossier → doit apparaître "إضافة الخصم ..." (opponent_added)
+5. Modifier le type de dossier → doit apparaître "تم تعديل بيانات الملف" (case_updated)
+
+SI un de ces tests échoue, c'est que le hook correspondant n'est PAS câblé. Documente lesquels manquent et corrige-les en ajoutant l'appel CaseEventLogger.log() au bon endroit dans les controllers/services correspondants.
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. Composant <CaseTimeline /> refait avec les 3 états.
+2. Composant <FilterPanel /> minimal (type + période seulement).
+3. Composant <TimelineEmptyState /> pour l'État 1.
+4. Modale d'ajout manuel simplifiée.
+5. RAPPORT DE TEST des 5 hooks : ✓ ou ✗ pour chacun, avec correction si nécessaire.
+6. Captures d'écran des 3 états (vide / 5 événements / 15 événements avec filtres dépliés).
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Le backend de T18a (table, service, endpoint) ne doit PAS être modifié.
+- Les hooks d'auto-log dans les modules continuent de fonctionner.
+- Les événements créés par les actions auto-loggées apparaissent bien dans la timeline.
+- Le bouton "+ تسجيل إجراء يدوي" reste fonctionnel dans les 3 états.
+- RTL préservé.
+- Pas de régression sur les autres onglets de la page dossier (T17b).

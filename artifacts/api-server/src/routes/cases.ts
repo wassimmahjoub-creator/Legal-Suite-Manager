@@ -180,9 +180,22 @@ router.patch("/cases/:id", async (req, res): Promise<void> => {
 
   if (Object.keys(set).length === 0) { res.status(400).json({ error: "No fields" }); return; }
 
+  // Fetch before for case_updated diff
+  const [before] = await db.select().from(casesTable).where(eq(casesTable.id, id));
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [row] = await db.update(casesTable).set(set as any).where(eq(casesTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+
+  if (before) {
+    const watchedFields = ["title", "caseType", "litigationDegree", "procedureType", "feeMethod", "disputeValue", "agreedFees", "confidentialityLevel"] as const;
+    const changed = watchedFields.filter(f => f in set && String((before as Record<string, unknown>)[f] ?? "") !== String(set[f] ?? ""));
+    if (changed.length > 0) {
+      const actor = (req as typeof req & { user?: { id: number } }).user;
+      void CaseEventLogger.log({ caseId: id, eventType: "case_updated", actorUserId: actor?.id ?? null, metadata: { changed_fields: changed } });
+    }
+  }
+
   res.json(row);
 });
 

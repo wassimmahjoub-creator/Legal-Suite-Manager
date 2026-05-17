@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText, UserPlus, UserMinus, Users, Gavel, Calendar,
   FileUp, FileX, Receipt, DollarSign, Archive, RefreshCw,
   XCircle, Clock, AlertTriangle, Lock, StickyNote, Plus,
-  ChevronDown, Loader2, Bot, User, Link2, Pencil
+  ChevronDown, Loader2, Bot, User, Link2, Pencil,
+  Filter, History, ChevronUp, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { SelectNative } from "@/components/SelectNative";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CaseEventRow {
   id: number;
@@ -32,41 +32,49 @@ interface CaseEventRow {
   createdAt: string;
 }
 
+type FilterGroup = "إجرائي" | "مالي" | "إداري" | "وثائق";
+
+interface ActiveFilters {
+  groups: FilterGroup[];
+  from: string;
+  to: string;
+}
+
 // ── Icon + color mapping ──────────────────────────────────────────────────────
 
 const EVENT_META: Record<string, { icon: React.ReactNode; color: string }> = {
-  case_filed:                { icon: <Gavel className="h-3.5 w-3.5" />,     color: "bg-primary/20 text-primary" },
-  case_updated:              { icon: <Pencil className="h-3.5 w-3.5" />,    color: "bg-blue-500/20 text-blue-400" },
-  opponent_added:            { icon: <UserPlus className="h-3.5 w-3.5" />,  color: "bg-red-500/20 text-red-400" },
-  opponent_removed:          { icon: <UserMinus className="h-3.5 w-3.5" />, color: "bg-red-500/20 text-red-400" },
-  team_member_added:         { icon: <UserPlus className="h-3.5 w-3.5" />,  color: "bg-green-500/20 text-green-400" },
-  team_member_removed:       { icon: <UserMinus className="h-3.5 w-3.5" />, color: "bg-orange-500/20 text-orange-400" },
-  responsible_changed:       { icon: <Users className="h-3.5 w-3.5" />,     color: "bg-blue-500/20 text-blue-400" },
-  hearing_scheduled:         { icon: <Calendar className="h-3.5 w-3.5" />,  color: "bg-indigo-500/20 text-indigo-400" },
-  hearing_held:              { icon: <Calendar className="h-3.5 w-3.5" />,  color: "bg-green-500/20 text-green-400" },
-  hearing_postponed:         { icon: <Calendar className="h-3.5 w-3.5" />,  color: "bg-orange-500/20 text-orange-400" },
-  judgment_recorded:         { icon: <Gavel className="h-3.5 w-3.5" />,     color: "bg-violet-500/20 text-violet-400" },
-  stage_transitioned:        { icon: <RefreshCw className="h-3.5 w-3.5" />, color: "bg-indigo-500/20 text-indigo-400" },
-  document_added:            { icon: <FileUp className="h-3.5 w-3.5" />,    color: "bg-cyan-500/20 text-cyan-400" },
-  document_removed:          { icon: <FileX className="h-3.5 w-3.5" />,     color: "bg-red-500/20 text-red-400" },
-  invoice_issued:            { icon: <Receipt className="h-3.5 w-3.5" />,   color: "bg-primary/20 text-primary" },
-  invoice_paid:              { icon: <DollarSign className="h-3.5 w-3.5" />,color: "bg-green-500/20 text-green-400" },
-  invoice_partially_paid:    { icon: <DollarSign className="h-3.5 w-3.5" />,color: "bg-orange-500/20 text-orange-400" },
-  payment_received:          { icon: <DollarSign className="h-3.5 w-3.5" />,color: "bg-green-500/20 text-green-400" },
-  expense_recorded:          { icon: <Receipt className="h-3.5 w-3.5" />,   color: "bg-orange-500/20 text-orange-400" },
-  time_entry_logged:         { icon: <Clock className="h-3.5 w-3.5" />,     color: "bg-blue-500/20 text-blue-400" },
-  legal_deadline_added:      { icon: <AlertTriangle className="h-3.5 w-3.5" />, color: "bg-orange-500/20 text-orange-400" },
-  legal_deadline_approaching:{ icon: <AlertTriangle className="h-3.5 w-3.5" />, color: "bg-red-500/20 text-red-400" },
-  legal_deadline_missed:     { icon: <AlertTriangle className="h-3.5 w-3.5" />, color: "bg-red-500/20 text-red-400" },
-  confidentiality_changed:   { icon: <Lock className="h-3.5 w-3.5" />,      color: "bg-orange-500/20 text-orange-400" },
-  internal_note_added:       { icon: <StickyNote className="h-3.5 w-3.5" />,color: "bg-orange-500/20 text-orange-400" },
-  case_archived:             { icon: <Archive className="h-3.5 w-3.5" />,   color: "bg-muted text-muted-foreground" },
-  case_closed:               { icon: <XCircle className="h-3.5 w-3.5" />,   color: "bg-red-500/20 text-red-400" },
-  case_reopened:             { icon: <RefreshCw className="h-3.5 w-3.5" />, color: "bg-green-500/20 text-green-400" },
-  manual_entry:              { icon: <FileText className="h-3.5 w-3.5" />,  color: "bg-muted text-muted-foreground" },
+  case_filed:                 { icon: <Gavel className="h-4 w-4" />,         color: "bg-primary/20 text-primary" },
+  case_updated:               { icon: <Pencil className="h-4 w-4" />,        color: "bg-blue-500/20 text-blue-400" },
+  opponent_added:             { icon: <UserPlus className="h-4 w-4" />,      color: "bg-red-500/20 text-red-400" },
+  opponent_removed:           { icon: <UserMinus className="h-4 w-4" />,     color: "bg-red-500/20 text-red-400" },
+  team_member_added:          { icon: <UserPlus className="h-4 w-4" />,      color: "bg-green-500/20 text-green-400" },
+  team_member_removed:        { icon: <UserMinus className="h-4 w-4" />,     color: "bg-orange-500/20 text-orange-400" },
+  responsible_changed:        { icon: <Users className="h-4 w-4" />,         color: "bg-blue-500/20 text-blue-400" },
+  hearing_scheduled:          { icon: <Calendar className="h-4 w-4" />,      color: "bg-indigo-500/20 text-indigo-400" },
+  hearing_held:               { icon: <Calendar className="h-4 w-4" />,      color: "bg-green-500/20 text-green-400" },
+  hearing_postponed:          { icon: <Calendar className="h-4 w-4" />,      color: "bg-orange-500/20 text-orange-400" },
+  judgment_recorded:          { icon: <Gavel className="h-4 w-4" />,         color: "bg-violet-500/20 text-violet-400" },
+  stage_transitioned:         { icon: <RefreshCw className="h-4 w-4" />,     color: "bg-indigo-500/20 text-indigo-400" },
+  document_added:             { icon: <FileUp className="h-4 w-4" />,        color: "bg-cyan-500/20 text-cyan-400" },
+  document_removed:           { icon: <FileX className="h-4 w-4" />,         color: "bg-red-500/20 text-red-400" },
+  invoice_issued:             { icon: <Receipt className="h-4 w-4" />,       color: "bg-primary/20 text-primary" },
+  invoice_paid:               { icon: <DollarSign className="h-4 w-4" />,    color: "bg-green-500/20 text-green-400" },
+  invoice_partially_paid:     { icon: <DollarSign className="h-4 w-4" />,    color: "bg-orange-500/20 text-orange-400" },
+  payment_received:           { icon: <DollarSign className="h-4 w-4" />,    color: "bg-green-500/20 text-green-400" },
+  expense_recorded:           { icon: <Receipt className="h-4 w-4" />,       color: "bg-orange-500/20 text-orange-400" },
+  time_entry_logged:          { icon: <Clock className="h-4 w-4" />,         color: "bg-blue-500/20 text-blue-400" },
+  legal_deadline_added:       { icon: <AlertTriangle className="h-4 w-4" />, color: "bg-orange-500/20 text-orange-400" },
+  legal_deadline_approaching: { icon: <AlertTriangle className="h-4 w-4" />, color: "bg-red-500/20 text-red-400" },
+  legal_deadline_missed:      { icon: <AlertTriangle className="h-4 w-4" />, color: "bg-red-500/20 text-red-400" },
+  confidentiality_changed:    { icon: <Lock className="h-4 w-4" />,          color: "bg-orange-500/20 text-orange-400" },
+  internal_note_added:        { icon: <StickyNote className="h-4 w-4" />,    color: "bg-orange-500/20 text-orange-400" },
+  case_archived:              { icon: <Archive className="h-4 w-4" />,       color: "bg-muted text-muted-foreground" },
+  case_closed:                { icon: <XCircle className="h-4 w-4" />,       color: "bg-red-500/20 text-red-400" },
+  case_reopened:              { icon: <RefreshCw className="h-4 w-4" />,     color: "bg-green-500/20 text-green-400" },
+  manual_entry:               { icon: <FileText className="h-4 w-4" />,      color: "bg-muted text-muted-foreground" },
 };
 
-const FILTER_GROUPS = {
+const FILTER_GROUPS: Record<FilterGroup, string[]> = {
   "إجرائي": ["case_filed", "case_updated", "hearing_scheduled", "hearing_held", "hearing_postponed", "judgment_recorded", "stage_transitioned", "legal_deadline_added", "legal_deadline_approaching", "legal_deadline_missed"],
   "مالي":   ["invoice_issued", "invoice_paid", "invoice_partially_paid", "payment_received", "expense_recorded"],
   "إداري":  ["opponent_added", "opponent_removed", "team_member_added", "team_member_removed", "responsible_changed", "case_archived", "case_closed", "case_reopened", "confidentiality_changed"],
@@ -92,8 +100,6 @@ function toDateKey(dateStr: string): string {
   return new Date(dateStr).toISOString().slice(0, 10);
 }
 
-// ── Entity link helper ────────────────────────────────────────────────────────
-
 function entityLink(type: string | null | undefined, id: number | null | undefined): string | null {
   if (!type || !id) return null;
   if (type === "invoice") return `/invoices/${id}`;
@@ -102,11 +108,20 @@ function entityLink(type: string | null | undefined, id: number | null | undefin
   return null;
 }
 
+function hasActiveFilters(f: ActiveFilters): boolean {
+  return f.groups.length > 0 || !!f.from || !!f.to;
+}
+
 // ── Manual entry modal ────────────────────────────────────────────────────────
 
 function ManualEntryModal({ caseId, onClose, onSaved }: { caseId: number; onClose: () => void; onSaved: () => void }) {
-  const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
-  const [form, setForm] = useState({ eventType: "manual_entry", occurredAt: new Date().toISOString().slice(0, 16), titleAr: "", description: "" });
+  const inputCls = "h-10 bg-muted/50 border border-border focus:outline-none focus:ring-1 focus:ring-primary rounded-lg w-full px-3 text-sm";
+  const [form, setForm] = useState({
+    eventType: "manual_entry",
+    occurredAt: new Date().toISOString().slice(0, 16),
+    titleAr: "",
+    description: "",
+  });
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
@@ -126,12 +141,17 @@ function ManualEntryModal({ caseId, onClose, onSaved }: { caseId: number; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4">
-        <h2 className="font-semibold text-base">إجراء يدوي جديد</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4 shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-base">تسجيل إجراء جديد</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         <form onSubmit={submit} className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">نوع الحدث</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">نوع الإجراء</label>
             <SelectNative value={form.eventType} onChange={e => setForm(p => ({ ...p, eventType: e.target.value }))} className={inputCls}>
               <option value="manual_entry">إجراء يدوي</option>
               <option value="judgment_recorded">تسجيل حكم</option>
@@ -139,23 +159,28 @@ function ManualEntryModal({ caseId, onClose, onSaved }: { caseId: number; onClos
             </SelectNative>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">التاريخ والوقت</label>
-            <input type="datetime-local" value={form.occurredAt} onChange={e => setForm(p => ({ ...p, occurredAt: e.target.value }))}
-              className={cn(inputCls, "px-3")} />
+            <label className="text-xs text-muted-foreground mb-1.5 block">التاريخ والوقت</label>
+            <input type="datetime-local" value={form.occurredAt}
+              onChange={e => setForm(p => ({ ...p, occurredAt: e.target.value }))}
+              className={inputCls} />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">العنوان <span className="text-destructive">*</span></label>
-            <Input value={form.titleAr} onChange={e => setForm(p => ({ ...p, titleAr: e.target.value }))}
+            <label className="text-xs text-muted-foreground mb-1.5 block">
+              العنوان <span className="text-destructive">*</span>
+            </label>
+            <input type="text" value={form.titleAr}
+              onChange={e => setForm(p => ({ ...p, titleAr: e.target.value }))}
               placeholder="وصف الإجراء..." className={inputCls} required />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">الوصف (اختياري)</label>
-            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+            <label className="text-xs text-muted-foreground mb-1.5 block">الوصف (اختياري)</label>
+            <textarea value={form.description}
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               rows={3} placeholder="تفاصيل إضافية..."
-              className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+              className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
           </div>
           <div className="flex gap-2 pt-1">
-            <Button type="submit" disabled={saving || !form.titleAr.trim()} className="flex-1 gap-1.5">
+            <Button type="submit" disabled={saving || !form.titleAr.trim()} className="flex-1 gap-2">
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}حفظ
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} className="flex-1">إلغاء</Button>
@@ -166,33 +191,245 @@ function ManualEntryModal({ caseId, onClose, onSaved }: { caseId: number; onClos
   );
 }
 
+// ── State 1: Empty ────────────────────────────────────────────────────────────
+
+function TimelineEmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+      <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+        <History className="h-8 w-8 text-muted-foreground/30" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-lg font-semibold">سيظهر هنا تاريخ هذا الملف</h3>
+        <p className="text-sm text-muted-foreground">كل جلسة، حكم، فاتورة، أو وثيقة تضاف تلقائياً</p>
+      </div>
+      <Button onClick={onAdd} className="gap-2 mt-2">
+        <Plus className="h-4 w-4" />
+        تسجيل إجراء يدوي
+      </Button>
+    </div>
+  );
+}
+
+// ── Filter panel (State 3) ────────────────────────────────────────────────────
+
+function FilterPanel({
+  filters,
+  onChange,
+  onClose,
+}: {
+  filters: ActiveFilters;
+  onChange: (f: ActiveFilters) => void;
+  onClose: () => void;
+}) {
+  function toggleGroup(g: FilterGroup) {
+    const next = filters.groups.includes(g)
+      ? filters.groups.filter(x => x !== g)
+      : [...filters.groups, g];
+    onChange({ ...filters, groups: next });
+  }
+
+  function clearAll() {
+    onChange({ groups: [], from: "", to: "" });
+  }
+
+  const chipBase = "text-xs px-3 py-1.5 rounded-full border transition-colors cursor-pointer select-none";
+  const chipActive = "bg-primary text-primary-foreground border-primary";
+  const chipIdle = "border-border text-muted-foreground hover:border-primary/50";
+
+  return (
+    <div className="border border-border rounded-xl bg-muted/20 p-4 space-y-4">
+      {/* النوع */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">النوع</p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(FILTER_GROUPS) as FilterGroup[]).map(g => (
+            <button key={g} onClick={() => toggleGroup(g)}
+              className={cn(chipBase, filters.groups.includes(g) ? chipActive : chipIdle)}>
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* الفترة */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">الفترة</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">من</span>
+            <input type="date" value={filters.from}
+              onChange={e => onChange({ ...filters, from: e.target.value })}
+              className="h-8 bg-muted/50 border border-border rounded-lg px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">إلى</span>
+            <input type="date" value={filters.to}
+              onChange={e => onChange({ ...filters, to: e.target.value })}
+              className="h-8 bg-muted/50 border border-border rounded-lg px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary" />
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-1">
+        {hasActiveFilters(filters) && (
+          <button onClick={clearAll}
+            className="text-xs text-destructive hover:underline flex items-center gap-1">
+            <X className="h-3 w-3" />مسح المرشحات
+          </button>
+        )}
+        <button onClick={onClose}
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mr-auto">
+          <ChevronUp className="h-3.5 w-3.5" />إخفاء التصفية
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Timeline event list ───────────────────────────────────────────────────────
+
+function TimelineList({
+  events,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  events: CaseEventRow[];
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+}) {
+  const grouped = events.reduce<Record<string, CaseEventRow[]>>((acc, ev) => {
+    const key = toDateKey(ev.occurredAt);
+    (acc[key] ??= []).push(ev);
+    return acc;
+  }, {});
+  const days = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+  return (
+    <div className="space-y-6">
+      {days.map(day => (
+        <div key={day}>
+          {/* Day separator */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-px flex-1 bg-border/60" />
+            <span className="text-[11px] font-medium text-muted-foreground px-2.5 py-1 bg-muted/40 rounded-full border border-border/60">
+              {formatDayLabel(grouped[day][0].occurredAt)}
+            </span>
+            <div className="h-px flex-1 bg-border/60" />
+          </div>
+
+          {/* Events */}
+          <div className="relative pr-5">
+            <div className="absolute right-2 top-3 bottom-3 w-px bg-border/40" />
+            <div className="space-y-2.5">
+              {grouped[day].map(ev => {
+                const meta = EVENT_META[ev.eventType] ?? { icon: <FileText className="h-4 w-4" />, color: "bg-muted text-muted-foreground" };
+                const link = entityLink(ev.relatedEntityType, ev.relatedEntityId);
+                return (
+                  <div key={ev.id} className="flex items-start gap-3">
+                    {/* Icon dot */}
+                    <div className={cn(
+                      "h-8 w-8 rounded-full shrink-0 flex items-center justify-center z-10",
+                      "border border-border/50 -mr-1 mt-0.5 shadow-sm",
+                      meta.color
+                    )}>
+                      {meta.icon}
+                    </div>
+
+                    {/* Card */}
+                    <div className="flex-1 pb-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium text-sm leading-snug">{ev.titleAr}</p>
+                        <span className="text-[11px] text-muted-foreground font-mono shrink-0 mt-0.5">
+                          {formatTime(ev.occurredAt)}
+                        </span>
+                      </div>
+
+                      {ev.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic leading-relaxed">
+                          {ev.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
+                        {ev.actorName ? (
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <User className="h-2.5 w-2.5" />{ev.actorName}
+                          </span>
+                        ) : ev.isSystemGenerated ? (
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Bot className="h-2.5 w-2.5" />تلقائي
+                          </span>
+                        ) : null}
+
+                        {link && (
+                          <a href={link}
+                            className="flex items-center gap-1 text-[10px] text-primary hover:underline">
+                            <Link2 className="h-2.5 w-2.5" />عرض
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {hasMore && (
+        <div className="flex justify-center pt-1">
+          <Button variant="ghost" size="sm" disabled={loadingMore} onClick={onLoadMore} className="gap-2 text-xs">
+            {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            تحميل المزيد
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function CaseTimeline({ caseId }: { caseId: number }) {
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [events, setEvents] = useState<CaseEventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filters, setFilters] = useState<ActiveFilters>({ groups: [], from: "", to: "" });
 
-  // Filters
-  const [search, setSearch] = useState("");
-  const [filterGroup, setFilterGroup] = useState<string>("الكل");
-  const [filterSystem, setFilterSystem] = useState<"all" | "system" | "manual">("all");
+  // Fetch total count on mount
+  useEffect(() => {
+    authFetch(`${BASE}/api/cases/${caseId}/events?count_only=true`)
+      .then(r => r.json() as Promise<{ count: number }>)
+      .then(d => setTotalCount(d.count))
+      .catch(() => setTotalCount(0));
+  }, [caseId]);
 
   const fetchEvents = useCallback(async (cursor?: string, append = false) => {
     if (!append) setLoading(true); else setLoadingMore(true);
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (cursor) params.set("cursor", cursor);
-      if (filterGroup !== "الكل") {
-        const types = FILTER_GROUPS[filterGroup as keyof typeof FILTER_GROUPS];
-        if (types) params.set("eventType", types.join(","));
+
+      if (filters.groups.length > 0) {
+        const types = filters.groups.flatMap(g => FILTER_GROUPS[g]);
+        params.set("eventType", types.join(","));
       }
-      if (search.trim()) params.set("search", search.trim());
-      if (filterSystem === "system") params.set("isSystem", "true");
-      if (filterSystem === "manual") params.set("isSystem", "false");
+      if (filters.from) params.set("from", new Date(filters.from).toISOString());
+      if (filters.to) {
+        const toDate = new Date(filters.to);
+        toDate.setHours(23, 59, 59, 999);
+        params.set("to", toDate.toISOString());
+      }
 
       const r = await authFetch(`${BASE}/api/cases/${caseId}/events?${params}`);
       if (!r.ok) return;
@@ -204,156 +441,106 @@ export function CaseTimeline({ caseId }: { caseId: number }) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [caseId, filterGroup, search, filterSystem]);
+  }, [caseId, filters]);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => {
+    if (totalCount === null) return;
+    if (totalCount === 0) { setLoading(false); return; }
+    fetchEvents();
+  }, [fetchEvents, totalCount]);
 
-  // Group by day
-  const grouped = events.reduce<Record<string, CaseEventRow[]>>((acc, ev) => {
-    const key = toDateKey(ev.occurredAt);
-    (acc[key] ??= []).push(ev);
-    return acc;
-  }, {});
-  const days = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+  function handleSaved() {
+    setShowModal(false);
+    setTotalCount(c => (c ?? 0) + 1);
+    fetchEvents();
+  }
 
+  function handleFiltersChange(f: ActiveFilters) {
+    setFilters(f);
+  }
+
+  const isState3 = totalCount !== null && totalCount >= 11;
+  const filtersActive = hasActiveFilters(filters);
+
+  // ── Loading ──────────────────────────────────────────────────────────────
+  if (totalCount === null) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  // ── State 1: Empty ────────────────────────────────────────────────────────
+  if (totalCount === 0) {
+    return (
+      <>
+        <TimelineEmptyState onAdd={() => setShowModal(true)} />
+        {showModal && (
+          <ManualEntryModal caseId={caseId} onClose={() => setShowModal(false)} onSaved={handleSaved} />
+        )}
+      </>
+    );
+  }
+
+  // ── State 2 + 3 ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      {/* ── Toolbar ─────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-semibold">التسلسل الإجرائي</h3>
-          <Button size="sm" onClick={() => setShowModal(true)} className="gap-1.5 text-xs">
-            <Plus className="h-3.5 w-3.5" />إجراء جديد
+      {/* Header */}
+      <div className={cn("flex items-center gap-2", isState3 ? "justify-between" : "justify-end")}>
+        {isState3 && (
+          <Button variant="ghost" size="sm" onClick={() => setShowFilter(v => !v)}
+            className={cn("gap-1.5 text-xs", showFilter && "bg-muted")}>
+            <Filter className="h-3.5 w-3.5" />
+            تصفية
+            {filtersActive && (
+              <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+            )}
           </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col gap-2">
-          {/* Row 1: search + category */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="بحث..." className="h-8 text-xs w-40 bg-muted/50 border-border rounded-lg" />
-            <span className="text-[10px] text-muted-foreground">النوع:</span>
-            {["الكل", ...Object.keys(FILTER_GROUPS)].map(g => (
-              <button key={g} onClick={() => setFilterGroup(g)}
-                className={cn("text-xs px-3 py-1.5 rounded-full border transition-colors",
-                  filterGroup === g
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:border-primary/50")}>
-                {g}
-              </button>
-            ))}
-          </div>
-          {/* Row 2: system/manual toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground">المصدر:</span>
-            {(["all", "system", "manual"] as const).map(f => (
-              <button key={f} onClick={() => setFilterSystem(f)}
-                className={cn("text-xs px-2.5 py-1.5 rounded-full border transition-colors",
-                  filterSystem === f
-                    ? "bg-muted border-primary text-foreground"
-                    : "border-border text-muted-foreground hover:border-primary/50")}>
-                {f === "all" ? "الكل" : f === "system" ? "تلقائي" : "يدوي"}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
+        <Button variant="secondary" size="sm" onClick={() => setShowModal(true)} className="gap-1.5 text-xs">
+          <Plus className="h-3.5 w-3.5" />
+          تسجيل إجراء يدوي
+        </Button>
       </div>
 
-      {/* ── Timeline ────────────────────────────────────────────── */}
+      {/* Filter panel (State 3 only) */}
+      {isState3 && showFilter && (
+        <FilterPanel
+          filters={filters}
+          onChange={handleFiltersChange}
+          onClose={() => setShowFilter(false)}
+        />
+      )}
+
+      {/* Timeline content */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-          <Loader2 className="h-5 w-5 animate-spin" /><span className="text-sm">جارٍ التحميل...</span>
+        <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">جارٍ التحميل...</span>
         </div>
       ) : events.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-xl">
-          <Clock className="h-8 w-8 mx-auto mb-2 opacity-20" />
-          <p className="text-sm">لا توجد أحداث مسجلة بعد</p>
-          <p className="text-xs mt-1">ستظهر هنا كل الأنشطة المتعلقة بهذا الملف</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {days.map(day => (
-            <div key={day}>
-              {/* Day separator */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-muted/50 rounded-full border border-border">
-                  {formatDayLabel(grouped[day][0].occurredAt)}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-
-              {/* Events of the day */}
-              <div className="relative pr-6">
-                <div className="absolute right-2.5 top-0 bottom-0 w-px bg-border/60" />
-                <div className="space-y-3">
-                  {grouped[day].map(ev => {
-                    const meta = EVENT_META[ev.eventType] ?? { icon: <FileText className="h-3.5 w-3.5" />, color: "bg-muted text-muted-foreground" };
-                    const link = entityLink(ev.relatedEntityType, ev.relatedEntityId);
-                    return (
-                      <div key={ev.id} className="flex gap-3">
-                        {/* Icon dot */}
-                        <div className={cn("h-6 w-6 rounded-full shrink-0 flex items-center justify-center z-10 border border-border/50 -mr-3", meta.color)}>
-                          {meta.icon}
-                        </div>
-                        {/* Card */}
-                        <div className="flex-1 p-3 bg-muted/20 rounded-xl border border-border/50 hover:border-border transition-colors">
-                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                            <p className="font-medium text-sm leading-tight">{ev.titleAr}</p>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-[10px] text-muted-foreground font-mono">{formatTime(ev.occurredAt)}</span>
-                              {!ev.isSystemGenerated && (
-                                <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">يدوي</span>
-                              )}
-                            </div>
-                          </div>
-                          {ev.description && (
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{ev.description}</p>
-                          )}
-                          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                            {ev.actorName ? (
-                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                <User className="h-2.5 w-2.5" />{ev.actorName}
-                              </span>
-                            ) : ev.isSystemGenerated ? (
-                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                <Bot className="h-2.5 w-2.5" />تلقائي
-                              </span>
-                            ) : null}
-                            {link && (
-                              <a href={link} className="flex items-center gap-1 text-[10px] text-primary hover:underline">
-                                <Link2 className="h-2.5 w-2.5" />عرض
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Load more */}
-          {hasMore && (
-            <div className="flex justify-center pt-2">
-              <Button variant="ghost" size="sm" disabled={loadingMore} onClick={() => fetchEvents(nextCursor ?? undefined, true)} className="gap-2 text-xs">
-                {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                تحميل المزيد
-              </Button>
-            </div>
+        <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
+          <Clock className="h-7 w-7 mx-auto mb-2 opacity-20" />
+          <p className="text-sm">لا نتائج لهذه التصفية.</p>
+          {filtersActive && (
+            <button onClick={() => setFilters({ groups: [], from: "", to: "" })}
+              className="text-xs text-primary hover:underline mt-1">
+              مسح المرشحات
+            </button>
           )}
         </div>
+      ) : (
+        <TimelineList
+          events={events}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={() => fetchEvents(nextCursor ?? undefined, true)}
+        />
       )}
 
       {showModal && (
-        <ManualEntryModal
-          caseId={caseId}
-          onClose={() => setShowModal(false)}
-          onSaved={() => { setShowModal(false); fetchEvents(); }}
-        />
+        <ManualEntryModal caseId={caseId} onClose={() => setShowModal(false)} onSaved={handleSaved} />
       )}
     </div>
   );
