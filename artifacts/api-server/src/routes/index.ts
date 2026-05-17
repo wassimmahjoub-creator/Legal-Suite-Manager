@@ -32,6 +32,7 @@ import usersMgmtRouter from "./users-mgmt";
 import invitationsRouter from "./invitations";
 import cabinetSettingsRouter from "./cabinet-settings";
 import agendaRouter from "./agenda";
+import casePdfDataRouter from "./case-pdf-data";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -84,5 +85,6 @@ router.use(usersMgmtRouter);
 router.use(invitationsRouter);
 router.use(cabinetSettingsRouter);
 router.use(agendaRouter);
+router.use(casePdfDataRouter);
 
 export default router;

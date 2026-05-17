@@ -19,6 +19,7 @@ import {
   Archive, Hash, Layers, Shield, Pencil,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CasePdfButton } from "@/components/CasePdfButton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
@@ -177,9 +178,11 @@ export default function CaseDetail() {
               <Button variant="outline" size="sm" onClick={async () => { if (!confirm(c.archivedAt ? "استرجاع هذه القضية؟" : "أرشفة هذه القضية؟")) return; await authFetch(`${BASE}/api/cases/${id}/archive`, { method: "PATCH" }); refetch(); }} className="gap-1.5 text-xs">
                 <Archive className="h-3.5 w-3.5" /> {c.archivedAt ? "استرجاع" : "أرشفة"}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5 text-xs">
-                <FileText className="h-3.5 w-3.5" /> طباعة
-              </Button>
+              <CasePdfButton
+                caseId={Number(id)}
+                caseTitle={caseData?.title}
+                caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber}
+              />
               <Button variant="destructive" size="sm" onClick={async () => { if (!confirm("نقل إلى سلة المحذوفات؟")) return; await authFetch(`${BASE}/api/cases/${id}/soft-delete`, { method: "PATCH" }); navigate("/cases"); }} className="gap-1.5 text-xs">
                 <Trash2 className="h-3.5 w-3.5" /> حذف
               </Button>

@@ -1,0 +1,48 @@
+Stabilise le bouton "طباعة / Imprimer" du détail dossier et livre un vrai export PDF du dossier complet.
+
+DIAGNOSTIC PRÉALABLE :
+Examine pourquoi le bouton actuel ne répond pas (handler manquant ? endpoint 404 ? erreur silencieuse ?). Rapporte la cause racine dans ta réponse.
+
+FORMAT DU PDF :
+
+Page 1 — En-tête du dossier
+- Logo cabinet (haut gauche)
+- Numéro de dossier + statut (haut droite)
+- Titre : "Dossier [numéro]" / "ملف رقم [numéro]"
+- Bloc client : nom, matricule fiscal si personne morale
+- Bloc adversaire(s) : un par ligne avec son avocat si renseigné
+- Bloc juridiction : tribunal + chambre + numéro de RG + date d'audience initiale
+- Bloc procédure : nature, stade (ابتدائي / استئنافي / تعقيبي / تنفيذي), date d'ouverture
+
+Page 2 — Audiences
+- Table chronologique : date, juridiction, chambre, objet, décision, prochaine audience
+
+Page 3 — Échéancier financier
+- Honoraires convenus
+- Factures émises (numéro, date, montant TTC, payé, solde)
+- Frais engagés (table par type, montant total)
+
+Page 4 — Documents
+- Liste : nom du fichier, type, date d'ajout, taille (sans la pièce jointe elle-même)
+
+Pied de page (chaque page) :
+- Cabinet, adresse, téléphone (à gauche)
+- "Confidentiel – Document interne" (au centre)
+- Date d'édition + "Page X / Y" (à droite)
+
+BIBLIOTHÈQUE :
+react-pdf ou puppeteer (préférence puppeteer pour fidélité RTL/AR). Génère côté serveur via un endpoint POST /api/cases/:id/pdf qui renvoie le binaire.
+
+UX :
+- Au clic sur "طباعة", appel à l'endpoint avec un loader sur le bouton.
+- Si la génération dépasse 2 s, affiche un toast "PDF en préparation…", continue la génération en arrière-plan, et au retour de la réponse affiche un toast cliquable "PDF prêt — Télécharger".
+- Le PDF est aussi téléversé dans Documents du dossier (auto-archivage) avec un tag "export-fiche".
+
+LANGUE :
+La langue du PDF suit la langue active de l'UI au moment du clic. Tous les libellés, en-têtes, et libellés de champs sont traduits via la même i18n que l'UI.
+
+LIVRABLES :
+- Diagnostic du bug original
+- Endpoint serveur testé
+- Composant <CasePdfTemplate />
+- Capture d'un PDF généré dans chaque langue
