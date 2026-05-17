@@ -184,6 +184,7 @@ export default function CalendarView() {
   );
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dndToast, setDndToast] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then(setCases);
@@ -239,6 +240,7 @@ export default function CalendarView() {
   async function save() {
     if (!form.title.trim() || !form.date) return;
     setSaving(true);
+    setSaveError(null);
     const payload = {
       title:       form.title,
       date:        form.date,
@@ -255,11 +257,21 @@ export default function CalendarView() {
       notes:       form.notes || null,
       duration:    Number(form.duration) || 60,
     };
-    const url = editing ? `${BASE}/api/events/${editing.id}` : `${BASE}/api/events`;
-    await authFetch(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
-    await reload();
+    try {
+      const url = editing ? `${BASE}/api/events/${editing.id}` : `${BASE}/api/events`;
+      const r = await authFetch(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        setSaveError((err as { error?: string }).error ?? `خطأ ${r.status}`);
+        setSaving(false);
+        return;
+      }
+      await reload();
+      setModal(false);
+    } catch {
+      setSaveError("فشل الاتصال بالخادم");
+    }
     setSaving(false);
-    setModal(false);
   }
 
   async function remove(id: number) {
@@ -690,11 +702,16 @@ export default function CalendarView() {
               value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
 
+          {saveError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
+              {saveError}
+            </div>
+          )}
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={save} disabled={saving || !form.title.trim() || !form.date}>
               {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الموعد"}
             </Button>
-            <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>
+            <Button variant="outline" onClick={() => { setModal(false); setSaveError(null); }} className="px-6">إلغاء</Button>
           </div>
         </div>
       </Modal>

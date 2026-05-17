@@ -116,6 +116,19 @@ type Opponent   = { id: number; name: string; lawyerName: string | null; phone: 
 type DocItem    = { id: number; name: string; type: string | null; url: string | null; caseId: number | null; createdAt: string; deletedAt?: string | null; };
 type Invoice    = { id: number; invoiceNumber: string | null; amount: number; paidAmount: number | null; status: string; issuedAt: string | null; dueDate: string | null; caseId: number | null; clientId: number | null; description: string | null; deletedAt: string | null; };
 type AuditLog   = { id: number; entityType: string; entityId: number | null; action: string; userName: string | null; createdAt: string; details: string | null; };
+type HearingEvent = { id: number; title: string; date: string; time: string | null; type: string; legalStatus: string | null; court: string | null; division: string | null; location: string | null; objective: string | null; result: string | null; };
+
+const HEARING_TYPES = [
+  { value: "hearing", label: "جلسة" }, { value: "meeting", label: "اجتماع" },
+  { value: "deadline", label: "أجل قانوني" }, { value: "notification", label: "إعلام" },
+  { value: "expertise", label: "خبرة" }, { value: "execution", label: "تنفيذ" },
+  { value: "appeal", label: "استئناف" }, { value: "cassation", label: "تعقيب" },
+  { value: "judgment", label: "حكم" }, { value: "other", label: "أخرى" },
+];
+const HEARING_STATUSES = [
+  { value: "scheduled", label: "مبرمجة" }, { value: "completed", label: "منجزة" },
+  { value: "postponed", label: "مؤجلة" }, { value: "cancelled", label: "ملغاة" },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────
 function daysFromNow(dateStr: string): number {
@@ -195,6 +208,8 @@ export default function CaseDetail() {
   const [docForm,   setDocForm]   = useState({ name: "", fileType: "عقد", url: "" });
   const [noteText,  setNoteText]  = useState("");
   const [noteModal, setNoteModal] = useState(false);
+  const [hearingEvents, setHearingEvents] = useState<HearingEvent[]>([]);
+  const [hForm, setHForm] = useState({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" });
   const [modal,     setModal]     = useState<string | null>(null);
   const [saving,    setSaving]    = useState(false);
   const [dlFilter,  setDlFilter]  = useState<"all" | "upcoming" | "past">("all");
@@ -222,6 +237,7 @@ export default function CaseDetail() {
     docs:       async () => { const r = await authFetch(`${BASE}/api/documents?caseId=${id}`); if (r.ok) setDocs(await r.json()); },
     invoices:   async () => { const r = await authFetch(`${BASE}/api/invoices`); if (r.ok) { const all: Invoice[] = await r.json(); setInvoices(all.filter(inv => inv.caseId === Number(id) && !inv.deletedAt)); } },
     auditLogs:  async () => { const r = await authFetch(`${BASE}/api/audit-logs`); if (r.ok) setAuditLogs(await r.json()); },
+    hearings:   async () => { const r = await authFetch(`${BASE}/api/events?caseId=${id}`, { cache: "no-store" }); if (r.ok) setHearingEvents(await r.json()); },
   };
 
   useEffect(() => {
@@ -459,14 +475,51 @@ export default function CaseDetail() {
   }
 
   function renderHearings() {
+    const htLabel = (t: string) => HEARING_TYPES.find(x => x.value === t)?.label ?? t;
+    const hsLabel = (s: string | null) => HEARING_STATUSES.find(x => x.value === s)?.label ?? s ?? "";
+    const sortedHearings = [...hearingEvents].sort((a, b) => a.date.localeCompare(b.date));
     return (
       <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-semibold">الجلسات والآجال</h3>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => { setHForm({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" }); setModal("hearing"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />جلسة جديدة</Button>
             <Button size="sm" onClick={() => { setDlForm({ title: "", type: "custom", dueDate: "", urgency: "normal", notes: "" }); setModal("deadline"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />أجل قانوني</Button>
           </div>
         </div>
+
+        {/* Hearing events (calendar) */}
+        {sortedHearings.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">الجلسات المبرمجة</p>
+            {sortedHearings.map(h => {
+              const isPast = h.date < new Date().toISOString().slice(0, 10);
+              return (
+                <div key={h.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isPast ? "border-border bg-muted/10 opacity-60" : "border-primary/20 bg-primary/5"}`}>
+                  <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{h.title}</span>
+                      <span className="text-xs px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">{htLabel(h.type)}</span>
+                      {h.legalStatus && <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">{hsLabel(h.legalStatus)}</span>}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                      <span>{formatDateTN(h.date)}{h.time ? ` — ${h.time}` : ""}</span>
+                      {h.court && <span>{h.court}{h.division ? ` / ${h.division}` : ""}</span>}
+                    </div>
+                  </div>
+                  <button onClick={async () => { if (!confirm("حذف هذه الجلسة؟")) return; await authFetch(`${BASE}/api/events/${h.id}`, { method: "DELETE" }); load.hearings(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg shrink-0">
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">الآجال القانونية</p>
         {/* Filters */}
         <div className="flex gap-2 flex-wrap">
           {(["all","upcoming","past"] as const).map(f => (
@@ -1145,6 +1198,57 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/procedures`, { method: "POST", body: JSON.stringify(procForm) }); }, load.procedures)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Hearing modal */}
+      <Modal open={modal === "hearing"} onClose={() => setModal(null)} title="إضافة جلسة" size="lg">
+        <div className="space-y-4">
+          <FormField label="عنوان الجلسة *" htmlFor="h-title">
+            <Input id="h-title" value={hForm.title} onChange={e => setHForm({...hForm, title: e.target.value})} className={inputCls} placeholder="مثال: جلسة محكمة تونس الابتدائية" />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="نوع الجلسة" htmlFor="h-type">
+              <SelectNative id="h-type" value={hForm.type} onChange={e => setHForm({...hForm, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+                {HEARING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </SelectNative>
+            </FormField>
+            <FormField label="الحالة" htmlFor="h-status">
+              <SelectNative id="h-status" value={hForm.legalStatus} onChange={e => setHForm({...hForm, legalStatus: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+                {HEARING_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </SelectNative>
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="التاريخ *" htmlFor="h-date">
+              <Input id="h-date" type="date" value={hForm.date} onChange={e => setHForm({...hForm, date: e.target.value})} className={inputCls} dir="ltr" />
+            </FormField>
+            <FormField label="الوقت" htmlFor="h-time">
+              <Input id="h-time" type="time" value={hForm.time} onChange={e => setHForm({...hForm, time: e.target.value})} className={inputCls} dir="ltr" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="المحكمة" htmlFor="h-court">
+              <CourtSelect value={hForm.court} onChange={v => setHForm({...hForm, court: v})} placeholder="اختر المحكمة..." />
+            </FormField>
+            <FormField label="الدائرة" htmlFor="h-div">
+              <Input id="h-div" value={hForm.division} onChange={e => setHForm({...hForm, division: e.target.value})} className={inputCls} placeholder="الدائرة الأولى" />
+            </FormField>
+          </div>
+          <FormField label="المكان" htmlFor="h-loc">
+            <Input id="h-loc" value={hForm.location} onChange={e => setHForm({...hForm, location: e.target.value})} className={inputCls} placeholder="قاعة المحاكمات..." />
+          </FormField>
+          <div className="flex gap-3">
+            <Button className="flex-1" disabled={saving || !hForm.title.trim() || !hForm.date} onClick={() => withSave(async () => {
+              await authFetch(`${BASE}/api/events`, { method: "POST", body: JSON.stringify({
+                title: hForm.title, date: hForm.date, time: hForm.time || null,
+                type: hForm.type, legalStatus: hForm.legalStatus || null,
+                court: hForm.court || null, division: hForm.division || null,
+                location: hForm.location || null, caseId: Number(id), duration: Number(hForm.duration) || 60,
+              })});
+            }, load.hearings)}>{saving ? "جارٍ الحفظ..." : "حفظ الجلسة"}</Button>
             <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
           </div>
         </div>
