@@ -328,10 +328,6 @@ export default function ClientPage() {
               onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
               <Plus className="h-3.5 w-3.5" /> ملف جديد
             </Button>
-            <Button size="sm" className="gap-1.5 text-xs"
-              onClick={() => { setInvForm({ description: "", unitPriceHt: "", vatRate: "19", dueDate: "", caseId: "" }); setInvoiceModal(true); }}>
-              <Receipt className="h-3.5 w-3.5" /> فاتورة جديدة
-            </Button>
             <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
               <Pencil className="h-3.5 w-3.5" /> تعديل
             </Button>
@@ -488,6 +484,13 @@ export default function ClientPage() {
         {/* ÉCHÉANCIER FINANCIER */}
         {activeTab === "billing" && (
           <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">الفواتير</h2>
+              <Button size="sm" className="gap-1.5 text-xs"
+                onClick={() => { setInvForm({ description: "", unitPriceHt: "", vatRate: "19", dueDate: "", caseId: "" }); setInvoiceModal(true); }}>
+                <Plus className="h-3.5 w-3.5" /> فاتورة جديدة
+              </Button>
+            </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard label="الرقم الإجمالي" value={formatCurrency(totalInvoiced)} icon={<Receipt className="h-5 w-5 text-blue-400" />} />
               <KpiCard label="المحصّل" value={formatCurrency(totalPaid)} icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />} />
