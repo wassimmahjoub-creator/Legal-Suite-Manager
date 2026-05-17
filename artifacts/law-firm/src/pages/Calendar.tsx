@@ -125,21 +125,31 @@ function WeekDayHeader({ date }: { date: Date }) {
     date.getDate() === today.getDate();
 
   return (
-    <div className="flex flex-col items-center gap-0.5 py-1.5">
-      <span
-        className="text-[0.7rem] font-semibold leading-none"
-        style={{ color: isToday ? "#d4a017" : "rgba(255,255,255,0.55)" }}
-      >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "5px",
+        padding: "8px 4px",
+        borderBottom: isToday ? "2px solid #d4a017" : "2px solid transparent",
+        boxSizing: "border-box",
+      }}
+    >
+      <span style={{
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        color: isToday ? "#d4a017" : "rgba(255,255,255,0.5)",
+        lineHeight: 1,
+      }}>
         {AR_DAY_NAMES[date.getDay()]}
       </span>
-      <span
-        className="text-sm font-bold leading-none flex items-center justify-center w-7 h-7 rounded-full"
-        style={
-          isToday
-            ? { background: "#d4a017", color: "#0f2342" }
-            : { color: "rgba(255,255,255,0.85)" }
-        }
-      >
+      <span style={{
+        fontSize: "0.875rem",
+        fontWeight: 700,
+        color: isToday ? "#d4a017" : "rgba(255,255,255,0.85)",
+        lineHeight: 1,
+      }}>
         {date.getDate()}
       </span>
     </div>
