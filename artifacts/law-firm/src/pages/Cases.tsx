@@ -70,18 +70,21 @@ export default function Cases() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">القضايا</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {viewArchived ? "القضايا المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {viewArchived ? (
-            <button onClick={() => setViewArchived(false)} className="p-2 rounded-xl hover:bg-muted transition-colors shrink-0" title="رجوع">
+        <div className="flex items-start gap-3">
+          {viewArchived && (
+            <button onClick={() => setViewArchived(false)} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0" title="رجوع">
               <ArrowRight className="h-5 w-5 text-muted-foreground" />
             </button>
-          ) : (
+          )}
+          <div>
+            <h1 className="text-2xl font-bold">القضايا</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {viewArchived ? "القضايا المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {!viewArchived && (
             <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
               <Archive className="h-4 w-4" />
               المحفوظات
