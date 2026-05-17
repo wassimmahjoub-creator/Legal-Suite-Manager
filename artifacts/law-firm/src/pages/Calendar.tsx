@@ -276,13 +276,18 @@ export default function CalendarView() {
 
   async function remove(id: number) {
     if (!confirm("حذف هذا الموعد؟")) return;
-    await authFetch(`${BASE}/api/events/${id}`, { method: "DELETE" });
+    if (id < 0) {
+      await authFetch(`${BASE}/api/deadlines/${-id}`, { method: "DELETE" });
+    } else {
+      await authFetch(`${BASE}/api/events/${id}`, { method: "DELETE" });
+    }
     await reload();
   }
 
   // ── Drag & Drop ────────────────────────────────────────────────────────────
 
   const onEventDrop = useCallback(async ({ event, start }: { event: CalEvent; start: Date | string }) => {
+    if (event.id < 0) return; // deadlines are not draggable
     const newDate = format(new Date(start), "yyyy-MM-dd");
     const newTime = event.resource.time ? format(new Date(start), "HH:mm") : null;
 

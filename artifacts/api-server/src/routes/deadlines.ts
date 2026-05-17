@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, deadlinesTable } from "@workspace/db";
+import { db, deadlinesTable, casesTable } from "@workspace/db";
 import { eq, isNull } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -12,6 +12,26 @@ const DEADLINE_RULES: Record<string, { days: number; urgency: string; label: str
   response: { days: 20, urgency: "high", label: "أجل الرد" },
   custom: { days: 0, urgency: "normal", label: "أجل مخصص" },
 };
+
+router.get("/deadlines", requireAuth, async (_req, res) => {
+  const rows = await db
+    .select({
+      id: deadlinesTable.id,
+      caseId: deadlinesTable.caseId,
+      caseName: casesTable.title,
+      title: deadlinesTable.title,
+      type: deadlinesTable.type,
+      dueDate: deadlinesTable.dueDate,
+      urgency: deadlinesTable.urgency,
+      notes: deadlinesTable.notes,
+      completedAt: deadlinesTable.completedAt,
+      createdAt: deadlinesTable.createdAt,
+    })
+    .from(deadlinesTable)
+    .leftJoin(casesTable, eq(deadlinesTable.caseId, casesTable.id))
+    .orderBy(deadlinesTable.dueDate);
+  res.json(rows);
+});
 
 router.get("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
   const caseId = Number(req.params.caseId);

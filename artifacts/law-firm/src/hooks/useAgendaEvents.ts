@@ -21,6 +21,8 @@ export interface AgendaEvent {
   postponedTo: string | null;
   notes: string | null;
   createdAt: string;
+  isDeadline?: boolean;
+  urgency?: string;
 }
 
 export interface CalEvent {
@@ -29,6 +31,43 @@ export interface CalEvent {
   start: Date;
   end: Date;
   resource: AgendaEvent;
+}
+
+interface RawDeadline {
+  id: number;
+  caseId: number;
+  caseName: string | null;
+  title: string;
+  type: string;
+  dueDate: string;
+  urgency: string;
+  notes: string | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+function deadlineToAgendaEvent(d: RawDeadline): AgendaEvent {
+  return {
+    id: -(d.id),
+    title: d.title,
+    caseId: d.caseId,
+    caseName: d.caseName,
+    date: d.dueDate,
+    time: null,
+    duration: 60,
+    location: null,
+    court: null,
+    division: null,
+    type: "deadline",
+    objective: null,
+    result: null,
+    legalStatus: d.completedAt ? "completed" : "scheduled",
+    postponedTo: null,
+    notes: d.notes,
+    createdAt: d.createdAt,
+    isDeadline: true,
+    urgency: d.urgency,
+  };
 }
 
 export function toCalEvent(e: AgendaEvent): CalEvent {
@@ -45,8 +84,16 @@ export function useAgendaEvents() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await authFetch(`${BASE}/api/events`, { cache: "no-store" });
-    if (r.ok) setEvents(await r.json());
+    const [evRes, dlRes] = await Promise.all([
+      authFetch(`${BASE}/api/events`, { cache: "no-store" }),
+      authFetch(`${BASE}/api/deadlines`, { cache: "no-store" }),
+    ]);
+    const evts: AgendaEvent[] = evRes.ok ? await evRes.json() : [];
+    const dls: RawDeadline[] = dlRes.ok ? await dlRes.json() : [];
+    const dlEvents = dls
+      .filter(d => !d.completedAt)
+      .map(deadlineToAgendaEvent);
+    setEvents([...evts, ...dlEvents]);
     setLoading(false);
   }, []);
 
