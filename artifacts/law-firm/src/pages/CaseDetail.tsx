@@ -483,7 +483,7 @@ export default function CaseDetail() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-semibold">الجلسات والآجال</h3>
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => { setHForm({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" }); setModal("hearing"); }} className="gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white border-orange-500"><Plus className="h-3.5 w-3.5" />جلسة جديدة</Button>
+            <Button size="sm" onClick={() => { setHForm({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" }); setModal("hearing"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />جلسة جديدة</Button>
             <Button size="sm" onClick={() => { setDlForm({ title: "", type: "custom", dueDate: "", urgency: "normal", notes: "" }); setModal("deadline"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />أجل قانوني</Button>
           </div>
         </div>
