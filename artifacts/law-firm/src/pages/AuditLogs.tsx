@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTimeTN } from "@/lib/date";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -71,7 +72,7 @@ export default function AuditLogs() {
           <label className="text-xs text-muted-foreground">إلى</label>
           <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-9 w-36 bg-muted/50 border-border rounded-lg text-sm" dir="ltr" />
         </div>
-        <button onClick={load} className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 flex items-center gap-2"><Filter className="h-4 w-4" />تصفية</button>
+        <Button onClick={load} size="sm" className="gap-2 h-9"><Filter className="h-4 w-4" />تصفية</Button>
       </div>
 
       {loading ? (

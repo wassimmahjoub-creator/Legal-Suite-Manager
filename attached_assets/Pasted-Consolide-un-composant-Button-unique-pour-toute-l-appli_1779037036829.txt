@@ -1,0 +1,39 @@
+Consolide un composant <Button /> unique pour toute l'application et fais un audit de remplacement.
+
+ÉTAPE 1 — COMPOSANT
+Crée src/components/ui/Button.tsx avec :
+
+type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+Props : variant (default 'primary'), size (default 'md'), isLoading, leftIcon, rightIcon, fullWidth, disabled, type, onClick, children.
+
+Styles (Tailwind, respecte la palette dorée existante du projet — adapte le hex à ce qui est déjà utilisé) :
+- primary : bg-gold-500 text-white hover:bg-gold-600 focus:ring-2 focus:ring-gold-300
+- secondary : border border-gold-500 text-gold-700 bg-white hover:bg-gold-50
+- destructive : bg-red-600 text-white hover:bg-red-700
+- ghost : bg-transparent text-gold-700 hover:bg-gold-50
+
+Tailles :
+- sm : h-8 px-3 text-sm
+- md : h-10 px-4 text-base
+- lg : h-12 px-6 text-lg
+
+Quand isLoading, affiche un spinner inline et désactive le bouton.
+
+ÉTAPE 2 — PAGE DE DEMO
+Crée src/pages/dev/Components.tsx (route /dev/components, accessible seulement en NODE_ENV=development) qui rend toutes les combinaisons variant × size côte à côte, dans chaque état (default, hover, focus, disabled, loading), avec et sans icônes.
+
+ÉTAPE 3 — AUDIT ET MIGRATION
+1. grep -r "<button" src/ — liste toutes les occurrences.
+2. Remplace systématiquement par <Button variant="..." />.
+3. Repère les écrans où plusieurs boutons sont en variant="primary" simultanément (c'est une violation de la règle "une seule action principale par écran"). Liste-les dans un fichier MIGRATION_NOTES.md pour que je tranche au cas par cas.
+4. Cas particuliers à respecter : 
+   - inputs file customisés (peuvent rester <button> stylé identiquement)
+   - boutons dans les libs externes (calendrier, table) — laisse-les, on overridera via CSS si besoin
+
+LIVRABLES :
+- Composant <Button /> + tests Storybook ou simples render tests
+- Page /dev/components
+- MIGRATION_NOTES.md avec la liste des écrans à arbitrer
+- Diff de migration

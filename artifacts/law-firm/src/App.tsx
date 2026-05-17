@@ -42,6 +42,7 @@ import Correspondances from "@/pages/Correspondances";
 import UserManagement from "@/pages/UserManagement";
 import Subscription from "@/pages/Subscription";
 import Pricing from "@/pages/Pricing";
+import ComponentsDevPage from "@/pages/dev/Components";
 
 const queryClient = new QueryClient();
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -134,6 +135,9 @@ function Router() {
               <Route path="/users" component={UserManagement} />
               <Route path="/subscription" component={Subscription} />
               <Route path="/pricing" component={Pricing} />
+              {import.meta.env.DEV && (
+                <Route path="/dev/components" component={ComponentsDevPage} />
+              )}
               <Route path="/login">
                 {() => { window.location.replace(`${BASE}/`); return null; }}
               </Route>
