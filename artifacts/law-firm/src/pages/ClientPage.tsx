@@ -545,7 +545,15 @@ export default function ClientPage() {
 
         {/* HEURES */}
         {activeTab === "hours" && (
-          <EmptyState icon={<Clock className="h-12 w-12 opacity-20" />} label="تتبع الساعات قريبًا" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">ساعات العمل</h2>
+              <Button size="sm" className="gap-1.5 text-xs" disabled title="قريبًا">
+                <Plus className="h-3.5 w-3.5" /> تسجيل ساعات
+              </Button>
+            </div>
+            <EmptyState icon={<Clock className="h-12 w-12 opacity-20" />} label="تتبع الساعات قريبًا" />
+          </div>
         )}
 
         {/* DOCUMENTS */}
