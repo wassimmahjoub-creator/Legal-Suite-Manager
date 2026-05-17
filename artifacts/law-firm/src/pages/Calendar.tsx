@@ -140,7 +140,7 @@ function WeekDayHeader({ date }: { date: Date }) {
       <span style={{
         fontSize: "0.75rem",
         fontWeight: 600,
-        color: isToday ? "#d4a017" : "rgba(255,255,255,0.5)",
+        color: "#d4a017",
         lineHeight: 1,
       }}>
         {AR_DAY_NAMES[date.getDay()]}
