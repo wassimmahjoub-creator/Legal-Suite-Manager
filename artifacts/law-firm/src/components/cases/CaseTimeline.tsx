@@ -227,20 +227,26 @@ export function CaseTimeline({ caseId }: { caseId: number }) {
           </Button>
         </div>
 
-        {/* Filters row */}
-        <div className="flex flex-wrap gap-2">
-          <Input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="بحث..." className="h-8 text-xs w-40 bg-muted/50 border-border rounded-lg" />
-          {["الكل", ...Object.keys(FILTER_GROUPS)].map(g => (
-            <button key={g} onClick={() => setFilterGroup(g)}
-              className={cn("text-xs px-3 py-1.5 rounded-full border transition-colors",
-                filterGroup === g
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50")}>
-              {g}
-            </button>
-          ))}
-          <div className="flex gap-1">
+        {/* Filters */}
+        <div className="flex flex-col gap-2">
+          {/* Row 1: search + category */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="بحث..." className="h-8 text-xs w-40 bg-muted/50 border-border rounded-lg" />
+            <span className="text-[10px] text-muted-foreground">النوع:</span>
+            {["الكل", ...Object.keys(FILTER_GROUPS)].map(g => (
+              <button key={g} onClick={() => setFilterGroup(g)}
+                className={cn("text-xs px-3 py-1.5 rounded-full border transition-colors",
+                  filterGroup === g
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50")}>
+                {g}
+              </button>
+            ))}
+          </div>
+          {/* Row 2: system/manual toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground">المصدر:</span>
             {(["all", "system", "manual"] as const).map(f => (
               <button key={f} onClick={() => setFilterSystem(f)}
                 className={cn("text-xs px-2.5 py-1.5 rounded-full border transition-colors",
