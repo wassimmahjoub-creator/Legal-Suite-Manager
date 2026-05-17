@@ -1,4 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Calendar, dateFnsLocalizer, type View, type ToolbarProps } from "react-big-calendar";
+import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
+import { format, parse, startOfWeek, getDay, addDays, startOfMonth, endOfMonth } from "date-fns";
+import { ar } from "date-fns/locale";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+import "@/styles/big-calendar.css";
+
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +17,45 @@ import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
 import {
   CalendarIcon, Clock, MapPin, Briefcase, Plus, Pencil, Trash2,
-  Target, CheckCircle2, Scale, ChevronRight,
+  Target, CheckCircle2, Scale, ChevronRight, ChevronLeft,
+  LayoutGrid, List, Columns2,
 } from "lucide-react";
+import { useAgendaEvents, type AgendaEvent, type CalEvent, toCalEvent } from "@/hooks/useAgendaEvents";
+
+// ── Setup ────────────────────────────────────────────────────────────────────
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+const VIEW_KEY = "agenda.preferredView";
+
+const locales = { ar };
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
+  getDay,
+  locales,
+});
+
+const DnDCalendar = withDragAndDrop<CalEvent>(Calendar);
+
+// ── Color map (audience / rdv / deadline / task) ──────────────────────────────
+
+const EVENT_STYLE_MAP: Record<string, { backgroundColor: string; color: string }> = {
+  hearing:      { backgroundColor: "#C0392B", color: "#fff" },
+  execution:    { backgroundColor: "#C0392B", color: "#fff" },
+  meeting:      { backgroundColor: "#2874A6", color: "#fff" },
+  notification: { backgroundColor: "#2874A6", color: "#fff" },
+  expertise:    { backgroundColor: "#2874A6", color: "#fff" },
+  deadline:     { backgroundColor: "#D35400", color: "#fff" },
+  appeal:       { backgroundColor: "#D35400", color: "#fff" },
+  cassation:    { backgroundColor: "#D35400", color: "#fff" },
+  sealing:      { backgroundColor: "#D35400", color: "#fff" },
+  other:        { backgroundColor: "#566573", color: "#fff" },
+  judgment:     { backgroundColor: "#566573", color: "#fff" },
+  declaration:  { backgroundColor: "#566573", color: "#fff" },
+};
+
+// ── Static data ──────────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
   { value: "hearing",      label: "جلسة" },
@@ -37,88 +80,112 @@ const LEGAL_STATUSES = [
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  hearing:      "bg-blue-500",
-  meeting:      "bg-purple-500",
-  deadline:     "bg-red-500",
-  judgment:     "bg-amber-500",
-  appeal:       "bg-orange-500",
-  cassation:    "bg-rose-500",
-  execution:    "bg-emerald-500",
-  notification: "bg-sky-500",
-  expertise:    "bg-teal-500",
-  declaration:  "bg-violet-500",
-  sealing:      "bg-slate-500",
+  hearing: "bg-red-600", meeting: "bg-blue-600", deadline: "bg-orange-500",
+  appeal: "bg-orange-500", cassation: "bg-orange-500", execution: "bg-red-600",
+  notification: "bg-blue-600", expertise: "bg-blue-600", sealing: "bg-orange-500",
 };
 
-interface Event {
-  id: number;
-  title: string;
-  caseId: number | null;
-  caseName: string | null;
-  date: string;
-  time: string | null;
-  location: string | null;
-  court: string | null;
-  division: string | null;
-  type: string;
-  objective: string | null;
-  result: string | null;
-  legalStatus: string | null;
-  postponedTo: string | null;
-  notes: string | null;
-  createdAt: string;
-}
+type ViewMode = "month" | "week" | "day" | "list";
 
 interface CaseOption { id: number; title: string; caseNumber: string | null; }
 
 const EMPTY_FORM = {
-  title: "",
-  date: "",
-  time: "",
-  location: "",
-  court: "",
-  division: "",
-  type: "hearing",
-  legalStatus: "scheduled",
-  objective: "",
-  result: "",
-  postponedTo: "",
-  caseId: "",
-  notes: "",
+  title: "", date: "", time: "", location: "", court: "", division: "",
+  type: "hearing", legalStatus: "scheduled", objective: "", result: "",
+  postponedTo: "", caseId: "", notes: "", duration: "60",
 };
+
+// ── Arabic period title ───────────────────────────────────────────────────────
+
+function formatPeriodTitle(date: Date, view: ViewMode): string {
+  try {
+    switch (view) {
+      case "day":
+        return format(date, "EEEE d MMMM yyyy", { locale: ar });
+      case "week": {
+        const start = startOfWeek(date, { weekStartsOn: 1 });
+        const end = addDays(start, 6);
+        if (start.getMonth() === end.getMonth()) {
+          return `${format(start, "d")}–${format(end, "d MMMM yyyy", { locale: ar })}`;
+        }
+        return `${format(start, "d MMM", { locale: ar })} – ${format(end, "d MMM yyyy", { locale: ar })}`;
+      }
+      case "month":
+        return format(date, "MMMM yyyy", { locale: ar });
+      default:
+        return format(date, "MMMM yyyy", { locale: ar });
+    }
+  } catch {
+    return format(date, "MMMM yyyy");
+  }
+}
+
+// ── Custom Toolbar (injected into react-big-calendar) ─────────────────────────
+
+function AgendaToolbar({ date, onNavigate }: ToolbarProps<CalEvent>) {
+  return (
+    <div style={{ display: "none" }} data-date={date.toISOString()} data-nav={onNavigate.toString()} />
+  );
+}
+
+// ── Color legend ─────────────────────────────────────────────────────────────
+
+const LEGEND = [
+  { color: "#C0392B", label: "جلسة / تنفيذ" },
+  { color: "#2874A6", label: "اجتماع / إعلام" },
+  { color: "#D35400", label: "أجل قانوني / استئناف" },
+  { color: "#566573", label: "أحكام / أخرى" },
+];
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
 export default function CalendarView() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const { events, setEvents, loading, reload } = useAgendaEvents();
   const [cases, setCases] = useState<CaseOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
-  const [editing, setEditing] = useState<Event | null>(null);
+  const [editing, setEditing] = useState<AgendaEvent | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  async function loadEvents() {
-    setLoading(true);
-    const r = await authFetch(`${BASE}/api/events`);
-    if (r.ok) setEvents(await r.json());
-    setLoading(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    (localStorage.getItem(VIEW_KEY) as ViewMode) ?? "month"
+  );
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [dndToast, setDndToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then(setCases);
+  }, []);
+
+  function changeView(v: ViewMode) {
+    setViewMode(v);
+    localStorage.setItem(VIEW_KEY, v);
   }
 
-  async function loadCases() {
-    const r = await authFetch(`${BASE}/api/cases`);
-    if (r.ok) setCases(await r.json());
+  function navigate(dir: "prev" | "next" | "today") {
+    setCurrentDate(d => {
+      if (dir === "today") return new Date();
+      const delta = dir === "next" ? 1 : -1;
+      const clone = new Date(d);
+      if (viewMode === "day") clone.setDate(clone.getDate() + delta);
+      else if (viewMode === "week") clone.setDate(clone.getDate() + delta * 7);
+      else clone.setMonth(clone.getMonth() + delta);
+      return clone;
+    });
   }
 
-  useEffect(() => { loadEvents(); loadCases(); }, []);
-
-  function openNew() {
+  function openNew(date?: Date) {
     setEditing(null);
-    setForm({ ...EMPTY_FORM, date: new Date().toISOString().slice(0, 10) });
+    setForm({
+      ...EMPTY_FORM,
+      date: date ? format(date, "yyyy-MM-dd") : new Date().toISOString().slice(0, 10),
+    });
     setModal(true);
   }
 
-  function openEdit(e: Event) {
+  function openEdit(e: AgendaEvent) {
     setEditing(e);
     setForm({
       title:       e.title,
@@ -134,6 +201,7 @@ export default function CalendarView() {
       postponedTo: e.postponedTo ?? "",
       caseId:      e.caseId?.toString() ?? "",
       notes:       e.notes ?? "",
+      duration:    String(e.duration ?? 60),
     });
     setModal(true);
   }
@@ -155,12 +223,11 @@ export default function CalendarView() {
       postponedTo: form.postponedTo || null,
       caseId:      form.caseId ? Number(form.caseId) : null,
       notes:       form.notes || null,
+      duration:    Number(form.duration) || 60,
     };
-    const url = editing
-      ? `${BASE}/api/events/${editing.id}`
-      : `${BASE}/api/events`;
+    const url = editing ? `${BASE}/api/events/${editing.id}` : `${BASE}/api/events`;
     await authFetch(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
-    await loadEvents();
+    await reload();
     setSaving(false);
     setModal(false);
   }
@@ -168,165 +235,304 @@ export default function CalendarView() {
   async function remove(id: number) {
     if (!confirm("حذف هذا الموعد؟")) return;
     await authFetch(`${BASE}/api/events/${id}`, { method: "DELETE" });
-    await loadEvents();
+    await reload();
   }
+
+  // ── Drag & Drop ────────────────────────────────────────────────────────────
+
+  const onEventDrop = useCallback(async ({ event, start }: { event: CalEvent; start: Date | string }) => {
+    const newDate = format(new Date(start), "yyyy-MM-dd");
+    const newTime = event.resource.time ? format(new Date(start), "HH:mm") : null;
+
+    // Optimistic update
+    const prev = [...events];
+    setEvents(es => es.map(e => e.id === event.id
+      ? { ...e, date: newDate, ...(newTime ? { time: newTime } : {}) }
+      : e));
+
+    try {
+      const r = await authFetch(`${BASE}/api/events/${event.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ date: newDate, ...(newTime ? { time: newTime } : {}) }),
+      });
+      if (!r.ok) throw new Error("API error");
+      setDndToast(`تم نقل "${event.title}" إلى ${format(new Date(start), "d MMM", { locale: ar })}`);
+      setTimeout(() => setDndToast(null), 3000);
+    } catch {
+      setEvents(prev);
+      setDndToast("فشل تحديث الموعد");
+      setTimeout(() => setDndToast(null), 3000);
+    }
+  }, [events, setEvents]);
+
+  // ── Props for react-big-calendar ──────────────────────────────────────────
+
+  const calEvents: CalEvent[] = events.map(toCalEvent);
+
+  function eventPropGetter(event: CalEvent) {
+    const style = EVENT_STYLE_MAP[event.resource.type] ?? { backgroundColor: "#566573", color: "#fff" };
+    return { style: { ...style, border: "none", borderRadius: "4px" } };
+  }
+
+  const rbcView: View = viewMode === "list" ? "month" : viewMode;
+
+  // ── List view (existing grouped list) ─────────────────────────────────────
 
   const typeLabel = (t: string) => EVENT_TYPES.find(x => x.value === t)?.label ?? t;
   const typeColor = (t: string) => TYPE_COLORS[t] ?? "bg-primary";
   const statusLabel = (s: string | null) => LEGAL_STATUSES.find(x => x.value === s)?.label ?? s ?? "";
 
-  const grouped = events.reduce((acc, e) => {
-    const key = new Date(e.date + "T00:00:00").toLocaleDateString("ar-TN", {
-      weekday: "long", year: "numeric", month: "long", day: "numeric",
-    });
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(e);
-    return acc;
-  }, {} as Record<string, Event[]>);
+  const grouped = events
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .reduce((acc, e) => {
+      const key = new Date(e.date + "T00:00:00").toLocaleDateString("ar-TN", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      });
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(e);
+      return acc;
+    }, {} as Record<string, AgendaEvent[]>);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+
+      {/* DnD toast */}
+      {dndToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border shadow-lg rounded-xl px-5 py-3 text-sm font-medium">
+          {dndToast}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">الرزنامة</h1>
           <p className="text-muted-foreground text-sm mt-0.5">مواعيد الجلسات، الاجتماعات والآجال القانونية</p>
         </div>
-        <Button onClick={openNew} className="rounded-lg gap-2 px-5">
+        <Button onClick={() => openNew()} className="rounded-lg gap-2 px-5">
           <Plus className="h-4 w-4" /> حدث جديد
         </Button>
       </div>
 
-      <div className="space-y-8">
-        {loading ? (
-          Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-6 w-52" />
-              <Skeleton className="h-24 w-full rounded-xl" />
-              <Skeleton className="h-24 w-full rounded-xl" />
-            </div>
-          ))
-        ) : Object.keys(grouped).length === 0 ? (
-          <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
-            <CalendarIcon className="h-14 w-14 text-muted-foreground/20" />
-            <p className="text-muted-foreground">لا توجد مواعيد</p>
-            <Button variant="outline" onClick={openNew} className="gap-2">
-              <Plus className="h-4 w-4" /> أضف موعدك الأول
-            </Button>
-          </div>
-        ) : (
-          Object.entries(grouped).map(([date, dayEvents]) => (
-            <div key={date} className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <CalendarIcon className="h-4 w-4 text-primary" />
-                </div>
-                <h2 className="text-base font-bold">{date}</h2>
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                  {dayEvents.length} {dayEvents.length === 1 ? "موعد" : "مواعيد"}
-                </span>
-              </div>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-card border border-border rounded-xl p-3">
+        {/* Navigation */}
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => navigate("prev")}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="outline" className="h-8 px-3 text-xs" onClick={() => navigate("today")}>
+            اليوم
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => navigate("next")}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="font-semibold text-sm px-2 min-w-[160px]">
+            {formatPeriodTitle(currentDate, viewMode)}
+          </span>
+        </div>
 
-              <div className="space-y-3 mr-9">
-                {dayEvents.map(event => (
-                  <Card key={event.id} className="border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                    <CardContent className="p-0 flex">
-                      <div className={`w-1.5 shrink-0 ${typeColor(event.type)}`} />
-                      <div className="p-4 flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-bold">{event.title}</h3>
-                              <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
-                                {typeLabel(event.type)}
-                              </span>
-                              {event.legalStatus && (
-                                <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                                  {statusLabel(event.legalStatus)}
-                                </span>
-                              )}
-                            </div>
-                            {event.caseName && (
-                              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                <Briefcase className="h-3.5 w-3.5" />
-                                <span>{event.caseName}</span>
-                              </div>
-                            )}
-                            {event.objective && (
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Target className="h-3 w-3" />
-                                <span>الهدف: {event.objective}</span>
-                              </div>
-                            )}
-                            {event.result && (
-                              <div className="flex items-center gap-1.5 text-xs text-green-400">
-                                <CheckCircle2 className="h-3 w-3" />
-                                <span>النتيجة: {event.result}</span>
-                              </div>
-                            )}
-                            {event.postponedTo && (
-                              <div className="flex items-center gap-1.5 text-xs text-orange-400">
-                                <ChevronRight className="h-3 w-3" />
-                                <span>مؤجل إلى: {new Date(event.postponedTo + "T00:00:00").toLocaleDateString("ar-TN")}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex gap-3 items-start">
-                            <div className="flex flex-col gap-2 text-sm">
-                              {event.time && (
-                                <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
-                                  <Clock className="h-3.5 w-3.5" />
-                                  <span dir="ltr">{event.time}</span>
-                                </div>
-                              )}
-                              {(event.court || event.location) && (
-                                <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full text-muted-foreground text-xs">
-                                  <Scale className="h-3.5 w-3.5" />
-                                  <span>
-                                    {event.court || event.location}
-                                    {event.division ? ` — ${event.division}` : ""}
-                                  </span>
-                                </div>
-                              )}
-                              {!event.court && event.location && event.court !== event.location && (
-                                <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full text-muted-foreground text-xs">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  <span>{event.location}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-1 shrink-0">
-                              <button
-                                onClick={() => openEdit(event)}
-                                className="p-1.5 hover:bg-muted rounded-lg"
-                              >
-                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
-                              <button
-                                onClick={() => remove(event.id)}
-                                className="p-1.5 hover:bg-destructive/10 rounded-lg"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                        {event.notes && (
-                          <p className="mt-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/40">
-                            {event.notes}
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
+        {/* View toggle */}
+        <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-1">
+          {([
+            { key: "day",   label: "يوم",    Icon: Clock },
+            { key: "week",  label: "أسبوع",  Icon: Columns2 },
+            { key: "month", label: "شهر",    Icon: LayoutGrid },
+            { key: "list",  label: "قائمة",  Icon: List },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => changeView(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                viewMode === key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3">
+        {LEGEND.map(l => (
+          <div key={l.color} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: l.color }} />
+            {l.label}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid views */}
+      {viewMode !== "list" && (
+        <div className="rounded-xl overflow-hidden" style={{ minHeight: 560 }}>
+          {loading ? (
+            <Skeleton className="h-[560px] w-full rounded-xl" />
+          ) : (
+            <div dir="ltr">
+              <DnDCalendar
+                localizer={localizer}
+                events={calEvents}
+                view={rbcView}
+                date={currentDate}
+                onNavigate={setCurrentDate}
+                onView={() => {}}
+                onEventDrop={onEventDrop as never}
+                draggableAccessor={() => true}
+                resizable={false}
+                eventPropGetter={eventPropGetter}
+                components={{ toolbar: AgendaToolbar as never }}
+                onSelectSlot={({ start }) => openNew(new Date(start))}
+                onSelectEvent={({ resource }) => openEdit(resource)}
+                selectable
+                culture="ar"
+                min={new Date(0, 0, 0, 8, 0)}
+                max={new Date(0, 0, 0, 20, 0)}
+                step={30}
+                timeslots={2}
+                popup
+                style={{ height: 560 }}
+                messages={{
+                  allDay: "اليوم كله",
+                  previous: "السابق",
+                  next: "التالي",
+                  today: "اليوم",
+                  month: "شهر",
+                  week: "أسبوع",
+                  day: "يوم",
+                  agenda: "قائمة",
+                  date: "التاريخ",
+                  time: "الوقت",
+                  event: "الحدث",
+                  noEventsInRange: "لا توجد أحداث في هذه الفترة",
+                  showMore: (total) => `+${total} أكثر`,
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* List view (existing grouped view) */}
+      {viewMode === "list" && (
+        <div className="space-y-8">
+          {loading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-24 w-full rounded-xl" />
+                <Skeleton className="h-24 w-full rounded-xl" />
+              </div>
+            ))
+          ) : Object.keys(grouped).length === 0 ? (
+            <div className="text-center py-20 bg-card rounded-xl shadow-sm flex flex-col items-center gap-3">
+              <CalendarIcon className="h-14 w-14 text-muted-foreground/20" />
+              <p className="text-muted-foreground">لا توجد مواعيد</p>
+              <Button variant="outline" onClick={() => openNew()} className="gap-2">
+                <Plus className="h-4 w-4" /> أضف موعدك الأول
+              </Button>
+            </div>
+          ) : (
+            Object.entries(grouped).map(([date, dayEvents]) => (
+              <div key={date} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <CalendarIcon className="h-4 w-4 text-primary" />
+                  </div>
+                  <h2 className="text-base font-bold">{date}</h2>
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                    {dayEvents.length} {dayEvents.length === 1 ? "موعد" : "مواعيد"}
+                  </span>
+                </div>
+                <div className="space-y-3 mr-9">
+                  {dayEvents.map(event => (
+                    <Card key={event.id} className="border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                      <CardContent className="p-0 flex">
+                        <div className={`w-1.5 shrink-0 ${typeColor(event.type)}`} />
+                        <div className="p-4 flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-bold">{event.title}</h3>
+                                <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
+                                  {typeLabel(event.type)}
+                                </span>
+                                {event.legalStatus && (
+                                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                                    {statusLabel(event.legalStatus)}
+                                  </span>
+                                )}
+                              </div>
+                              {event.caseName && (
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Briefcase className="h-3.5 w-3.5" /><span>{event.caseName}</span>
+                                </div>
+                              )}
+                              {event.objective && (
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Target className="h-3 w-3" /><span>الهدف: {event.objective}</span>
+                                </div>
+                              )}
+                              {event.result && (
+                                <div className="flex items-center gap-1.5 text-xs text-green-400">
+                                  <CheckCircle2 className="h-3 w-3" /><span>النتيجة: {event.result}</span>
+                                </div>
+                              )}
+                              {event.postponedTo && (
+                                <div className="flex items-center gap-1.5 text-xs text-orange-400">
+                                  <ChevronRight className="h-3 w-3" />
+                                  <span>مؤجل إلى: {new Date(event.postponedTo + "T00:00:00").toLocaleDateString("ar-TN")}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-3 items-start">
+                              <div className="flex flex-col gap-2 text-sm">
+                                {event.time && (
+                                  <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+                                    <Clock className="h-3.5 w-3.5" /><span dir="ltr">{event.time}</span>
+                                  </div>
+                                )}
+                                {(event.court || event.location) && (
+                                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full text-muted-foreground text-xs">
+                                    <Scale className="h-3.5 w-3.5" />
+                                    <span>{event.court || event.location}{event.division ? ` — ${event.division}` : ""}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-1 shrink-0">
+                                <button onClick={() => openEdit(event)} className="p-1.5 hover:bg-muted rounded-lg">
+                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                <button onClick={() => remove(event.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg">
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {event.notes && (
+                            <p className="mt-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/40">
+                              {event.notes}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Event form modal */}
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? "تعديل الحدث" : "حدث جديد"} size="lg">
         <div className="space-y-4">
           <FormField label="عنوان الحدث *" htmlFor="ev-title">
@@ -359,6 +565,19 @@ export default function CalendarView() {
                 value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
             </FormField>
           </div>
+
+          <FormField label="مدة الحدث (دقيقة)" htmlFor="ev-duration">
+            <select id="ev-duration" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
+              className={inputCls + " px-3 cursor-pointer"}>
+              <option value="30">30 دقيقة</option>
+              <option value="60">ساعة واحدة</option>
+              <option value="90">ساعة ونصف</option>
+              <option value="120">ساعتان</option>
+              <option value="180">3 ساعات</option>
+              <option value="240">4 ساعات</option>
+              <option value="480">نهار كامل</option>
+            </select>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="المحكمة" htmlFor="ev-court">
@@ -417,8 +636,7 @@ export default function CalendarView() {
           </FormField>
 
           <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={save}
-              disabled={saving || !form.title.trim() || !form.date}>
+            <Button className="flex-1" onClick={save} disabled={saving || !form.title.trim() || !form.date}>
               {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الموعد"}
             </Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>

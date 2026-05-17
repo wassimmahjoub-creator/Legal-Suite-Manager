@@ -1,0 +1,52 @@
+Ajoute une vraie vue calendrier à l'agenda. Aujourd'hui c'est une liste verticale ; on veut Jour/Semaine/Mois/Liste avec drag & drop et codes couleur.
+
+LIBRAIRIE :
+Utilise `react-big-calendar` (ou `@fullcalendar/react` si tu préfères) avec localizer date-fns. Configure-le en multi-langue AR/FR avec basculement RTL correct sur la vue Semaine.
+
+VUES À LIVRER :
+1. Jour : grille horaire 8h00–20h00 avec créneaux de 30 min.
+2. Semaine : 7 colonnes (ou 6 si on cache le dimanche selon la culture cabinet — rendre paramétrable), grille horaire idem.
+3. Mois : grille classique 6 lignes × 7 colonnes, événements en pastilles.
+4. Liste : conserve la vue actuelle, l'utilisateur peut y revenir.
+
+TOGGLE VUE :
+- Boutons groupés en haut à droite : Jour | Semaine | Mois | Liste.
+- Persiste le choix dans localStorage sous la clé `agenda.preferredView`.
+- Au montage, restaure cette préférence.
+
+NAVIGATION :
+- Boutons "<" et ">" pour prev/next période.
+- Bouton "Aujourd'hui" qui recentre.
+- Titre de la période affiché entre les flèches au format enrichi :
+  - Vue Jour : "الجمعة 14 ماي 2026" / "vendredi 14 mai 2026"
+  - Vue Semaine : "14–20 ماي 2026" / "14–20 mai 2026"
+  - Vue Mois : "ماي 2026" / "mai 2026"
+
+DRAG & DROP :
+Active le drag & drop natif de react-big-calendar (HTML5 Drag and Drop) sur les vues Jour et Semaine. Au drop, déclenche un PATCH sur l'événement et un toast de confirmation. Si l'API renvoie une erreur, rollback visuel.
+
+CODE COULEUR (par type d'événement) :
+- audience : rouge (#C0392B background, blanc texte)
+- rdv_cabinet : bleu (#2874A6)
+- delai_legal : orange (#D35400)
+- tache : gris (#566573)
+Configure ces couleurs via une fonction eventPropGetter.
+
+TYPES D'ÉVÉNEMENT :
+Étends la table `events` (ou crée-la si absente) avec une colonne `event_type` enum (audience, rdv_cabinet, delai_legal, tache, autre) et `case_id` (FK nullable) pour rattacher à une qadhiya.
+
+EXPORT ICAL :
+Crée un endpoint GET /api/agenda/feed/:user_token.ics qui renvoie un flux iCalendar (RFC 5545) de tous les événements de l'utilisateur. Génère un token unique par utilisateur dans son profil (révocable). Dans les paramètres utilisateur, expose le lien copiable + bouton "Régénérer le token".
+
+PARAMÈTRES UTILISATEUR :
+Ajoute une page Paramètres > Agenda avec :
+- Vue par défaut
+- Heure de début / fin de la grille horaire
+- Affichage du dimanche (on/off)
+- URL du flux iCal + bouton copier + bouton régénérer
+
+LIVRABLES :
+- Composant <AgendaPage /> avec les 4 vues
+- Hook useAgendaEvents (fetch + cache)
+- Endpoint iCal testé avec import dans Google Calendar
+- Captures des 4 vues

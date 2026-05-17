@@ -2,16 +2,20 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Building2, Bell, Shield, Palette, Save, CheckCircle2, AlertCircle } from "lucide-react";
+import { User, Building2, Bell, Shield, Palette, Save, CheckCircle2, AlertCircle, CalendarIcon, Copy, RefreshCw, Link2 } from "lucide-react";
 import { FormField } from "@/components/Modal";
 import { useAuth } from "@/context/AuthContext";
+import { authFetch } from "@/lib/authFetch";
+
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
 const tabs = [
-  { id: "profile", label: "الملف الشخصي", icon: User },
-  { id: "office", label: "معلومات المكتب", icon: Building2 },
-  { id: "notifications", label: "الإشعارات", icon: Bell },
-  { id: "security", label: "الأمان", icon: Shield },
-  { id: "display", label: "العرض", icon: Palette },
+  { id: "profile",      label: "الملف الشخصي",  icon: User },
+  { id: "office",       label: "معلومات المكتب", icon: Building2 },
+  { id: "notifications",label: "الإشعارات",      icon: Bell },
+  { id: "security",     label: "الأمان",          icon: Shield },
+  { id: "display",      label: "العرض",           icon: Palette },
+  { id: "agenda",       label: "الأجندة",         icon: CalendarIcon },
 ];
 
 type Status = { type: "success" | "error"; msg: string } | null;
@@ -21,23 +25,34 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
   const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg";
 
-  /* ── Profile tab state ── */
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [profileStatus, setProfileStatus] = useState<Status>(null);
   const [profileSaving, setProfileSaving] = useState(false);
 
-  /* ── Security tab state ── */
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [secStatus, setSecStatus] = useState<Status>(null);
   const [secSaving, setSecSaving] = useState(false);
 
-  /* Sync if user loads after mount */
+  /* Agenda settings */
+  const [icalToken, setIcalToken] = useState<string | null>(null);
+  const [icalLoading, setIcalLoading] = useState(false);
+  const [icalCopied, setIcalCopied] = useState(false);
+  const [agendaView, setAgendaView] = useState(() => localStorage.getItem("agenda.preferredView") ?? "month");
+
   useEffect(() => {
     if (user) { setName(user.name); setEmail(user.email); }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (activeTab === "agenda") {
+      authFetch(`${BASE}/api/agenda/ical-token`).then(r => r.ok ? r.json() : null).then(d => {
+        if (d) setIcalToken(d.token);
+      });
+    }
+  }, [activeTab]);
 
   async function saveProfile() {
     if (!name.trim() || !email.trim()) return;
@@ -67,6 +82,44 @@ export default function Settings() {
       setSecSaving(false);
     }
   }
+
+  async function generateToken() {
+    setIcalLoading(true);
+    try {
+      const r = await authFetch(`${BASE}/api/agenda/ical-token`, { method: "POST" });
+      if (r.ok) { const d = await r.json(); setIcalToken(d.token); }
+    } finally {
+      setIcalLoading(false);
+    }
+  }
+
+  async function revokeToken() {
+    if (!confirm("إلغاء رابط iCal الحالي؟ سيتوقف الاستيراد في Google Calendar.")) return;
+    setIcalLoading(true);
+    try {
+      await authFetch(`${BASE}/api/agenda/ical-token`, { method: "DELETE" });
+      setIcalToken(null);
+    } finally {
+      setIcalLoading(false);
+    }
+  }
+
+  function copyIcalUrl() {
+    if (!icalToken) return;
+    const url = `${window.location.origin}${BASE}/api/agenda/feed/${icalToken}.ics`;
+    navigator.clipboard.writeText(url).then(() => {
+      setIcalCopied(true);
+      setTimeout(() => setIcalCopied(false), 2000);
+    });
+  }
+
+  function saveAgendaSettings() {
+    localStorage.setItem("agenda.preferredView", agendaView);
+  }
+
+  const icalUrl = icalToken
+    ? `${window.location.origin}${BASE}/api/agenda/feed/${icalToken}.ics`
+    : null;
 
   const StatusBar = ({ status }: { status: Status }) => status ? (
     <div className={`flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl ${status.type === "success" ? "bg-green-500/10 text-green-400" : "bg-destructive/10 text-destructive"}`}>
@@ -117,7 +170,6 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-5">
-                {/* Avatar */}
                 <div className="flex items-center gap-4 pb-5 border-b border-border">
                   <div className="h-16 w-16 rounded-full bg-primary/20 text-primary flex items-center justify-center text-2xl font-bold shrink-0">
                     {name.charAt(0) || "م"}
@@ -130,7 +182,6 @@ export default function Settings() {
                     </span>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="الاسم الكامل *" htmlFor="s-name">
                     <Input id="s-name" value={name} onChange={e => setName(e.target.value)} className={inputCls} placeholder="اسمك الكامل" />
@@ -139,9 +190,7 @@ export default function Settings() {
                     <Input id="s-email" type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} dir="ltr" placeholder="email@cabinet.tn" />
                   </FormField>
                 </div>
-
                 <StatusBar status={profileStatus} />
-
                 <Button onClick={saveProfile} disabled={profileSaving || !name.trim() || !email.trim()} className="gap-2">
                   <Save className="h-4 w-4" />
                   {profileSaving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
@@ -182,9 +231,7 @@ export default function Settings() {
                 <FormField label="الترقيم الجبائي" htmlFor="o-tax">
                   <Input id="o-tax" placeholder="1234567A/P/M/000" className={inputCls} dir="ltr" />
                 </FormField>
-                <Button className="gap-2">
-                  <Save className="h-4 w-4" /> حفظ
-                </Button>
+                <Button className="gap-2"><Save className="h-4 w-4" /> حفظ</Button>
               </CardContent>
             </Card>
           )}
@@ -235,9 +282,7 @@ export default function Settings() {
                 <FormField label="تأكيد كلمة المرور الجديدة" htmlFor="pass-confirm">
                   <Input id="pass-confirm" type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="••••••••" className={inputCls} dir="ltr" />
                 </FormField>
-
                 <StatusBar status={secStatus} />
-
                 <Button onClick={savePassword} disabled={secSaving || !currentPw || !newPw || !confirmPw} className="gap-2">
                   <Shield className="h-4 w-4" />
                   {secSaving ? "جارٍ التحديث..." : "تحديث كلمة المرور"}
@@ -275,6 +320,82 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* ── AGENDA ── */}
+          {activeTab === "agenda" && (
+            <div className="space-y-4">
+              {/* View preferences */}
+              <Card className="border-none shadow-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-primary" /> إعدادات الأجندة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-5">
+                  <FormField label="العرض الافتراضي" htmlFor="ag-view">
+                    <select id="ag-view" value={agendaView} onChange={e => setAgendaView(e.target.value)}
+                      className={inputCls + " px-3 cursor-pointer max-w-xs"}>
+                      <option value="month">شهر</option>
+                      <option value="week">أسبوع</option>
+                      <option value="day">يوم</option>
+                      <option value="list">قائمة</option>
+                    </select>
+                  </FormField>
+                  <Button onClick={saveAgendaSettings} className="gap-2">
+                    <Save className="h-4 w-4" /> حفظ الإعدادات
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* iCal feed */}
+              <Card className="border-none shadow-sm">
+                <CardHeader className="border-b border-border pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Link2 className="h-5 w-5 text-primary" /> رابط iCal (Google Calendar / Apple Calendar)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl leading-relaxed">
+                    أضف رزنامتك مباشرة في Google Calendar أو Apple Calendar باستخدام الرابط أدناه.
+                    الرابط يبقى خاصاً ومرتبطاً بحسابك — يمكنك إلغاؤه في أي وقت.
+                  </p>
+
+                  {icalUrl ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input value={icalUrl} readOnly className={inputCls + " flex-1 text-xs font-mono"} dir="ltr" />
+                        <Button variant="outline" size="sm" onClick={copyIcalUrl} className="shrink-0 gap-1.5">
+                          {icalCopied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                          {icalCopied ? "تم النسخ" : "نسخ"}
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={generateToken} disabled={icalLoading} className="gap-1.5">
+                          <RefreshCw className={`h-3.5 w-3.5 ${icalLoading ? "animate-spin" : ""}`} />
+                          تجديد الرابط
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={revokeToken} disabled={icalLoading}
+                          className="gap-1.5 text-destructive hover:text-destructive">
+                          إلغاء الرابط
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        في Google Calendar: إضافة تقويم → من عنوان URL → الصق الرابط أعلاه
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">لا يوجد رابط iCal حتى الآن.</p>
+                      <Button onClick={generateToken} disabled={icalLoading} className="gap-2">
+                        <Link2 className="h-4 w-4" />
+                        {icalLoading ? "جارٍ الإنشاء..." : "إنشاء رابط iCal"}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
       </div>

@@ -78,6 +78,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@react-pdf/renderer": "^4.5.1"
+    "@react-pdf/renderer": "^4.5.1",
+    "react-big-calendar": "^1.19.4"
   }
 }

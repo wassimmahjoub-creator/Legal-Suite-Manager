@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { casesTable } from "./cases";
@@ -18,6 +18,8 @@ export const eventsTable = pgTable("events", {
   legalStatus: text("legal_status"),
   postponedTo: date("postponed_to"),
   notes: text("notes"),
+  duration: integer("duration").default(60),
+  userId: integer("user_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

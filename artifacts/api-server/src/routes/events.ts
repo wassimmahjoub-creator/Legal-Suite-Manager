@@ -52,6 +52,20 @@ router.put("/events/:id", async (req, res) => {
   res.json({ ...row, caseName: null });
 });
 
+// ── PATCH for drag & drop (date/time only) ────────────────────────────────────
+
+router.patch("/events/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const body = req.body as Record<string, unknown>;
+  const updates: Partial<typeof eventsTable.$inferSelect> = {};
+  if (typeof body.date === "string") updates.date = body.date;
+  if (typeof body.time === "string" || body.time === null) updates.time = body.time as string | null;
+  if (typeof body.duration === "number") updates.duration = body.duration;
+  const [row] = await db.update(eventsTable).set(updates).where(eq(eventsTable.id, id)).returning();
+  if (!row) return res.status(404).json({ error: "Not found" });
+  res.json(row);
+});
+
 router.delete("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(eventsTable).where(eq(eventsTable.id, id));
