@@ -2,6 +2,7 @@ import {
   Document, Page, Text, View, StyleSheet,
   PDFDownloadLink,
 } from "@react-pdf/renderer";
+import { formatCurrency } from "@/lib/currency";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ const s = StyleSheet.create({
 // ── PDF Document ──────────────────────────────────────────────────────────────
 
 function InvoiceDocument({ inv, cab }: { inv: Invoice; cab: CabinetSettings }) {
-  const fmt = (n: number) => n.toFixed(3);
+  const fmt = (n: number) => formatCurrency(n, "fr");
   const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("fr-TN") : "—";
   const cabName = cab.cabinetName ?? "Cabinet d'Avocats";
   const invNum = inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`;
@@ -147,42 +148,42 @@ function InvoiceDocument({ inv, cab }: { inv: Invoice; cab: CabinetSettings }) {
         <View style={s.totalsBox}>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>Sous-total HT / المجموع خ.ض</Text>
-            <Text style={s.totalValue}>{fmt(inv.subtotalHt)} DT</Text>
+            <Text style={s.totalValue}>{fmt(inv.subtotalHt)}</Text>
           </View>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>TVA</Text>
-            <Text style={s.totalValue}>{fmt(inv.vatTotal)} DT</Text>
+            <Text style={s.totalValue}>{fmt(inv.vatTotal)}</Text>
           </View>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>Timbre fiscal / الطابع الجبائي</Text>
-            <Text style={s.totalValue}>{fmt(inv.stampDuty)} DT</Text>
+            <Text style={s.totalValue}>{fmt(inv.stampDuty)}</Text>
           </View>
           <View style={s.totalRow}>
             <Text style={[s.totalLabel, { fontFamily: "Helvetica-Bold" }]}>Total TTC / المجموع ش.ض</Text>
-            <Text style={[s.totalValue, { fontFamily: "Courier-Bold" }]}>{fmt(inv.totalTtc)} DT</Text>
+            <Text style={[s.totalValue, { fontFamily: "Courier-Bold" }]}>{fmt(inv.totalTtc)}</Text>
           </View>
           {inv.withholdingTax > 0 && (
             <View style={s.totalRow}>
               <Text style={[s.totalLabel, { color: "#c45000" }]}>
                 Retenue à la source ({inv.clientWithholdingRate ?? 0}%)
               </Text>
-              <Text style={[s.totalValue, { color: "#c45000" }]}>- {fmt(inv.withholdingTax)} DT</Text>
+              <Text style={[s.totalValue, { color: "#c45000" }]}>- {fmt(inv.withholdingTax)}</Text>
             </View>
           )}
           <View style={s.netRow}>
             <Text style={s.netLabel}>Net à payer / الصافي للدفع</Text>
-            <Text style={s.netValue}>{fmt(inv.netToPay)} DT</Text>
+            <Text style={s.netValue}>{fmt(inv.netToPay)}</Text>
           </View>
           {inv.amountPaid > 0 && (
             <View style={[s.totalRow, { marginTop: 6 }]}>
               <Text style={[s.totalLabel, { color: "#1a7a1a" }]}>Déjà payé</Text>
-              <Text style={[s.totalValue, { color: "#1a7a1a" }]}>{fmt(inv.amountPaid)} DT</Text>
+              <Text style={[s.totalValue, { color: "#1a7a1a" }]}>{fmt(inv.amountPaid)}</Text>
             </View>
           )}
           {inv.balanceDue > 0 && (
             <View style={s.totalRow}>
               <Text style={[s.totalLabel, { fontFamily: "Helvetica-Bold", color: "#c45000" }]}>Solde restant</Text>
-              <Text style={[s.totalValue, { fontFamily: "Courier-Bold", color: "#c45000" }]}>{fmt(inv.balanceDue)} DT</Text>
+              <Text style={[s.totalValue, { fontFamily: "Courier-Bold", color: "#c45000" }]}>{fmt(inv.balanceDue)}</Text>
             </View>
           )}
         </View>

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { InvoicePdfButton } from "@/components/InvoicePdf";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
+import { Money } from "@/components/Money";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -241,28 +242,28 @@ export default function InvoicePage() {
           <Card className="border-none shadow-md">
             <CardHeader className="pb-3"><CardTitle className="text-base">الملخص المالي</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <Row label="المجموع خ.ض" value={inv.subtotalHt.toFixed(3)} />
-              <Row label="TVA" value={inv.vatTotal.toFixed(3)} />
-              <Row label="الطابع الجبائي" value={inv.stampDuty.toFixed(3)} />
+              <Row label="المجموع خ.ض" amount={inv.subtotalHt} />
+              <Row label="TVA" amount={inv.vatTotal} />
+              <Row label="الطابع الجبائي" amount={inv.stampDuty} />
               <div className="border-t border-border pt-2">
-                <Row label="المجموع ش.ض" value={inv.totalTtc.toFixed(3)} bold />
+                <Row label="المجموع ش.ض" amount={inv.totalTtc} bold />
               </div>
               {inv.withholdingTax > 0 && (
                 <div className="text-orange-600 dark:text-orange-400">
                   <Row label={`الخصم في المنبع (${inv.clientWithholdingRate ?? 0}%)`}
-                    value={`- ${inv.withholdingTax.toFixed(3)}`} />
+                    amount={inv.withholdingTax} prefix="- " />
                 </div>
               )}
               <div className="border-t border-border pt-2">
-                <Row label="الصافي للدفع" value={inv.netToPay.toFixed(3)} bold highlight />
+                <Row label="الصافي للدفع" amount={inv.netToPay} bold highlight />
               </div>
               {inv.amountPaid > 0 && (
                 <>
                   <div className="border-t border-border pt-2 text-green-600 dark:text-green-400">
-                    <Row label="المدفوع" value={inv.amountPaid.toFixed(3)} />
+                    <Row label="المدفوع" amount={inv.amountPaid} />
                   </div>
                   <div className="text-primary font-bold">
-                    <Row label="الرصيد المتبقي" value={inv.balanceDue.toFixed(3)} bold />
+                    <Row label="الرصيد المتبقي" amount={inv.balanceDue} bold />
                   </div>
                 </>
               )}
@@ -290,15 +291,15 @@ export default function InvoicePage() {
           <div className="p-3 bg-muted/40 rounded-lg text-sm space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">الصافي للدفع</span>
-              <span dir="ltr" className="font-mono">{inv.netToPay.toFixed(3)} د.ت</span>
+              <Money amount={inv.netToPay} />
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">المدفوع</span>
-              <span dir="ltr" className="font-mono">{inv.amountPaid.toFixed(3)} د.ت</span>
+              <Money amount={inv.amountPaid} />
             </div>
             <div className="flex justify-between font-semibold text-primary">
               <span>الرصيد المتبقي</span>
-              <span dir="ltr" className="font-mono">{inv.balanceDue.toFixed(3)} د.ت</span>
+              <Money amount={inv.balanceDue} />
             </div>
           </div>
           <FormField label="مبلغ الدفعة (د.ت)" htmlFor="payment-amount">
@@ -318,11 +319,11 @@ export default function InvoicePage() {
   );
 }
 
-function Row({ label, value, bold, highlight }: { label: string; value: string; bold?: boolean; highlight?: boolean }) {
+function Row({ label, amount, bold, highlight, prefix }: { label: string; amount: number; bold?: boolean; highlight?: boolean; prefix?: string }) {
   return (
     <div className={`flex justify-between py-0.5 ${bold ? "font-semibold" : ""} ${highlight ? "text-primary text-base" : ""}`}>
       <span className={!bold && !highlight ? "text-muted-foreground" : ""}>{label}</span>
-      <span dir="ltr" className="font-mono">{value} د.ت</span>
+      <span dir="ltr" className="font-mono whitespace-nowrap">{prefix}<Money amount={amount} /></span>
     </div>
   );
 }

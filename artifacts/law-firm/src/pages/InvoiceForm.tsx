@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField } from "@/components/Modal";
 import { ArrowRight, Plus, Trash2, Send, Save, Loader2 } from "lucide-react";
 import { calcLine, calcTotals, UNITS, VAT_RATES } from "@/services/invoiceCalculator";
+import { Money } from "@/components/Money";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -321,19 +322,19 @@ export default function InvoiceForm() {
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between py-1 border-b border-border/50">
                 <span className="text-muted-foreground">المجموع خ.ض</span>
-                <span dir="ltr" className="font-mono">{totals.subtotalHt.toFixed(3)} د.ت</span>
+                <Money amount={totals.subtotalHt} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
                 <span className="text-muted-foreground">TVA</span>
-                <span dir="ltr" className="font-mono">{totals.vatTotal.toFixed(3)} د.ت</span>
+                <Money amount={totals.vatTotal} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
                 <span className="text-muted-foreground">الطابع الجبائي</span>
-                <span dir="ltr" className="font-mono">{totals.stampDuty.toFixed(3)} د.ت</span>
+                <Money amount={totals.stampDuty} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50 font-semibold">
                 <span>المجموع ش.ض</span>
-                <span dir="ltr" className="font-mono">{totals.totalTtc.toFixed(3)} د.ت</span>
+                <Money amount={totals.totalTtc} />
               </div>
               {totals.withholdingTax > 0 && (
                 <div className="flex justify-between py-1 border-b border-border/50 text-orange-600 dark:text-orange-400">
@@ -341,12 +342,12 @@ export default function InvoiceForm() {
                     الخصم في المنبع
                     {selectedClient?.withholdingRate ? ` (${selectedClient.withholdingRate}%)` : ""}
                   </span>
-                  <span dir="ltr" className="font-mono">- {totals.withholdingTax.toFixed(3)} د.ت</span>
+                  <span dir="ltr" className="font-mono whitespace-nowrap">- <Money amount={totals.withholdingTax} /></span>
                 </div>
               )}
               <div className="flex justify-between py-2 text-base font-bold text-primary">
                 <span>الصافي للدفع</span>
-                <span dir="ltr" className="font-mono">{totals.netToPay.toFixed(3)} د.ت</span>
+                <Money amount={totals.netToPay} />
               </div>
 
               {selectedClient?.withholdingExempt && (

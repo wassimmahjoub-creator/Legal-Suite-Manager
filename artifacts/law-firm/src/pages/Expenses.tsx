@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Money } from "@/components/Money";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
@@ -71,7 +72,7 @@ export default function Expenses() {
             <div className="p-3 bg-red-500/10 rounded-xl"><TrendingDown className="h-5 w-5 text-red-400" /></div>
             <div>
               <p className="text-xs text-muted-foreground">إجمالي المصاريف</p>
-              <p className="text-xl font-bold" dir="ltr">{total.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
+              <Money amount={total} className="text-xl font-bold" />
             </div>
           </CardContent>
         </Card>
@@ -80,7 +81,7 @@ export default function Expenses() {
             <div className="p-3 bg-green-500/10 rounded-xl"><Banknote className="h-5 w-5 text-green-500" /></div>
             <div>
               <p className="text-xs text-muted-foreground">قابلة للاسترجاع</p>
-              <p className="text-xl font-bold" dir="ltr">{reimbursable.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
+              <Money amount={reimbursable} className="text-xl font-bold" />
             </div>
           </CardContent>
         </Card>
@@ -89,7 +90,7 @@ export default function Expenses() {
             <div className="p-3 bg-orange-500/10 rounded-xl"><Scale className="h-5 w-5 text-orange-500" /></div>
             <div>
               <p className="text-xs text-muted-foreground">مصاريف المكتب</p>
-              <p className="text-xl font-bold" dir="ltr">{notReimbursable.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
+              <Money amount={notReimbursable} className="text-xl font-bold" />
             </div>
           </CardContent>
         </Card>
@@ -136,7 +137,7 @@ export default function Expenses() {
                       <span className="bg-muted/60 px-2 py-1 rounded-md text-xs">{e.type}</span>
                     </td>
                     <td className="py-3 px-4 text-muted-foreground hidden md:table-cell">{e.description}</td>
-                    <td className="py-3 px-4 font-bold" dir="ltr">{e.amount.toFixed(2)} د.ت</td>
+                    <td className="py-3 px-4 font-bold" dir="ltr"><Money amount={e.amount} /></td>
                     <td className="py-3 px-4 text-center">
                       <span className={`text-xs px-2 py-1 rounded-full ${e.reimbursable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
                         {e.reimbursable ? "نعم" : "لا"}
@@ -157,7 +158,7 @@ export default function Expenses() {
                 <tfoot className="bg-muted/20 border-t border-border">
                   <tr>
                     <td colSpan={4} className="py-3 px-4 font-semibold text-muted-foreground text-left">المجموع</td>
-                    <td className="py-3 px-4 font-bold text-primary" dir="ltr">{total.toFixed(2)} د.ت</td>
+                    <td className="py-3 px-4 font-bold text-primary" dir="ltr"><Money amount={total} /></td>
                     <td colSpan={2}></td>
                   </tr>
                 </tfoot>

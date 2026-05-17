@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
+import { Money } from "@/components/Money";
+import { formatCurrency } from "@/lib/currency";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -142,7 +144,7 @@ export default function Reports() {
         {[
           {
             label: "إجمالي المداخيل (7 أشهر)",
-            value: loading ? null : `${totalIncome.toLocaleString()} د.ت`,
+            value: loading ? null : formatCurrency(totalIncome),
             icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10",
             action: () => navigate("/billing"),
           },
@@ -160,7 +162,7 @@ export default function Reports() {
           },
           {
             label: "متوسط شهري",
-            value: loading ? null : `${avgMonthly.toLocaleString()} د.ت`,
+            value: loading ? null : formatCurrency(avgMonthly),
             icon: BarChart3, color: "text-blue-400", bg: "bg-blue-500/10",
             action: undefined,
           },
@@ -299,7 +301,7 @@ export default function Reports() {
                   </div>
                   <div className="text-left shrink-0">
                     <p className="font-bold text-sm text-primary" dir="ltr">
-                      {c.amount.toLocaleString()} د.ت
+                      <Money amount={c.amount} />
                     </p>
                     <p className="text-xs text-muted-foreground">إجمالي الأتعاب</p>
                   </div>
@@ -333,7 +335,7 @@ export default function Reports() {
                     <p className="text-2xl font-bold">{data?.billing.paidCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير مدفوعة</p>
                     <p className="text-sm font-medium mt-1 text-green-400" dir="ltr">
-                      {(data?.billing.paidAmount ?? 0).toLocaleString()} د.ت
+                      <Money amount={data?.billing.paidAmount ?? 0} />
                     </p>
                   </div>
                   <div
@@ -344,7 +346,7 @@ export default function Reports() {
                     <p className="text-2xl font-bold">{data?.billing.pendingCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير معلقة</p>
                     <p className="text-sm font-medium mt-1 text-orange-400" dir="ltr">
-                      {(data?.billing.pendingAmount ?? 0).toLocaleString()} د.ت
+                      <Money amount={data?.billing.pendingAmount ?? 0} />
                     </p>
                   </div>
                 </div>

@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
+import { Money } from "@/components/Money";
+import { formatCurrency } from "@/lib/currency";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -85,11 +87,11 @@ export default function Billing() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<CreditCard className="h-5 w-5 text-blue-500" />}
-          bg="bg-blue-500/10" label="إجمالي الفواتير" value={totalNet.toFixed(3)} />
+          bg="bg-blue-500/10" label="إجمالي الفواتير" value={formatCurrency(totalNet)} />
         <KpiCard icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-          bg="bg-green-500/10" label="المدفوع" value={totalPaid.toFixed(3)} />
+          bg="bg-green-500/10" label="المدفوع" value={formatCurrency(totalPaid)} />
         <KpiCard icon={<Clock className="h-5 w-5 text-orange-500" />}
-          bg="bg-orange-500/10" label="الرصيد المتبقي" value={totalBalance.toFixed(3)} />
+          bg="bg-orange-500/10" label="الرصيد المتبقي" value={formatCurrency(totalBalance)} />
         <KpiCard icon={<AlertCircle className="h-5 w-5 text-red-500" />}
           bg="bg-red-500/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
       </div>
@@ -168,7 +170,7 @@ export default function Billing() {
                         {inv.subtotalHt.toFixed(3)}
                       </TableCell>
                       <TableCell className="py-3 font-mono font-bold" dir="ltr">
-                        {inv.netToPay.toFixed(3)} <span className="font-normal text-muted-foreground text-xs">د.ت</span>
+                        <Money amount={inv.netToPay} />
                       </TableCell>
                       <TableCell className="py-3 font-mono text-sm hidden sm:table-cell" dir="ltr">
                         <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-orange-600 dark:text-orange-400" : ""}>
@@ -198,7 +200,7 @@ export default function Billing() {
   );
 }
 
-function KpiCard({ icon, bg, label, value, unit = " د.ت" }: {
+function KpiCard({ icon, bg, label, value, unit = "" }: {
   icon: React.ReactNode; bg: string; label: string; value: string; unit?: string;
 }) {
   return (

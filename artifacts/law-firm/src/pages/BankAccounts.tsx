@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
+import { Money } from "@/components/Money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
@@ -48,7 +49,7 @@ export default function BankAccounts() {
           <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Landmark className="h-6 w-6 text-emerald-400" /></div>
           <div>
             <h1 className="text-2xl font-bold">الحسابات البنكية</h1>
-            <p className="text-muted-foreground text-sm">إجمالي TND: <span className="text-primary font-bold">{totalTND.toLocaleString("ar-TN", { minimumFractionDigits: 3 })} د.ت</span></p>
+            <p className="text-muted-foreground text-sm">إجمالي TND: <Money amount={totalTND} className="text-primary font-bold" /></p>
           </div>
         </div>
         <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> حساب جديد</Button>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, Crown, Users, Zap, Star } from "lucide-react";
+import { Money } from "@/components/Money";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -71,11 +72,11 @@ export default function Pricing() {
               <div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-extrabold text-primary">{price}</span>
-                  <span className="text-muted-foreground text-sm">TND / {period}</span>
+                  <span className="text-muted-foreground text-sm">DT / {period}</span>
                 </div>
                 {yearly && (
                   <p className="text-xs text-green-500 mt-1 font-medium">
-                    توفير {plan.priceMonthly * 12 - plan.priceYearly} TND مقارنة بالشهري
+                    توفير <Money amount={plan.priceMonthly * 12 - plan.priceYearly} locale="fr" /> مقارنة بالشهري
                   </p>
                 )}
               </div>
@@ -114,8 +115,8 @@ export default function Pricing() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           {[
-            { plan: "محامي فردي", included: "1", extra: "12 TND / شهر" },
-            { plan: "مكتب محاماة", included: "5", extra: "12 TND / شهر" },
+            { plan: "محامي فردي", included: "1", extra: "12 DT / شهر" },
+            { plan: "مكتب محاماة", included: "5", extra: "12 DT / شهر" },
             { plan: "مؤسسة قانونية", included: "غير محدود", extra: "مجاناً" },
           ].map(r => (
             <div key={r.plan} className="bg-muted/30 rounded-xl p-3 space-y-1">

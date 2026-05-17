@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { Money } from "@/components/Money";
+import { formatCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,7 +131,7 @@ export default function TimeTracking() {
         {[
           { label: "إجمالي الساعات", value: `${totalHours.toFixed(1)} س`, icon: Clock, color: "text-blue-400" },
           { label: "ساعات قابلة للفوترة", value: `${billableHours.toFixed(1)} س`, icon: Timer, color: "text-primary" },
-          { label: "المبلغ القابل للفوترة", value: `${totalAmount.toFixed(0)} د.ت`, icon: TrendingUp, color: "text-green-400" },
+          { label: "المبلغ القابل للفوترة", value: formatCurrency(totalAmount, "ar"), icon: TrendingUp, color: "text-green-400" },
           { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1)} س`, icon: Receipt, color: "text-purple-400" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
@@ -183,8 +185,8 @@ export default function TimeTracking() {
                     <td className="py-3 px-4 font-medium max-w-[200px] truncate">{e.case}</td>
                     <td className="py-3 px-4 text-muted-foreground">{e.description}</td>
                     <td className="py-3 px-4 font-mono" dir="ltr">{e.hours.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-muted-foreground" dir="ltr">{e.rate} د.ت/س</td>
-                    <td className="py-3 px-4 font-bold" dir="ltr">{(e.hours * e.rate).toFixed(2)} د.ت</td>
+                    <td className="py-3 px-4 text-muted-foreground" dir="ltr"><Money amount={e.rate} />/س</td>
+                    <td className="py-3 px-4 font-bold" dir="ltr"><Money amount={e.hours * e.rate} /></td>
                     <td className="py-3 px-4 text-center">
                       <span className={`text-xs px-2 py-1 rounded-full ${e.billable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
                         {e.billable ? "نعم" : "لا"}
@@ -239,7 +241,7 @@ export default function TimeTracking() {
             <div className="p-3 bg-primary/10 rounded-lg flex justify-between items-center">
               <span className="text-sm text-primary font-medium">المبلغ الإجمالي:</span>
               <span className="font-bold text-primary" dir="ltr">
-                {(parseFloat(form.hours) * parseFloat(form.rate)).toFixed(2)} د.ت
+                <Money amount={parseFloat(form.hours) * parseFloat(form.rate)} />
               </span>
             </div>
           )}

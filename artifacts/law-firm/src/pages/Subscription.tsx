@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { Money } from "@/components/Money";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,15 +168,14 @@ export default function Subscription() {
 
           <div className="text-left shrink-0 space-y-1">
             <p className="text-3xl font-extrabold text-primary">
-              {cyclePrice}
-              <span className="text-sm font-normal text-muted-foreground"> د.ت</span>
+              <Money amount={Number(cyclePrice)} />
             </p>
             <p className="text-xs text-muted-foreground">/{org.billingCycle === "yearly" ? "سنة" : "شهر"}</p>
             {org.extraCost > 0 && (
-              <p className="text-xs text-orange-500">+ {org.extraCost} د.ت (متعاونون إضافيون)</p>
+              <p className="text-xs text-orange-500">+ <Money amount={Number(org.extraCost)} /> (متعاونون إضافيون)</p>
             )}
             {org.extraCost > 0 && (
-              <p className="text-xs font-bold text-foreground">المجموع: {org.estimatedMonthlyTotal} د.ت/شهر</p>
+              <p className="text-xs font-bold text-foreground">المجموع: <Money amount={Number(org.estimatedMonthlyTotal)} />/شهر</p>
             )}
           </div>
         </div>
@@ -257,11 +257,11 @@ export default function Subscription() {
                 </div>
                 <div>
                   <p className="text-xl font-bold text-primary">
-                    {price}
-                    <span className="text-xs font-normal text-muted-foreground"> د.ت/{upgradeCycle === "yearly" ? "سنة" : "شهر"}</span>
+                    <Money amount={Number(price)} />
+                    <span className="text-xs font-normal text-muted-foreground">/{upgradeCycle === "yearly" ? "سنة" : "شهر"}</span>
                   </p>
                   {upgradeCycle === "yearly" && (
-                    <p className="text-xs text-green-500 font-medium">توفير {p.priceMonthly * 12 - p.priceYearly} د.ت</p>
+                    <p className="text-xs text-green-500 font-medium">توفير <Money amount={p.priceMonthly * 12 - p.priceYearly} /></p>
                   )}
                 </div>
                 <ul className="space-y-1.5 flex-1">
@@ -301,15 +301,15 @@ export default function Subscription() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">الخطة ({org.plan.name})</span>
-              <span className="font-medium">{org.plan.priceMonthly} د.ت</span>
+              <Money amount={Number(org.plan.priceMonthly)} className="font-medium" />
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">مستخدمون إضافيون ({org.extraCollaborators} × 12 د.ت)</span>
-              <span className="font-medium text-orange-500">{org.extraCost} د.ت</span>
+              <span className="text-muted-foreground">مستخدمون إضافيون ({org.extraCollaborators} × 12 DT)</span>
+              <Money amount={Number(org.extraCost)} className="font-medium text-orange-500" />
             </div>
             <div className="border-t border-border pt-2 flex justify-between text-sm font-bold">
               <span>المجموع الشهري</span>
-              <span className="text-primary">{org.estimatedMonthlyTotal} د.ت / شهر</span>
+              <span className="text-primary"><Money amount={Number(org.estimatedMonthlyTotal)} /> / شهر</span>
             </div>
           </div>
         </div>

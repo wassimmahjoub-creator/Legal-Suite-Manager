@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { formatCurrency } from "@/lib/currency";
 import { useParams, useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
@@ -457,9 +458,9 @@ export default function ClientPage() {
         {activeTab === "billing" && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard label="الرقم الإجمالي" value={`${totalInvoiced.toFixed(3)} د.ت`} icon={<Receipt className="h-5 w-5 text-blue-400" />} />
-              <KpiCard label="المحصّل" value={`${totalPaid.toFixed(3)} د.ت`} icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />} />
-              <KpiCard label="الرصيد المتبقي" value={`${balance.toFixed(3)} د.ت`} icon={<AlertCircle className="h-5 w-5 text-amber-400" />} />
+              <KpiCard label="الرقم الإجمالي" value={formatCurrency(totalInvoiced)} icon={<Receipt className="h-5 w-5 text-blue-400" />} />
+              <KpiCard label="المحصّل" value={formatCurrency(totalPaid)} icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />} />
+              <KpiCard label="الرصيد المتبقي" value={formatCurrency(balance)} icon={<AlertCircle className="h-5 w-5 text-amber-400" />} />
               <KpiCard label="عدد الفواتير" value={String(invoices.length)} icon={<FileText className="h-5 w-5 text-purple-400" />} />
             </div>
             {invoices.length === 0 ? (

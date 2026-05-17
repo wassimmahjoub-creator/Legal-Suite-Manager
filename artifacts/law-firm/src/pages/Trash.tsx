@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { formatCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +96,7 @@ export default function Trash() {
           <Section title="الوثائق" icon={FileText} entity="documents"
             items={data.documents.map(d => ({ id: d.id, label: d.name, deletedAt: d.deletedAt }))} />
           <Section title="الفواتير" icon={CreditCard} entity="invoices"
-            items={data.invoices.map(i => ({ id: i.id, label: `${Number(i.amount).toLocaleString()} د.ت`, deletedAt: i.deletedAt }))} />
+            items={data.invoices.map(i => ({ id: i.id, label: formatCurrency(Number(i.amount)), deletedAt: i.deletedAt }))} />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { formatCurrency } from "@/lib/currency";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts,
@@ -151,7 +152,7 @@ export default function Dashboard() {
           },
           {
             title: "المداخيل هذا الشهر",
-            value: loadingSummary ? null : (summary?.monthlyIncome ? `${summary.monthlyIncome} د.ت` : "0 د.ت"),
+            value: loadingSummary ? null : formatCurrency(Number(summary?.monthlyIncome ?? 0)),
             icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10",
             action: () => navigate("/billing"),
           },
@@ -231,9 +232,9 @@ export default function Dashboard() {
               <span className="text-sm text-muted-foreground">الملف المالي لهذا الشهر:</span>
             </div>
             {[
-              { label: "مداخيل", value: "2200 د.ت", color: "text-green-400" },
-              { label: "مصاريف", value: "200 د.ت", color: "text-red-400" },
-              { label: "صافي", value: "2000 د.ت", color: "text-primary" },
+              { label: "مداخيل", value: formatCurrency(2200), color: "text-green-400" },
+              { label: "مصاريف", value: formatCurrency(200), color: "text-red-400" },
+              { label: "صافي", value: formatCurrency(2000), color: "text-primary" },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">{f.label}:</span>

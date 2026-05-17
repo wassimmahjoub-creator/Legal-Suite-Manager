@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
+import { Money } from "@/components/Money";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,7 +76,7 @@ export default function Consultations() {
           <div className="p-2.5 bg-blue-500/10 rounded-xl"><MessageSquare className="h-6 w-6 text-blue-400" /></div>
           <div>
             <h1 className="text-2xl font-bold">الاستشارات</h1>
-            <p className="text-muted-foreground text-sm">استشارات قانونية • مداخيل: <span className="text-primary font-bold">{totalRevenue.toLocaleString()} د.ت</span></p>
+            <p className="text-muted-foreground text-sm">استشارات قانونية • مداخيل: <Money amount={totalRevenue} className="text-primary font-bold" /></p>
           </div>
         </div>
         <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> استشارة جديدة</Button>
@@ -110,7 +111,7 @@ export default function Consultations() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    {c.amount && <span className="font-bold text-primary text-sm" dir="ltr">{Number(c.amount).toLocaleString()} د.ت</span>}
+                    {c.amount && <Money amount={Number(c.amount)} className="font-bold text-primary text-sm" />}
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${st.color}`}>{st.label}</span>
                     <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-muted rounded-lg transition-colors"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
                     <button onClick={() => remove(c.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
