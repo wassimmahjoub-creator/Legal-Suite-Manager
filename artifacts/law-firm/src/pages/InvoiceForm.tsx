@@ -61,8 +61,20 @@ export default function InvoiceForm() {
 
   useEffect(() => {
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
-    authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then(setCases);
-  }, []);
+    authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then((list: CaseOption[]) => {
+      setCases(list);
+      // Pre-fill caseId from query param on new invoice
+      if (!isEdit) {
+        const params = new URLSearchParams(window.location.search);
+        const qCaseId = params.get("caseId");
+        if (qCaseId) {
+          setCaseId(qCaseId);
+          const matched = list.find(c => String(c.id) === qCaseId);
+          if (matched) setClientId(String(matched.clientId));
+        }
+      }
+    });
+  }, [isEdit]);
 
   useEffect(() => {
     if (!isEdit) return;

@@ -550,7 +550,7 @@ export default function CaseDetail() {
         <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm">الفواتير</h3>
-            <Button size="sm" onClick={() => navigate(`/invoices/new?caseId=${id}`)} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />فاتورة جديدة</Button>
+            <Button size="sm" onClick={() => navigate(`/billing/new?caseId=${id}`)} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />فاتورة جديدة</Button>
           </div>
           {invoices.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl"><Receipt className="h-7 w-7 mx-auto mb-2 opacity-20" /><p className="text-sm">لا توجد فواتير لهذا الملف</p></div>
