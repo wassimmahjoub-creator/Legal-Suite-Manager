@@ -113,6 +113,39 @@ function AgendaToolbar({ date, onNavigate }: ToolbarProps<CalEvent>) {
   );
 }
 
+// ── Custom Week/Day header: day name stacked above date circle ────────────────
+
+const AR_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+function WeekDayHeader({ date }: { date: Date }) {
+  const today = new Date();
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+
+  return (
+    <div className="flex flex-col items-center gap-0.5 py-1.5">
+      <span
+        className="text-[0.7rem] font-semibold leading-none"
+        style={{ color: isToday ? "#d4a017" : "rgba(255,255,255,0.55)" }}
+      >
+        {AR_DAY_NAMES[date.getDay()]}
+      </span>
+      <span
+        className="text-sm font-bold leading-none flex items-center justify-center w-7 h-7 rounded-full"
+        style={
+          isToday
+            ? { background: "#d4a017", color: "#0f2342" }
+            : { color: "rgba(255,255,255,0.85)" }
+        }
+      >
+        {date.getDate()}
+      </span>
+    </div>
+  );
+}
+
 // ── Color legend ─────────────────────────────────────────────────────────────
 
 const LEGEND = [
@@ -390,7 +423,11 @@ export default function CalendarView() {
                 draggableAccessor={() => true}
                 resizable={false}
                 eventPropGetter={eventPropGetter}
-                components={{ toolbar: AgendaToolbar as never }}
+                components={{
+                  toolbar: AgendaToolbar as never,
+                  week: { header: WeekDayHeader as never },
+                  day:  { header: WeekDayHeader as never },
+                }}
                 onSelectSlot={({ start }) => openNew(new Date(start))}
                 onSelectEvent={({ resource }) => openEdit(resource)}
                 selectable
