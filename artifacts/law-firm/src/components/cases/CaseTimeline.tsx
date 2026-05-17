@@ -93,7 +93,7 @@ function formatDayLabel(dateStr: string): string {
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("fr-TN", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("fr-TN", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function toDateKey(dateStr: string): string {
