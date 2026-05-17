@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FormField, Modal } from "@/components/Modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowRight, Lock, Edit2, FileX, CreditCard, Download, Loader2, Trash2,
+  ArrowRight, Lock, Edit2, FileX, CreditCard, Download, Loader2, Trash2, ExternalLink,
 } from "lucide-react";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { InvoicePdfButton } from "@/components/InvoicePdf";
@@ -116,7 +116,7 @@ export default function InvoicePage() {
       {/* Breadcrumb + actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <button onClick={() => window.history.back()}
+          <button onClick={() => navigate("/billing")}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
             <ArrowRight className="h-3.5 w-3.5" /> الفوترة
           </button>
@@ -174,7 +174,13 @@ export default function InvoicePage() {
             <CardContent className="pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">الحريف</p>
-                <p className="font-semibold text-base">{inv.clientName}</p>
+                <button
+                  onClick={() => navigate(`/clients/${inv.clientId}`)}
+                  className="flex items-center gap-1.5 font-semibold text-base hover:text-primary transition-colors group text-right"
+                >
+                  {inv.clientName}
+                  <ExternalLink className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                </button>
                 {inv.clientTaxId && <p className="text-muted-foreground text-xs mt-0.5">م.ج: {inv.clientTaxId}</p>}
                 {inv.clientWithholdingRate && !inv.clientWithholdingExempt && (
                   <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
@@ -183,10 +189,16 @@ export default function InvoicePage() {
                 )}
               </div>
               <div>
-                {inv.caseName && (
+                {inv.caseName && inv.caseId && (
                   <>
                     <p className="text-xs text-muted-foreground mb-1">القضية</p>
-                    <p className="font-medium">{inv.caseName}</p>
+                    <button
+                      onClick={() => navigate(`/cases/${inv.caseId}`)}
+                      className="flex items-center gap-1.5 font-medium hover:text-primary transition-colors group text-right"
+                    >
+                      {inv.caseName}
+                      <ExternalLink className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                    </button>
                   </>
                 )}
               </div>
