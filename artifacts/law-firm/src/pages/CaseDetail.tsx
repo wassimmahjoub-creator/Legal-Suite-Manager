@@ -552,8 +552,8 @@ export default function CaseDetail() {
             <h3 className="font-semibold text-sm">الفواتير</h3>
             <Button size="sm" onClick={() => {
   const p = new URLSearchParams({ caseId: String(id) });
-  if (caseData.clientId) p.set("clientId", String(caseData.clientId));
-  if (caseData.title)    p.set("desc",     encodeURIComponent(`أتعاب قانونية — ${caseData.title}`));
+  if (caseData?.clientId) p.set("clientId", String(caseData.clientId));
+  if (caseData?.title)    p.set("desc",     encodeURIComponent(`أتعاب قانونية — ${caseData.title}`));
   if (c.feeMethod === "fixed" && c.agreedFees) p.set("amount", String(c.agreedFees));
   navigate(`/billing/new?${p.toString()}`);
 }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />فاتورة جديدة</Button>

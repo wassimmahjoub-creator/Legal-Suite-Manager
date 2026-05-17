@@ -31,7 +31,20 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    runtimeErrorOverlay({
+      // Prevent the overlay crash from looping back through the plugin:
+      // if createErrorOverlay itself throws (document.body null in the Replit
+      // iframe), that unhandledrejection must NOT be re-sent to the server or
+      // the cycle becomes infinite.
+      filter: (err: Error) => {
+        const s = err.stack ?? "";
+        // Errors from Vite's own client code are not app errors — skip them.
+        if (s.includes("@vite/client")) return false;
+        // The specific createErrorOverlay crash message.
+        if (err.message?.includes("appendChild") && s.includes("createErrorOverlay")) return false;
+        return true;
+      },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

@@ -83,9 +83,13 @@ export default function InvoiceForm() {
 
         // Pre-fill first line with description and/or amount from case
         if (qDesc || qAmount) {
+          let desc = "";
+          if (qDesc) {
+            try { desc = decodeURIComponent(qDesc); } catch { desc = qDesc; }
+          }
           setLines([{
             _id: Math.random().toString(36).slice(2),
-            description: qDesc ? decodeURIComponent(qDesc) : "",
+            description: desc,
             unit: "forfait",
             quantity: "1",
             unitPriceHt: qAmount ?? "0",
