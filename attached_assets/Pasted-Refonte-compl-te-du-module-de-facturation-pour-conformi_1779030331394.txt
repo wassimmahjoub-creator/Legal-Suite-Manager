@@ -1,0 +1,94 @@
+Refonte complète du module de facturation pour conformité fiscale tunisienne.
+
+PRÉREQUIS : la table `clients` doit avoir les colonnes `tax_id`, `rib`, `withholding_rate`, `withholding_exempt` (livrées par T3). Ne pas commencer ce ticket avant T3.
+
+SCHÉMA :
+
+Table `invoices` :
+- id (uuid)
+- invoice_number (text, unique, format "F-YYYY-NNNN", généré côté serveur de manière atomique)
+- client_id (FK)
+- case_id (FK nullable) — dossier rattaché
+- issue_date (date)
+- due_date (date)
+- status (enum: draft, issued, partially_paid, paid, cancelled)
+- subtotal_ht (numeric)
+- vat_total (numeric)
+- stamp_duty (numeric, default 1.000 — timbre fiscal 1 DT)
+- withholding_tax (numeric) — retenue à la source calculée
+- total_ttc (numeric) — sous-total + TVA + timbre
+- net_to_pay (numeric) — total_ttc - withholding_tax
+- amount_paid (numeric, default 0)
+- balance_due (numeric, generated as net_to_pay - amount_paid)
+- payment_terms (text)
+- notes (text)
+- locked_at (timestamp, nullable) — devient non null à l'émission, verrouille les modifications
+- cancelled_by_invoice_id (FK self, nullable) — si annulée par un avoir
+- created_at, updated_at
+
+Table `invoice_lines` :
+- id, invoice_id (FK), position (int, pour ordre)
+- description (text)
+- unit (text, ex: "heure", "forfait", "déplacement")
+- quantity (numeric)
+- unit_price_ht (numeric)
+- vat_rate (numeric, default 19) — 0 si exonéré
+- line_total_ht (numeric, generated)
+- line_vat (numeric, generated)
+
+Table `cabinet_settings` (si elle n'existe pas) :
+- cabinet_tax_id (matricule fiscal)
+- cabinet_rib
+- cabinet_rc
+- cabinet_address
+- default_payment_terms
+- invoice_footer_ar, invoice_footer_fr
+
+NUMÉROTATION :
+Implémente une fonction SQL ou un service Node atomique qui génère le prochain `invoice_number` pour l'exercice en cours via un SELECT ... FOR UPDATE sur une table `invoice_counters (year, last_number)`. Aucun saut, aucun doublon, jamais.
+
+LOGIQUE DE CALCUL (à mettre dans un service `invoiceCalculator.ts`) :
+1. subtotal_ht = SUM(line_total_ht)
+2. vat_total = SUM(line_vat)
+3. stamp_duty = 1.000 DT (constant)
+4. total_ttc = subtotal_ht + vat_total + stamp_duty
+5. withholding_rate = client.withholding_rate si !client.withholding_exempt sinon 0
+6. withholding_tax = subtotal_ht * withholding_rate / 100  (la retenue s'applique sur le HT)
+7. net_to_pay = total_ttc - withholding_tax
+
+UI :
+Formulaire de création de facture (page, pas modale) :
+- Section "En-tête" : sélection client (autocomplete), sélection dossier (filtré par client), date d'émission, date d'échéance.
+- Section "Lignes" : table éditable, bouton "+ Ajouter une ligne". Chaque ligne : description, unité (select), qté, PU HT, TVA % (default 19, modifiable), total HT calculé en temps réel.
+- Section "Récapitulatif" en bas à droite, calculé en live :
+  - Sous-total HT
+  - TVA
+  - Timbre fiscal 1.000 DT
+  - Total TTC
+  - Retenue à la source (X %) : - Y.YYY DT  (affichée seulement si applicable)
+  - **Net à payer**
+- Section "Conditions" : conditions de paiement (textarea), notes (textarea).
+- Boutons en bas : "Enregistrer brouillon" / "Émettre la facture" (verrouille). 
+
+Quand une facture est en statut `issued` :
+- Tous les champs deviennent read-only.
+- Apparaît un bouton "Générer un avoir" qui crée une nouvelle facture rectificative avec montants négatifs et marque l'originale comme `cancelled`.
+- Apparaît un bouton "Enregistrer un paiement" qui ajoute à amount_paid et fait basculer status si paid en totalité.
+
+EXPORT PDF :
+- Génération via puppeteer ou react-pdf.
+- Template bilingue AR (RTL, colonne droite) / FR (LTR, colonne gauche), ou toggle de langue à l'export.
+- Mentions obligatoires en pied de page : matricule fiscal cabinet, RIB cabinet, RC cabinet, adresse, "TVA acquittée d'après les débits".
+- En-tête : logo cabinet + coordonnées.
+- Numéro de facture en gros et en haut à droite.
+- Section client avec son matricule fiscal et son RIB.
+
+DEVISE :
+Affiche tous les montants en "د.ت" côté AR et "DT" côté FR, jamais "TND".
+
+LIVRABLES :
+- Migrations
+- Service de numérotation atomique
+- Service de calcul testé (au moins 5 cas de test : avec/sans retenue, avec/sans exonération TVA, taux mixtes)
+- Composant <InvoiceForm />, <InvoicePreview />, <InvoicePdfTemplate />
+- Capture d'écran du formulaire et d'un PDF généré

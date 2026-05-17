@@ -19,6 +19,8 @@ import CaseDetail from "@/pages/CaseDetail";
 import Clients from "@/pages/Clients";
 import ClientPage from "@/pages/ClientPage";
 import Billing from "@/pages/Billing";
+import InvoiceForm from "@/pages/InvoiceForm";
+import InvoicePage from "@/pages/InvoicePage";
 import CalendarView from "@/pages/Calendar";
 import Documents from "@/pages/Documents";
 import Settings from "@/pages/Settings";
@@ -107,6 +109,9 @@ function Router() {
               <Route path="/cases/:id" component={CaseDetail} />
               <Route path="/clients" component={Clients} />
               <Route path="/clients/:id" component={ClientPage} />
+              <Route path="/billing/new" component={InvoiceForm} />
+              <Route path="/billing/:id/edit" component={InvoiceForm} />
+              <Route path="/billing/:id" component={InvoicePage} />
               <Route path="/billing" component={Billing} />
               <Route path="/calendar" component={CalendarView} />
               <Route path="/documents" component={Documents} />

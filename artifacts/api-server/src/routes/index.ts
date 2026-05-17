@@ -30,6 +30,7 @@ import correspondancesRouter from "./correspondances";
 import organizationsRouter from "./organizations";
 import usersMgmtRouter from "./users-mgmt";
 import invitationsRouter from "./invitations";
+import cabinetSettingsRouter from "./cabinet-settings";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -80,5 +81,6 @@ router.use(correspondancesRouter);
 router.use(organizationsRouter);
 router.use(usersMgmtRouter);
 router.use(invitationsRouter);
+router.use(cabinetSettingsRouter);
 
 export default router;

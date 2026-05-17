@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Download, Edit2, CreditCard, TrendingUp, Clock, CheckCircle, Trash2 } from "lucide-react";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Modal, FormField } from "@/components/Modal";
-import { useKeypadInput } from "@/context/KeypadContext";
-import { SmartTextarea } from "@/components/SmartTextarea";
+import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -17,155 +15,103 @@ interface Invoice {
   id: number;
   invoiceNumber: string | null;
   clientId: number;
-  clientName: string;
+  clientName: string | null;
   caseId: number | null;
   caseName: string | null;
-  amount: number;
-  expenses: number | null;
-  taxAmount: number | null;
-  retenue: number | null;
-  description: string | null;
-  status: string;
+  issueDate: string | null;
   dueDate: string | null;
-  notes: string | null;
+  status: string;
+  subtotalHt: number;
+  vatTotal: number;
+  totalTtc: number;
+  netToPay: number;
+  amountPaid: number;
+  balanceDue: number;
+  withholdingTax: number;
+  lockedAt: string | null;
   createdAt: string;
 }
 
-interface Client { id: number; name: string; }
-interface CaseOption { id: number; title: string; caseNumber: string | null; }
-
-const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
-
 export default function Billing() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [cases, setCases] = useState<CaseOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
-  const [form, setForm] = useState({
-    clientId: "",
-    caseId: "",
-    status: "pending",
-    dueDate: "",
-    notes: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [amount, setAmount] = useState("");
-  const amountKeypad = useKeypadInput("new-invoice-amount");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [, navigate] = useLocation();
 
   async function load() {
     setLoading(true);
-    const [invRes, clientRes, caseRes] = await Promise.all([
-      authFetch(`${BASE}/api/invoices`),
-      authFetch(`${BASE}/api/clients`),
-      authFetch(`${BASE}/api/cases`),
-    ]);
-    if (invRes.ok) setInvoices(await invRes.json());
-    if (clientRes.ok) setClients(await clientRes.json());
-    if (caseRes.ok) setCases(await caseRes.json());
+    const r = await authFetch(`${BASE}/api/invoices`);
+    if (r.ok) setInvoices(await r.json());
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
-  function openNew() {
-    setForm({ clientId: "", caseId: "", status: "pending", dueDate: "", notes: "" });
-    setAmount("");
-    setShowModal(true);
-  }
+  const filtered = invoices.filter(inv => {
+    if (statusFilter && inv.status !== statusFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        (inv.clientName?.toLowerCase().includes(q)) ||
+        (inv.invoiceNumber?.toLowerCase().includes(q)) ||
+        (inv.caseName?.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
 
-  async function saveNew() {
-    const parsedAmount = parseFloat(amount || "0");
-    if (!form.clientId || isNaN(parsedAmount) || parsedAmount <= 0) return;
-    setSaving(true);
-    await authFetch(`${BASE}/api/invoices`, {
-      method: "POST",
-      body: JSON.stringify({
-        clientId: Number(form.clientId),
-        caseId:   form.caseId ? Number(form.caseId) : null,
-        amount:   parsedAmount,
-        status:   form.status,
-        dueDate:  form.dueDate || null,
-        notes:    form.notes || null,
-      }),
-    });
-    await load();
-    setSaving(false);
-    setShowModal(false);
-  }
-
-  async function saveEdit() {
-    if (!editInvoice) return;
-    setSaving(true);
-    await authFetch(`${BASE}/api/invoices/${editInvoice.id}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        clientId: editInvoice.clientId,
-        caseId:   editInvoice.caseId,
-        amount:   editInvoice.amount,
-        status:   editInvoice.status,
-        dueDate:  editInvoice.dueDate || null,
-        notes:    editInvoice.notes || null,
-      }),
-    });
-    await load();
-    setSaving(false);
-    setEditInvoice(null);
-  }
-
-  async function remove(id: number) {
-    if (!confirm("حذف هذه الفاتورة؟")) return;
-    await authFetch(`${BASE}/api/invoices/${id}`, { method: "DELETE" });
-    await load();
-  }
-
-  const total   = invoices.reduce((s, i) => s + i.amount, 0);
-  const paid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
-  const pending = invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
+  const totalNet = invoices.reduce((s, i) => s + i.netToPay, 0);
+  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
+  const totalBalance = invoices.reduce((s, i) => s + i.balanceDue, 0);
+  const overdueCount = invoices.filter(i =>
+    i.dueDate && i.status !== "paid" && i.status !== "cancelled" && i.lockedAt &&
+    new Date(i.dueDate) < new Date()
+  ).length;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">الفوترة</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة الفواتير والمدفوعات</p>
         </div>
-        <Button onClick={openNew} className="rounded-lg gap-2 px-5">
+        <Button onClick={() => navigate("/billing/new")} className="rounded-lg gap-2 px-5">
           <Plus className="h-4 w-4" /> فاتورة جديدة
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-none shadow-sm bg-card">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 rounded-xl"><CreditCard className="h-5 w-5 text-blue-500" /></div>
-            <div>
-              <p className="text-xs text-muted-foreground">إجمالي الفواتير</p>
-              <p className="text-xl font-bold" dir="ltr">{total.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-card">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-green-500/10 rounded-xl"><CheckCircle className="h-5 w-5 text-green-500" /></div>
-            <div>
-              <p className="text-xs text-muted-foreground">المدفوع</p>
-              <p className="text-xl font-bold" dir="ltr">{paid.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-card">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-orange-500/10 rounded-xl"><Clock className="h-5 w-5 text-orange-500" /></div>
-            <div>
-              <p className="text-xs text-muted-foreground">في الانتظار</p>
-              <p className="text-xl font-bold" dir="ltr">{pending.toFixed(2)} <span className="text-sm font-normal">د.ت</span></p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard icon={<CreditCard className="h-5 w-5 text-blue-500" />}
+          bg="bg-blue-500/10" label="إجمالي الفواتير" value={totalNet.toFixed(3)} />
+        <KpiCard icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+          bg="bg-green-500/10" label="المدفوع" value={totalPaid.toFixed(3)} />
+        <KpiCard icon={<Clock className="h-5 w-5 text-orange-500" />}
+          bg="bg-orange-500/10" label="الرصيد المتبقي" value={totalBalance.toFixed(3)} />
+        <KpiCard icon={<AlertCircle className="h-5 w-5 text-red-500" />}
+          bg="bg-red-500/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 -translate-y-1/2 right-3 h-4 w-4 text-muted-foreground" />
+          <Input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="بحث بالحريف أو رقم الفاتورة..."
+            className="h-10 pr-9 bg-muted/50 border-border rounded-lg" />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="h-10 px-3 rounded-lg border border-border bg-muted/50 text-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="">كل الحالات</option>
+          {Object.entries(STATUS_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table */}
       <Card className="border-none shadow-md overflow-hidden">
         <CardContent className="p-0">
           <Table>
@@ -174,186 +120,96 @@ export default function Billing() {
                 <TableHead className="text-right py-3 font-semibold">رقم الفاتورة</TableHead>
                 <TableHead className="text-right py-3 font-semibold">الحريف</TableHead>
                 <TableHead className="text-right py-3 font-semibold hidden md:table-cell">القضية</TableHead>
-                <TableHead className="text-right py-3 font-semibold">المبلغ</TableHead>
+                <TableHead className="text-right py-3 font-semibold">خ.ض</TableHead>
+                <TableHead className="text-right py-3 font-semibold">الصافي</TableHead>
+                <TableHead className="text-right py-3 font-semibold hidden sm:table-cell">الرصيد</TableHead>
                 <TableHead className="text-right py-3 font-semibold">الحالة</TableHead>
-                <TableHead className="text-right py-3 font-semibold hidden sm:table-cell">الاستحقاق</TableHead>
-                <TableHead className="text-center py-3 font-semibold w-24">إجراءات</TableHead>
+                <TableHead className="text-right py-3 font-semibold hidden lg:table-cell">الاستحقاق</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading
-                ? Array.from({ length: 4 }).map((_, i) => (
+                ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <TableCell key={j} className="py-3"><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
-                : invoices.length === 0
+                : filtered.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-40 text-center">
+                    <TableCell colSpan={8} className="h-40 text-center">
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <TrendingUp className="h-10 w-10 opacity-20" />
                         <p>لا توجد فواتير</p>
+                        <Button size="sm" variant="outline" onClick={() => navigate("/billing/new")} className="gap-1.5">
+                          <Plus className="h-3.5 w-3.5" /> إنشاء فاتورة
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 )
-                : invoices.map(inv => (
-                  <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-mono text-sm py-3 text-muted-foreground">
-                      {inv.invoiceNumber ?? `#INV-${inv.id.toString().padStart(4, "0")}`}
-                    </TableCell>
-                    <TableCell className="font-semibold py-3">{inv.clientName}</TableCell>
-                    <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{inv.caseName || "—"}</TableCell>
-                    <TableCell className="py-3 font-bold" dir="ltr">{inv.amount.toFixed(2)} TND</TableCell>
-                    <TableCell className="py-3"><StatusBadge status={inv.status} /></TableCell>
-                    <TableCell className="py-3 text-muted-foreground hidden sm:table-cell">
-                      {inv.dueDate
-                        ? new Date(inv.dueDate + "T00:00:00").toLocaleDateString("ar-TN")
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => setEditInvoice(inv)}
-                          className="p-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors" title="تعديل">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => remove(inv.id)}
-                          className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="حذف">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground" title="تحميل">
-                          <Download className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              }
+                : filtered.map(inv => {
+                  const isOverdue = inv.dueDate && inv.status !== "paid" && inv.status !== "cancelled"
+                    && inv.lockedAt && new Date(inv.dueDate) < new Date();
+                  return (
+                    <TableRow key={inv.id}
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/billing/${inv.id}`)}>
+                      <TableCell className="font-mono text-sm py-3 text-primary font-semibold">
+                        {inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`}
+                      </TableCell>
+                      <TableCell className="py-3 font-semibold">{inv.clientName ?? "—"}</TableCell>
+                      <TableCell className="py-3 text-muted-foreground text-sm hidden md:table-cell">
+                        {inv.caseName ?? "—"}
+                      </TableCell>
+                      <TableCell className="py-3 font-mono text-sm" dir="ltr">
+                        {inv.subtotalHt.toFixed(3)}
+                      </TableCell>
+                      <TableCell className="py-3 font-mono font-bold" dir="ltr">
+                        {inv.netToPay.toFixed(3)} <span className="font-normal text-muted-foreground text-xs">د.ت</span>
+                      </TableCell>
+                      <TableCell className="py-3 font-mono text-sm hidden sm:table-cell" dir="ltr">
+                        <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-orange-600 dark:text-orange-400" : ""}>
+                          {inv.balanceDue.toFixed(3)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[inv.status] ?? "bg-muted"}`}>
+                          {STATUS_LABELS[inv.status] ?? inv.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 text-sm hidden lg:table-cell">
+                        {inv.dueDate ? (
+                          <span className={isOverdue ? "text-red-500 font-semibold" : "text-muted-foreground"}>
+                            {new Date(inv.dueDate + "T00:00:00").toLocaleDateString("ar-TN")}
+                          </span>
+                        ) : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      {/* New Invoice Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="فاتورة جديدة">
-        <div className="space-y-4">
-          <FormField label="الحريف *" htmlFor="inv-client">
-            <select id="inv-client" value={form.clientId}
-              onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))}
-              className={inputCls + " px-3 cursor-pointer"}>
-              <option value="">— اختر حريفاً —</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </FormField>
-
-          <FormField label="القضية (اختياري)" htmlFor="inv-case">
-            <select id="inv-case" value={form.caseId}
-              onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}
-              className={inputCls + " px-3 cursor-pointer"}>
-              <option value="">— بدون قضية —</option>
-              {cases.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.caseNumber ? `${c.caseNumber} — ` : ""}{c.title}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <FormField label="المبلغ (د.ت)" htmlFor="new-invoice-amount"
-            hint="استخدم اللوحة الرقمية على اليمين لإدخال المبلغ">
-            <Input
-              id="new-invoice-amount"
-              type="text"
-              inputMode="decimal"
-              placeholder="0.000"
-              dir="ltr"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              {...amountKeypad}
-              className={`h-14 text-2xl font-bold font-mono tracking-wider focus-visible:ring-primary text-left bg-muted/30 border-primary/30 rounded-lg ${amountKeypad.className ?? ""}`}
-            />
-          </FormField>
-
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="الحالة" htmlFor="inv-status">
-              <select id="inv-status" className={inputCls + " px-3 cursor-pointer"}
-                value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                <option value="pending">في الانتظار</option>
-                <option value="paid">مدفوعة</option>
-                <option value="cancelled">ملغاة</option>
-              </select>
-            </FormField>
-            <FormField label="تاريخ الاستحقاق" htmlFor="inv-due">
-              <Input id="inv-due" type="date" className={inputCls} dir="ltr"
-                value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <FormField label="بيان الأتعاب" htmlFor="inv-desc">
-            <SmartTextarea id="inv-desc" rows={2} placeholder="تفصيل الخدمات القانونية المقدمة..." aiContext="بيان أتعاب محامي" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
-          </FormField>
-
-          <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={saveNew} disabled={saving || !form.clientId}>
-              {saving ? "جارٍ الحفظ..." : "حفظ الفاتورة"}
-            </Button>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">إلغاء</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Edit Invoice Modal */}
-      {editInvoice && (
-        <Modal open={!!editInvoice} onClose={() => setEditInvoice(null)}
-          title={`تعديل الفاتورة ${editInvoice.invoiceNumber ?? `#INV-${editInvoice.id.toString().padStart(4, "0")}`}`}>
-          <div className="space-y-4">
-            <div className="p-4 bg-muted/30 rounded-lg space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">الحريف:</span>
-                <span className="font-semibold">{editInvoice.clientName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">المبلغ:</span>
-                <span className="font-bold font-mono">{editInvoice.amount.toFixed(2)} د.ت</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">التاريخ:</span>
-                <span>{new Date(editInvoice.createdAt).toLocaleDateString("ar-TN")}</span>
-              </div>
-            </div>
-
-            <FormField label="تغيير الحالة" htmlFor="edit-status">
-              <select id="edit-status" className={inputCls + " px-3 cursor-pointer"}
-                value={editInvoice.status}
-                onChange={e => setEditInvoice(inv => inv ? { ...inv, status: e.target.value } : null)}>
-                <option value="pending">في الانتظار</option>
-                <option value="paid">مدفوعة</option>
-                <option value="cancelled">ملغاة</option>
-              </select>
-            </FormField>
-
-            <FormField label="تاريخ الاستحقاق" htmlFor="edit-due">
-              <Input id="edit-due" type="date" className={inputCls} dir="ltr"
-                value={editInvoice.dueDate ?? ""}
-                onChange={e => setEditInvoice(inv => inv ? { ...inv, dueDate: e.target.value || null } : null)} />
-            </FormField>
-
-            <FormField label="ملاحظات" htmlFor="edit-notes">
-              <SmartTextarea id="edit-notes" rows={2} aiContext="ملاحظات فاتورة" value={editInvoice.notes ?? ""} onChange={v => setEditInvoice(inv => inv ? { ...inv, notes: v || null } : null)} />
-            </FormField>
-
-            <div className="flex gap-3 pt-2">
-              <Button className="flex-1" onClick={saveEdit} disabled={saving}>
-                {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
-              </Button>
-              <Button variant="outline" onClick={() => setEditInvoice(null)} className="px-6">إلغاء</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
+  );
+}
+
+function KpiCard({ icon, bg, label, value, unit = " د.ت" }: {
+  icon: React.ReactNode; bg: string; label: string; value: string; unit?: string;
+}) {
+  return (
+    <Card className="border-none shadow-sm bg-card">
+      <CardContent className="p-4 flex items-center gap-4">
+        <div className={`p-3 ${bg} rounded-xl shrink-0`}>{icon}</div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-bold font-mono" dir="ltr">{value}<span className="text-sm font-normal text-muted-foreground">{unit}</span></p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
