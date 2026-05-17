@@ -5,7 +5,7 @@ import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,6 +74,7 @@ export default function CaseDetail() {
   const [confForm, setConfForm] = useState({ content: "" });
   const [relForm, setRelForm] = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
+  const [activeTab, setActiveTab] = useState("procedures");
   const [saving, setSaving] = useState(false);
   const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -194,21 +195,40 @@ export default function CaseDetail() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="procedures">
-        <TabsList className="flex-wrap h-auto gap-1 bg-muted/40 p-1.5 rounded-xl mb-2">
-          <TabsTrigger value="procedures" className="rounded-lg text-xs gap-1"><GitBranch className="h-3.5 w-3.5" />الإجراءات</TabsTrigger>
-          <TabsTrigger value="deadlines" className="rounded-lg text-xs gap-1 relative">
-            <Clock className="h-3.5 w-3.5" />الآجال
-            {overdueCount > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">{overdueCount}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="team" className="rounded-lg text-xs gap-1"><Users className="h-3.5 w-3.5" />الفريق</TabsTrigger>
-          <TabsTrigger value="relations" className="rounded-lg text-xs gap-1"><Link2 className="h-3.5 w-3.5" />قضايا مرتبطة</TabsTrigger>
-          <TabsTrigger value="conf-notes" className="rounded-lg text-xs gap-1"><Lock className="h-3.5 w-3.5" />ملاحظات سرية</TabsTrigger>
-          <TabsTrigger value="overview" className="rounded-lg text-xs gap-1"><StickyNote className="h-3.5 w-3.5" />ملاحظات</TabsTrigger>
-        </TabsList>
+      <div>
+        <div className="border-b border-border">
+          <div className="flex gap-1 overflow-x-auto no-scrollbar">
+            {([
+              { id: "procedures", label: "الإجراءات",     icon: <GitBranch className="h-4 w-4" /> },
+              { id: "deadlines",  label: "الآجال",        icon: <Clock className="h-4 w-4" />,    badge: overdueCount > 0 ? overdueCount : 0, badgeColor: "bg-red-500" },
+              { id: "team",       label: "الفريق",        icon: <Users className="h-4 w-4" /> },
+              { id: "relations",  label: "قضايا مرتبطة", icon: <Link2 className="h-4 w-4" /> },
+              { id: "conf-notes", label: "ملاحظات سرية", icon: <Lock className="h-4 w-4" /> },
+              { id: "overview",   label: "ملاحظات",      icon: <StickyNote className="h-4 w-4" /> },
+            ] as { id: string; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string }[]).map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                )}>
+                {tab.icon}
+                {tab.label}
+                {tab.badge != null && tab.badge > 0 && (
+                  <span className={`text-[10px] ${tab.badgeColor ?? "bg-primary/20 text-primary"} ${tab.badgeColor ? "text-white" : ""} rounded-full px-1.5 py-0.5 font-bold leading-none`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4">
 
         {/* PROCEDURES */}
-        <TabsContent value="procedures" className="mt-0">
+        {activeTab === "procedures" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">الإجراءات القانونية</h3>
@@ -245,10 +265,10 @@ export default function CaseDetail() {
               </div>
             )}
           </CardContent></Card>
-        </TabsContent>
+        )}
 
         {/* DEADLINES */}
-        <TabsContent value="deadlines" className="mt-0">
+        {activeTab === "deadlines" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">الآجال القانونية</h3>
@@ -284,10 +304,10 @@ export default function CaseDetail() {
               </div>
             )}
           </CardContent></Card>
-        </TabsContent>
+        )}
 
         {/* TEAM */}
-        <TabsContent value="team" className="mt-0">
+        {activeTab === "team" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">فريق القضية</h3>
@@ -312,10 +332,10 @@ export default function CaseDetail() {
               </div>
             )}
           </CardContent></Card>
-        </TabsContent>
+        )}
 
         {/* RELATIONS */}
-        <TabsContent value="relations" className="mt-0">
+        {activeTab === "relations" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">القضايا المرتبطة</h3>
@@ -343,10 +363,10 @@ export default function CaseDetail() {
               </div>
             )}
           </CardContent></Card>
-        </TabsContent>
+        )}
 
         {/* CONFIDENTIAL NOTES */}
-        <TabsContent value="conf-notes" className="mt-0">
+        {activeTab === "conf-notes" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -374,10 +394,10 @@ export default function CaseDetail() {
               </div>
             )}
           </CardContent></Card>
-        </TabsContent>
+        )}
 
         {/* OVERVIEW */}
-        <TabsContent value="overview" className="mt-0">
+        {activeTab === "overview" && (
           <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-4">
             {caseData.description && (
               <div><h4 className="text-sm font-semibold text-muted-foreground mb-2">الوصف</h4><p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl">{caseData.description}</p></div>
@@ -389,8 +409,10 @@ export default function CaseDetail() {
               <div className="text-center py-10 text-muted-foreground"><StickyNote className="h-8 w-8 mx-auto mb-2 opacity-20" /><p>لا توجد ملاحظات</p></div>
             )}
           </CardContent></Card>
-        </TabsContent>
-      </Tabs>
+        )}
+
+        </div>
+      </div>
 
       {/* MODAL: Procedure */}
       <Modal open={modal === "procedure"} onClose={() => setModal(null)} title="إضافة إجراء قانوني">
