@@ -569,7 +569,7 @@ export default function ClientPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">السجل الزمني</h2>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs"
+              <Button size="sm" className="gap-1.5 text-xs"
                 onClick={() => { setNoteText(""); setNoteModal(true); }}>
                 <Plus className="h-3.5 w-3.5" /> إضافة ملاحظة
               </Button>
