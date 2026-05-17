@@ -235,7 +235,14 @@ export default function InvoiceForm() {
 
               <FormField label="القضية (اختياري)" htmlFor={`${uid}-case`}>
                 <SelectNative id={`${uid}-case`} value={caseId}
-                  onChange={e => setCaseId(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setCaseId(val);
+                    if (val) {
+                      const matched = cases.find(c => String(c.id) === val);
+                      if (matched) setClientId(String(matched.clientId));
+                    }
+                  }}
                   className={inputCls + " w-full px-2 cursor-pointer"}>
                   <option value="">— بدون قضية —</option>
                   {filteredCases.map(c => (
