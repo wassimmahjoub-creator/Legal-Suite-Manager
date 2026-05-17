@@ -325,7 +325,7 @@ export default function InvoiceForm() {
                         </td>
                         <td className={cellCls}>
                           <button onClick={() => removeLine(idx)}
-                            className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            className="p-1 rounded text-destructive hover:bg-destructive/10 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </td>
