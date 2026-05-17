@@ -173,6 +173,12 @@
 .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
 .rbc-time-content::-webkit-scrollbar-thumb { background: rgba(212,160,23,0.3); border-radius: 2px; }
 
+/* Equal column widths in week/day view — same proportion as month view */
+.rbc-time-header-content .rbc-header {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
 /* ── RTL: لنده أقصى اليمين، الأحد أقصى اليسار ──────────── */
 
 /* vue mois — entête des jours */
