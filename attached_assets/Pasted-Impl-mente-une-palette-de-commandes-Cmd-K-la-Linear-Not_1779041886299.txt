@@ -1,0 +1,90 @@
+Implémente une palette de commandes Cmd-K à la Linear / Notion, unifiée sur toutes les entités.
+
+LIBRAIRIE :
+Utilise cmdk (https://cmdk.paco.me) pour la base UI. Compatible RTL.
+
+ÉTAPE 1 — UI
+Crée src/components/CommandPalette.tsx :
+- Modal overlay centré, max-width 640px, fond semi-transparent derrière.
+- Input de recherche en haut avec placeholder "ابحث... / Rechercher..." et indicateur de raccourci.
+- Liste de résultats scrollable en dessous.
+- Footer avec hint clavier : ↑↓ naviguer, ⏎ ouvrir, esc fermer.
+
+ÉTAPE 2 — RACCOURCI
+Hook useCommandPaletteShortcut() qui écoute window keydown :
+- Cmd+K (Mac) ou Ctrl+K (Windows/Linux) → ouvre la palette
+- Doit fonctionner même quand un input est focus
+
+Bouton visible dans la TopBar : "Rechercher (⌘K)" qui ouvre aussi la palette.
+
+ÉTAPE 3 — BACKEND
+Endpoint GET /api/search?q=<query>&limit=20 qui interroge en parallèle :
+- clients : LIKE sur name_ar, name_fr, tax_id
+- cases : LIKE sur case_number, title_ar, title_fr
+- invoices : LIKE sur invoice_number
+- documents : LIKE sur filename, title
+- courts : LIKE sur name_ar, name_fr
+- opponents : LIKE sur name_ar, name_fr
+- events : LIKE sur title, dans une fenêtre de ±90 jours autour de today
+
+Renvoie un format unifié :
+{
+  results: [
+    {
+      type: 'client' | 'case' | 'invoice' | 'document' | 'court' | 'opponent' | 'event',
+      id: string,
+      title: string,            // ce qui matche
+      subtitle?: string,        // contexte
+      icon?: string,            // nom d'icône lucide
+      href: string,             // route à ouvrir
+      matchedField?: string     // pour surlignage
+    }
+  ]
+}
+
+Limite à 5 résultats max par type pour rester lisible.
+
+ÉTAPE 4 — RÉSULTATS GROUPÉS
+Dans la palette, groupe les résultats par type avec une heading :
+- "Dossiers (3)"
+- "Clients (2)"
+- "Factures (1)"
+- etc.
+
+Chaque ligne :
+- Icône à gauche
+- Titre avec surlignage du match (bold sur les caractères matched)
+- Subtitle en text-muted text-sm en dessous
+
+ÉTAPE 5 — COMMANDES D'ACTION
+En plus des résultats data, ajoute une section "Actions" en bas (toujours visible si la query est vide ou matche) avec :
+- + Nouveau dossier → navigate('/cases/new')
+- + Nouveau client → navigate('/clients/new')
+- + Nouvelle facture → navigate('/invoices/new')
+- + Nouvel événement → ouvre modal agenda
+- Aller à l'agenda → navigate('/agenda')
+- Aller aux factures → navigate('/invoices')
+- Changer la langue → setLocale(autre)
+
+ÉTAPE 6 — HISTORIQUE
+Stocke dans localStorage les 5 derniers résultats cliqués (key: 'commandpalette.recent', max 5, FIFO).
+Quand l'input est vide, affiche "Récents" suivi de ces 5 entrées.
+
+ÉTAPE 7 — DÉBOUNCE ET LOADING
+- Debounce 200 ms sur l'input avant de fire la requête.
+- Pendant la requête : skeleton sur 3-4 lignes.
+- Pas de résultat : empty state mini ("Aucun résultat pour '...' • Essayez un autre terme").
+
+NAVIGATION CLAVIER
+cmdk le fait nativement mais vérifie :
+- ↑↓ naviguent entre items
+- Enter ouvre l'item
+- Esc ferme la palette
+- Tab/Shift+Tab fonctionnent
+- Cmd+K alors qu'elle est ouverte la ferme
+
+LIVRABLES :
+- <CommandPalette /> monté dans le layout root
+- Hook useCommandPaletteShortcut
+- Endpoint /api/search avec tests
+- Capture en AR et en FR montrant 3 groupes de résultats
