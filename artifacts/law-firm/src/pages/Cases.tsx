@@ -1,57 +1,27 @@
 import { SelectNative } from "@/components/SelectNative";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
 import { useListCases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Filter, Briefcase, Archive, Hash, ArrowRight } from "lucide-react";
+import { Plus, Search, Filter, Archive, Hash, ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Modal, FormField } from "@/components/Modal";
-import { SmartTextarea } from "@/components/SmartTextarea";
-import { MicButton } from "@/components/MicButton";
-import { CourtSelect } from "@/components/CourtSelect";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyCasesIllustration } from "@/components/illustrations/EmptyCases";
-
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+import { CaseWizard } from "@/components/cases/CaseWizard";
 
 export default function Cases() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewArchived, setViewArchived] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({
-    title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
-    nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "",
-    opponentName: "", opponentLawyer: "",
-  });
-  const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
-  const [saving, setSaving] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [, navigate] = useLocation();
   const { data: cases, isLoading, refetch } = useListCases();
-
-  async function openNewModal() {
-    const rc = await authFetch(`${BASE}/api/clients`);
-    if (rc.ok) setClients(await rc.json());
-    setForm({ title: "", clientId: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" });
-    setShowModal(true);
-  }
-
-  async function saveCase() {
-    if (!form.title || !form.clientId) return;
-    setSaving(true);
-    await authFetch(`${BASE}/api/cases`, {
-      method: "POST",
-      body: JSON.stringify({ ...form, clientId: Number(form.clientId), nextHearing: form.nextHearing || undefined }),
-    });
-    refetch(); setSaving(false); setShowModal(false);
-  }
 
   const filteredCases = cases?.filter((c: any) => {
     if (viewArchived) {
@@ -63,9 +33,6 @@ export default function Cases() {
     if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.clientName?.includes(search) && !(c.caseNumber ?? "").includes(search) && !(c.courtCaseNumber ?? "").includes(search)) return false;
     return true;
   });
-
-  const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
-  const STAGES = ["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"];
 
   return (
     <div className="space-y-6">
@@ -91,7 +58,7 @@ export default function Cases() {
               القضايا المؤرشفة
             </Button>
           )}
-          <Button onClick={openNewModal} className="rounded-lg gap-2 px-5">
+          <Button onClick={() => setShowWizard(true)} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />
             قضية جديدة
           </Button>
@@ -154,7 +121,7 @@ export default function Cases() {
               {isLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 7 }).map((_, j) => (
                         <TableCell key={j} className="py-3"><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
@@ -213,107 +180,16 @@ export default function Cases() {
         </CardContent>
       </Card>
 
-      {/* New Case Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="قضية جديدة" size="lg">
-        <div className="space-y-4">
-          <FormField label="عنوان القضية *" htmlFor="case-title">
-            <Input id="case-title" placeholder="مثال: قضية ميراث عائلة بن علي" className={inputCls}
-              value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-          </FormField>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="الحريف *" htmlFor="case-client">
-              <SelectNative id="case-client" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
-                <option value="">اختر حريفاً...</option>
-                {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
-              </SelectNative>
-            </FormField>
-            <FormField label="المحامي المسؤول" htmlFor="case-lawyer">
-              <Input id="case-lawyer" placeholder="اسم المحامي" className={inputCls}
-                value={form.lawyer} onChange={e => setForm(f => ({ ...f, lawyer: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="المحكمة" htmlFor="case-court">
-              <CourtSelect
-                value={form.court}
-                onChange={v => setForm(f => ({ ...f, court: v }))}
-              />
-            </FormField>
-            <FormField label="الدائرة" htmlFor="case-div">
-              <Input id="case-div" placeholder="الدائرة الأولى" className={inputCls}
-                value={form.division} onChange={e => setForm(f => ({ ...f, division: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="عدد القضية بالمحكمة" htmlFor="case-court-num"
-              hint="العدد الذي خصصته المحكمة">
-              <Input id="case-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
-                value={form.courtCaseNumber}
-                onChange={e => setForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
-            </FormField>
-            <FormField label="مرجع الحريف" htmlFor="case-client-ref"
-              hint="رقم الملف لدى الحريف نفسه">
-              <Input id="case-client-ref" placeholder="مرجع داخلي للحريف" className={inputCls}
-                value={form.clientFileRef}
-                onChange={e => setForm(f => ({ ...f, clientFileRef: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="اسم الخصم" htmlFor="case-opponent">
-              <Input id="case-opponent" placeholder="الاسم الكامل للخصم" className={inputCls}
-                value={form.opponentName}
-                onChange={e => setForm(f => ({ ...f, opponentName: e.target.value }))} />
-            </FormField>
-            <FormField label="محامي الخصم" htmlFor="case-opp-lawyer">
-              <Input id="case-opp-lawyer" placeholder="اسم محامي الطرف الآخر" className={inputCls}
-                value={form.opponentLawyer}
-                onChange={e => setForm(f => ({ ...f, opponentLawyer: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="الحالة" htmlFor="case-status">
-              <SelectNative id="case-status" className={inputCls + " px-3 cursor-pointer"}
-                value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                <option value="active">نشطة</option>
-                <option value="pending">في الانتظار</option>
-                <option value="suspended">موقوفة</option>
-                <option value="closed">مغلقة</option>
-              </SelectNative>
-            </FormField>
-            <FormField label="المرحلة الإجرائية" htmlFor="case-stage">
-              <SelectNative id="case-stage" className={inputCls + " px-3 cursor-pointer"}
-                value={form.procedureStage} onChange={e => setForm(f => ({ ...f, procedureStage: e.target.value }))}>
-                {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </SelectNative>
-            </FormField>
-          </div>
-
-          <FormField label="موعد الجلسة القادمة" htmlFor="case-hearing">
-            <Input id="case-hearing" type="date" className={inputCls} dir="ltr"
-              value={form.nextHearing} onChange={e => setForm(f => ({ ...f, nextHearing: e.target.value }))} />
-          </FormField>
-
-          <FormField label="وصف القضية" htmlFor="case-desc">
-            <SmartTextarea id="case-desc" rows={3} placeholder="وصف مختصر للقضية والوقائع..."
-              aiContext="وصف قضية قانونية"
-              value={form.description} onChange={v => setForm(f => ({ ...f, description: v }))} />
-          </FormField>
-
-          <div className="flex gap-3 pt-2">
-            <Button className="flex-1" disabled={saving || !form.title || !form.clientId} onClick={saveCase}>
-              {saving ? "جارٍ الحفظ..." : "حفظ القضية"}
-            </Button>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="px-6">
-              إلغاء
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Wizard */}
+      <CaseWizard
+        open={showWizard}
+        onClose={() => setShowWizard(false)}
+        onCreated={(id) => {
+          setShowWizard(false);
+          refetch();
+          navigate(`/cases/${id}`);
+        }}
+      />
     </div>
   );
 }

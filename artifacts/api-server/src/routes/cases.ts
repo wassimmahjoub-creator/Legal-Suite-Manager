@@ -25,6 +25,24 @@ const caseFields = {
   description: casesTable.description,
   notes: casesTable.notes,
   procedureStage: casesTable.procedureStage,
+  // Wizard fields
+  caseType: casesTable.caseType,
+  litigationDegree: casesTable.litigationDegree,
+  procedureType: casesTable.procedureType,
+  casePriority: casesTable.casePriority,
+  feeMethod: casesTable.feeMethod,
+  agreedFees: casesTable.agreedFees,
+  hourlyRate: casesTable.hourlyRate,
+  percentage: casesTable.percentage,
+  percentageBasis: casesTable.percentageBasis,
+  disputeValue: casesTable.disputeValue,
+  clientSource: casesTable.clientSource,
+  judgeName: casesTable.judgeName,
+  firstHearingDate: casesTable.firstHearingDate,
+  openedAt: casesTable.openedAt,
+  confidentialityLevel: casesTable.confidentialityLevel,
+  internalNotes: casesTable.internalNotes,
+  draftLastStep: casesTable.draftLastStep,
   archivedAt: casesTable.archivedAt,
   deletedAt: casesTable.deletedAt,
   createdAt: casesTable.createdAt,
@@ -39,6 +57,25 @@ function extractExtras(body: Record<string, unknown>) {
     opponentName: str("opponentName"),
     opponentLawyer: str("opponentLawyer"),
     judgmentText: str("judgmentText"),
+    // Wizard fields
+    caseType: str("caseType"),
+    litigationDegree: str("litigationDegree"),
+    procedureType: str("procedureType"),
+    casePriority: str("casePriority"),
+    feeMethod: str("feeMethod"),
+    agreedFees: str("agreedFees"),
+    hourlyRate: str("hourlyRate"),
+    percentage: str("percentage"),
+    percentageBasis: str("percentageBasis"),
+    disputeValue: str("disputeValue"),
+    clientSource: str("clientSource"),
+    judgeName: str("judgeName"),
+    firstHearingDate: str("firstHearingDate"),
+    openedAt: str("openedAt"),
+    confidentialityLevel: str("confidentialityLevel"),
+    internalNotes: str("internalNotes"),
+    draftData: str("draftData"),
+    draftLastStep: typeof body["draftLastStep"] === "number" ? body["draftLastStep"] as number : undefined,
   };
 }
 
@@ -109,6 +146,36 @@ router.put("/cases/:id", async (req, res) => {
   if (!row) return res.status(404).json({ error: "Not found" });
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.json({ ...row, clientName: client?.name ?? "" });
+});
+
+// Partial update — used by wizard, CaseDetail tabs, draft saves
+router.patch("/cases/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const b = req.body as Record<string, unknown>;
+
+  const set: Record<string, unknown> = {};
+  const strFields = [
+    "status", "title", "court", "division", "lawyer", "notes", "description",
+    "procedureStage", "courtCaseNumber", "clientFileRef", "officeRef",
+    "opponentName", "opponentLawyer", "judgmentText",
+    "caseType", "litigationDegree", "procedureType", "casePriority",
+    "feeMethod", "agreedFees", "hourlyRate", "percentage", "percentageBasis",
+    "disputeValue", "clientSource", "judgeName", "firstHearingDate", "openedAt",
+    "confidentialityLevel", "internalNotes", "draftData",
+  ];
+  for (const f of strFields) {
+    if (f in b) set[f] = b[f] !== undefined ? b[f] : null;
+  }
+  if ("clientId" in b) set["clientId"] = Number(b["clientId"]);
+  if ("draftLastStep" in b) set["draftLastStep"] = Number(b["draftLastStep"]);
+  if ("nextHearing" in b) set["nextHearing"] = b["nextHearing"] ?? null;
+
+  if (Object.keys(set).length === 0) { res.status(400).json({ error: "No fields" }); return; }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [row] = await db.update(casesTable).set(set as any).where(eq(casesTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  res.json(row);
 });
 
 router.patch("/cases/:id/archive", async (req, res): Promise<void> => {

@@ -11,6 +11,8 @@ export const opponentsTable = pgTable("opponents", {
   address: text("address"),
   notes: text("notes"),
   caseId: integer("case_id").references(() => casesTable.id),
+  capacity: text("capacity"),
+  opponentLawyerPhone: text("opponent_lawyer_phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

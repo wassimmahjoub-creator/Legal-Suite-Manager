@@ -1,0 +1,252 @@
+Refonte du formulaire de création de qadhiya en wizard 4 étapes avec auto-save, et enrichissement métier tunisien complet.
+
+IMPORTANT - PRINCIPES DE NON-RÉGRESSION :
+- Ne supprime AUCUN champ existant. Les renomme/réorganise seulement.
+- Ne supprime AUCUNE qadhiya existante. Migre les données.
+- Si la table `cases` a déjà certains champs proposés ci-dessous (ex: titre, client_id), réutilise-les. Ne crée pas de doublons.
+- Avant chaque ALTER TABLE, vérifie l'existence de la colonne (IF NOT EXISTS).
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — EXTENSION DU SCHÉMA
+═══════════════════════════════════════════════════════
+
+Migration 1 : Extension table `cases`
+
+Ajoute ces colonnes (toutes nullable au départ pour permettre le backfill) :
+
+- case_type (enum) : civil, commercial, real_estate, labor, criminal, administrative, tax, family
+  Libellés AR : مدني، تجاري، عقاري، شغل، جزائي، إداري، جبائي، أحوال شخصية
+
+- litigation_degree (enum) : first_instance, appeal, cassation
+  Libellés AR : ابتدائي، استئناف، تعقيب
+  ⚠️ ATTENTION : Ce champ représente le DEGRÉ INITIAL d'ouverture du dossier dans le système.
+  Le suivi des transitions entre stades (passage de first_instance à appeal, etc.) est géré par la table case_stages livrée en T18. Ne pas confondre.
+  À la création d'une qadhiya, on insère AUSSI une ligne dans case_stages avec stage = litigation_degree.
+
+- procedure_type (enum) : main_action, urgent_request, petition_order, opposition, appeal, cassation, execution
+  Libellés AR : دعوى أصلية، مطلب استعجالي، إذن على عريضة، اعتراض، استئناف، تعقيب، تنفيذ
+
+- case_priority (enum, default 'normal') : normal, important, urgent
+  Libellés AR : عادية، مهمة، عاجلة
+
+- financial_status (enum, default 'not_invoiced') : not_invoiced, partially_invoiced, paid, overdue
+  Libellés AR : غير مفوتر، مفوتر جزئياً، مدفوع، متأخر
+  ⚠️ Ce champ doit être DÉRIVÉ AUTOMATIQUEMENT depuis la table invoices, pas saisi manuellement.
+  Crée une vue ou un trigger qui recalcule financial_status à chaque insert/update sur invoices.
+
+- fee_method (enum) : fixed, per_hearing, percentage, hourly
+  Libellés AR : مبلغ قار، بالجلسة، بالنسبة، بالساعة
+
+- agreed_fees (numeric, default 0) — الأتعاب المتفق عليها
+- amount_paid (numeric, default 0, generated) — المبلغ المدفوع, dérivé de invoices
+- dispute_value (numeric, nullable) — قيمة النزاع
+- client_source (enum) : referral, returning_client, facebook, google, partner, other
+  Libellés AR : توصية، عميل سابق، Facebook، Google، شريك، آخر
+
+- chamber (text, nullable) — الدائرة القضائية (texte libre, complète CourtSelect)
+- judge_name (text, nullable) — القاضي المتعهد
+- court_case_number (text, nullable) — عدد القضية بالمحكمة (différent du case_number interne)
+- first_hearing_date (date, nullable) — تاريخ أول جلسة
+- next_hearing_date (date, nullable) — الجلسة القادمة (DÉRIVÉ de la table events, ne pas saisir à la main)
+
+- confidentiality_level (enum, default 'normal') : normal, confidential, sensitive
+  Libellés AR : عادي، سري، حساس
+- internal_notes (text, nullable) — ملاحظات داخلية (non visible au portail client P3)
+
+- status doit accepter la valeur 'draft' (vérifie l'enum existant)
+- draft_data (jsonb, nullable) — snapshot du wizard pour reprise
+- draft_last_step (smallint, default 1) — étape où l'utilisateur s'est arrêté
+
+═══════════════════════════════════════════════════════
+Migration 2 : Table case_opponents (multi-adversaires)
+═══════════════════════════════════════════════════════
+
+CREATE TABLE case_opponents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  opponent_id uuid REFERENCES opponents(id) ON DELETE RESTRICT,
+  -- ⚠️ opponent_id est FK vers la table opponents existante (T2/T16 original).
+  -- Ceci permet la réutilisation d'un opponent sur plusieurs dossiers,
+  -- nécessaire pour la vérification de conflits d'intérêts (T19 P3).
+  capacity text, -- صفة الخصم : ex "مدعى عليه", "مدعي", "متدخل"
+  opponent_lawyer_name text, -- محامي الخصم
+  opponent_lawyer_phone text, -- هاتف محامي الخصم
+  notes text, -- ملاحظات
+  position smallint DEFAULT 0, -- ordre d'affichage
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_case_opponents_case ON case_opponents(case_id);
+CREATE INDEX idx_case_opponents_opponent ON case_opponents(opponent_id);
+
+═══════════════════════════════════════════════════════
+Migration 3 : Table case_team (équipe interne)
+═══════════════════════════════════════════════════════
+
+CREATE TABLE case_team (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  role enum ('responsible', 'assigned', 'collaborator'),
+  -- responsible = المحامي المسؤول (un seul par dossier)
+  -- assigned = المكلف بالملف (un seul par dossier)
+  -- collaborator = الفريق المتابع (plusieurs possibles)
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(case_id, user_id, role)
+);
+
+CREATE INDEX idx_case_team_case ON case_team(case_id);
+CREATE INDEX idx_case_team_user ON case_team(user_id);
+
+-- Contrainte : un seul 'responsible' et un seul 'assigned' par dossier
+CREATE UNIQUE INDEX idx_case_team_one_responsible
+  ON case_team(case_id) WHERE role = 'responsible';
+CREATE UNIQUE INDEX idx_case_team_one_assigned
+  ON case_team(case_id) WHERE role = 'assigned';
+
+═══════════════════════════════════════════════════════
+Migration 4 : Backfill des données existantes
+═══════════════════════════════════════════════════════
+
+Pour chaque qadhiya existante :
+1. Si elle a un champ opponent_id ou opponent_name dans cases (ancien modèle), migre-le vers case_opponents avec une ligne par dossier, puis drop la colonne legacy. Garde une trace dans une table migration_log au cas où.
+2. Si elle a un champ responsible_lawyer_id, migre-le vers case_team avec role='responsible', puis drop.
+3. case_type, litigation_degree etc. restent NULL pour les anciennes qadhiyat — l'utilisateur les complétera à la prochaine édition. Affiche un badge "À compléter" sur la liste pour ces dossiers.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — WIZARD UI (4 étapes)
+═══════════════════════════════════════════════════════
+
+Crée src/components/cases/CaseWizard.tsx avec un stepper visuel en haut :
+[1.معلومات الملف] ─── [2.المحكمة والإجراء] ─── [3.الأطراف] ─── [4.المالية]
+
+Cliquer sur une étape franchie y ramène. Cliquer sur une étape future est désactivé.
+
+───────────────────────────────────────
+ÉTAPE 1 — معلومات الملف (Identification)
+───────────────────────────────────────
+
+Champs :
+- عنوان الملف (title) — REQUIS
+- المرجع الداخلي (case_number interne) — auto-généré, modifiable
+- الحريف (client_id) — REQUIS — autocomplete + bouton "+ حريف جديد" qui ouvre la fiche client (T3) dans une side-modal
+- نوع الملف (case_type) — REQUIS — select des 8 valeurs
+- تاريخ فتح الملف (opened_at) — REQUIS — default today
+- مصدر الحريف (client_source) — OPTIONNEL — select des 6 valeurs
+- أولوية الملف (case_priority) — OPTIONNEL — default "عادية"
+
+Validation : title + client_id + case_type + opened_at requis pour passer à l'étape 2.
+
+───────────────────────────────────────
+ÉTAPE 2 — المحكمة والإجراء (Procédure)
+───────────────────────────────────────
+
+Champs :
+- درجة التقاضي (litigation_degree) — REQUIS — radio buttons (3 options) avec ARIA labels
+- نوع الإجراء (procedure_type) — REQUIS — select des 7 valeurs
+- المحكمة (court_id) — REQUIS — <CourtSelect /> (autocomplete livré en T2)
+- الدائرة القضائية (chamber) — OPTIONNEL — texte libre (les chambres ne sont pas toujours standardisées)
+- القاضي المتعهد (judge_name) — OPTIONNEL — texte libre
+- عدد القضية بالمحكمة (court_case_number) — OPTIONNEL
+- تاريخ أول جلسة (first_hearing_date) — OPTIONNEL — date picker
+
+⚠️ ATTENTION : ne pas créer de champ "stade procédural actuel" séparé.
+La litigation_degree saisie ici est utilisée pour créer la ligne initiale dans case_stages (table livrée en T18). Les transitions ultérieures se font UNIQUEMENT via le stepper de T18.
+
+Validation : litigation_degree + procedure_type + court_id requis.
+
+───────────────────────────────────────
+ÉTAPE 3 — الأطراف (Parties)
+───────────────────────────────────────
+
+Section "الخصوم" :
+- Liste de blocs adversaire (au moins 1 requis).
+- Pour chaque bloc :
+  - اسم الخصم (opponent_id) — autocomplete sur table opponents OU saisie libre qui crée un nouvel opponent
+  - صفة الخصم (capacity) — texte libre avec suggestions : "مدعى عليه", "مدعي", "متدخل", "ضامن"
+  - محامي الخصم (opponent_lawyer_name) — texte libre
+  - هاتف محامي الخصم (opponent_lawyer_phone) — texte libre, format tel
+  - ملاحظات (notes) — textarea courte
+- Bouton "+ إضافة خصم" en bas pour ajouter un bloc supplémentaire.
+- Bouton X sur chaque bloc (sauf le premier) pour retirer.
+- Drag handle pour réordonner si plus de 2 adversaires.
+
+Section "الفريق الداخلي" :
+- المحامي المسؤول (responsible) — REQUIS — select des users du cabinet (un seul)
+- المكلف بالملف (assigned) — OPTIONNEL — select des users (un seul, peut être le même que responsible)
+- الفريق المتابع (collaborators) — OPTIONNEL — multi-select des users
+
+Validation : au moins 1 adversaire avec nom + responsible requis.
+
+───────────────────────────────────────
+ÉTAPE 4 — المالية والسرية (Financier)
+───────────────────────────────────────
+
+Section "الأتعاب" :
+- طريقة احتساب الأتعاب (fee_method) — REQUIS — select des 4 valeurs
+- الأتعاب المتفق عليها (agreed_fees) — REQUIS si fee_method = 'fixed' ou 'per_hearing'
+  - Pour 'hourly' : champ "التعرفة بالساعة" (hourly_rate)
+  - Pour 'percentage' : champ "النسبة %" (percentage) + "أساس الاحتساب" (texte libre)
+- قيمة النزاع (dispute_value) — OPTIONNEL — montant
+
+Section "السرية والملاحظات" :
+- درجة الحساسية (confidentiality_level) — REQUIS — radio (3 options) — default "عادي"
+- ملاحظات داخلية (internal_notes) — OPTIONNEL — textarea
+  - Sous le champ, mention en gris : "⚠️ هذه الملاحظات لا تظهر للحريف في بوابة العميل"
+
+Validation : fee_method + (agreed_fees ou hourly_rate selon méthode) + confidentiality_level requis.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — AUTO-SAVE ET BROUILLONS
+═══════════════════════════════════════════════════════
+
+Hook useAutoSaveDraft(wizardData, currentStep) :
+- Debounce 30 secondes après dernier changement.
+- PATCH /api/cases/draft avec { ...formData, draft_last_step: currentStep, status: 'draft' }.
+- À chaque transition d'étape, force-save (pas de debounce).
+- Toast discret en bas à droite "💾 تم حفظ المسودة" disparaissant après 2 s.
+- Si erreur réseau, mettre en file localStorage et retry au prochain événement.
+
+Reprise :
+- Sur la liste des qadhiyat, les brouillons apparaissent avec badge orange "مسودة" + tooltip "آخر تعديل: {date}".
+- Cliquer dessus rouvre le wizard à draft_last_step.
+- Les brouillons abandonnés > 30 jours déclenchent une notification "هل تريد حذف المسودة القديمة ؟".
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — FINALISATION ET CRÉATION
+═══════════════════════════════════════════════════════
+
+Bouton final à l'étape 4 : "إنشاء الملف" (variant primary, doré).
+
+À la création :
+1. INSERT cases avec tous les champs, status = 'active' (plus 'draft').
+2. INSERT N lignes dans case_opponents.
+3. INSERT lignes dans case_team (1 responsible + 0..1 assigned + 0..N collaborators).
+4. INSERT 1 ligne dans case_stages (stage = litigation_degree, entered_at = now()) — préparation T18.
+5. Redirection vers /cases/:id (page détail livrée en T16 révisé).
+6. Toast succès "تم إنشاء الملف بنجاح".
+
+═══════════════════════════════════════════════════════
+LIVRABLES ATTENDUS
+═══════════════════════════════════════════════════════
+
+1. 4 migrations SQL (extension cases, case_opponents, case_team, backfill).
+2. Trigger ou vue pour financial_status dérivé d'invoices.
+3. Composant <CaseWizard /> + 4 sous-composants (Step1Identification, Step2Procedure, Step3Parties, Step4Financial).
+4. Composant réutilisable <OpponentBlock /> avec ajout/retrait/drag.
+5. Hook useAutoSaveDraft.
+6. Endpoint PATCH /api/cases/draft.
+7. Badge "مسودة" sur liste qadhiyat.
+8. Tests : validation par étape, backfill, contrainte un seul responsible.
+9. Captures d'écran des 4 étapes en AR.
+10. Rapport de migration : combien de qadhiyat backfillées, combien d'adversaires migrés, anomalies détectées.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION À VÉRIFIER
+═══════════════════════════════════════════════════════
+
+- Liste des qadhiyat fonctionne toujours (filtres, recherche, pagination).
+- Le clic sur une qadhiya existante (non-brouillon) ouvre toujours sa page détail.
+- L'export PDF dossier (livré en T8 P1) fonctionne toujours et inclut maintenant les nouveaux champs.
+- La facturation (T4 P1) référence toujours correctement les qadhiyat.
+- RTL préservé sur tous les nouveaux écrans.
