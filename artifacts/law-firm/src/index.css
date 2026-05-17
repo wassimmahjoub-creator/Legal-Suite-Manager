@@ -371,3 +371,22 @@ body {
 [dir="rtl"] .skeleton-shimmer {
   animation-direction: reverse;
 }
+
+/* ============================================================
+   Native <select> — orange accent au lieu du bleu système
+   ============================================================ */
+select {
+  accent-color: hsl(var(--primary));
+}
+
+/* Firefox : option sélectionnée dans la liste déroulante */
+select option:checked {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Focus ring orange sur les selects (comme les inputs) */
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px hsl(var(--primary));
+}
