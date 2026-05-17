@@ -133,6 +133,9 @@ export default function CaseDetail() {
   const [confirmProcId,     setConfirmProcId]     = useState<number | null>(null);
   const [confirmDeadlineId, setConfirmDeadlineId] = useState<number | null>(null);
   const [confirmDocId,      setConfirmDocId]      = useState<number | null>(null);
+  const [confirmTeamId,     setConfirmTeamId]     = useState<number | null>(null);
+  const [confirmConfNoteId, setConfirmConfNoteId] = useState<number | null>(null);
+  const [confirmRelationId, setConfirmRelationId] = useState<number | null>(null);
 
   // Loaders
   const load = {
@@ -350,7 +353,7 @@ export default function CaseDetail() {
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{m.role}</span>
                       </div>
                     </div>
-                    <button onClick={async () => { await authFetch(`${BASE}/api/case-teams/${m.id}`, { method: "DELETE" }); load.team(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={() => setConfirmTeamId(m.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 ))}
                 {team.length === 0 && !caseData.lawyer && <p className="text-xs text-muted-foreground py-1">لا يوجد فريق مسجل</p>}
@@ -649,7 +652,7 @@ export default function CaseDetail() {
                 <div key={n.id} className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm flex-1 leading-relaxed">{n.content}</p>
-                    <button onClick={async () => { await authFetch(`${BASE}/api/confidential-notes/${n.id}`, { method: "DELETE" }); load.confNotes(); }} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={() => setConfirmConfNoteId(n.id)} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     {n.createdBy && <span className="flex items-center gap-1"><User className="h-3 w-3" />{n.createdBy}</span>}
@@ -690,7 +693,7 @@ export default function CaseDetail() {
                 </div>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm" onClick={() => navigate(`/cases/${r.relatedCaseId}`)} className="text-xs h-7">عرض</Button>
-                  <button onClick={async () => { await authFetch(`${BASE}/api/case-relations/${r.id}`, { method: "DELETE" }); load.relations(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                  <button onClick={() => setConfirmRelationId(r.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                 </div>
               </div>
             ))}
@@ -1072,6 +1075,27 @@ export default function CaseDetail() {
         open={confirmDocId !== null} onClose={() => setConfirmDocId(null)}
         onConfirm={async () => { await authFetch(`${BASE}/api/documents/${confirmDocId}`, { method: "DELETE" }); await load.docs(); }}
         title="حذف الوثيقة نهائياً؟" description="سيتم حذف هذه الوثيقة بشكل نهائي ولا يمكن التراجع عنه." confirmLabel="حذف الوثيقة"
+      />
+
+      {/* Confirm team member remove */}
+      <ConfirmDestructive
+        open={confirmTeamId !== null} onClose={() => setConfirmTeamId(null)}
+        onConfirm={async () => { await authFetch(`${BASE}/api/case-teams/${confirmTeamId}`, { method: "DELETE" }); await load.team(); }}
+        title="إزالة العضو من الفريق؟" description="سيتم إزالة هذا العضو من فريق القضية." confirmLabel="إزالة"
+      />
+
+      {/* Confirm confidential note delete */}
+      <ConfirmDestructive
+        open={confirmConfNoteId !== null} onClose={() => setConfirmConfNoteId(null)}
+        onConfirm={async () => { await authFetch(`${BASE}/api/confidential-notes/${confirmConfNoteId}`, { method: "DELETE" }); await load.confNotes(); }}
+        title="حذف الملاحظة السرية؟" description="سيتم حذف هذه الملاحظة الداخلية السرية نهائياً." confirmLabel="حذف"
+      />
+
+      {/* Confirm relation delete */}
+      <ConfirmDestructive
+        open={confirmRelationId !== null} onClose={() => setConfirmRelationId(null)}
+        onConfirm={async () => { await authFetch(`${BASE}/api/case-relations/${confirmRelationId}`, { method: "DELETE" }); await load.relations(); }}
+        title="فك الارتباط بين القضيتين؟" description="سيتم حذف هذا الرابط. القضيتان تبقيان موجودتين في قاعدة البيانات." confirmLabel="فك الارتباط"
       />
     </div>
   );
