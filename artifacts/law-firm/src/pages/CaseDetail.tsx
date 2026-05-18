@@ -175,10 +175,14 @@ export default function CaseDetail() {
     if (p in TAB_ALIASES) return TAB_ALIASES[p];
     return "overview";
   };
+  const [, navigate]    = useLocation();
+  const fromReports     = new URLSearchParams(window.location.search).get("from") === "reports";
   const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL);
   const changeTab = useCallback((t: TabId) => {
     setActiveTab(t);
-    window.history.replaceState(null, "", `?tab=${t}`);
+    const from = new URLSearchParams(window.location.search).get("from");
+    const fromParam = from ? `&from=${from}` : "";
+    window.history.replaceState(null, "", `?tab=${t}${fromParam}`);
   }, []);
 
   const locale = useLocale();
@@ -1066,9 +1070,16 @@ export default function CaseDetail() {
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <button onClick={() => window.history.back()} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </button>
+              {fromReports ? (
+                <button onClick={() => navigate("/reports")}
+                  className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted transition-colors shrink-0 text-xs text-muted-foreground hover:text-foreground">
+                  <ArrowRight className="h-4 w-4" /> التقارير
+                </button>
+              ) : (
+                <button onClick={() => window.history.back()} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+              )}
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
