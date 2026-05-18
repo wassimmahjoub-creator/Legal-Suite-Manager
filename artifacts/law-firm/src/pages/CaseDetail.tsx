@@ -159,9 +159,18 @@ export default function CaseDetail() {
   const { data: caseData, isLoading, refetch } = useGetCase(Number(id), { query: { enabled: !!id } });
 
   // URL tab sync
+  const TAB_ALIASES: Record<string, TabId> = {
+    billing: "invoicing", facturation: "invoicing", invoices: "invoicing",
+    procedures: "timeline", lifecycle: "timeline",
+    audiences: "hearings", sessions: "hearings",
+    jugement: "judgment", verdict: "judgment",
+    docs: "documents", fichiers: "documents",
+  };
   const getTabFromURL = (): TabId => {
-    const p = new URLSearchParams(window.location.search).get("tab");
-    return (TAB_IDS as readonly string[]).includes(p ?? "") ? (p as TabId) : "overview";
+    const p = new URLSearchParams(window.location.search).get("tab") ?? "";
+    if ((TAB_IDS as readonly string[]).includes(p)) return p as TabId;
+    if (p in TAB_ALIASES) return TAB_ALIASES[p];
+    return "overview";
   };
   const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL);
   const changeTab = useCallback((t: TabId) => {

@@ -51,7 +51,7 @@ export function CaseStageStepper({ caseId, onStageClick, refreshKey }: CaseStage
   for (const s of stages) stageMap.set(s.stage, s);
 
   return (
-    <div className="flex items-center justify-center gap-0 py-3 px-4 bg-card/50 border-b border-border/40">
+    <div className="flex items-center justify-center gap-0 py-2 sm:py-3 px-2 sm:px-4 bg-card/50 border-b border-border/40 overflow-x-auto">
       {STAGES.map((slot, idx) => {
         const data = stageMap.get(slot.value);
         const isDone   = !!data && !!data.exitedAt;
@@ -88,33 +88,30 @@ export function CaseStageStepper({ caseId, onStageClick, refreshKey }: CaseStage
         };
 
         return (
-          <div key={slot.value} className="flex items-center">
-            <div className="flex flex-col items-center gap-1 group relative">
+          <div key={slot.value} className="flex items-center shrink-0">
+            <div className="flex flex-col items-center gap-0.5 group relative">
               <button
                 title={tooltip}
                 disabled={!isReached}
                 onClick={handleClick}
                 className={cn(
-                  "w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 font-bold text-sm shrink-0",
+                  "w-7 h-7 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 font-bold text-xs sm:text-sm shrink-0",
                   circleClass,
                   isReached && "cursor-pointer hover:scale-110",
                   !isReached && "cursor-not-allowed opacity-50"
                 )}
               >
-                {isDone ? <Check className="h-4 w-4 text-white" /> : idx + 1}
+                {isDone ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-white" /> : idx + 1}
               </button>
-              <span className={cn("text-xs transition-colors text-center whitespace-nowrap", labelClass)}>
+              <span className={cn("text-[9px] sm:text-xs transition-colors text-center leading-tight", labelClass)}>
                 {slot.label}
               </span>
-              {isReached && data && (
-                <span className="text-[10px] text-muted-foreground -mt-0.5">
-                  {formatDateTN(data.enteredAt.slice(0, 10))}
-                </span>
-              )}
-              {!isReached && <span className="text-[10px] invisible">–</span>}
+              <span className={cn("text-[9px] text-muted-foreground leading-tight hidden sm:block", !isReached && "invisible")}>
+                {isReached && data ? formatDateTN(data.enteredAt.slice(0, 10)) : "–"}
+              </span>
             </div>
             {idx < STAGES.length - 1 && (
-              <div className={cn("h-0.5 w-12 sm:w-20 mx-1 mt-[-20px] transition-colors", lineClass)} />
+              <div className={cn("h-0.5 w-5 sm:w-12 md:w-20 mx-1 mt-[-14px] sm:mt-[-20px] transition-colors shrink-0", lineClass)} />
             )}
           </div>
         );

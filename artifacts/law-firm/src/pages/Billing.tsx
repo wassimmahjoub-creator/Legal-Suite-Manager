@@ -67,7 +67,7 @@ export default function Billing() {
     return true;
   });
 
-  const totalNet = invoices.reduce((s, i) => s + i.netToPay, 0);
+  const totalNet = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.netToPay, 0);
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
   const totalBalance = invoices.reduce((s, i) => s + i.balanceDue, 0);
   const overdueCount = invoices.filter(i =>
@@ -169,7 +169,7 @@ export default function Billing() {
                         {inv.caseName ?? "—"}
                       </TableCell>
                       <TableCell className="py-3 font-mono text-sm" dir="ltr">
-                        {inv.subtotalHt.toFixed(3)}
+                        {inv.withholdingTax > 0 ? inv.withholdingTax.toFixed(3) : "—"}
                       </TableCell>
                       <TableCell className="py-3 font-mono font-bold" dir="ltr">
                         <Money amount={inv.netToPay} />

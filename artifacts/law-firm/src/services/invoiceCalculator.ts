@@ -56,6 +56,7 @@ export const VAT_RATES = [0, 7, 13, 19];
 
 export const STATUS_LABELS: Record<string, string> = {
   draft: "مسودة",
+  pending: "في الانتظار",
   issued: "مُصدَرة",
   partially_paid: "مدفوعة جزئياً",
   paid: "مدفوعة",
@@ -64,6 +65,7 @@ export const STATUS_LABELS: Record<string, string> = {
 
 export const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
   issued: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
   partially_paid: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
   paid: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",

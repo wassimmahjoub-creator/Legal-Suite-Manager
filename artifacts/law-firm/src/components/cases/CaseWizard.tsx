@@ -513,6 +513,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const [users, setUsers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [step4Err, setStep4Err] = useState(false);
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
 
@@ -694,6 +695,11 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
         {/* Footer */}
         <div className="p-5 border-t border-border shrink-0">
+          {step === 4 && step4Err && !isStepValid(4, form, editMode) && (
+            <p className="text-xs text-destructive text-center mb-3">
+              يرجى اختيار طريقة احتساب الأتعاب ودرجة السرية قبل الإنشاء
+            </p>
+          )}
           <div className="flex items-center gap-3">
             {step > 1
               ? <Button variant="outline" onClick={() => setStep(s => s - 1)} className="px-5">السابق</Button>
@@ -703,7 +709,14 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
             <span className="text-xs text-muted-foreground">{step} / 4</span>
             {step < 4
               ? <Button onClick={() => setStep(s => s + 1)} disabled={!isStepValid(step, form, editMode)} className="px-5">التالي</Button>
-              : <Button onClick={handleSubmit} disabled={!isStepValid(4, form, editMode) || saving} className="px-6">
+              : <Button
+                  onClick={() => {
+                    if (!isStepValid(4, form, editMode)) { setStep4Err(true); return; }
+                    handleSubmit();
+                  }}
+                  disabled={saving}
+                  className="px-6"
+                >
                   {saving ? "جارٍ الحفظ..." : editMode ? "حفظ التعديلات" : "إنشاء الملف"}
                 </Button>
             }

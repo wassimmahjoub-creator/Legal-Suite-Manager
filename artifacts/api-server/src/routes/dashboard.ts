@@ -16,7 +16,10 @@ router.get("/dashboard/summary", async (req, res) => {
   const [monthIncomeRow] = await db
     .select({ total: sql<string>`coalesce(sum(net_to_pay), 0)` })
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.status, "paid"), gte(invoicesTable.createdAt, new Date(firstOfMonth))));
+    .where(and(
+      sql`${invoicesTable.status} IN ('issued', 'partially_paid', 'paid')`,
+      sql`${invoicesTable.lockedAt} >= ${firstOfMonth}`
+    ));
 
   const [pendingInvoicesRow] = await db
     .select({ count: sql<number>`count(*)::int` })

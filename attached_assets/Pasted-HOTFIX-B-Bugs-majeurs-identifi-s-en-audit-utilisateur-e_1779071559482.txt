@@ -1,0 +1,230 @@
+HOTFIX B — Bugs majeurs identifiés en audit utilisateur. À effectuer APRÈS Hotfix A.
+
+═══════════════════════════════════════════════════════
+BUG B1 — PALETTE CMD+K NE CHERCHE PAS DANS LES DONNÉES
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Ctrl+K → taper "عقار" → résultat "لا توجد نتائج" alors que "قضية عقار الزهراء" et "قضية شراكة" existent.
+Seules les actions rapides (نسخة جديدة, حريف جديد...) sont surfacées. Les données réelles ne sont jamais cherchées.
+
+CORRECTION :
+
+1. Vérifie l'endpoint GET /api/search?q=... — existe-t-il ? Renvoie-t-il les bonnes entités ?
+
+2. Si l'endpoint n'existe pas ou est incomplet, le créer/compléter pour qu'il interroge en parallèle :
+   - clients : LIKE sur name_ar, name_fr, tax_id
+   - cases : LIKE sur case_number, title_ar, title_fr
+   - invoices : LIKE sur invoice_number
+   - documents : LIKE sur filename, title
+   - courts : LIKE sur name_ar, name_fr
+   - opponents : LIKE sur name_ar, name_fr
+
+3. Renvoyer un format unifié { type, id, title, subtitle, icon, href, matchedField }.
+
+4. Brancher la palette Cmd+K sur cet endpoint avec debounce 200ms.
+
+5. Garder les actions rapides actuelles, mais en SOUS-section "إجراءات سريعة" après les résultats data.
+
+6. Test : "عقار" doit ramener les dossiers contenant "عقار" dans leur titre.
+
+═══════════════════════════════════════════════════════
+BUG B2 — KPI DASHBOARD ET BILLING INCOHÉRENTS
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+- Dashboard "المداخيل هذا الشهر" affiche `DT 0,000` alors que le récap juste en dessous affiche `2 200,000 DT مداخيل`.
+- /billing : KPI "إجمالي الفواتير 0,000 DT" mais le tableau liste 3 factures (1500/2200/800).
+
+Les agrégats ne lisent visiblement pas les vraies données.
+
+CORRECTION :
+
+1. Identifie les composants <DashboardKPI /> et <BillingKPI />.
+
+2. Vérifie leurs sources de données :
+   - Sont-elles hardcoded à 0 ?
+   - Font-elles un fetch sur un endpoint qui retourne mal ?
+   - Le filtre par période / par cabinet est-il mal appliqué ?
+
+3. Corrige pour que :
+   - Dashboard "المداخيل هذا الشهر" = SUM(invoices.amount_paid) WHERE paid_at >= start_of_current_month
+   - /billing "إجمالي الفواتير" = SUM(invoices.total_ttc) WHERE status != 'draft' && status != 'cancelled'
+   - Idem pour les autres KPI : "مدفوع", "قيد التحصيل", "متأخر"
+
+4. Vérifie la cohérence dashboard ↔ /billing : un même KPI calculé à deux endroits doit utiliser la MÊME query, idéalement extraite dans un service partagé invoiceMetrics.ts.
+
+5. Si les KPI sont calculés côté frontend à partir d'une liste fetchée, vérifier que toutes les pages chargent toute la liste (et pas seulement la première page).
+
+═══════════════════════════════════════════════════════
+BUG B3 — STATUTS EN ANGLAIS DANS UI ARABE
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Sur /billing colonne "الحالة" : `pending` (en anglais) à côté de `مدفوعة` (en arabe). Mélange.
+
+CORRECTION :
+
+1. Identifie le composant qui rend la colonne status (probablement <InvoiceStatusBadge /> ou inline).
+
+2. Vérifie qu'il utilise un mapping i18n :
+   const STATUS_LABELS_AR = {
+     draft: 'مسودة',
+     pending: 'في الانتظار',
+     issued: 'مفوترة',
+     partially_paid: 'مدفوعة جزئياً',
+     paid: 'مدفوعة',
+     overdue: 'متأخرة',
+     cancelled: 'ملغاة'
+   };
+
+3. Remplace l'affichage brut de la valeur enum par STATUS_LABELS_AR[status].
+
+4. Audit global : grep dans le code des occurrences de status brutes affichées (pending, draft, paid, etc.) qui devraient être traduites. Corrige toutes celles trouvées.
+
+5. Étend le mapping à tous les enums affichés dans l'UI : case_priority, case_type, fee_method, decision_outcome, execution_status, etc.
+
+═══════════════════════════════════════════════════════
+BUG B4 — URL QUERY PARAMS D'ONGLETS INCOHÉRENTS
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+/cases/4?tab=billing ouvre l'onglet "نظرة عامة" au lieu de "الأتعاب والفواتير". La vraie clé est ?tab=invoicing. Pas de cohérence de naming.
+
+CORRECTION :
+
+1. Centralise les slugs d'onglets dans une constante :
+   export const CASE_TABS = {
+     OVERVIEW: 'overview',
+     TIMELINE: 'timeline',
+     HEARINGS: 'hearings',
+     JUDGMENT: 'judgment',
+     DOCUMENTS: 'documents',
+     INVOICING: 'invoicing',
+     EXPENSES: 'expenses',
+     TIME_TRACKING: 'time',
+     NOTES: 'notes'
+   };
+
+2. Accepter des ALIAS pour rétrocompatibilité — si l'utilisateur arrive avec ?tab=billing, on redirige silencieusement vers ?tab=invoicing :
+   const TAB_ALIASES = {
+     billing: 'invoicing',
+     facturation: 'invoicing',
+     factures: 'invoicing',
+     // ...
+   };
+
+3. Vérifie que le composant <CaseDetailTabs /> :
+   - Lit ?tab=... depuis l'URL au mount
+   - Affiche l'onglet correspondant en actif
+   - Si la valeur est invalide, fallback sur "overview" SANS effacer l'URL
+   - À chaque changement d'onglet via clic, met à jour l'URL via router.replace (pas push, pour ne pas polluer l'historique)
+
+4. Documente la liste des slugs valides dans un commentaire en haut du fichier.
+
+═══════════════════════════════════════════════════════
+BUG B5 — STEPPER PROCÉDURAL INVISIBLE EN MOBILE
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Sur viewport 375px (mobile), le stepper procédural (livré en T18b) n'apparaît pas du tout — espace vide à sa place. Badges du header coupés à droite.
+
+CORRECTION :
+
+1. Inspecte le composant <CaseStageStepper /> et son comportement responsive.
+
+2. Si le stepper est masqué via `hidden md:flex` ou équivalent, c'est une erreur — il doit être visible sur mobile aussi.
+
+3. Adapte le rendu mobile :
+   - Sur viewport < 768px : version compacte (pastilles plus petites, labels en dessous tronqués à 1 ligne ou icônes seules)
+   - Sur viewport >= 768px : version actuelle complète
+
+4. Pour les badges du header dossier (statut, priorité, confidentialité, type) :
+   - Sur mobile : les afficher en wrap (flex-wrap) plutôt qu'en une ligne qui déborde
+   - Réduire la taille des badges si nécessaire
+
+5. Audit visuel : prendre une capture en 375px et vérifier que tous les éléments du header + stepper + onglets sont visibles et utilisables.
+
+═══════════════════════════════════════════════════════
+BUG B6 — VALIDATION SILENCIEUSE AU WIZARD ÉTAPE 4
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Sur l'étape 4 du wizard, cliquer "إنشاء الملف" alors que "طريقة احتساب الأتعاب" est vide ne produit aucun message d'erreur — juste rien. L'utilisateur est perdu.
+
+CORRECTION :
+
+1. Audit du schéma zod (ou yup, ou validateur custom) de l'étape 4 du wizard.
+
+2. Vérifie que les champs requis sont bien marqués required :
+   - fee_method : required
+   - agreed_fees : required if fee_method == 'fixed' || 'per_hearing'
+   - hourly_rate : required if fee_method == 'hourly'
+   - percentage : required if fee_method == 'percentage'
+   - confidentiality_level : required (default 'normal')
+
+3. Au clic sur "إنشاء الملف" :
+   - Valider le formulaire
+   - Si erreurs : afficher les erreurs sous chaque champ ET scroller jusqu'au premier champ en erreur
+   - Toast en haut "املأ الحقول المطلوبة"
+   - Bouton "إنشاء الملف" reste actif (pas disabled, mais bloque le submit)
+
+4. Audit similaire sur les autres étapes du wizard pour éviter le même problème.
+
+═══════════════════════════════════════════════════════
+BUG B7 — RETENUE À LA SOURCE NON APPLIQUÉE
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+La colonne `ج.ض` (retenue à la source) existe en table factures mais est toujours à 0.000. Pourtant la spec T4 P1 prévoyait :
+- Champ withholding_rate sur le client (0, 3, ou 5)
+- Calcul automatique lors de l'émission de facture
+
+CORRECTION :
+
+1. Vérifie que la colonne `withholding_rate` existe bien sur la table `clients` (livrée en T3).
+
+2. Pour les clients existants, mettre une migration douce :
+   - Si withholding_rate IS NULL → set à 0 par défaut
+   - L'utilisateur peut le passer à 3 ou 5 manuellement via la fiche client
+
+3. Sur le formulaire de création/édition de client (page fiche client 360°), AJOUTER si absent :
+   - Section "الجباية"
+   - Champ "نسبة الخصم بالمصدر" : radio (0% / 3% / 5%)
+   - Helper text : "تطبق على الأشخاص المعنويين الخاضعين للضريبة"
+
+4. Sur le formulaire de facturation, dans la section récap :
+   - Récupérer client.withholding_rate
+   - Calculer withholding_amount = subtotal_ht * (withholding_rate / 100)
+   - L'afficher en ligne "خصم بالمصدر (-X%)"
+   - Soustraire du net_to_pay
+
+5. Au moment de l'émission de facture (INSERT) :
+   - Persister withholding_amount dans la colonne `ج.ض`
+   - Persister withholding_rate appliqué (pour audit)
+
+6. Sur le PDF de facture, ajouter la ligne "خصم بالمصدر" entre TTC et "صافي للدفع".
+
+═══════════════════════════════════════════════════════
+ÉTAPE FINALE — VÉRIFICATION
+═══════════════════════════════════════════════════════
+
+Pour chacun des 7 bugs ci-dessus, effectue le test de reproduction et documente ✓ ou ✗ avec capture si pertinent.
+
+Particulièrement :
+- B1 : "عقار" dans Cmd+K → résultats data visibles
+- B2 : créer 2 factures payées de 1000 et 1500 → dashboard affiche "المداخيل هذا الشهر : 2500 DT"
+- B3 : aucune chaîne enum brute en anglais dans /billing
+- B4 : /cases/X?tab=invoicing fonctionne ET ?tab=billing redirige
+- B5 : capture 375px montrant stepper + header complets
+- B6 : étape 4 avec fee_method vide → erreur visible et focus champ
+- B7 : client avec withholding 3% → facture 1000 HT → retenue 30 DT visible
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Le hotfix A reste en place (modales, facturation, transition de stade).
+- L'auto-log timeline continue de fonctionner.
+- Les T17b onglets restent dans le bon ordre.
+- RTL préservé partout.

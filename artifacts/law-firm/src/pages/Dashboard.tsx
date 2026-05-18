@@ -33,11 +33,7 @@ const EMPTY_CASE = {
 
 type QuickModal = "case" | "event" | "invoice" | null;
 
-const RECENT_CASES = [
-  { id: 1, title: "قضية ميراث عائلة بن علي", status: "active", client: "محمد بن علي" },
-  { id: 2, title: "قضية عقار الزهراء", status: "active", client: "فاطمة الزهراء" },
-  { id: 3, title: "قضية عقد شراكة التريكي", status: "pending", client: "يوسف التريكي" },
-];
+type RecentCase = { id: number; title: string; status: string; clientName?: string | null; };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   active: { label: "نشطة", color: "text-green-400 bg-green-500/10" },
@@ -67,11 +63,16 @@ export default function Dashboard() {
   const [caseForm, setCaseForm] = useState({ ...EMPTY_CASE });
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
   const [savingCase, setSavingCase] = useState(false);
+  const [recentCases, setRecentCases] = useState<RecentCase[]>([]);
 
   useEffect(() => {
     authFetch(`${BASE}/api/organization`)
       .then(r => r.ok ? r.json() : null)
       .then((d: OrgTrialInfo | null) => { if (d) setOrgInfo(d); })
+      .catch(() => {});
+    authFetch(`${BASE}/api/cases`)
+      .then(r => r.ok ? r.json() : [])
+      .then((d: RecentCase[]) => setRecentCases(Array.isArray(d) ? d.slice(0, 5) : []))
       .catch(() => {});
   }, []);
 
@@ -234,18 +235,20 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">الملف المالي لهذا الشهر:</span>
             </div>
-            {[
-              { label: "مداخيل", value: formatCurrency(2200), color: "text-green-400" },
-              { label: "مصاريف", value: formatCurrency(200), color: "text-red-400" },
-              { label: "صافي", value: formatCurrency(2000), color: "text-primary" },
-            ].map((f, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">{f.label}:</span>
-                <span className={`font-bold text-sm ${f.color}`} dir="ltr">{f.value}</span>
-              </div>
-            ))}
-            <button onClick={() => navigate("/reports")} className="text-xs text-primary hover:underline flex items-center gap-1 mr-auto">
-              تقرير مفصّل <ArrowLeft className="h-3 w-3" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">مداخيل الفواتير:</span>
+              <span className="font-bold text-sm text-green-400" dir="ltr">
+                {loadingSummary ? "..." : formatCurrency(Number(summary?.monthlyIncome ?? 0))}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">فواتير معلقة:</span>
+              <span className="font-bold text-sm text-orange-400">
+                {loadingSummary ? "..." : summary?.pendingInvoices ?? 0}
+              </span>
+            </div>
+            <button onClick={() => navigate("/billing")} className="text-xs text-primary hover:underline flex items-center gap-1 mr-auto">
+              تفاصيل الفوترة <ArrowLeft className="h-3 w-3" />
             </button>
           </div>
         </CardContent>
@@ -378,7 +381,12 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
-            {RECENT_CASES.map(c => {
+            {recentCases.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                لا توجد ملفات بعد
+              </div>
+            ) : recentCases.map(c => {
               const s = STATUS_LABELS[c.status] || STATUS_LABELS.active;
               return (
                 <div
@@ -392,7 +400,7 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{c.title}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {c.client}
+                      <Users className="h-3 w-3" /> {c.clientName ?? "—"}
                     </p>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${s.color}`}>
