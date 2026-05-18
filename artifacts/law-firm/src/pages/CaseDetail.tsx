@@ -212,7 +212,10 @@ export default function CaseDetail() {
   const [noteModal, setNoteModal] = useState(false);
   const [hearingEvents, setHearingEvents] = useState<HearingEvent[]>([]);
   const [hForm, setHForm] = useState({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" });
-  const [hEditId, setHEditId] = useState<number | null>(null);
+  const [hEditId,   setHEditId]   = useState<number | null>(null);
+  const [oppEditId, setOppEditId] = useState<number | null>(null);
+  const [expEditId, setExpEditId] = useState<number | null>(null);
+  const [timeEditId, setTimeEditId] = useState<number | null>(null);
   const [modal,     setModal]     = useState<string | null>(null);
   const [saving,    setSaving]    = useState(false);
   const [dlFilter,  setDlFilter]  = useState<"all" | "upcoming" | "past">("all");
@@ -400,20 +403,18 @@ export default function CaseDetail() {
                 </div>
                 {/* Client */}
                 {caseData.clientName && (
-                  <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                  <div onClick={() => (caseData as { clientId?: number }).clientId && navigate(`/clients/${(caseData as { clientId?: number }).clientId}`)} className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-colors">
                     <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{caseData.clientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{caseData.clientName}</p>
                       <p className="text-[10px] text-muted-foreground">الحريف</p>
                     </div>
-                    {(caseData as { clientId?: number }).clientId && (
-                      <button onClick={() => navigate(`/clients/${(caseData as { clientId?: number }).clientId}`)} className="p-1 hover:bg-muted rounded-lg"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                    )}
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                 )}
                 {/* Opponents */}
                 {opponents.map(o => (
-                  <div key={o.id} className="flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-xl">
+                  <div key={o.id} onClick={() => { setOppEditId(o.id); setOppForm({ name: o.name ?? "", lawyerName: o.lawyerName ?? "", phone: o.phone ?? "", address: o.address ?? "", notes: o.notes ?? "", capacity: o.capacity ?? "", opponentLawyerPhone: o.opponentLawyerPhone ?? "" }); setModal("opponent"); }} className="flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-xl cursor-pointer hover:border-destructive/40 transition-colors">
                     <div className="h-8 w-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center font-bold text-sm shrink-0">{o.name.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -422,7 +423,7 @@ export default function CaseDetail() {
                       </div>
                       {o.lawyerName && <p className="text-[10px] text-muted-foreground">ذ. {o.lawyerName}{o.opponentLawyerPhone ? ` — ${o.opponentLawyerPhone}` : ""}</p>}
                     </div>
-                    <button onClick={() => setConfirmOppId(o.id)} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={e => { e.stopPropagation(); setConfirmOppId(o.id); }} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 ))}
                 {opponents.length === 0 && !caseData.clientName && <p className="text-xs text-muted-foreground py-1">لا خصوم مسجلين</p>}
@@ -682,7 +683,7 @@ export default function CaseDetail() {
                   {invoices.map(inv => {
                     const isOverdue = inv.status !== "paid" && inv.dueDate && inv.dueDate < today;
                     return (
-                      <tr key={inv.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <tr key={inv.id} onClick={() => navigate(`/billing/${inv.id}`)} className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer">
                         <td className="py-2.5 px-2 font-mono text-xs">{inv.invoiceNumber ?? `#${inv.id}`}</td>
                         <td className="py-2.5 px-2 text-muted-foreground text-xs">{inv.issuedAt ? formatDateTN(inv.issuedAt) : "—"}</td>
                         <td className="py-2.5 px-2 font-semibold">{Number(inv.amount).toLocaleString()} د.ت</td>
@@ -755,7 +756,7 @@ export default function CaseDetail() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {expenses.map(e => (
-                    <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={e.id} onClick={() => { setExpEditId(e.id); setExpForm({ date: e.date, typeValue: e.typeValue, description: e.description, amount: String(e.amount), reimbursable: e.reimbursable }); setShowExpModal(true); }} className="hover:bg-muted/20 transition-colors cursor-pointer">
                       <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">{formatDateTN(e.date)}</td>
                       <td className="py-2.5 px-4"><span className="bg-muted/60 px-2 py-0.5 rounded text-xs">{getLabel(e.typeValue)}</span></td>
                       <td className="py-2.5 px-4 text-muted-foreground hidden md:table-cell">{e.description}</td>
@@ -764,7 +765,7 @@ export default function CaseDetail() {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${e.reimbursable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>{e.reimbursable ? "نعم" : "لا"}</span>
                       </td>
                       <td className="py-2.5 px-2 text-center">
-                        <button onClick={() => setExpenses(es => es.filter(x => x.id !== e.id))} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                        <button onClick={ev => { ev.stopPropagation(); setExpenses(es => es.filter(x => x.id !== e.id)); }} className="p-1 rounded hover:bg-destructive/10 transition-colors">
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </button>
                       </td>
@@ -880,7 +881,7 @@ export default function CaseDetail() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {timeEntries.map(e => (
-                    <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={e.id} onClick={() => { setTimeEditId(e.id); setTimeForm({ date: e.date, description: e.description, hours: String(e.hours), rate: String(e.rate), billable: e.billable }); setShowTimeModal(true); }} className="hover:bg-muted/20 transition-colors cursor-pointer">
                       <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">{formatDateTN(e.date)}</td>
                       <td className="py-2.5 px-4">{e.description}</td>
                       <td className="py-2.5 px-4 font-mono" dir="ltr">{e.hours.toFixed(2)}</td>
@@ -890,7 +891,7 @@ export default function CaseDetail() {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${e.billable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>{e.billable ? "نعم" : "لا"}</span>
                       </td>
                       <td className="py-2.5 px-2 text-center">
-                        <button onClick={() => setTimeEntries(es => es.filter(x => x.id !== e.id))} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                        <button onClick={ev => { ev.stopPropagation(); setTimeEntries(es => es.filter(x => x.id !== e.id)); }} className="p-1 rounded hover:bg-destructive/10 transition-colors">
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </button>
                       </td>
@@ -1007,7 +1008,7 @@ export default function CaseDetail() {
               <Button size="sm" onClick={() => { setRelForm({ relatedCaseId: "", relationType: "مرتبطة" }); setModal("relation"); }} className="gap-1 text-xs h-7"><Plus className="h-3 w-3" />ربط</Button>
             </div>
             {relations.map(r => (
-              <div key={r.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border">
+              <div key={r.id} onClick={() => navigate(`/cases/${r.relatedCaseId}`)} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border cursor-pointer hover:border-primary/40 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-indigo-400 shrink-0" />
                   <div>
@@ -1016,8 +1017,7 @@ export default function CaseDetail() {
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/cases/${r.relatedCaseId}`)} className="text-xs h-7">عرض</Button>
-                  <button onClick={() => setConfirmRelationId(r.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                  <button onClick={e => { e.stopPropagation(); setConfirmRelationId(r.id); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                 </div>
               </div>
             ))}
@@ -1122,7 +1122,7 @@ export default function CaseDetail() {
       {/* ─── MODALS ─────────────────────────────────────────── */}
 
       {/* Opponent modal */}
-      <Modal open={modal === "opponent"} onClose={() => setModal(null)} title="إضافة خصم">
+      <Modal open={modal === "opponent"} onClose={() => { setModal(null); setOppEditId(null); }} title={oppEditId ? "تعديل الخصم" : "إضافة خصم"}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="الاسم *" htmlFor="opp-name">
@@ -1156,9 +1156,14 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !oppForm.name.trim()} onClick={() => withSave(async () => {
-              await authFetch(`${BASE}/api/opponents`, { method: "POST", body: JSON.stringify({ name: oppForm.name, lawyerName: oppForm.lawyerName, phone: oppForm.phone, address: oppForm.address, notes: oppForm.notes, caseId: Number(id), capacity: oppForm.capacity || undefined, opponentLawyerPhone: oppForm.opponentLawyerPhone || undefined }) });
-            }, load.opponents)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+              if (oppEditId) {
+                await authFetch(`${BASE}/api/opponents/${oppEditId}`, { method: "PUT", body: JSON.stringify({ name: oppForm.name, lawyerName: oppForm.lawyerName, phone: oppForm.phone, address: oppForm.address, notes: oppForm.notes, capacity: oppForm.capacity || undefined, opponentLawyerPhone: oppForm.opponentLawyerPhone || undefined }) });
+                setOppEditId(null);
+              } else {
+                await authFetch(`${BASE}/api/opponents`, { method: "POST", body: JSON.stringify({ name: oppForm.name, lawyerName: oppForm.lawyerName, phone: oppForm.phone, address: oppForm.address, notes: oppForm.notes, caseId: Number(id), capacity: oppForm.capacity || undefined, opponentLawyerPhone: oppForm.opponentLawyerPhone || undefined }) });
+              }
+            }, load.opponents)}>{saving ? "جارٍ الحفظ..." : oppEditId ? "حفظ التعديلات" : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => { setModal(null); setOppEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
@@ -1340,7 +1345,7 @@ export default function CaseDetail() {
       </Modal>
 
       {/* Time entry modal */}
-      <Modal open={showTimeModal} onClose={() => setShowTimeModal(false)} title="إدخال وقت يدوي">
+      <Modal open={showTimeModal} onClose={() => { setShowTimeModal(false); setTimeEditId(null); }} title={timeEditId ? "تعديل إدخال الوقت" : "إدخال وقت يدوي"}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="التاريخ *" htmlFor="te-date">
@@ -1375,17 +1380,22 @@ export default function CaseDetail() {
           <div className="flex gap-3">
             <Button className="flex-1" disabled={!timeForm.description.trim() || !timeForm.hours || parseFloat(timeForm.hours) <= 0}
               onClick={() => {
-                setTimeEntries(es => [{ id: Date.now(), date: timeForm.date, description: timeForm.description, hours: parseFloat(timeForm.hours), rate: parseFloat(timeForm.rate) || 150, billable: timeForm.billable }, ...es]);
+                if (timeEditId) {
+                  setTimeEntries(es => es.map(x => x.id === timeEditId ? { ...x, date: timeForm.date, description: timeForm.description, hours: parseFloat(timeForm.hours), rate: parseFloat(timeForm.rate) || 150, billable: timeForm.billable } : x));
+                  setTimeEditId(null);
+                } else {
+                  setTimeEntries(es => [{ id: Date.now(), date: timeForm.date, description: timeForm.description, hours: parseFloat(timeForm.hours), rate: parseFloat(timeForm.rate) || 150, billable: timeForm.billable }, ...es]);
+                }
                 setTimeForm({ date: new Date().toISOString().slice(0, 10), description: "", hours: "", rate: "150", billable: true });
                 setShowTimeModal(false);
-              }}>حفظ الإدخال</Button>
-            <Button variant="outline" onClick={() => setShowTimeModal(false)} className="px-5">إلغاء</Button>
+              }}>{timeEditId ? "حفظ التعديلات" : "حفظ الإدخال"}</Button>
+            <Button variant="outline" onClick={() => { setShowTimeModal(false); setTimeEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
 
       {/* Add Expense modal */}
-      <Modal open={showExpModal} onClose={() => setShowExpModal(false)} title="إضافة مصروف قضائي">
+      <Modal open={showExpModal} onClose={() => { setShowExpModal(false); setExpEditId(null); }} title={expEditId ? "تعديل المصروف" : "إضافة مصروف قضائي"}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <FormField label="التاريخ *" htmlFor="exp-date">
@@ -1422,10 +1432,15 @@ export default function CaseDetail() {
             <Button className="flex-1" disabled={!expForm.amount || parseFloat(expForm.amount) <= 0}
               onClick={() => {
                 if (!expForm.amount || parseFloat(expForm.amount) <= 0) return;
-                setExpenses(es => [{ id: Date.now(), date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }, ...es]);
+                if (expEditId) {
+                  setExpenses(es => es.map(x => x.id === expEditId ? { ...x, date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable } : x));
+                  setExpEditId(null);
+                } else {
+                  setExpenses(es => [{ id: Date.now(), date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }, ...es]);
+                }
                 setShowExpModal(false);
-              }}>حفظ المصروف</Button>
-            <Button variant="outline" onClick={() => setShowExpModal(false)} className="px-5">إلغاء</Button>
+              }}>{expEditId ? "حفظ التعديلات" : "حفظ المصروف"}</Button>
+            <Button variant="outline" onClick={() => { setShowExpModal(false); setExpEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
