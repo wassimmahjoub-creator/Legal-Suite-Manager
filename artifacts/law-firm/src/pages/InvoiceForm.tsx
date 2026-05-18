@@ -171,17 +171,25 @@ export default function InvoiceForm() {
   async function saveDraft() {
     if (!clientId) return;
     setSaving(true);
-    const payload = buildPayload();
-    let inv;
-    if (isEdit) {
-      const r = await authFetch(`${BASE}/api/invoices/${params.id}`, { method: "PUT", body: JSON.stringify(payload) });
-      inv = await r.json();
-    } else {
-      const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", body: JSON.stringify(payload) });
-      inv = await r.json();
+    try {
+      const payload = buildPayload();
+      const headers = { "Content-Type": "application/json" };
+      let inv;
+      if (isEdit) {
+        const r = await authFetch(`${BASE}/api/invoices/${params.id}`, { method: "PUT", headers, body: JSON.stringify(payload) });
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل تحديث الفاتورة."); setSaving(false); return; }
+        inv = await r.json();
+      } else {
+        const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", headers, body: JSON.stringify(payload) });
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل إنشاء الفاتورة."); setSaving(false); return; }
+        inv = await r.json();
+      }
+      setSaving(false);
+      navigate(`/billing/${inv.id}`);
+    } catch {
+      alert("حدث خطأ غير متوقع. حاول مجدداً.");
+      setSaving(false);
     }
-    setSaving(false);
-    navigate(`/billing/${inv.id}`);
   }
 
   async function issue() {
@@ -189,18 +197,19 @@ export default function InvoiceForm() {
     setIssuing(true);
     try {
       const payload = buildPayload();
+      const headers = { "Content-Type": "application/json" };
       let id = params.id ? Number(params.id) : null;
       if (!id) {
-        const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", body: JSON.stringify(payload) });
+        const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", headers, body: JSON.stringify(payload) });
         if (!r.ok) { alert("فشل إنشاء الفاتورة. حاول مجدداً."); setIssuing(false); return; }
         const inv = await r.json();
         id = inv.id;
       } else {
-        const r = await authFetch(`${BASE}/api/invoices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-        if (!r.ok) { const e = await r.json(); alert(e.error ?? "فشل تحديث الفاتورة."); setIssuing(false); return; }
+        const r = await authFetch(`${BASE}/api/invoices/${id}`, { method: "PUT", headers, body: JSON.stringify(payload) });
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل تحديث الفاتورة."); setIssuing(false); return; }
       }
-      const r = await authFetch(`${BASE}/api/invoices/${id}/issue`, { method: "POST", body: JSON.stringify({ issueDate }) });
-      if (!r.ok) { const e = await r.json(); alert(e.error ?? "فشل إصدار الفاتورة."); setIssuing(false); return; }
+      const r = await authFetch(`${BASE}/api/invoices/${id}/issue`, { method: "POST", headers, body: JSON.stringify({ issueDate }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل إصدار الفاتورة."); setIssuing(false); return; }
       const inv = await r.json();
       navigate(`/billing/${inv.id}`);
     } catch {

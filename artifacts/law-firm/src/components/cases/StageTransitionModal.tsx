@@ -98,6 +98,22 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
   const [courts, setCourts]               = useState<Court[]>([]);
   const [saving, setSaving]               = useState(false);
   const [error, setError]                 = useState("");
+  const [confirmClose, setConfirmClose]   = useState(false);
+
+  const isDirty = decisionSummary !== "" || nextCourtId !== "" || nextCourtNum !== "" || executionNotes !== "";
+
+  function handleClose() {
+    if (isDirty) { setConfirmClose(true); } else { onClose(); }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, isDirty]);
 
   const nextOpts = getNextStageOptions(stage.stage, outcome);
 
@@ -193,8 +209,21 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" dir="rtl">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Confirm-close overlay */}
+        {confirmClose && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 rounded-2xl">
+            <div className="bg-card border border-border rounded-xl p-5 max-w-xs w-full mx-4 space-y-4 text-center">
+              <p className="font-semibold">هل تريد تجاهل التعديلات؟</p>
+              <p className="text-sm text-muted-foreground">ستفقد كل البيانات التي أدخلتها.</p>
+              <div className="flex gap-2 justify-center">
+                <Button size="sm" variant="outline" onClick={() => setConfirmClose(false)}>إلغاء</Button>
+                <Button size="sm" variant="destructive" onClick={onClose}>تجاهل وإغلاق</Button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
           <h2 className="font-bold text-lg">
@@ -202,7 +231,7 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
             <span className="text-primary">{STAGE_LABELS[stage.stage] ?? stage.stage}</span>
             {" "}إلى الطور التالي
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -387,7 +416,7 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 p-5 border-t border-border shrink-0">
-          <Button variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button variant="outline" onClick={handleClose}>إلغاء</Button>
           <Button onClick={handleConfirm} disabled={saving}>
             {saving ? "جارٍ الانتقال..." : "تأكيد الانتقال"}
           </Button>

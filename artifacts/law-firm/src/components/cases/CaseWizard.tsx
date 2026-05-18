@@ -512,16 +512,36 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const [clients, setClients] = useState<Client[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [saving, setSaving] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
+
+  const df = defaultForm();
+  const isDirty = form.title !== df.title || form.clientId !== df.clientId ||
+    form.description !== df.description || form.litigationDegree !== df.litigationDegree ||
+    form.court !== df.court || form.agreedFees !== df.agreedFees;
+
+  function handleClose() {
+    if (isDirty) { setConfirmClose(true); } else { onClose(); }
+  }
 
   useEffect(() => {
     if (!open) return;
     setForm(editMode && initialData ? { ...defaultForm(), ...initialData } : defaultForm());
     setStep(1);
+    setConfirmClose(false);
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
     authFetch(`${BASE}/api/auth/users`).then(r => r.ok ? r.json() : []).then(setUsers);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, isDirty]);
 
   if (!open) return null;
 
@@ -611,14 +631,28 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" dir="rtl">
+
+        {/* Confirm-close overlay */}
+        {confirmClose && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 rounded-2xl">
+            <div className="bg-card border border-border rounded-xl p-5 max-w-xs w-full mx-4 space-y-4 text-center">
+              <p className="font-semibold">هل تريد تجاهل التعديلات؟</p>
+              <p className="text-sm text-muted-foreground">ستفقد كل البيانات التي أدخلتها.</p>
+              <div className="flex gap-2 justify-center">
+                <Button size="sm" variant="outline" onClick={() => setConfirmClose(false)}>إلغاء</Button>
+                <Button size="sm" variant="destructive" onClick={onClose}>تجاهل وإغلاق</Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header + stepper */}
         <div className="p-5 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-bold">{editMode ? "تعديل الملف القضائي" : "ملف قضائي جديد"}</h2>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
+            <button onClick={handleClose} className="p-2 rounded-full hover:bg-muted transition-colors">
               <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
@@ -663,7 +697,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
           <div className="flex items-center gap-3">
             {step > 1
               ? <Button variant="outline" onClick={() => setStep(s => s - 1)} className="px-5">السابق</Button>
-              : <Button variant="outline" onClick={onClose} className="px-5">إلغاء</Button>
+              : <Button variant="outline" onClick={handleClose} className="px-5">إلغاء</Button>
             }
             <div className="flex-1" />
             <span className="text-xs text-muted-foreground">{step} / 4</span>

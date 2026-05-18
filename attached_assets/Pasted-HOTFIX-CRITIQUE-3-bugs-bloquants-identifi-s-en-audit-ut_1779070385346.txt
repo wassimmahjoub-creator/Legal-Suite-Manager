@@ -1,0 +1,148 @@
+HOTFIX CRITIQUE — 3 bugs bloquants identifiés en audit utilisateur. Doivent être corrigés avant toute autre fonctionnalité.
+
+═══════════════════════════════════════════════════════
+BUG 1 — MODALES QUI SE FERMENT SAUVAGEMENT
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Sur les modales suivantes, un clic n'importe où en dehors de la modale (y compris dans le scrollbar) ferme la modale et perd toutes les saisies. Aucune confirmation, aucun toast d'avertissement.
+
+Modales concernées (au minimum) :
+- "ملف قضائي جديد" — modale du wizard de création de dossier (4 étapes)
+- "الانتقال للطور التالي" — modale de transition de stade
+- Toute autre modale de saisie avec plus de 3 champs (à auditer)
+
+CORRECTION ATTENDUE :
+Pour TOUTES les modales contenant un formulaire de saisie (création/édition) :
+
+1. DÉSACTIVER la fermeture sur clic extérieur (closeOnOutsideClick = false dans la lib de modal utilisée).
+2. DÉSACTIVER la fermeture sur touche Escape SANS confirmation.
+3. Le bouton X (top-right) et le bouton "إلغاء" doivent :
+   - Si AUCUNE saisie n'a été faite (formulaire dirty = false) : fermer directement.
+   - Si des saisies ont été faites (dirty = true) : afficher un AlertDialog de confirmation :
+     "هل تريد تجاهل التعديلات ؟"
+     "ستفقد كل البيانات التي أدخلتها."
+     [إلغاء] [تجاهل وإغلاق]
+
+4. Pour la modale de création de dossier spécifiquement, AJOUTER une sauvegarde brouillon automatique :
+   - À chaque changement de champ, debounce 5 secondes → PATCH /api/cases/draft.
+   - À chaque transition d'étape, force-save.
+   - Toast discret "💾 تم حفظ المسودة" pendant 2 secondes après chaque save.
+
+5. Si la modale se ferme avec un brouillon existant non finalisé, afficher un toast d'information :
+   "تم حفظ المسودة. يمكنك المتابعة لاحقاً من قائمة الملفات."
+
+IDENTIFIER LE COMPOSANT MODAL UTILISÉ (probablement shadcn/ui Dialog ou un wrapper custom) et corriger LA SOURCE plutôt que cas par cas. Si plusieurs libs sont utilisées, harmoniser.
+
+═══════════════════════════════════════════════════════
+BUG 2 — ÉMISSION DE FACTURE NON FONCTIONNELLE
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Sur /billing/new, après avoir rempli les lignes de prestation, le clic sur "إصدار الفاتورة" ou "حفظ كمسودة" :
+- Affiche un spinner perpétuel
+- Console : AUCUNE erreur métier
+- Network : AUCUN appel API déclenché
+
+Cela signifie que le handler du bouton n'est PAS connecté à la mutation.
+
+CORRECTION ATTENDUE :
+
+1. Inspecte le composant <InvoiceForm /> (ou équivalent) sur /billing/new.
+
+2. Vérifie l'existence et la fonction du handler onSubmit / onIssue / onSaveDraft.
+
+3. Cas A — Handler manquant :
+   Implémente le handler. Il doit :
+   - Valider les champs requis (au minimum : client, au moins 1 ligne avec description+montant)
+   - Construire le payload selon le schéma de la table invoices
+   - Appeler POST /api/invoices (pour brouillon) ou POST /api/invoices puis PATCH /api/invoices/:id/issue (pour émission)
+   - Désactiver le bouton pendant la requête (isLoading)
+   - À la succès : redirection vers /invoices/:id + toast "تم إصدار الفاتورة" / "تم حفظ المسودة"
+   - À l'échec : toast d'erreur explicite + bouton réactivé
+
+4. Cas B — Handler existe mais déconnecté :
+   Identifie pourquoi onClick n'appelle pas le handler. Probablement un useEffect mal configuré, une prop manquante, ou une condition qui short-circuite.
+
+5. Vérifie que l'endpoint POST /api/invoices existe côté backend. Si non, créer.
+
+6. Vérifie que la facturation conforme TN (TVA 19%, timbre 1 DT, numérotation atomique F-YYYY-NNNN) fonctionne toujours après cette correction — c'était livré en T4 P1.
+
+═══════════════════════════════════════════════════════
+BUG 3 — TRANSITION DE STADE CASSÉE PAR DROPDOWN IMBRIQUÉ
+═══════════════════════════════════════════════════════
+
+COMPORTEMENT ACTUEL :
+Dans la modale "الانتقال من الطور ابتدائي إلى الطور التالي", après avoir rempli date de jugement, résultat "ضد الموكل", résumé, choisi استئنافي comme stade suivant, le clic sur le dropdown "محكمة الاستئناف بتونس" pour sélectionner la cour ferme la modale entière et perd toutes les saisies.
+
+CAUSE PROBABLE :
+Le dropdown CourtSelect (autocomplete) utilise un portal ou un popover qui n'est pas considéré comme "dans la modale" par le handler de fermeture. Quand l'utilisateur clique dans le dropdown, le système croit qu'il a cliqué "en dehors" de la modale.
+
+CORRECTION ATTENDUE :
+
+1. Inspecte le composant <StageTransitionModal /> et son enfant <CourtSelect />.
+
+2. Si CourtSelect rend son menu déroulant via un Portal (ReactDOM.createPortal vers document.body), le menu est techniquement hors du DOM de la modale.
+
+3. SOLUTIONS PAR ORDRE DE PRÉFÉRENCE :
+
+   Solution préférée : passer le menu déroulant en RELATIF au lieu de Portal pour qu'il reste enfant DOM de la modale.
+
+   Solution alternative : si Portal nécessaire (pour gérer le z-index avec d'autres overlays), ajouter à la modale un check "ne pas fermer si le clic provient d'un descendant de [data-portal-owner='court-select']".
+
+   Solution dégradée (si rien d'autre marche) : désactiver complètement la fermeture sur clic extérieur (rejoint la solution du BUG 1).
+
+4. Une fois le bug 1 corrigé (closeOnOutsideClick = false sur toutes les modales métier), ce bug 3 devrait disparaître mécaniquement. Vérifie quand même que le dropdown CourtSelect fonctionne normalement à l'intérieur de la modale (que l'utilisateur peut bien sélectionner une cour sans souci).
+
+5. Profite de ce debug pour vérifier qu'AUCUN dropdown imbriqué dans une modale (CourtSelect, ClientSelect, OpponentSelect, etc.) ne déclenche de fermeture parasite.
+
+═══════════════════════════════════════════════════════
+ÉTAPE FINALE OBLIGATOIRE — RAPPORT DE TEST
+═══════════════════════════════════════════════════════
+
+Avant de marquer le ticket terminé, EFFECTUE ces 3 tests end-to-end et documente :
+
+TEST 1 — Création de dossier complète sans perte de données :
+- Ouvre la modale "ملف قضائي جديد"
+- Remplis l'étape 1 complètement
+- Avance à l'étape 2
+- Clique ACCIDENTELLEMENT en dehors de la modale (zone sombre)
+- VÉRIFIE : la modale reste ouverte ET les saisies de l'étape 1 sont intactes
+- Continue jusqu'à l'étape 4 et clique "إنشاء الملف"
+- VÉRIFIE : dossier créé, redirection page détail, toast succès
+- ✓ ou ✗ + capture
+
+TEST 2 — Émission de facture end-to-end :
+- Va sur /billing/new
+- Sélectionne un client, ajoute 2 lignes (ex: "استشارة" 500 DT, "تحرير عريضة" 1500 DT)
+- VÉRIFIE le calcul automatique : sous-total 2000, TVA 380, timbre 1, total 2381 DT
+- Clique "إصدار الفاتورة"
+- VÉRIFIE : appel API visible dans Network tab, statut 200/201
+- VÉRIFIE : redirection vers /invoices/:id, toast succès
+- VÉRIFIE : la facture apparaît dans la liste /billing avec statut "مفوترة" et montant correct
+- ✓ ou ✗ + capture + log Network
+
+TEST 3 — Transition de stade complète :
+- Sur un dossier au stade ابتدائي
+- Clic sur le stade actif → side-panel
+- Bouton "الانتقال للطور التالي" → modal s'ouvre
+- Remplis : date today, outcome "ضد الموكل", résumé "رفض الدعوى", stade استئنافي
+- Sélectionne dans le dropdown "محكمة الاستئناف بتونس"
+- VÉRIFIE : la modale reste ouverte après sélection de la cour
+- Confirme la transition
+- VÉRIFIE : stepper passe à استئنافي actif, ابتدائي vert ✓
+- VÉRIFIE : timeline contient stage_transitioned + legal_deadline_added
+- VÉRIFIE : onglet "الحكم والتنفيذ" contient le jugement
+- ✓ ou ✗ + captures
+
+LIVRER LE RAPPORT DES 3 TESTS DANS LE PR. Sans ce rapport, le hotfix n'est pas considéré comme livré.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- La facturation conforme TN livrée en T4 P1 doit toujours produire : TVA 19%, timbre fiscal 1 DT, numérotation atomique F-YYYY-NNNN, mentions obligatoires sur PDF.
+- L'auto-log timeline livré en T18a doit toujours créer les événements case_filed, invoice_issued, stage_transitioned, etc. aux moments appropriés.
+- Le wizard 4 étapes livré en T17 doit toujours valider correctement chaque étape avant de permettre d'avancer.
+- Les transitions de stade livrées en T18b doivent toujours créer les case_stages + legal_deadlines correctement.
+- RTL préservé sur toutes les modales corrigées.
