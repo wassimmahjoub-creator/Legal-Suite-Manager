@@ -435,7 +435,6 @@ export default function ClientPage() {
               </Button>
               <Button
                 size="sm"
-                variant="outline"
                 title="تصدير بيانات الموكّل"
                 className="gap-1.5 text-xs"
                 onClick={async () => {
