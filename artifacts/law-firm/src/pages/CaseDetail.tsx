@@ -1312,17 +1312,14 @@ export default function CaseDetail() {
       {/* Team modal */}
       <Modal open={modal === "team"} onClose={() => { setModal(null); setTeamEditId(null); }} title={teamEditId ? "تعديل دور العضو" : "إضافة عضو للفريق"}>
         <div className="space-y-4">
-          {!teamEditId && (
-            <FormField label="المستخدم" htmlFor="tm-user">
-              <SelectNative id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
-                <option value="">اختر مستخدماً...</option>
-                {allUsers.filter(u => !team.some(t => t.userId === u.id)).map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
-              </SelectNative>
-            </FormField>
-          )}
-          {teamEditId && (
-            <p className="text-sm font-medium">{team.find(m => m.id === teamEditId)?.userName}</p>
-          )}
+          <FormField label="المستخدم" htmlFor="tm-user">
+            <SelectNative id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+              <option value="">اختر مستخدماً...</option>
+              {allUsers
+                .filter(u => teamEditId ? true : !team.some(t => t.userId === u.id))
+                .map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
+            </SelectNative>
+          </FormField>
           <FormField label="الدور في القضية" htmlFor="tm-role">
             <SelectNative id="tm-role" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {["مسؤول رئيسي","مساعد","متربص"].map(r => <option key={r} value={r}>{r}</option>)}
@@ -1332,7 +1329,7 @@ export default function CaseDetail() {
             <Button className="flex-1" disabled={saving || (!teamEditId && !teamForm.userId)}
               onClick={() => withSave(async () => {
                 if (teamEditId) {
-                  await authFetch(`${BASE}/api/case-teams/${teamEditId}`, { method: "PUT", body: JSON.stringify({ role: teamForm.role }) });
+                  await authFetch(`${BASE}/api/case-teams/${teamEditId}`, { method: "PUT", body: JSON.stringify({ role: teamForm.role, userId: Number(teamForm.userId) }) });
                   setTeamEditId(null);
                 } else {
                   await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) });

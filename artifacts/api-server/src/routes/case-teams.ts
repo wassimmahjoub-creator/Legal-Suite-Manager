@@ -42,8 +42,10 @@ router.post("/cases/:caseId/team", requireAuth, async (req, res): Promise<void> 
 
 router.put("/case-teams/:id", requireAuth, async (req, res) => {
   const teamId = Number(req.params.id);
-  const { role } = req.body as { role: string };
-  const [row] = await db.update(caseTeamsTable).set({ role }).where(eq(caseTeamsTable.id, teamId)).returning();
+  const { role, userId } = req.body as { role: string; userId?: number };
+  const updateData: Record<string, unknown> = { role };
+  if (userId) updateData.userId = userId;
+  const [row] = await db.update(caseTeamsTable).set(updateData).where(eq(caseTeamsTable.id, teamId)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   res.json(row);
 });
