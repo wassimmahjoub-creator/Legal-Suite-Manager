@@ -46,33 +46,32 @@ interface StageDetailPanelProps {
 }
 
 export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, onSaved }: StageDetailPanelProps) {
-  const [notes, setNotes] = useState("");
-  const [executionStatus, setExecutionStatus] = useState("");
-  const [executionNotes, setExecutionNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [deadlines, setDeadlines] = useState<LegalDeadline[]>([]);
+  const [notes, setNotes]                 = useState("");
+  const [executionStatus, setExecStatus]  = useState("not_started");
+  const [executionNotes, setExecNotes]    = useState("");
+  const [saving, setSaving]               = useState(false);
+  const [deadlines, setDeadlines]         = useState<LegalDeadline[]>([]);
 
   useEffect(() => {
     if (!stage) return;
     setNotes(stage.notes ?? "");
-    setExecutionStatus(stage.executionStatus ?? "not_started");
-    setExecutionNotes(stage.executionNotes ?? "");
+    setExecStatus(stage.executionStatus ?? "not_started");
+    setExecNotes(stage.executionNotes ?? "");
   }, [stage]);
 
   useEffect(() => {
     if (!stage) return;
     authFetch(`${BASE}/api/cases/${caseId}/legal-deadlines`)
       .then(r => r.json())
-      .then((all: LegalDeadline[]) => setDeadlines(all.filter(d => {
-        return true;
-      })))
+      .then((all: LegalDeadline[]) => setDeadlines(all))
       .catch(() => {});
   }, [stage, caseId]);
 
   if (!stage) return null;
 
   const outcomeInfo = stage.decisionOutcome ? OUTCOME_ICONS[stage.decisionOutcome] : null;
-  const isDone = !!stage.exitedAt;
+  const isDone      = !!stage.exitedAt;
+  const today       = new Date().toISOString().slice(0, 10);
 
   async function handleSave() {
     if (!stage) return;
@@ -95,62 +94,82 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
     setDeadlines(prev => prev.map(d => d.id === dl.id ? { ...d, isCompleted: !d.isCompleted } : d));
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const inputCls = "w-full text-sm rounded-lg border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none";
 
   return (
-    <div className="fixed inset-0 z-50 flex" dir="rtl">
-      <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-full max-w-sm bg-card border-r border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Dialog */}
+      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center",
+              isDone ? "bg-green-500/15" : "bg-primary/15"
+            )}>
+              <Scale className={cn("h-4 w-4", isDone ? "text-green-400" : "text-primary")} />
+            </div>
+            <div>
+              <p className="font-semibold leading-none">{STAGE_LABELS[stage.stage] ?? stage.stage}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDateTN(stage.enteredAt.slice(0, 10))}
+                {stage.exitedAt && <> ← {formatDateTN(stage.exitedAt.slice(0, 10))}</>}
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-primary" />
-            <span className="font-semibold">{STAGE_LABELS[stage.stage] ?? stage.stage}</span>
             <span className={cn(
-              "text-xs px-2 py-0.5 rounded-full",
-              isDone ? "bg-green-500/10 text-green-400" : "bg-primary/10 text-primary"
+              "text-xs px-2 py-0.5 rounded-full font-medium",
+              isDone ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                     : "bg-primary/10 text-primary border border-primary/20"
             )}>
               {isDone ? "منتهٍ" : "نشط"}
             </span>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* Entry date */}
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" />
-            تاريخ الدخول: {formatDateTN(stage.enteredAt.slice(0, 10))}
-            {stage.exitedAt && <> — الخروج: {formatDateTN(stage.exitedAt.slice(0, 10))}</>}
-          </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
 
-          {/* Decision section (if exited) */}
+          {/* Judgment result (readonly, done stages) */}
           {isDone && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">الحكم</p>
-              <div className="bg-muted/40 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">نتيجة الطور</p>
+              <div className="bg-muted/40 rounded-xl p-4 space-y-2.5">
                 {stage.decisionDate && (
-                  <div className="text-sm"><span className="text-muted-foreground">تاريخ الحكم:</span> {formatDateTN(stage.decisionDate)}</div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">تاريخ الحكم:</span>
+                    <span className="font-medium">{formatDateTN(stage.decisionDate)}</span>
+                  </div>
                 )}
                 {outcomeInfo && (() => {
                   const Icon = outcomeInfo.icon;
                   return (
-                    <div className={cn("flex items-center gap-2 text-sm font-medium", outcomeInfo.cls)}>
+                    <div className={cn("flex items-center gap-2 text-sm font-semibold", outcomeInfo.cls)}>
                       <Icon className="h-4 w-4" />{outcomeInfo.label}
                     </div>
                   );
                 })()}
                 {stage.decisionSummary && (
-                  <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{stage.decisionSummary}</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed border-t border-border/40 pt-2.5 mt-1">
+                    {stage.decisionSummary}
+                  </p>
+                )}
+                {!stage.decisionDate && !stage.decisionOutcome && !stage.decisionSummary && (
+                  <p className="text-sm text-muted-foreground italic">لم تُسجَّل تفاصيل الحكم</p>
                 )}
               </div>
             </div>
           )}
 
-          {/* Execution tracking */}
+          {/* Execution tracking (only for execution stage) */}
           {stage.stage === "execution" && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">التنفيذ</p>
@@ -158,8 +177,8 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
                 <div className="space-y-2">
                   <select
                     value={executionStatus}
-                    onChange={e => setExecutionStatus(e.target.value)}
-                    className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2"
+                    onChange={e => setExecStatus(e.target.value)}
+                    className={inputCls}
                   >
                     <option value="not_started">لم يبدأ التنفيذ</option>
                     <option value="in_progress">التنفيذ جارٍ</option>
@@ -167,15 +186,15 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
                   </select>
                   <textarea
                     value={executionNotes}
-                    onChange={e => setExecutionNotes(e.target.value)}
+                    onChange={e => setExecNotes(e.target.value)}
                     rows={2}
                     placeholder="ملاحظات التنفيذ..."
-                    className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2 resize-none"
+                    className={inputCls}
                   />
                 </div>
               ) : (
                 <div className="bg-muted/40 rounded-xl p-3 space-y-1">
-                  <span className="text-sm">{EXEC_STATUS_LABELS[stage.executionStatus ?? "not_started"] ?? stage.executionStatus}</span>
+                  <span className="text-sm font-medium">{EXEC_STATUS_LABELS[stage.executionStatus ?? "not_started"]}</span>
                   {stage.executionNotes && <p className="text-xs text-muted-foreground">{stage.executionNotes}</p>}
                 </div>
               )}
@@ -191,16 +210,18 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
                 placeholder="ملاحظات حول هذا الطور..."
-                className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2 resize-none"
+                className={inputCls}
               />
             ) : (
-              <p className="text-sm text-muted-foreground bg-muted/40 rounded-xl p-3 min-h-[3rem]">
-                {stage.notes || <span className="italic opacity-50">لا توجد ملاحظات</span>}
-              </p>
+              <div className="bg-muted/40 rounded-xl p-3 min-h-[4rem] flex items-center">
+                <p className="text-sm text-muted-foreground">
+                  {stage.notes || <span className="italic opacity-50">لا توجد ملاحظات</span>}
+                </p>
+              </div>
             )}
           </div>
 
-          {/* Legal deadlines linked to this stage */}
+          {/* Deadlines */}
           {deadlines.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">الآجال القانونية</p>
@@ -209,22 +230,28 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
                   const isOverdue = !dl.isCompleted && dl.endDate && dl.endDate < today;
                   return (
                     <div key={dl.id} className={cn(
-                      "flex items-center gap-2 p-2 rounded-lg border text-sm",
-                      dl.isCompleted ? "opacity-50 bg-muted/20 border-border/40" : isOverdue ? "bg-red-500/5 border-red-500/20" : "bg-muted/30 border-border/50"
+                      "flex items-center gap-3 p-2.5 rounded-xl border text-sm transition-colors",
+                      dl.isCompleted
+                        ? "opacity-50 bg-muted/20 border-border/30"
+                        : isOverdue
+                          ? "bg-red-500/5 border-red-500/20"
+                          : "bg-muted/30 border-border/50 hover:border-border"
                     )}>
                       <button onClick={() => toggleDeadline(dl)} className="shrink-0">
                         <div className={cn(
-                          "w-4 h-4 rounded border-2 flex items-center justify-center",
-                          dl.isCompleted ? "bg-green-600 border-green-600" : "border-muted-foreground"
+                          "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                          dl.isCompleted
+                            ? "bg-green-600 border-green-600"
+                            : "border-muted-foreground hover:border-primary"
                         )}>
-                          {dl.isCompleted && <CheckCircle2 className="h-3 w-3 text-white" />}
+                          {dl.isCompleted && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                         </div>
                       </button>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("truncate", dl.isCompleted && "line-through")}>{dl.nameAr}</p>
+                        <p className={cn("truncate font-medium", dl.isCompleted && "line-through")}>{dl.nameAr}</p>
                         {dl.endDate && (
-                          <p className={cn("text-xs", isOverdue ? "text-red-400" : "text-muted-foreground")}>
-                            {formatDateTN(dl.endDate)}
+                          <p className={cn("text-xs", isOverdue ? "text-red-400 font-semibold" : "text-muted-foreground")}>
+                            {formatDateTN(dl.endDate)}{isOverdue && " — متأخر"}
                           </p>
                         )}
                       </div>
@@ -237,19 +264,22 @@ export function StageDetailPanel({ stage, mode, caseId, onClose, onTransition, o
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border space-y-2">
-          {mode === "active" && (
-            <Button onClick={handleSave} disabled={saving} variant="outline" size="sm" className="w-full">
-              {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+        {mode === "active" && (
+          <div className={cn(
+            "px-5 py-4 border-t border-border shrink-0 flex gap-2",
+            stage.stage !== "execution" ? "justify-between" : "justify-end"
+          )}>
+            {stage.stage !== "execution" && (
+              <Button onClick={onTransition} size="sm" className="gap-2">
+                <ChevronLeft className="h-4 w-4" />
+                الانتقال للطور التالي
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={saving} variant="outline" size="sm">
+              {saving ? "جارٍ الحفظ..." : "حفظ الملاحظات"}
             </Button>
-          )}
-          {mode === "active" && stage.stage !== "execution" && (
-            <Button onClick={onTransition} size="sm" className="w-full gap-2">
-              <ChevronLeft className="h-4 w-4" />
-              الانتقال للطور التالي
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
