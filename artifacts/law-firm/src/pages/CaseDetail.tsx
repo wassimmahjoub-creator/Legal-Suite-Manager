@@ -549,8 +549,8 @@ export default function CaseDetail() {
                         <div className="flex items-center gap-3 text-xs mt-0.5 flex-wrap">
                           <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateTN(d.dueDate)}</span>
                           {isOver && <span className="text-red-400 font-bold animate-pulse">متأخر!</span>}
-                          {!isOver && !d.completedAt && days <= 30 && <span className={cn("font-semibold", days <= 3 ? "text-red-400" : days <= 7 ? "text-orange-400" : "text-green-400")}>{days} يوم</span>}
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${d.urgency === "critical" ? "bg-red-500/20 text-red-400" : d.urgency === "high" ? "bg-orange-500/20 text-orange-400" : "bg-muted text-muted-foreground"}`}>{d.urgency === "critical" ? "حرج" : d.urgency === "high" ? "عالٍ" : "عادي"}</span>
+                          {!isOver && !d.completedAt && days <= 30 && <span className="text-[10px] bg-primary text-white rounded-full px-1.5 py-0.5 font-bold leading-none">{days} يوم</span>}
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-primary text-white font-bold leading-none">{d.urgency === "critical" ? "حرج" : d.urgency === "high" ? "عالٍ" : "عادي"}</span>
                         </div>
                       </div>
                     </div>
