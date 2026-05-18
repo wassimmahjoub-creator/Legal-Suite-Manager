@@ -71,16 +71,15 @@ export function ExportDropdown({ endpoint, apiPath, params = {}, label = "تصد
   return (
     <div className="relative" ref={ref}>
       <Button
-        size="sm"
-        className="gap-1.5 text-xs"
+        className="rounded-lg gap-2 px-5"
         disabled={busy}
         onClick={() => setOpen(o => !o)}
       >
         {busy
-          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          : <Download className="h-3.5 w-3.5" />}
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <Download className="h-4 w-4" />}
         {label}
-        <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </Button>
 
       {open && (
