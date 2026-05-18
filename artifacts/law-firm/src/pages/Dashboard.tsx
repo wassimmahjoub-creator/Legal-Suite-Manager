@@ -1,4 +1,3 @@
-import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/currency";
@@ -11,28 +10,15 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal, FormField } from "@/components/Modal";
-import { SmartTextarea } from "@/components/SmartTextarea";
 import {
-  Briefcase, CreditCard, Clock, AlertTriangle, CheckCircle2,
-  Calendar, Plus, Timer, TrendingUp, Scale, Users, ArrowLeft,
+  Briefcase, Clock, AlertTriangle, CheckCircle2,
+  Calendar, TrendingUp, Scale, Users, ArrowLeft,
   Circle, CalendarClock, Crown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
-import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-const STAGES = ["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"];
-
-const EMPTY_CASE = {
-  title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
-  nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "",
-};
-
-type QuickModal = "case" | "event" | "invoice" | null;
-
 type RecentCase = { id: number; title: string; status: string; clientName?: string | null; };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -54,15 +40,11 @@ export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: today, isLoading: loadingToday } = useGetDashboardToday();
   const { data: alerts, isLoading: loadingAlerts } = useGetDashboardAlerts();
-  const [modal, setModal] = useState<QuickModal>(null);
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
   const updateTask = useUpdateTask();
   const [orgInfo, setOrgInfo] = useState<OrgTrialInfo | null>(null);
-  const [caseForm, setCaseForm] = useState({ ...EMPTY_CASE });
-  const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
-  const [savingCase, setSavingCase] = useState(false);
   const [recentCases, setRecentCases] = useState<RecentCase[]>([]);
 
   useEffect(() => {
@@ -75,28 +57,6 @@ export default function Dashboard() {
       .then((d: RecentCase[]) => setRecentCases(Array.isArray(d) ? d.slice(0, 5) : []))
       .catch(() => {});
   }, []);
-
-  async function openCaseModal() {
-    const r = await authFetch(`${BASE}/api/clients`);
-    if (r.ok) setClients(await r.json());
-    setCaseForm({ ...EMPTY_CASE });
-    setModal("case");
-  }
-
-  async function saveCase() {
-    if (!caseForm.title || !caseForm.clientId) return;
-    setSavingCase(true);
-    const res = await authFetch(`${BASE}/api/cases`, {
-      method: "POST",
-      body: JSON.stringify({ ...caseForm, clientId: Number(caseForm.clientId), nextHearing: caseForm.nextHearing || undefined }),
-    });
-    setSavingCase(false);
-    if (res.ok) {
-      const created = await res.json() as { id: number };
-      setModal(null);
-      navigate(`${BASE}/cases/${created.id}`);
-    }
-  }
 
   function toggleTask(taskId: number, currentDone: boolean) {
     setTogglingIds(prev => new Set(prev).add(taskId));
@@ -111,37 +71,18 @@ export default function Dashboard() {
     );
   }
 
-  const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-primary/10 rounded-xl">
-            <Scale className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">لوحة القيادة</h1>
-            <p className="text-muted-foreground text-sm">
-              <DateDisplay date={new Date()} format="full" />
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-xl">
+          <Scale className="h-6 w-6 text-primary" />
         </div>
-        {/* Quick Actions Bar */}
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={openCaseModal} className="gap-1.5 h-9">
-            <Plus className="h-3.5 w-3.5" /> قضية
-          </Button>
-          <Button size="sm" onClick={() => setModal("event")} className="gap-1.5 h-9">
-            <Calendar className="h-3.5 w-3.5" /> موعد
-          </Button>
-          <Button size="sm" onClick={() => setModal("invoice")} className="gap-1.5 h-9">
-            <CreditCard className="h-3.5 w-3.5" /> فاتورة
-          </Button>
-          <Button size="sm" onClick={() => navigate("/time-tracking")} className="gap-1.5 h-9">
-            <Timer className="h-3.5 w-3.5" /> كرونومتر
-          </Button>
+        <div>
+          <h1 className="text-2xl font-bold">لوحة القيادة</h1>
+          <p className="text-muted-foreground text-sm">
+            <DateDisplay date={new Date()} format="full" />
+          </p>
         </div>
       </div>
 
@@ -413,134 +354,6 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* New Case Modal — identical to Cases page form */}
-      <Modal open={modal === "case"} onClose={() => setModal(null)} title="قضية جديدة" size="lg">
-        <div className="space-y-4">
-          <FormField label="عنوان القضية *" htmlFor="dc-title">
-            <Input id="dc-title" placeholder="مثال: قضية ميراث عائلة بن علي" className={inputCls}
-              value={caseForm.title} onChange={e => setCaseForm(f => ({ ...f, title: e.target.value }))} />
-          </FormField>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="الحريف *" htmlFor="dc-client">
-              <SelectNative id="dc-client" value={caseForm.clientId} onChange={e => setCaseForm(f => ({ ...f, clientId: e.target.value }))} className={inputCls + " px-3 cursor-pointer"}>
-                <option value="">اختر حريفاً...</option>
-                {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
-              </SelectNative>
-            </FormField>
-            <FormField label="المحامي المسؤول" htmlFor="dc-lawyer">
-              <Input id="dc-lawyer" placeholder="اسم المحامي" className={inputCls}
-                value={caseForm.lawyer} onChange={e => setCaseForm(f => ({ ...f, lawyer: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="المحكمة" htmlFor="dc-court">
-              <Input id="dc-court" placeholder="مثال: محكمة تونس الابتدائية" className={inputCls}
-                value={caseForm.court} onChange={e => setCaseForm(f => ({ ...f, court: e.target.value }))} />
-            </FormField>
-            <FormField label="الدائرة" htmlFor="dc-div">
-              <Input id="dc-div" placeholder="الدائرة الأولى" className={inputCls}
-                value={caseForm.division} onChange={e => setCaseForm(f => ({ ...f, division: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="رقم القضية لدى المحكمة" htmlFor="dc-court-num"
-              hint="الرقم الذي خصصته المحكمة">
-              <Input id="dc-court-num" placeholder="12345/2026" className={inputCls} dir="ltr"
-                value={caseForm.courtCaseNumber} onChange={e => setCaseForm(f => ({ ...f, courtCaseNumber: e.target.value }))} />
-            </FormField>
-            <FormField label="مرجع الحريف" htmlFor="dc-client-ref"
-              hint="رقم الملف لدى الحريف نفسه">
-              <Input id="dc-client-ref" placeholder="مرجع داخلي للحريف" className={inputCls}
-                value={caseForm.clientFileRef} onChange={e => setCaseForm(f => ({ ...f, clientFileRef: e.target.value }))} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="الحالة" htmlFor="dc-status">
-              <SelectNative id="dc-status" className={inputCls + " px-3 cursor-pointer"}
-                value={caseForm.status} onChange={e => setCaseForm(f => ({ ...f, status: e.target.value }))}>
-                <option value="active">نشطة</option>
-                <option value="pending">في الانتظار</option>
-                <option value="suspended">موقوفة</option>
-                <option value="closed">مغلقة</option>
-              </SelectNative>
-            </FormField>
-            <FormField label="المرحلة الإجرائية" htmlFor="dc-stage">
-              <SelectNative id="dc-stage" className={inputCls + " px-3 cursor-pointer"}
-                value={caseForm.procedureStage} onChange={e => setCaseForm(f => ({ ...f, procedureStage: e.target.value }))}>
-                {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </SelectNative>
-            </FormField>
-          </div>
-
-          <FormField label="موعد الجلسة القادمة" htmlFor="dc-hearing">
-            <Input id="dc-hearing" type="date" className={inputCls} dir="ltr"
-              value={caseForm.nextHearing} onChange={e => setCaseForm(f => ({ ...f, nextHearing: e.target.value }))} />
-          </FormField>
-
-          <FormField label="وصف القضية" htmlFor="dc-desc">
-            <SmartTextarea id="dc-desc" rows={3} placeholder="وصف مختصر للقضية والوقائع..."
-              aiContext="وصف قضية قانونية"
-              value={caseForm.description} onChange={v => setCaseForm(f => ({ ...f, description: v }))} />
-          </FormField>
-
-          <div className="flex gap-3 pt-2">
-            <Button className="flex-1" disabled={savingCase || !caseForm.title || !caseForm.clientId} onClick={saveCase}>
-              {savingCase ? "جارٍ الحفظ..." : "حفظ وفتح الملف"}
-            </Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-6">إلغاء</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Quick Add Event Modal */}
-      <Modal open={modal === "event"} onClose={() => setModal(null)} title="حدث جديد">
-        <div className="space-y-4">
-          <FormField label="عنوان الحدث *" htmlFor="qe-title">
-            <Input id="qe-title" placeholder="مثال: جلسة محكمة تونس" className={inputCls} />
-          </FormField>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField label="التاريخ *" htmlFor="qe-date">
-              <Input id="qe-date" type="date" className={inputCls} dir="ltr" />
-            </FormField>
-            <FormField label="الوقت" htmlFor="qe-time">
-              <Input id="qe-time" type="time" className={inputCls} dir="ltr" />
-            </FormField>
-          </div>
-          <FormField label="القضية" htmlFor="qe-case">
-            <Input id="qe-case" placeholder="اسم القضية المرتبطة" className={inputCls} />
-          </FormField>
-          <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setModal(null)}>حفظ الحدث</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Quick Add Invoice Modal */}
-      <Modal open={modal === "invoice"} onClose={() => setModal(null)} title="فاتورة جديدة">
-        <div className="space-y-4">
-          <FormField label="الحريف *" htmlFor="qi-client">
-            <Input id="qi-client" placeholder="اسم الحريف" className={inputCls} />
-          </FormField>
-          <FormField label="المبلغ (د.ت) *" htmlFor="qi-amount">
-            <Input id="qi-amount" type="number" placeholder="0.000" className={inputCls} dir="ltr" />
-          </FormField>
-          <FormField label="القضية" htmlFor="qi-case">
-            <Input id="qi-case" placeholder="اسم القضية (اختياري)" className={inputCls} />
-          </FormField>
-          <FormField label="تاريخ الاستحقاق" htmlFor="qi-due">
-            <Input id="qi-due" type="date" className={inputCls} dir="ltr" />
-          </FormField>
-          <div className="flex gap-3 pt-2">
-            <Button className="flex-1" onClick={() => setModal(null)}>إنشاء الفاتورة</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
