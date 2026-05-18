@@ -686,8 +686,8 @@ export default function CaseDetail() {
                       <tr key={inv.id} onClick={() => navigate(`/billing/${inv.id}`)} className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer">
                         <td className="py-2.5 px-2 text-xs font-mono">{inv.invoiceNumber ?? `#${inv.id}`}</td>
                         <td className="py-2.5 px-2 text-xs text-muted-foreground">{inv.issueDate ? formatDateTN(inv.issueDate) : "—"}</td>
-                        <td className="py-2.5 px-2 text-xs font-mono font-semibold" dir="ltr">{Number(inv.netToPay).toFixed(3)} د.ت</td>
-                        <td className="py-2.5 px-2 text-xs font-mono text-green-400" dir="ltr">{inv.amountPaid ? `${Number(inv.amountPaid).toFixed(3)} د.ت` : "—"}</td>
+                        <td className="py-2.5 px-2 text-xs font-mono font-semibold text-right">{Number(inv.netToPay).toFixed(3)} د.ت</td>
+                        <td className="py-2.5 px-2 text-xs font-mono text-green-400 text-right">{inv.amountPaid ? `${Number(inv.amountPaid).toFixed(3)} د.ت` : "—"}</td>
                         <td className="py-2.5 px-2">
                           <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", inv.status === "paid" ? "bg-green-500/10 text-green-400" : isOverdue ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground")}>
                             {inv.status === "paid" ? "مدفوعة" : isOverdue ? "متأخرة" : "قيد الانتظار"}
