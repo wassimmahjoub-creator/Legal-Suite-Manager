@@ -816,19 +816,23 @@ export default function Reports() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-[#1a2236] p-1 rounded-xl w-fit border border-white/10">
-        {TABS.map(t => {
-          const Icon = t.icon;
-          return (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.key ? "bg-[#D4AF37] text-[#0f1929]" : "text-muted-foreground hover:text-white"
-              }`}>
-              <Icon className="w-4 h-4" />
-              {t.label}
-            </button>
-          );
-        })}
+      <div className="border-b border-border">
+        <div className="flex gap-0.5 overflow-x-auto no-scrollbar">
+          {TABS.map(t => {
+            const Icon = t.icon;
+            return (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
+                  tab === t.key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                }`}>
+                <Icon className="w-4 h-4" />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Content */}
