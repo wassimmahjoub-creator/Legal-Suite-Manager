@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Filter, Archive, Hash, ArrowRight } from "lucide-react";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +53,10 @@ export default function Cases() {
           </div>
         </div>
         <div className="flex gap-2">
+          <ExportDropdown
+            endpoint="cases"
+            params={{ search, status: statusFilter !== "all" ? statusFilter : undefined, archived: viewArchived ? "true" : undefined }}
+          />
           {!viewArchived && (
             <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
               <Archive className="h-4 w-4" />

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/ui/skeletons";
 import { Modal, FormField } from "@/components/Modal";
@@ -124,9 +125,12 @@ export default function Clients() {
           <h1 className="text-2xl font-bold">الموكّلون</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة معلومات وبيانات الموكّلون</p>
         </div>
-        <Button onClick={openNew} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" /> موكّل جديد
-        </Button>
+        <div className="flex gap-2">
+          <ExportDropdown endpoint="clients" params={{ search }} />
+          <Button onClick={openNew} className="rounded-lg gap-2 px-5">
+            <Plus className="h-4 w-4" /> موكّل جديد
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">

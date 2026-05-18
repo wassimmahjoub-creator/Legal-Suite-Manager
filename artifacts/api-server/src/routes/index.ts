@@ -38,6 +38,7 @@ import caseStagesRouter from "./case-stages";
 import expensesRouter from "./expenses";
 import conflictChecksRouter from "./conflict-checks";
 import dataExportsRouter from "./data-exports.js";
+import exportsRouter from "./exports.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -96,5 +97,6 @@ router.use(caseStagesRouter);
 router.use(expensesRouter);
 router.use(conflictChecksRouter);
 router.use(dataExportsRouter);
+router.use(exportsRouter);
 
 export default router;
