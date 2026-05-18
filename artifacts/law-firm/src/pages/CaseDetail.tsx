@@ -1070,7 +1070,10 @@ export default function CaseDetail() {
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               {fromReports ? (
-                <button onClick={() => navigate("/reports")}
+                <button onClick={() => {
+                  const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
+                  navigate(`/reports?tab=${fromTab}`);
+                }}
                   className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted transition-colors shrink-0 text-xs text-muted-foreground hover:text-foreground">
                   <ArrowRight className="h-4 w-4" /> التقارير
                 </button>

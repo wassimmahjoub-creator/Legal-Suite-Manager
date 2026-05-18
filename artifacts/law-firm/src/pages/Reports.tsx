@@ -500,7 +500,7 @@ function CaseProfitability() {
               <tbody>
                 {sorted.map((r, i) => (
                   <tr key={r.caseId}
-                    onClick={() => navigate(`/cases/${r.caseId}?from=reports`)}
+                    onClick={() => navigate(`/cases/${r.caseId}?from=reports&fromTab=profitability`)}
                     className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
                     <td className="px-3 py-2 font-mono text-[#D4AF37] whitespace-nowrap">{r.caseNumber}</td>
                     <td className="px-3 py-2 max-w-[16rem] truncate" title={r.title}>{r.title}</td>
@@ -796,8 +796,19 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function Reports() {
-  const [tab, setTab]   = useState<Tab>("summary");
+  const getTabFromURL = (): Tab => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return (["summary", "profitability", "lawyers", "clients"] as Tab[]).includes(t as Tab)
+      ? (t as Tab)
+      : "summary";
+  };
+  const [tab, setTab]   = useState<Tab>(getTabFromURL);
   const [, navigate]    = useLocation();
+
+  function changeTab(t: Tab) {
+    setTab(t);
+    window.history.replaceState(null, "", `?tab=${t}`);
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
@@ -824,7 +835,7 @@ export default function Reports() {
           {TABS.map(t => {
             const Icon = t.icon;
             return (
-              <button key={t.key} onClick={() => setTab(t.key)}
+              <button key={t.key} onClick={() => changeTab(t.key)}
                 className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   tab === t.key
                     ? "border-primary text-primary"
