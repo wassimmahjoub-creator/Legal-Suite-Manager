@@ -8,6 +8,7 @@ import { useGetCase } from "@workspace/api-client-react";
 import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { useLocale } from "@/context/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,7 @@ export default function CaseDetail() {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: caseData, isLoading, refetch } = useGetCase(Number(id), { query: { enabled: !!id } });
 
   // URL tab sync
