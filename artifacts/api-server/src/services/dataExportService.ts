@@ -1,4 +1,4 @@
-// archiver v8 is ESM with named class exports
+import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { createWriteStream, mkdirSync, statSync } from "fs";
 import { join } from "path";
@@ -9,7 +9,7 @@ import {
   invoicesTable, caseTeamsTable, legalDeadlinesTable,
   caseEventsTable, expensesTable, conflictChecksTable,
 } from "@workspace/db";
-import { eq, isNull, and, lt, sql } from "drizzle-orm";
+import { eq, isNull, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 export type ExportType = "full_cabinet" | "single_client" | "single_case";
@@ -40,22 +40,93 @@ export function verifyDownloadToken(exportId: number, token: string): boolean {
   return hmac === expected;
 }
 
+/* ── XLSX style helpers ──────────────────────────────────── */
+
+const GOLD_ARGB  = "FFD4AF37";
+const WHITE_ARGB = "FFFFFFFF";
+
+function fmtDate(d: string | Date | null | undefined): string {
+  if (!d) return "";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (isNaN(dt.getTime())) return "";
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${dt.getFullYear()}`;
+}
+
+function fmtNum(v: string | number | null | undefined): number | string {
+  if (v == null || v === "") return "";
+  const n = typeof v === "string" ? parseFloat(v) : v;
+  return isNaN(n) ? "" : n;
+}
+
+function applyGoldHeader(ws: ExcelJS.Worksheet, colCount: number) {
+  const row = ws.getRow(1);
+  for (let c = 1; c <= colCount; c++) {
+    const cell = row.getCell(c);
+    cell.font      = { bold: true, color: { argb: WHITE_ARGB }, name: "Cairo", size: 10 };
+    cell.fill      = { type: "pattern", pattern: "solid", fgColor: { argb: GOLD_ARGB } };
+    cell.alignment = { horizontal: "center", vertical: "middle", readingOrder: "rtl" };
+    cell.border    = { bottom: { style: "thin", color: { argb: "FF8B6914" } } };
+  }
+  row.height = 22;
+}
+
+function styleDataRows(ws: ExcelJS.Worksheet, rowCount: number, colCount: number) {
+  for (let r = 2; r <= rowCount + 1; r++) {
+    const row = ws.getRow(r);
+    row.height = 18;
+    for (let c = 1; c <= colCount; c++) {
+      const cell = row.getCell(c);
+      cell.alignment = { vertical: "middle", readingOrder: "rtl" };
+      if (r % 2 === 0) {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+      }
+    }
+  }
+}
+
+function autoWidths(ws: ExcelJS.Worksheet, headers: string[], data: (string | number | null | undefined)[][]) {
+  headers.forEach((h, i) => {
+    const maxData = data.reduce((max, row) => {
+      const len = String(row[i] ?? "").length;
+      return len > max ? len : max;
+    }, 0);
+    ws.getColumn(i + 1).width = Math.min(Math.max(h.length * 1.6, maxData, 10), 55);
+  });
+}
+
+function setRtlView(ws: ExcelJS.Worksheet) {
+  ws.views = [{ rightToLeft: true, state: "normal" }];
+}
+
+function addSheet(
+  wb: ExcelJS.Workbook,
+  name: string,
+  headers: string[],
+  rows: (string | number | null | undefined)[][],
+) {
+  const ws = wb.addWorksheet(name);
+  setRtlView(ws);
+  ws.addRow(headers);
+  applyGoldHeader(ws, headers.length);
+  rows.forEach(r => ws.addRow(r));
+  styleDataRows(ws, rows.length, headers.length);
+  autoWidths(ws, headers, rows);
+}
+
 /* ── ZIP builder ─────────────────────────────────────────── */
 
-function hashBuf(buf: Buffer): string {
+type ZipEntry = Buffer | string;
+
+function hashEntry(entry: ZipEntry): string {
+  const buf = typeof entry === "string" ? Buffer.from(entry, "utf8") : entry;
   return createHash("sha256").update(buf).digest("hex");
 }
 
-function toJson(v: unknown): Buffer {
-  return Buffer.from(JSON.stringify(v, null, 2), "utf8");
-}
-
-function buildZip(
-  files: Record<string, unknown>,
-  filePath: string,
-): Promise<void> {
+function buildZip(files: Record<string, ZipEntry>, filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const output = createWriteStream(filePath);
+    const output  = createWriteStream(filePath);
     const archive = new ZipArchive({ zlib: { level: 9 } });
 
     const manifest: Array<{ file: string; sha256: string; bytes: number }> = [];
@@ -66,246 +137,293 @@ function buildZip(
     archive.pipe(output);
 
     for (const [name, content] of Object.entries(files)) {
-      const buf =
-        typeof content === "string"
-          ? Buffer.from(content, "utf8")
-          : toJson(content);
-      manifest.push({ file: name, sha256: hashBuf(buf), bytes: buf.length });
+      const buf = typeof content === "string" ? Buffer.from(content, "utf8") : content;
+      manifest.push({ file: name, sha256: hashEntry(content), bytes: buf.length });
       archive.append(buf, { name });
     }
 
-    const mBuf = toJson({
+    const manifestBuf = Buffer.from(JSON.stringify({
       generatedAt: new Date().toISOString(),
       system: "محامي بلوس (Mahami Plus)",
       files: manifest,
-    });
-    archive.append(mBuf, { name: "audit/manifest.json" });
+    }, null, 2), "utf8");
+    archive.append(manifestBuf, { name: "audit/manifest.json" });
 
     archive.finalize();
   });
 }
 
-/* ── Data gathering helpers ──────────────────────────────── */
+/* ── Data helpers ────────────────────────────────────────── */
 
 async function safeExec(query: ReturnType<typeof sql>): Promise<unknown[]> {
   const r = await db.execute(query);
   return Array.isArray(r) ? r : ((r as { rows?: unknown[] }).rows ?? []);
 }
 
-async function gatherFullCabinet(): Promise<Record<string, unknown>> {
-  const files: Record<string, unknown> = {};
-  const now = new Date().toISOString();
+/* ── Full cabinet — multi-sheet XLSX ─────────────────────── */
 
-  files["README.txt"] =
+async function buildFullCabinetXlsx(): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "محامي بلوس (Mahami Plus)";
+
+  /* Sheet 1: Organization */
+  const orgRows = await safeExec(sql`SELECT * FROM organizations LIMIT 1`);
+  const org = (orgRows[0] as Record<string, unknown>) ?? {};
+  addSheet(wb, "المكتب", ["البيان", "القيمة"], [
+    ["اسم المكتب",       String(org.name ?? "")],
+    ["البريد الإلكتروني", String(org.email ?? "")],
+    ["الهاتف",           String(org.phone ?? "")],
+    ["العنوان",           String(org.address ?? "")],
+    ["المدينة",           String(org.city ?? "")],
+    ["الترقيم الجبائي",  String(org.taxId ?? "")],
+  ]);
+
+  /* Sheet 2: Users */
+  const users = await db.select({
+    id: usersTable.id, name: usersTable.name,
+    email: usersTable.email, role: usersTable.role,
+    createdAt: usersTable.createdAt,
+  }).from(usersTable);
+  addSheet(wb, "المستخدمون",
+    ["الرقم", "الاسم", "البريد", "الدور", "تاريخ الإنشاء"],
+    users.map(u => [u.id, u.name ?? "", u.email ?? "", u.role ?? "", fmtDate(u.createdAt)]),
+  );
+
+  /* Sheet 3: Clients */
+  const clients = await db.select().from(clientsTable).where(isNull(clientsTable.deletedAt));
+  addSheet(wb, "الموكّلون",
+    ["الرقم", "الاسم", "الهاتف", "البريد", "العنوان", "رقم الهوية", "تاريخ الإنشاء"],
+    clients.map(c => [c.id, c.name ?? "", c.phone ?? "", c.email ?? "", c.address ?? "", c.cin ?? "", fmtDate(c.createdAt)]),
+  );
+
+  /* Sheet 4: Cases */
+  const cases = await db.select().from(casesTable).where(isNull(casesTable.deletedAt));
+  addSheet(wb, "القضايا",
+    ["الرقم", "رقم الملف", "العنوان", "المحكمة", "الدائرة", "الحالة", "المرحلة الإجرائية", "الجلسة القادمة", "تاريخ الإنشاء"],
+    cases.map(c => [
+      c.id, c.caseNumber ?? "", c.title ?? "", c.court ?? "", c.division ?? "",
+      c.status ?? "", c.procedureStage ?? "", fmtDate(c.nextHearing), fmtDate(c.createdAt),
+    ]),
+  );
+
+  /* Sheet 5: Invoices */
+  const invoices = await db.select().from(invoicesTable).where(isNull(invoicesTable.deletedAt));
+  addSheet(wb, "الفواتير",
+    ["الرقم", "العنوان", "المبلغ الإجمالي", "المدفوع", "الرصيد", "الحالة", "تاريخ الاستحقاق", "تاريخ الإنشاء"],
+    invoices.map(inv => [
+      inv.id, inv.title ?? "",
+      fmtNum(inv.totalAmount), fmtNum(inv.paidAmount),
+      fmtNum(String(Number(inv.totalAmount ?? 0) - Number(inv.paidAmount ?? 0))),
+      inv.status ?? "", fmtDate(inv.dueDate), fmtDate(inv.createdAt),
+    ]),
+  );
+
+  /* Sheet 6: Expenses */
+  const expenses = await db.select().from(expensesTable);
+  addSheet(wb, "المصاريف",
+    ["الرقم", "التسمية", "المبلغ", "العملة", "الفئة", "التاريخ", "ملاحظات"],
+    expenses.map(e => [
+      e.id, e.label ?? "", fmtNum(e.amount), e.currency ?? "TND",
+      e.category ?? "", fmtDate(e.date), e.notes ?? "",
+    ]),
+  );
+
+  /* Sheet 7: Audit logs */
+  const auditRows = await safeExec(sql`SELECT id, entity_type, entity_id, action, user_id, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 5000`);
+  addSheet(wb, "سجل التعديلات",
+    ["الرقم", "نوع الكيان", "معرّف الكيان", "الإجراء", "المستخدم", "التاريخ"],
+    (auditRows as Record<string, unknown>[]).map(r => [
+      String(r.id ?? ""), String(r.entity_type ?? ""), String(r.entity_id ?? ""),
+      String(r.action ?? ""), String(r.user_id ?? ""), fmtDate(r.created_at as string),
+    ]),
+  );
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+/* ── Client data — multi-sheet XLSX ─────────────────────── */
+
+async function buildClientXlsx(clientId: number): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "محامي بلوس (Mahami Plus)";
+
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId));
+  if (!client) throw new Error(`Client ${clientId} not found`);
+
+  addSheet(wb, "بيانات الموكّل", ["البيان", "القيمة"], [
+    ["الاسم",       client.name ?? ""],
+    ["الهاتف",      client.phone ?? ""],
+    ["البريد",      client.email ?? ""],
+    ["العنوان",     client.address ?? ""],
+    ["رقم الهوية",  client.cin ?? ""],
+    ["تاريخ الإنشاء", fmtDate(client.createdAt)],
+  ]);
+
+  const cases = await db.select().from(casesTable)
+    .where(and(eq(casesTable.clientId, clientId), isNull(casesTable.deletedAt)));
+  addSheet(wb, "القضايا",
+    ["الرقم", "رقم الملف", "العنوان", "المحكمة", "الحالة", "الجلسة القادمة"],
+    cases.map(c => [c.id, c.caseNumber ?? "", c.title ?? "", c.court ?? "", c.status ?? "", fmtDate(c.nextHearing)]),
+  );
+
+  const invs = await db.select().from(invoicesTable)
+    .where(and(eq(invoicesTable.clientId, clientId), isNull(invoicesTable.deletedAt)));
+  addSheet(wb, "الفواتير",
+    ["الرقم", "العنوان", "الإجمالي", "المدفوع", "الرصيد", "الحالة", "تاريخ الاستحقاق"],
+    invs.map(i => [
+      i.id, i.title ?? "", fmtNum(i.totalAmount), fmtNum(i.paidAmount),
+      fmtNum(String(Number(i.totalAmount ?? 0) - Number(i.paidAmount ?? 0))),
+      i.status ?? "", fmtDate(i.dueDate),
+    ]),
+  );
+
+  for (const c of cases) {
+    const deadlines = await db.select().from(legalDeadlinesTable).where(eq(legalDeadlinesTable.caseId, c.id));
+    if (deadlines.length > 0) {
+      addSheet(wb, `آجال-${c.caseNumber ?? c.id}`.slice(0, 31),
+        ["النوع", "تاريخ الانطلاق", "تاريخ الانتهاء", "الحالة", "ملاحظات"],
+        deadlines.map(d => [d.type ?? "", fmtDate(d.startDate), fmtDate(d.dueDate), d.status ?? "", d.notes ?? ""]),
+      );
+    }
+  }
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+/* ── Case data — multi-sheet XLSX ───────────────────────── */
+
+async function buildCaseXlsx(caseId: number): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "محامي بلوس (Mahami Plus)";
+
+  const [caseRow] = await db.select().from(casesTable).where(eq(casesTable.id, caseId));
+  if (!caseRow) throw new Error(`Case ${caseId} not found`);
+
+  addSheet(wb, "القضية", ["البيان", "القيمة"], [
+    ["رقم الملف",        caseRow.caseNumber ?? ""],
+    ["العنوان",           caseRow.title ?? ""],
+    ["المحكمة",           caseRow.court ?? ""],
+    ["الدائرة",           caseRow.division ?? ""],
+    ["الحالة",            caseRow.status ?? ""],
+    ["المرحلة الإجرائية", caseRow.procedureStage ?? ""],
+    ["الجلسة القادمة",    fmtDate(caseRow.nextHearing)],
+    ["الوصف",             caseRow.description ?? ""],
+    ["تاريخ الإنشاء",    fmtDate(caseRow.createdAt)],
+  ]);
+
+  const opponents = await db.select().from(opponentsTable).where(eq(opponentsTable.caseId, caseId));
+  addSheet(wb, "الخصوم",
+    ["الرقم", "الاسم", "الهاتف", "المحامي", "الجهة"],
+    opponents.map(o => [o.id, o.name ?? "", o.phone ?? "", o.lawyer ?? "", o.organization ?? ""]),
+  );
+
+  const team = await db.select().from(caseTeamsTable).where(eq(caseTeamsTable.caseId, caseId));
+  addSheet(wb, "الفريق",
+    ["الرقم", "المستخدم", "الدور"],
+    team.map(t => [t.id, String(t.userId ?? ""), t.role ?? ""]),
+  );
+
+  const timeline = await db.select().from(caseEventsTable).where(eq(caseEventsTable.caseId, caseId));
+  addSheet(wb, "الجلسات",
+    ["الرقم", "العنوان", "التاريخ", "النوع", "النتيجة", "الحالة القانونية"],
+    timeline.map(e => [e.id, e.title ?? "", fmtDate(e.date), e.type ?? "", e.result ?? "", e.legalStatus ?? ""]),
+  );
+
+  const deadlines = await db.select().from(legalDeadlinesTable).where(eq(legalDeadlinesTable.caseId, caseId));
+  addSheet(wb, "الآجال",
+    ["الرقم", "النوع", "تاريخ الانطلاق", "تاريخ الانتهاء", "الحالة", "ملاحظات"],
+    deadlines.map(d => [d.id, d.type ?? "", fmtDate(d.startDate), fmtDate(d.dueDate), d.status ?? "", d.notes ?? ""]),
+  );
+
+  const invs = await db.select().from(invoicesTable).where(eq(invoicesTable.caseId, caseId));
+  addSheet(wb, "الفواتير",
+    ["الرقم", "العنوان", "الإجمالي", "المدفوع", "الحالة", "تاريخ الاستحقاق"],
+    invs.map(i => [i.id, i.title ?? "", fmtNum(i.totalAmount), fmtNum(i.paidAmount), i.status ?? "", fmtDate(i.dueDate)]),
+  );
+
+  const expenses = await db.select().from(expensesTable).where(eq(expensesTable.caseId, caseId));
+  addSheet(wb, "المصاريف",
+    ["الرقم", "التسمية", "المبلغ", "العملة", "الفئة", "التاريخ"],
+    expenses.map(e => [e.id, e.label ?? "", fmtNum(e.amount), e.currency ?? "TND", e.category ?? "", fmtDate(e.date)]),
+  );
+
+  const conflicts = await db.select().from(conflictChecksTable).where(eq(conflictChecksTable.caseId, caseId));
+  if (conflicts.length > 0) {
+    addSheet(wb, "تعارض المصالح",
+      ["الرقم", "الاسم المستعلم عنه", "النتيجة", "التاريخ"],
+      conflicts.map(c => [c.id, c.searchedName ?? "", c.result ?? "", fmtDate(c.createdAt)]),
+    );
+  }
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+/* ── Gather functions (return ZipEntry maps) ─────────────── */
+
+async function gatherFullCabinet(): Promise<Record<string, ZipEntry>> {
+  const now = new Date().toLocaleString("ar-TN");
+  const xlsxBuf = await buildFullCabinetXlsx();
+
+  const readme =
     `تصدير بيانات المكتب — محامي بلوس (Mahami Plus)\n` +
     `تاريخ التصدير: ${now}\n\n` +
-    `يحتوي هذا الملف على نسخة كاملة من بيانات مكتبك.\n` +
-    `الملفات بصيغة JSON. يمكن فتحها بأي محرر نص.\n` +
-    `تحتوي audit/manifest.json على بصمة SHA-256 لكل ملف.\n`;
+    `المحتويات:\n` +
+    `  بيانات-المكتب.xlsx — جميع بيانات المكتب (7 جداول):\n` +
+    `    • المكتب           — إعدادات المكتب\n` +
+    `    • المستخدمون       — قائمة المستخدمين والأدوار\n` +
+    `    • الموكّلون        — جميع الموكّلين\n` +
+    `    • القضايا          — جميع الملفات القضائية\n` +
+    `    • الفواتير         — جميع الفواتير\n` +
+    `    • المصاريف         — جميع المصاريف\n` +
+    `    • سجل التعديلات    — آخر 5000 تعديل\n` +
+    `  audit/manifest.json — بصمة SHA-256 لكل ملف\n\n` +
+    `⚠️  هذا الملف يحتوي على بيانات سرية. احتفظ به في مكان آمن.\n`;
 
-  const org = await safeExec(sql`SELECT * FROM organizations LIMIT 1`);
-  files["cabinet/settings.json"] = org[0] ?? {};
-
-  const users = await db
-    .select({
-      id: usersTable.id,
-      name: usersTable.name,
-      email: usersTable.email,
-      role: usersTable.role,
-      createdAt: usersTable.createdAt,
-    })
-    .from(usersTable);
-  files["users/users.json"] = users;
-
-  const clients = await db
-    .select()
-    .from(clientsTable)
-    .where(isNull(clientsTable.deletedAt));
-  files["clients/clients.json"] = clients;
-
-  for (const c of clients) {
-    files[`clients/per-client/client-${c.id}/client.json`] = c;
-    const invs = await db
-      .select()
-      .from(invoicesTable)
-      .where(eq(invoicesTable.clientId, c.id));
-    files[`clients/per-client/client-${c.id}/financial-summary.json`] = {
-      totalInvoices: invs.length,
-      invoiceIds: invs.map((i) => i.id),
-    };
-  }
-
-  const cases = await db
-    .select()
-    .from(casesTable)
-    .where(isNull(casesTable.deletedAt));
-  files["cases/cases.json"] = cases;
-
-  for (const c of cases) {
-    files[`cases/per-case/case-${c.id}/case.json`] = c;
-
-    const opponents = await db
-      .select()
-      .from(opponentsTable)
-      .where(eq(opponentsTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/opponents.json`] = opponents;
-
-    const team = await db
-      .select()
-      .from(caseTeamsTable)
-      .where(eq(caseTeamsTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/team.json`] = team;
-
-    const caseEvents = await db
-      .select()
-      .from(caseEventsTable)
-      .where(eq(caseEventsTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/timeline.json`] = caseEvents;
-
-    const deadlines = await db
-      .select()
-      .from(legalDeadlinesTable)
-      .where(eq(legalDeadlinesTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/deadlines.json`] = deadlines;
-
-    const invs = await db
-      .select()
-      .from(invoicesTable)
-      .where(eq(invoicesTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/invoices.json`] = invs;
-
-    const expenses = await db
-      .select()
-      .from(expensesTable)
-      .where(eq(expensesTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/expenses.json`] = expenses;
-
-    const conflicts = await db
-      .select()
-      .from(conflictChecksTable)
-      .where(eq(conflictChecksTable.caseId, c.id));
-    files[`cases/per-case/case-${c.id}/conflicts.json`] = conflicts;
-  }
-
-  const allInvoices = await db.select().from(invoicesTable).where(isNull(invoicesTable.deletedAt));
-  files["invoices/all.json"] = allInvoices;
-
-  const auditRows = await safeExec(
-    sql`SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 5000`,
-  );
-  files["audit/audit-logs.json"] = auditRows;
-
-  return files;
-}
-
-async function gatherClientData(
-  clientId: number,
-): Promise<Record<string, unknown>> {
-  const files: Record<string, unknown> = {};
-  const now = new Date().toISOString();
-
-  files["README.txt"] =
-    `تصدير بيانات موكّل — محامي بلوس\nتاريخ التصدير: ${now}\nمعرف الموكّل: ${clientId}\n`;
-
-  const [client] = await db
-    .select()
-    .from(clientsTable)
-    .where(eq(clientsTable.id, clientId));
-  if (!client) throw new Error(`Client ${clientId} not found`);
-  files["client.json"] = client;
-
-  const cases = await db
-    .select()
-    .from(casesTable)
-    .where(and(eq(casesTable.clientId, clientId), isNull(casesTable.deletedAt)));
-  files["cases/cases.json"] = cases;
-
-  for (const c of cases) {
-    files[`cases/case-${c.id}/case.json`] = c;
-    const deadlines = await db
-      .select()
-      .from(legalDeadlinesTable)
-      .where(eq(legalDeadlinesTable.caseId, c.id));
-    files[`cases/case-${c.id}/deadlines.json`] = deadlines;
-  }
-
-  const invs = await db
-    .select()
-    .from(invoicesTable)
-    .where(and(eq(invoicesTable.clientId, clientId), isNull(invoicesTable.deletedAt)));
-  files["invoices/invoices.json"] = invs;
-
-  files["financial-summary.json"] = {
-    totalInvoices: invs.length,
-    totalCases: cases.length,
-    exportedAt: now,
+  return {
+    "README.txt": readme,
+    "بيانات-المكتب.xlsx": xlsxBuf,
   };
-
-  return files;
 }
 
-async function gatherCaseData(
-  caseId: number,
-): Promise<Record<string, unknown>> {
-  const files: Record<string, unknown> = {};
-  const now = new Date().toISOString();
+async function gatherClientData(clientId: number): Promise<Record<string, ZipEntry>> {
+  const now = new Date().toLocaleString("ar-TN");
+  const [client] = await db.select({ name: clientsTable.name }).from(clientsTable).where(eq(clientsTable.id, clientId));
+  const xlsxBuf = await buildClientXlsx(clientId);
 
-  files["README.txt"] =
-    `تصدير بيانات ملف — محامي بلوس\nتاريخ التصدير: ${now}\nمعرف الملف: ${caseId}\n`;
+  const readme =
+    `تصدير بيانات موكّل — محامي بلوس\n` +
+    `الموكّل: ${client?.name ?? clientId}\n` +
+    `تاريخ التصدير: ${now}\n\n` +
+    `المحتويات:\n` +
+    `  بيانات-الموكّل.xlsx — بيانات الموكّل، قضاياه، فواتيره، وآجاله\n`;
 
-  const [caseRow] = await db
-    .select()
-    .from(casesTable)
-    .where(eq(casesTable.id, caseId));
-  if (!caseRow) throw new Error(`Case ${caseId} not found`);
-  files["case.json"] = caseRow;
-
-  const opponents = await db
-    .select()
-    .from(opponentsTable)
-    .where(eq(opponentsTable.caseId, caseId));
-  files["opponents.json"] = opponents;
-
-  const team = await db
-    .select()
-    .from(caseTeamsTable)
-    .where(eq(caseTeamsTable.caseId, caseId));
-  files["team.json"] = team;
-
-  const timeline = await db
-    .select()
-    .from(caseEventsTable)
-    .where(eq(caseEventsTable.caseId, caseId));
-  files["timeline.json"] = timeline;
-
-  const deadlines = await db
-    .select()
-    .from(legalDeadlinesTable)
-    .where(eq(legalDeadlinesTable.caseId, caseId));
-  files["deadlines.json"] = deadlines;
-
-  const invs = await db
-    .select()
-    .from(invoicesTable)
-    .where(eq(invoicesTable.caseId, caseId));
-  files["invoices.json"] = invs;
-
-  const expenses = await db
-    .select()
-    .from(expensesTable)
-    .where(eq(expensesTable.caseId, caseId));
-  files["expenses.json"] = expenses;
-
-  const conflicts = await db
-    .select()
-    .from(conflictChecksTable)
-    .where(eq(conflictChecksTable.caseId, caseId));
-  files["conflicts.json"] = conflicts;
-
-  return files;
+  return {
+    "README.txt": readme,
+    "بيانات-الموكّل.xlsx": xlsxBuf,
+  };
 }
 
-/* ── Public service methods ──────────────────────────────── */
+async function gatherCaseData(caseId: number): Promise<Record<string, ZipEntry>> {
+  const now = new Date().toLocaleString("ar-TN");
+  const [caseRow] = await db.select({ title: casesTable.title, caseNumber: casesTable.caseNumber })
+    .from(casesTable).where(eq(casesTable.id, caseId));
+  const xlsxBuf = await buildCaseXlsx(caseId);
+
+  const label = caseRow?.caseNumber ?? `ملف-${caseId}`;
+  const readme =
+    `تصدير ملف قضائي — محامي بلوس\n` +
+    `الملف: ${label} — ${caseRow?.title ?? ""}\n` +
+    `تاريخ التصدير: ${now}\n\n` +
+    `المحتويات:\n` +
+    `  بيانات-الملف.xlsx — القضية، الخصوم، الفريق، الجلسات، الآجال، الفواتير، المصاريف\n`;
+
+  return {
+    "README.txt": readme,
+    "بيانات-الملف.xlsx": xlsxBuf,
+  };
+}
+
+/* ── Public service ──────────────────────────────────────── */
 
 export const DataExportService = {
   async createExport(opts: {
@@ -336,7 +454,6 @@ export const DataExportService = {
       })
       .returning();
 
-    // Fire and forget
     setImmediate(() => {
       void DataExportService.processExport(row.id).catch((err) => {
         logger.error({ err, exportId: row.id }, "data-export: unhandled error in processExport");
@@ -364,7 +481,7 @@ export const DataExportService = {
       const fileName = `export-${exportId}-${Date.now()}.zip`;
       const filePath = join(EXPORTS_DIR, fileName);
 
-      let files: Record<string, unknown>;
+      let files: Record<string, ZipEntry>;
       if (exp.exportType === "full_cabinet") {
         files = await gatherFullCabinet();
       } else if (exp.exportType === "single_client" && exp.scopeId) {
