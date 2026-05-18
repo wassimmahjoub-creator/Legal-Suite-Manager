@@ -34,6 +34,7 @@ import cabinetSettingsRouter from "./cabinet-settings";
 import agendaRouter from "./agenda";
 import casePdfDataRouter from "./case-pdf-data";
 import caseEventsRouter from "./case-events";
+import caseStagesRouter from "./case-stages";
 import expensesRouter from "./expenses";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -89,6 +90,7 @@ router.use(cabinetSettingsRouter);
 router.use(agendaRouter);
 router.use(casePdfDataRouter);
 router.use(caseEventsRouter);
+router.use(caseStagesRouter);
 router.use(expensesRouter);
 
 export default router;

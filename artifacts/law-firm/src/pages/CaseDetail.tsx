@@ -1,5 +1,7 @@
 import { SelectNative } from "@/components/SelectNative";
 import { CaseWizard } from "@/components/cases/CaseWizard";
+import { CaseStageStepper } from "@/components/cases/CaseStageStepper";
+import { CaseJudgmentTab } from "@/components/cases/CaseJudgmentTab";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
@@ -204,6 +206,7 @@ export default function CaseDetail() {
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
   const [teamEditId, setTeamEditId] = useState<number | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [stageRefreshKey, setStageRefreshKey] = useState(0);
   const [editForm, setEditForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
@@ -1085,6 +1088,15 @@ export default function CaseDetail() {
         </CardContent>
       </Card>
 
+      {/* Stage Stepper — always visible above tabs */}
+      <CaseStageStepper
+        caseId={Number(id)}
+        refreshKey={stageRefreshKey}
+        onStageClick={(stage, mode) => {
+          changeTab("judgment");
+        }}
+      />
+
       {/* Tabs */}
       <div>
         <div className="border-b border-border">
@@ -1114,7 +1126,7 @@ export default function CaseDetail() {
           {activeTab === "overview"   && renderOverview()}
           {activeTab === "timeline"   && renderTimeline()}
           {activeTab === "hearings"   && renderHearings()}
-          {activeTab === "judgment"   && renderJudgment()}
+          {activeTab === "judgment"   && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
           {activeTab === "documents"  && renderDocuments()}
           {activeTab === "invoicing"  && renderInvoicing()}
           {activeTab === "expenses"   && renderExpenses()}

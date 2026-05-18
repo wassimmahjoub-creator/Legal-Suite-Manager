@@ -125,6 +125,19 @@ router.post("/cases", async (req, res) => {
   const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, ...extras }).returning();
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   const actor = (req as typeof req & { user?: { id: number } }).user;
+
+  // Auto-create initial stage
+  try {
+    const { caseStagesTable } = await import("@workspace/db");
+    const initialStage = (extras.litigationDegree as string) || "first_instance";
+    await db.insert(caseStagesTable).values({
+      caseId: row.id,
+      stage: initialStage,
+      enteredAt: row.openedAt ? new Date(row.openedAt) : row.createdAt,
+      createdBy: actor?.id ?? null,
+    });
+  } catch { /* non-blocking */ }
+
   void CaseEventLogger.log({
     caseId: row.id,
     eventType: "case_filed",

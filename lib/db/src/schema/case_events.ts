@@ -16,6 +16,7 @@ export const caseEventsTable = pgTable("case_events", {
   relatedEntityType: text("related_entity_type"),
   relatedEntityId: integer("related_entity_id"),
   isSystemGenerated: boolean("is_system_generated").default(true),
+  caseStageId: integer("case_stage_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

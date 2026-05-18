@@ -1,0 +1,406 @@
+Implémentation des transitions de stades procéduraux avec confirmation utilisateur et création automatique des délais légaux tunisiens.
+
+PRÉREQUIS : T17, T17b, T18a livrés. La table case_events existe, le service CaseEventLogger fonctionne, l'onglet "التسلسل الإجرائي" affiche les événements auto-loggés.
+
+PHILOSOPHIE :
+- AUCUNE transition automatique. Le système propose, l'utilisateur confirme TOUJOURS.
+- UI simple par défaut. Ne pas ajouter de filtres, options avancées, ou modes complexes.
+- Les délais sont calculés selon la matrice fournie, mais TOUJOURS éditables avant validation.
+- À chaque action critique, logger un événement via T18a.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — SCHÉMA DE BASE DE DONNÉES
+═══════════════════════════════════════════════════════
+
+Migration 1 : enums et table case_stages
+
+CREATE TYPE case_stage_value AS ENUM ('first_instance', 'appeal', 'cassation', 'execution');
+CREATE TYPE decision_outcome AS ENUM ('favorable', 'unfavorable', 'mixed');
+CREATE TYPE execution_status AS ENUM ('not_started', 'in_progress', 'completed');
+
+CREATE TABLE case_stages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  stage case_stage_value NOT NULL,
+  entered_at timestamptz NOT NULL DEFAULT now(),
+  exited_at timestamptz,
+  court_id uuid REFERENCES courts(id),
+  court_case_number text,
+  decision_date date,
+  decision_summary text,
+  decision_outcome decision_outcome,
+  decision_document_id uuid REFERENCES documents(id),
+  execution_status execution_status,
+  execution_notes text,
+  notes text,
+  created_by uuid REFERENCES users(id),
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE UNIQUE INDEX idx_case_stages_active 
+  ON case_stages(case_id) WHERE exited_at IS NULL;
+CREATE INDEX idx_case_stages_case ON case_stages(case_id);
+
+Migration 2 : enum et table legal_deadlines
+
+CREATE TYPE legal_deadline_type AS ENUM (
+  'appeal_filing', 'cassation_filing', 'opposition', 
+  'execution_notification', 'custom'
+);
+
+CREATE TABLE legal_deadlines (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  case_stage_id uuid REFERENCES case_stages(id) ON DELETE CASCADE,
+  deadline_type legal_deadline_type NOT NULL,
+  name_ar text NOT NULL,
+  start_date date NOT NULL,
+  duration_days integer NOT NULL CHECK (duration_days > 0),
+  end_date date GENERATED ALWAYS AS (start_date + (duration_days || ' days')::interval)::date STORED,
+  reminder_days_before integer DEFAULT 7,
+  is_completed boolean DEFAULT false,
+  completed_at timestamptz,
+  completed_notes text,
+  created_at timestamptz DEFAULT now(),
+  created_by uuid REFERENCES users(id)
+);
+
+CREATE INDEX idx_legal_deadlines_case ON legal_deadlines(case_id);
+CREATE INDEX idx_legal_deadlines_stage ON legal_deadlines(case_stage_id);
+CREATE INDEX idx_legal_deadlines_end ON legal_deadlines(end_date) WHERE is_completed = false;
+
+Migration 3 : extension de case_events
+
+ALTER TABLE case_events 
+  ADD CONSTRAINT fk_case_events_stage 
+  FOREIGN KEY (case_stage_id) REFERENCES case_stages(id);
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — INITIALISATION AUTO ET BACKFILL
+═══════════════════════════════════════════════════════
+
+Modifier createCase() (T17) :
+Après l'insertion en table cases, INSÉRER une ligne case_stages :
+
+INSERT INTO case_stages (case_id, stage, entered_at, court_id, court_case_number, created_by)
+VALUES (
+  NEW_CASE.id,
+  COALESCE(NEW_CASE.litigation_degree, 'first_instance'),
+  now(),
+  NEW_CASE.court_id,
+  NEW_CASE.court_case_number,
+  current_user_id
+);
+
+Modifier CaseEventLogger.log() :
+Avant l'INSERT dans case_events, fetcher le stage actif :
+SELECT id FROM case_stages WHERE case_id = ? AND exited_at IS NULL LIMIT 1;
+Renseigner case_stage_id dans l'INSERT.
+
+Script de backfill backfill_case_stages.sql :
+
+INSERT INTO case_stages (case_id, stage, entered_at, court_id, created_by)
+SELECT 
+  c.id,
+  COALESCE(c.litigation_degree, 'first_instance'),
+  c.created_at,
+  c.court_id,
+  c.created_by
+FROM cases c
+WHERE NOT EXISTS (
+  SELECT 1 FROM case_stages cs WHERE cs.case_id = c.id
+);
+
+-- Renseigner case_stage_id rétroactivement sur case_events existants
+UPDATE case_events ce
+SET case_stage_id = (
+  SELECT cs.id FROM case_stages cs 
+  WHERE cs.case_id = ce.case_id 
+  AND cs.entered_at <= ce.occurred_at 
+  AND (cs.exited_at IS NULL OR cs.exited_at >= ce.occurred_at)
+  ORDER BY cs.entered_at DESC LIMIT 1
+)
+WHERE ce.case_stage_id IS NULL;
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — STEPPER VISUEL
+═══════════════════════════════════════════════════════
+
+Crée src/components/cases/CaseStageStepper.tsx
+
+Placement dans /cases/:id :
+- Sous le header sticky principal (titre + actions)
+- AU-DESSUS de la barre d'onglets (T17b)
+
+Fetch GET /api/cases/:id/stages qui retourne TOUS les case_stages triés par entered_at ASC.
+
+Layout horizontal (s'inverse naturellement en RTL) :
+- 4 cercles avec connecteurs (━━━)
+- En RTL, first_instance est à droite, ordre naturel arabe
+- Chaque cercle (40px) :
+  - Actif (stage existe ET exited_at IS NULL) : bg-amber-500, ring-4 ring-amber-200, label gras
+  - Franchi (stage existe ET exited_at IS NOT NULL) : bg-green-600 avec icône ✓ blanche
+  - Non atteint : bg-gray-300 vide, label gris
+- Label sous le cercle (libellés AR) :
+  - first_instance : "ابتدائي"
+  - appeal : "استئنافي"
+  - cassation : "تعقيبي"
+  - execution : "تنفيذي"
+- Sous-titre (text-xs) :
+  - Si franchi ou actif : date d'entrée via formatDate de T11 ("٥ جانفي ٢٠٢٦")
+  - Si non atteint : vide
+
+Interactions :
+- Clic sur stade franchi : ouvrir <StageDetailPanel mode="readonly" stageId={stage.id} />
+- Clic sur stade actif : ouvrir <StageDetailPanel mode="active" stageId={stage.id} />
+- Clic sur stade non atteint : tooltip "لم يتم بلوغ هذا الطور بعد"
+- Hover sur stade franchi : tooltip avec decision_summary tronqué à 100 chars
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — STAGEDETAILPANEL
+═══════════════════════════════════════════════════════
+
+Crée src/components/cases/StageDetailPanel.tsx
+
+Side-panel (drawer) qui s'ouvre depuis la droite (gauche en RTL) au clic sur un stade.
+
+Header du panel :
+- Badge du stade
+- Statut (actif / منتهي)
+- Bouton X
+
+Body en mode "readonly" (stade franchi) :
+- Section "المحكمة" : court_id résolu, court_case_number
+- Section "الحكم" : decision_date, decision_outcome avec icône colorée, decision_summary, lien decision_document si présent
+- Section "الآجال الناتجة" : liste des legal_deadlines où case_stage_id = ce stage
+- Section "الملاحظات" : notes
+
+Body en mode "active" (stade actif) :
+- Mêmes sections, mais champs ÉDITABLES (sauf le stage lui-même)
+- Bouton "حفظ التعديلات" si modifications
+- Bouton primaire "الانتقال للطور التالي" en bas → ouvre StageTransitionModal
+
+═══════════════════════════════════════════════════════
+ÉTAPE 5 — STAGETRANSITIONMODAL (CŒUR DU TICKET)
+═══════════════════════════════════════════════════════
+
+Crée src/components/cases/StageTransitionModal.tsx
+
+Modal centré, max-width 640px, scroll interne si besoin.
+
+Header :
+"الانتقال من الطور [current_stage_ar] إلى الطور التالي"
+
+SECTION 1 — نتيجة الطور الحالي
+
+- "تاريخ الحكم" (decision_date) — date picker, REQUIS, default today
+- "نتيجة الحكم" (decision_outcome) — radio horizontal REQUIS :
+  - "لصالح الموكل" (favorable)
+  - "ضد الموكل" (unfavorable)
+  - "مختلط" (mixed)
+- "ملخص الحكم" (decision_summary) — textarea 4 lignes, optionnel mais encouragé
+- "رفع نص الحكم" (decision_document) — upload PDF, optionnel
+
+SECTION 2 — الطور القادم
+
+Affichage dynamique selon current_stage + decision_outcome (suivre la matrice fournie).
+
+Radio buttons des stades possibles :
+- current = first_instance :
+  - outcome = favorable : "تنفيذ" (default) | "استئناف"
+  - outcome = unfavorable : "استئناف" (default) | "تنفيذ"
+  - outcome = mixed : "استئناف" (default) | "تنفيذ"
+- current = appeal :
+  - outcome = favorable : "تنفيذ" (default) | "تعقيب"
+  - outcome = unfavorable : "تعقيب" (default) | "تنفيذ"
+  - outcome = mixed : "تعقيب" (default) | "تنفيذ"
+- current = cassation : "تنفيذ" (seul choix)
+
+Si stade choisi != execution :
+- "المحكمة للطور القادم" — autocomplete CourtSelect (T2 P1), REQUIS
+- "عدد القضية في الطور القادم" — text optionnel
+
+Si stade choisi == execution :
+- Pas de juridiction obligatoire
+- Champ optionnel "ملاحظات بدء التنفيذ"
+
+SECTION 3 — الآجال القانونية الناتجة
+
+Affichage dynamique selon le stade choisi :
+
+- stade choisi = appeal :
+  Délai pré-rempli "أجل الاستئناف" : 30 jours depuis decision_date
+- stade choisi = cassation :
+  Délai pré-rempli "أجل التعقيب" : 60 jours depuis decision_date
+- stade choisi = execution :
+  Aucun délai pré-rempli, juste bouton "+ إضافة أجل"
+
+Pour chaque délai affiché sur une ligne :
+- Nom (name_ar) — text éditable
+- Date début (start_date) — date picker, default = decision_date
+- Durée jours (duration_days) — number, default selon matrice
+- Date fin (end_date) — calculée auto, lecture seule
+- Rappel J- (reminder_days_before) — number, default 7
+- Bouton X pour retirer
+
+Bouton "+ إضافة أجل قانوني" en bas.
+
+FOOTER MODAL :
+- "إلغاء" — secondary
+- "تأكيد الانتقال" — primary
+
+ACTION À LA CONFIRMATION :
+
+Transaction DB (rollback si échec) :
+
+1. UPDATE case_stages SET 
+     exited_at = now(),
+     decision_date = ?,
+     decision_summary = ?,
+     decision_outcome = ?,
+     decision_document_id = ?
+   WHERE id = current_stage.id;
+
+2. INSERT INTO case_stages (case_id, stage, entered_at, court_id, court_case_number, created_by)
+   VALUES (?, next_stage, now(), ?, ?, current_user);
+
+3. Pour chaque délai dans section 3 :
+   INSERT INTO legal_deadlines (case_id, case_stage_id, deadline_type, name_ar, start_date, duration_days, reminder_days_before, created_by)
+   VALUES (?, new_stage.id, ?, ?, ?, ?, ?, current_user);
+
+4. UPDATE cases SET litigation_degree = next_stage WHERE id = ?;
+
+5. Logger via CaseEventLogger (T18a) :
+   - event 'judgment_recorded' sur l'ancien stage avec metadata { outcome, summary }
+   - event 'stage_transitioned' sur le nouveau stage avec metadata { from_stage_ar, to_stage_ar, outcome }
+   - event 'legal_deadline_added' pour CHAQUE délai créé
+
+6. Toast succès "تم الانتقال إلى الطور [next_stage_ar]"
+
+7. Refresh : stepper + timeline + onglet "الحكم والتنفيذ"
+
+═══════════════════════════════════════════════════════
+ÉTAPE 6 — REMPLISSAGE DE L'ONGLET "الحكم والتنفيذ"
+═══════════════════════════════════════════════════════
+
+Remplace le placeholder actuel par <CaseJudgmentTab caseId={...} />.
+
+Fetch GET /api/cases/:id/stages avec includeDeadlines=true.
+
+Layout :
+- En haut, si stade execution actif : section "حالة التنفيذ" :
+  - Radio : "غير منفذ" (not_started) / "جاري التنفيذ" (in_progress) / "منفذ" (completed)
+  - Si "منفذ" sélectionné : date de complétion + bouton "إغلاق الملف"
+  - Textarea "ملاحظات التنفيذ"
+  - Bouton "حفظ"
+- Si aucun stade n'a decision_date : empty state "لم يصدر بعد أي حكم في هذا الملف. ستظهر هنا الأحكام بمجرد تسجيلها."
+- Sinon : liste verticale de cards, une par stage avec decision_date != NULL
+
+Pour chaque card :
+- Header : 
+  - Badge stade (ابتدائي / استئنافي / etc.)
+  - Icône outcome colorée : ✓ vert favorable, ✗ rouge unfavorable, ◐ orange mixed
+  - Date du jugement formatée (T11)
+- Body :
+  - "المحكمة" : nom + court_case_number si présent
+  - "ملخص الحكم" : decision_summary
+  - "نص الحكم" : si decision_document_id, lien "تحميل الحكم (PDF)"
+- Sous-section "الآجال القانونية الناتجة" :
+  - Mini-liste des legal_deadlines de ce stage
+  - Pour chaque : nom, date fin, jours restants avec code couleur (vert > 30j, orange 7-30j, rouge < 7j, gris dépassé)
+
+═══════════════════════════════════════════════════════
+ÉTAPE 7 — DÉLAIS DANS L'ONGLET "الجلسات والآجال"
+═══════════════════════════════════════════════════════
+
+L'onglet "الجلسات والآجال" (T17b) avait un placeholder pour les délais. L'enrichir :
+
+Dans la vue chronologique fusionnée audiences + délais :
+- Fetcher GET /api/cases/:id/deadlines en plus des audiences
+- Mélanger les deux sources, trier par date
+- Pour chaque délai, affichage :
+  - Icône ⏰ orange (rouge si end_date dépassée et non complétée)
+  - Date : end_date formatée
+  - Titre : name_ar
+  - Sous-titre : "خلال X يوم" / "تجاوز الأجل" / "مكتمل" selon état
+  - Bouton "تأشير كمكتمل" si pas encore complété
+
+═══════════════════════════════════════════════════════
+ÉTAPE 8 — VÉRIFICATION FINALE OBLIGATOIRE
+═══════════════════════════════════════════════════════
+
+Avant de marquer le ticket terminé, EFFECTUE ces 5 tests et documente le résultat :
+
+TEST 1 — Stepper visible :
+- Ouvre n'importe quel dossier
+- Vérifie que le stepper apparaît sous le header
+- Vérifie que le stade actif est en doré, les autres en gris
+- ✓ ou ✗ + capture
+
+TEST 2 — Initialisation auto à la création :
+- Crée un nouveau dossier
+- Va sur sa page
+- Vérifie que le stepper montre first_instance actif
+- ✓ ou ✗ + capture
+
+TEST 3 — Transition de stade complète :
+- Sur un dossier au stade first_instance
+- Clic sur le stade actif → side-panel ouvre
+- Bouton "الانتقال للطور التالي" → modal s'ouvre
+- Saisir : date today, outcome unfavorable, stade choisi appeal, court
+- Confirmer
+- Vérifier : stepper passe à appeal actif, first_instance vert ✓
+- Vérifier : un délai "أجل الاستئناف" 30j apparaît dans l'onglet "الجلسات والآجال"
+- Vérifier : la timeline (T18a) montre les events judgment_recorded + stage_transitioned + legal_deadline_added
+- ✓ ou ✗ + captures
+
+TEST 4 — Onglet الحكم والتنفيذ rempli :
+- Sur le même dossier après TEST 3
+- Ouvrir l'onglet "الحكم والتنفيذ"
+- Vérifier qu'une card "ابتدائي" affiche le jugement
+- Vérifier que le délai d'appel y apparaît aussi
+- ✓ ou ✗ + capture
+
+TEST 5 — Backfill des dossiers existants :
+- Lister les dossiers créés AVANT la migration
+- Vérifier que tous ont une ligne case_stages
+- Vérifier que leur stepper s'affiche
+- ✓ ou ✗ + rapport SQL (count avant/après)
+
+LIVRER LE RAPPORT DE CES 5 TESTS DANS LE PR. Sans ce rapport, le ticket n'est pas livré.
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. 3 migrations SQL (case_stages, legal_deadlines, FK case_events).
+2. Script de backfill exécuté avec rapport (counts).
+3. Modification de createCase() pour init auto du stage.
+4. Modification de CaseEventLogger pour remplir case_stage_id.
+5. <CaseStageStepper /> intégré dans /cases/:id.
+6. <StageDetailPanel /> side-panel.
+7. <StageTransitionModal />.
+8. <CaseJudgmentTab /> remplaçant le placeholder.
+9. Enrichissement de l'onglet "الجلسات والآجال".
+10. Endpoints :
+    - GET /api/cases/:id/stages
+    - POST /api/cases/:id/stages/:stageId/transition
+    - PATCH /api/cases/:id/stages/:stageId
+    - GET /api/cases/:id/deadlines
+    - PATCH /api/deadlines/:id/complete
+11. Tests unitaires sur la matrice de transitions.
+12. RAPPORT DES 5 TESTS d'intégration.
+13. Captures d'écran.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- T18a (timeline) continue de fonctionner. Les events sont maintenant rattachés à un stage via case_stage_id.
+- Les hooks d'auto-log testés en T18a-fix continuent de fonctionner.
+- L'agenda (T5 P1) continue de gérer les audiences indépendamment des délais.
+- Les exports PDF dossier (T8 P1) continuent de fonctionner.
+- La création de dossier (T17 wizard) crée automatiquement le case_stages initial — vérifier qu'aucun double n'est créé.
+- RTL préservé sur stepper et modal.
+- Tous les dossiers anciens (backfill) doivent avoir leur stepper s'afficher correctement.
+- Les autres onglets de T17b continuent de s'afficher correctement.
