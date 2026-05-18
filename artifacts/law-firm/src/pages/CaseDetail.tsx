@@ -97,7 +97,7 @@ function fmtTime(secs: number) {
 }
 const URGENCY_COLORS: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/20",
-  high:     "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  high:     "bg-primary/10 text-primary border-primary/20",
   normal:   "bg-muted text-muted-foreground border-border",
 };
 
@@ -347,7 +347,7 @@ export default function CaseDetail() {
     { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
     { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
     { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
-      badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-orange-400" /> : undefined },
+      badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
   ];
 
   // ─────────────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ export default function CaseDetail() {
       <div className="space-y-5">
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-orange-400" : undefined)}
+          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
           {kpiCard("ساعات العمل", "—", "قيد التطوير", () => changeTab("time"))}
           {kpiCard("الموعد القادم", nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال قادمة", nextDeadline ? () => changeTab("hearings") : undefined)}
           {kpiCard("عدد الوثائق", activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
@@ -575,7 +575,7 @@ export default function CaseDetail() {
       <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-4">
         <h3 className="font-semibold">الحكم والتنفيذ</h3>
         {c.judgmentText && (
-          <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
             <p className="text-xs text-muted-foreground mb-1">نص الحكم</p>
             <p className="text-sm font-medium leading-relaxed">{c.judgmentText}</p>
           </div>
@@ -652,7 +652,7 @@ export default function CaseDetail() {
         <div className="grid grid-cols-3 gap-3">
           {kpiCard("المفوتر",  totalInvoiced > 0 ? `${totalInvoiced.toLocaleString()} د.ت` : "—")}
           {kpiCard("المقبوض",  totalPaid     > 0 ? `${totalPaid.toLocaleString()} د.ت`     : "—", undefined, undefined, "text-green-400")}
-          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", undefined, undefined, totalDue > 0 ? "text-orange-400" : undefined)}
+          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", undefined, undefined, totalDue > 0 ? "text-primary" : undefined)}
         </div>
 
         {/* Invoices list */}
@@ -723,7 +723,7 @@ export default function CaseDetail() {
             <div><p className="text-[11px] text-muted-foreground">قابلة للاسترجاع</p><Money amount={reimbursable} className="text-lg font-bold" /></div>
           </CardContent></Card>
           <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 bg-orange-500/10 rounded-xl"><Scale className="h-4 w-4 text-orange-500" /></div>
+            <div className="p-2.5 bg-primary/10 rounded-xl"><Scale className="h-4 w-4 text-primary" /></div>
             <div><p className="text-[11px] text-muted-foreground">مصاريف المكتب</p><Money amount={office} className="text-lg font-bold" /></div>
           </CardContent></Card>
         </div>
@@ -816,7 +816,7 @@ export default function CaseDetail() {
                 <Input placeholder="وصف النشاط (اختياري)..." className={inputCls} value={timerDesc} onChange={e => setTimerDesc(e.target.value)} />
               </div>
               <div className="flex gap-3 shrink-0">
-                <button onClick={() => setTimeRunning(r => !r)} className={`p-3.5 rounded-full transition-all shadow-md ${timeRunning ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"} text-primary-foreground`}>
+                <button onClick={() => setTimeRunning(r => !r)} className={`p-3.5 rounded-full transition-all shadow-md ${timeRunning ? "bg-primary/70 hover:bg-primary/60" : "bg-primary hover:bg-primary/90"} text-primary-foreground`}>
                   {timeRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                 </button>
                 {(timeRunning || timeElapsed > 0) && (
@@ -938,7 +938,7 @@ export default function CaseDetail() {
                 <Lock className="h-4 w-4 text-muted-foreground" />
                 <span className="font-semibold text-sm">درجة الحساسية</span>
               </div>
-              <span className={cn("text-xs px-2 py-1 rounded-full font-medium", c.confidentialityLevel === "سري للغاية" ? "bg-red-500/10 text-red-400" : c.confidentialityLevel === "سري" ? "bg-orange-500/10 text-orange-400" : "bg-muted text-muted-foreground")}>
+              <span className={cn("text-xs px-2 py-1 rounded-full font-medium", c.confidentialityLevel === "سري للغاية" ? "bg-red-500/10 text-red-400" : c.confidentialityLevel === "سري" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
                 {c.confidentialityLevel}
               </span>
             </div>
@@ -949,11 +949,11 @@ export default function CaseDetail() {
         {c.internalNotes && (
           <Card className="border-none shadow-sm"><CardContent className="p-5 space-y-3">
             <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-orange-400 shrink-0" />
+              <Lock className="h-4 w-4 text-primary shrink-0" />
               <h3 className="font-semibold text-sm">الملاحظات الداخلية</h3>
-              <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded-full">سري</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">سري</span>
             </div>
-            <div className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-xl text-xs text-orange-300 flex items-center gap-2">
+            <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-xs text-primary flex items-center gap-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> هذه الملاحظات لا تظهر للحريف في بوابة العميل
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{c.internalNotes}</p>
@@ -965,7 +965,7 @@ export default function CaseDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm">ملاحظات سرية إضافية</h3>
-              <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />سري</span>
+              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />سري</span>
             </div>
             <Button size="sm" onClick={() => { setConfForm({ content: "" }); setModal("conf-note"); }} className="gap-1.5 text-xs"><Plus className="h-3.5 w-3.5" />ملاحظة</Button>
           </div>
@@ -974,7 +974,7 @@ export default function CaseDetail() {
           ) : (
             <div className="space-y-3">
               {confNotes.map(n => (
-                <div key={n.id} className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+                <div key={n.id} className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm flex-1 leading-relaxed">{n.content}</p>
                     <button onClick={() => setConfirmConfNoteId(n.id)} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
@@ -1054,11 +1054,11 @@ export default function CaseDetail() {
                   {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
                   {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الحريف">📁 {c.clientFileRef}</span>}
                   <StatusBadge status={caseData.status} />
-                  {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
+                  {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
                   {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{tr(TR_CASE_TYPE, c.caseType)}</span>}
-                  {c.casePriority && c.casePriority !== "normal" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "urgent" ? "bg-red-500/10 text-red-400" : "bg-orange-500/10 text-orange-400"}`}><AlertTriangle className="h-3 w-3" />{tr(TR_PRIORITY, c.casePriority)}</span>}
-                  {c.confidentialityLevel && c.confidentialityLevel !== "normal" && <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{tr(TR_CONFIDENTIALITY, c.confidentialityLevel)}</span>}
+                  {c.casePriority && c.casePriority !== "normal" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "urgent" ? "bg-red-500/10 text-red-400" : "bg-primary/10 text-primary"}`}><AlertTriangle className="h-3 w-3" />{tr(TR_PRIORITY, c.casePriority)}</span>}
+                  {c.confidentialityLevel && c.confidentialityLevel !== "normal" && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{tr(TR_CONFIDENTIALITY, c.confidentialityLevel)}</span>}
                 </div>
                 <h1 className="text-xl font-bold mb-1">{caseData.title}</h1>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -1066,7 +1066,7 @@ export default function CaseDetail() {
                   {caseData.court     && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
                   {caseData.lawyer    && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
                   {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDateTN(caseData.nextHearing)}</span>}
-                  {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-orange-400"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
+                  {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-primary"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
                 </div>
               </div>
             </div>
@@ -1331,7 +1331,7 @@ export default function CaseDetail() {
       {/* Confidential Note modal */}
       <Modal open={modal === "conf-note"} onClose={() => setModal(null)} title="ملاحظة داخلية سرية">
         <div className="space-y-4">
-          <div className="flex items-center gap-2 p-3 bg-orange-500/10 text-orange-400 rounded-xl text-sm">
+          <div className="flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-xl text-sm">
             <Lock className="h-4 w-4 shrink-0" /> هذه الملاحظة للاستخدام الداخلي فقط
           </div>
           <FormField label="المحتوى *" htmlFor="cn-content">
