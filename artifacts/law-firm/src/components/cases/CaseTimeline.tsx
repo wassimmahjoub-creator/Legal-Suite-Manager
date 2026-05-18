@@ -105,8 +105,10 @@ function toDateKey(dateStr: string): string {
 function entityLink(type: string | null | undefined, id: number | null | undefined): string | null {
   if (!type || !id) return null;
   if (type === "invoice") return `/invoices/${id}`;
+  if (type === "document") return `/documents`;
   if (type === "hearing") return `/agenda?event=${id}`;
   if (type === "opponent") return `/opponents`;
+  if (type === "deadline") return null;
   return null;
 }
 
@@ -330,8 +332,15 @@ function TimelineList({
               {grouped[day].map(ev => {
                 const meta = EVENT_META[ev.eventType] ?? { icon: <FileText className="h-4 w-4" />, color: "bg-muted text-muted-foreground" };
                 const link = entityLink(ev.relatedEntityType, ev.relatedEntityId);
+                const fullLink = link ? `${BASE}${link}` : null;
                 return (
-                  <div key={ev.id} className="flex items-start gap-3">
+                  <div key={ev.id}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl transition-colors",
+                      fullLink && "cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1"
+                    )}
+                    onClick={fullLink ? () => { window.location.href = fullLink; } : undefined}
+                  >
                     {/* Icon dot */}
                     <div className={cn(
                       "h-8 w-8 rounded-full shrink-0 flex items-center justify-center z-10",
@@ -344,10 +353,15 @@ function TimelineList({
                     {/* Card */}
                     <div className="flex-1 pb-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm leading-snug">{ev.titleAr}</p>
-                        <span className="text-[11px] text-muted-foreground font-mono shrink-0 mt-0.5">
-                          {formatTime(ev.occurredAt)}
-                        </span>
+                        <p className={cn("font-medium text-sm leading-snug", fullLink && "group-hover:text-primary")}>{ev.titleAr}</p>
+                        <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                          {fullLink && (
+                            <Link2 className="h-3 w-3 text-primary/50" />
+                          )}
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            {formatTime(ev.occurredAt)}
+                          </span>
+                        </div>
                       </div>
 
                       {ev.description && (
@@ -366,13 +380,6 @@ function TimelineList({
                             <Bot className="h-2.5 w-2.5" />تلقائي
                           </span>
                         ) : null}
-
-                        {link && (
-                          <a href={link}
-                            className="flex items-center gap-1 text-[10px] text-primary hover:underline">
-                            <Link2 className="h-2.5 w-2.5" />عرض
-                          </a>
-                        )}
                       </div>
                     </div>
                   </div>
