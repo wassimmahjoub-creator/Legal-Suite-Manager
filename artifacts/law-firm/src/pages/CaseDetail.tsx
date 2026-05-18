@@ -207,6 +207,7 @@ export default function CaseDetail() {
     clientFileRef: "", opponentName: "", opponentLawyer: "", judgmentText: "",
   });
   const [docForm,   setDocForm]   = useState({ name: "", fileType: "عقد", url: "" });
+  const [docEditId, setDocEditId] = useState<number | null>(null);
   const [noteText,  setNoteText]  = useState("");
   const [noteModal, setNoteModal] = useState(false);
   const [hearingEvents, setHearingEvents] = useState<HearingEvent[]>([]);
@@ -618,6 +619,11 @@ export default function CaseDetail() {
                 </div>
                 <div className="flex gap-1">
                   {doc.url && <a href={doc.url} target="_blank" rel="noreferrer" className="p-1.5 hover:bg-muted rounded-lg"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></a>}
+                  <button onClick={() => {
+                    setDocEditId(doc.id);
+                    setDocForm({ name: doc.name ?? "", fileType: doc.fileType ?? "عقد", url: doc.url ?? "" });
+                    setModal("upload-doc");
+                  }} className="p-1.5 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
                   <button onClick={() => setConfirmDocId(doc.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                 </div>
               </div>
@@ -1424,27 +1430,29 @@ export default function CaseDetail() {
         </div>
       </Modal>
 
-      {/* Upload Document modal */}
-      <Modal open={modal === "upload-doc"} onClose={() => setModal(null)} title="رفع وثيقة جديدة">
+      {/* Upload / Edit Document modal */}
+      <Modal open={modal === "upload-doc"} onClose={() => { setModal(null); setDocEditId(null); }} title={docEditId ? "تعديل الوثيقة" : "رفع وثيقة جديدة"}>
         <div className="space-y-4">
-          <label
-            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
-            htmlFor="cd-doc-file"
-          >
-            <Upload className="h-10 w-10 text-muted-foreground/40" />
-            <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
-            <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
-            <input
-              id="cd-doc-file"
-              type="file"
-              className="hidden"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (file && !docForm.name) setDocForm(f => ({ ...f, name: file.name }));
-              }}
-            />
-          </label>
+          {!docEditId && (
+            <label
+              className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+              htmlFor="cd-doc-file"
+            >
+              <Upload className="h-10 w-10 text-muted-foreground/40" />
+              <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
+              <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
+              <input
+                id="cd-doc-file"
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file && !docForm.name) setDocForm(f => ({ ...f, name: file.name }));
+                }}
+              />
+            </label>
+          )}
           <FormField label="اسم الوثيقة *" htmlFor="cd-doc-name">
             <Input
               id="cd-doc-name"
@@ -1479,21 +1487,24 @@ export default function CaseDetail() {
               className="flex-1"
               disabled={saving || !docForm.name.trim()}
               onClick={() => withSave(async () => {
-                await authFetch(`${BASE}/api/documents`, {
-                  method: "POST",
-                  body: JSON.stringify({
-                    name: docForm.name.trim(),
-                    caseId: Number(id),
-                    fileType: docForm.fileType || null,
-                    url: docForm.url.trim() || null,
-                  }),
-                });
+                if (docEditId) {
+                  await authFetch(`${BASE}/api/documents/${docEditId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ name: docForm.name.trim(), fileType: docForm.fileType || null, url: docForm.url.trim() || null }),
+                  });
+                  setDocEditId(null);
+                } else {
+                  await authFetch(`${BASE}/api/documents`, {
+                    method: "POST",
+                    body: JSON.stringify({ name: docForm.name.trim(), caseId: Number(id), fileType: docForm.fileType || null, url: docForm.url.trim() || null }),
+                  });
+                }
                 setDocForm({ name: "", fileType: "عقد", url: "" });
               }, load.docs)}
             >
-              {saving ? "جارٍ الحفظ..." : "حفظ الوثيقة"}
+              {saving ? "جارٍ الحفظ..." : docEditId ? "حفظ التعديلات" : "حفظ الوثيقة"}
             </Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+            <Button variant="outline" onClick={() => { setModal(null); setDocEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>

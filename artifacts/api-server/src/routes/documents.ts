@@ -39,6 +39,18 @@ router.post("/documents", async (req, res) => {
   res.status(201).json({ ...row, caseName: null });
 });
 
+router.put("/documents/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const { name, fileType, url } = req.body;
+  const [row] = await db.update(documentsTable).set({
+    ...(name     !== undefined && { name }),
+    ...(fileType !== undefined && { fileType: fileType || null }),
+    ...(url      !== undefined && { url: url || null }),
+  }).where(eq(documentsTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "غير موجود" }); return; }
+  res.json(row);
+});
+
 router.delete("/documents/:id", async (req, res) => {
   const id = Number(req.params.id);
   const [doc] = await db.select().from(documentsTable).where(eq(documentsTable.id, id));
