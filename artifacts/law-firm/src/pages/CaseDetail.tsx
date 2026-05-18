@@ -449,7 +449,7 @@ export default function CaseDetail() {
                   </div>
                 )}
                 {team.map(m => (
-                  <div key={m.id} onClick={() => { setTeamEditId(m.id); setTeamForm({ userId: String(m.userId), role: m.role ?? "مساعد" }); setModal("team"); }} className="flex items-center justify-between p-2 -mx-2 rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div key={m.id} onClick={() => { setTeamEditId(m.id); setTeamForm({ userId: String(m.userId), role: m.role ?? "مساعد" }); setModal("team"); }} className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/20 cursor-pointer hover:border-primary/40 hover:bg-muted/40 transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{(m.userName ?? "م").charAt(0)}</div>
                       <div>
