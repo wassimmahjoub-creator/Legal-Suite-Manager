@@ -158,12 +158,12 @@ export default function InvoicePage() {
                 onClick={() => setPaymentModal(true)}>
                 <CreditCard className="h-4 w-4" /> تسجيل دفعة
               </Button>
-              <Button variant="outline" size="sm" className="gap-2 text-orange-400 hover:text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+              <Button variant="outline" size="sm" className="gap-2"
                 onClick={() => setConfirmUnlock(true)} disabled={unlockLoading}>
                 {unlockLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                 إلغاء القفل للتعديل
               </Button>
-              <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive"
+              <Button variant="outline" size="sm" className="gap-2"
                 onClick={() => setConfirmCreditNote(true)} disabled={creditLoading}>
                 {creditLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileX className="h-4 w-4" />}
                 إصدار فاتورة تصحيحية
