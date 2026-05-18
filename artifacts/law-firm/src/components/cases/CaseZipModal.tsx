@@ -54,24 +54,8 @@ export function CaseZipModal({ caseId, caseNumber, isOpen, onClose }: Props) {
     }
   }
 
-  if (!isOpen) return null;
-
   return (
-    <Modal
-      title="تصدير الملف مع المرفقات"
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            إلغاء
-          </Button>
-          <Button onClick={handleExport} disabled={loading} className="gap-2">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
-            بدء التصدير
-          </Button>
-        </>
-      }
-    >
+    <Modal open={isOpen} onClose={onClose} title="تصدير الملف مع المرفقات">
       <div className="space-y-5">
         <p className="text-sm text-muted-foreground leading-relaxed">
           سيتم تصدير الملف الكامل مع جميع المرفقات في أرشيف ZIP منظم حسب طبيعة الوثائق.
@@ -104,6 +88,16 @@ export function CaseZipModal({ caseId, caseNumber, isOpen, onClose }: Props) {
           <p className="text-xs text-muted-foreground leading-relaxed">
             يتضمن الأرشيف: بيانات القضية، الفواتير، الآجال، الإجراءات، فريق الملف، الخصوم، وقائمة الوثائق.
           </p>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            إلغاء
+          </Button>
+          <Button onClick={handleExport} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+            بدء التصدير
+          </Button>
         </div>
       </div>
     </Modal>
