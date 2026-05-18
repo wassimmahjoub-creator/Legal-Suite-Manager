@@ -133,13 +133,13 @@ export default function Dashboard() {
           <Button size="sm" onClick={openCaseModal} className="gap-1.5 h-9">
             <Plus className="h-3.5 w-3.5" /> قضية
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setModal("event")} className="gap-1.5 h-9">
+          <Button size="sm" onClick={() => setModal("event")} className="gap-1.5 h-9">
             <Calendar className="h-3.5 w-3.5" /> موعد
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setModal("invoice")} className="gap-1.5 h-9">
+          <Button size="sm" onClick={() => setModal("invoice")} className="gap-1.5 h-9">
             <CreditCard className="h-3.5 w-3.5" /> فاتورة
           </Button>
-          <Button size="sm" variant="outline" onClick={() => navigate("/time-tracking")} className="gap-1.5 h-9">
+          <Button size="sm" onClick={() => navigate("/time-tracking")} className="gap-1.5 h-9">
             <Timer className="h-3.5 w-3.5" /> كرونومتر
           </Button>
         </div>
