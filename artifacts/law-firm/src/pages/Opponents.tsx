@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
-import { Shield, Plus, Pencil, Trash2, Phone, MapPin, Briefcase, User } from "lucide-react";
+import { Shield, Plus, Pencil, Trash2, Phone, MapPin, Briefcase, User, ArrowRight } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,11 +79,17 @@ export default function Opponents() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-destructive/10 rounded-xl"><Shield className="h-6 w-6 text-destructive" /></div>
-          <div>
-            <h1 className="text-2xl font-bold">الخصوم</h1>
-            <p className="text-muted-foreground text-sm">الأطراف المعارضة في القضايا</p>
+        <div>
+          <button onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-destructive/10 rounded-xl"><Shield className="h-6 w-6 text-destructive" /></div>
+            <div>
+              <h1 className="text-2xl font-bold">الخصوم</h1>
+              <p className="text-muted-foreground text-sm">الأطراف المعارضة في القضايا</p>
+            </div>
           </div>
         </div>
         <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> خصم جديد</Button>

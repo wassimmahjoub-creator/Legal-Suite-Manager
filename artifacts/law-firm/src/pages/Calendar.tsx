@@ -23,7 +23,7 @@ import { MicButton } from "@/components/MicButton";
 import {
   CalendarIcon, Clock, MapPin, Briefcase, Plus, Pencil, Trash2,
   Target, CheckCircle2, Scale, ChevronRight, ChevronLeft,
-  LayoutGrid, List, Columns2,
+  LayoutGrid, List, Columns2, ArrowRight,
 } from "lucide-react";
 import { useAgendaEvents, type AgendaEvent, type CalEvent, toCalEvent } from "@/hooks/useAgendaEvents";
 
@@ -374,6 +374,10 @@ export default function CalendarView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          <button onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+          </button>
           <h1 className="text-2xl font-bold">الرزنامة</h1>
           <p className="text-muted-foreground text-sm mt-0.5">مواعيد الجلسات، الاجتماعات والآجال القانونية</p>
         </div>

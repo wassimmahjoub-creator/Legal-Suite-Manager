@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   FileText, Upload, Search, Download, Eye,
-  FileImage, File, FileSpreadsheet
+  FileImage, File, FileSpreadsheet, ArrowRight,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
@@ -46,6 +46,10 @@ export default function Documents() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          <button onClick={() => window.history.back()}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+          </button>
           <h1 className="text-2xl font-bold">الوثائق</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة الملفات والوثائق الخاصة بالقضايا</p>
         </div>
