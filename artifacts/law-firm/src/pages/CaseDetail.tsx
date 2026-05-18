@@ -244,6 +244,7 @@ export default function CaseDetail() {
     invoices:   async () => { const r = await authFetch(`${BASE}/api/invoices`); if (r.ok) { const all: Invoice[] = await r.json(); setInvoices(all.filter(inv => inv.caseId === Number(id) && !inv.deletedAt)); } },
     auditLogs:  async () => { const r = await authFetch(`${BASE}/api/audit-logs`); if (r.ok) setAuditLogs(await r.json()); },
     hearings:   async () => { const r = await authFetch(`${BASE}/api/events?caseId=${id}`, { cache: "no-store" }); if (r.ok) setHearingEvents(await r.json()); },
+    expenses:   async () => { const r = await authFetch(`${BASE}/api/expenses?caseId=${id}`); if (r.ok) setExpenses(await r.json()); },
   };
 
   useEffect(() => {
@@ -765,7 +766,7 @@ export default function CaseDetail() {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${e.reimbursable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>{e.reimbursable ? "نعم" : "لا"}</span>
                       </td>
                       <td className="py-2.5 px-2 text-center">
-                        <button onClick={ev => { ev.stopPropagation(); setExpenses(es => es.filter(x => x.id !== e.id)); }} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                        <button onClick={async ev => { ev.stopPropagation(); const r = await authFetch(`${BASE}/api/expenses/${e.id}`, { method: "DELETE" }); if (r.ok) setExpenses(es => es.filter(x => x.id !== e.id)); }} className="p-1 rounded hover:bg-destructive/10 transition-colors">
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </button>
                       </td>
@@ -1430,13 +1431,23 @@ export default function CaseDetail() {
           </label>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={!expForm.amount || parseFloat(expForm.amount) <= 0}
-              onClick={() => {
+              onClick={async () => {
                 if (!expForm.amount || parseFloat(expForm.amount) <= 0) return;
                 if (expEditId) {
-                  setExpenses(es => es.map(x => x.id === expEditId ? { ...x, date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable } : x));
+                  const r = await authFetch(`${BASE}/api/expenses/${expEditId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }),
+                  });
+                  if (r.ok) { const updated = await r.json(); setExpenses(es => es.map(x => x.id === expEditId ? updated : x)); }
                   setExpEditId(null);
                 } else {
-                  setExpenses(es => [{ id: Date.now(), date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }, ...es]);
+                  const r = await authFetch(`${BASE}/api/expenses`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ caseId: Number(id), date: expForm.date, typeValue: expForm.typeValue, description: expForm.description, amount: parseFloat(expForm.amount), reimbursable: expForm.reimbursable }),
+                  });
+                  if (r.ok) { const created = await r.json(); setExpenses(es => [created, ...es]); }
                 }
                 setShowExpModal(false);
               }}>{expEditId ? "حفظ التعديلات" : "حفظ المصروف"}</Button>
