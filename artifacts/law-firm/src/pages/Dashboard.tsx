@@ -162,7 +162,7 @@ export default function Dashboard() {
               <p className="text-sm text-muted-foreground flex-1">
                 <span className="text-primary font-medium">تجربة مجانية</span> — {orgInfo.daysRemaining} يوم متبقٍ من أصل 90
               </p>
-              <span className="text-xs text-primary hover:underline">تفاصيل</span>
+              <span className="text-xs text-primary hover:underline flex items-center gap-1">تفاصيل <ArrowLeft className="h-3 w-3" /></span>
             </div>
           ) : null}
         </div>
@@ -189,7 +189,7 @@ export default function Dashboard() {
               </span>
             </div>
             <button onClick={() => navigate("/billing")} className="text-xs text-primary hover:underline flex items-center gap-1 mr-auto">
-              تفاصيل الفوترة <ArrowLeft className="h-3 w-3" />
+              تفاصيل <ArrowLeft className="h-3 w-3" />
             </button>
           </div>
         </CardContent>
