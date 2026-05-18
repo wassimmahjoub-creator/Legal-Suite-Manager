@@ -28,7 +28,7 @@ import {
   Archive, Hash, Layers, Shield, Pencil, DollarSign,
   BarChart2, Timer, FolderOpen, Receipt, ArrowUpRight,
   ExternalLink, Scale, Upload, Banknote, TrendingDown,
-  Play, Pause, Square, TrendingUp, Download,
+  Play, Pause, Square, TrendingUp, Download, Loader2,
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
