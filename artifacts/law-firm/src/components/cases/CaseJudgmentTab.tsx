@@ -96,23 +96,28 @@ export function CaseJudgmentTab({ caseId, onStagesChanged }: CaseJudgmentTabProp
     <div className="space-y-5" dir="rtl">
       {/* Active stage CTA */}
       {activeStage && activeStage.stage !== "execution" && (
-        <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-          <button
-            onClick={() => { setPanelStage(activeStage); setPanelMode("active"); }}
-            className="flex-1 text-right group"
-          >
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
+          <div>
             <p className="text-sm font-semibold">الطور الحالي: <span className="text-primary">{STAGE_LABELS[activeStage.stage] ?? activeStage.stage}</span></p>
-            <p className="text-xs text-muted-foreground mt-0.5 group-hover:text-foreground/70 transition-colors">انقر للاطلاع على التفاصيل والملاحظات</p>
-          </button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="shrink-0 gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-            onClick={() => { setPanelStage(activeStage); setPanelMode("active"); setShowTransition(true); }}
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            الانتقال للطور التالي
-          </Button>
+            <p className="text-xs text-muted-foreground mt-0.5">سجّل ملاحظات الطور أو انتقل للطور الإجرائي التالي</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => { setPanelStage(activeStage); setPanelMode("active"); setShowTransition(true); }}
+              className="gap-1.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              الانتقال للطور التالي
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setPanelStage(activeStage); setPanelMode("active"); }}
+            >
+              تعديل الملاحظات
+            </Button>
+          </div>
         </div>
       )}
 
