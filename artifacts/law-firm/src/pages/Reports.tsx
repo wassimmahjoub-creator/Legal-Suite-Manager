@@ -385,6 +385,7 @@ function SummaryTab() {
 ══════════════════════════════════════════════════════════════ */
 
 function CaseProfitability() {
+  const [, navigate]            = useLocation();
   const [data, setData]         = useState<CaseProfRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [period, setPeriod]     = useState("all");
@@ -498,7 +499,9 @@ function CaseProfitability() {
               </thead>
               <tbody>
                 {sorted.map((r, i) => (
-                  <tr key={r.caseId} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                  <tr key={r.caseId}
+                    onClick={() => navigate(`/cases/${r.caseId}`)}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
                     <td className="px-3 py-2 font-mono text-[#D4AF37] whitespace-nowrap">{r.caseNumber}</td>
                     <td className="px-3 py-2 max-w-[16rem] truncate" title={r.title}>{r.title}</td>
                     <td className="px-3 py-2 max-w-[12rem] truncate" title={r.clientName}>{r.clientName}</td>
