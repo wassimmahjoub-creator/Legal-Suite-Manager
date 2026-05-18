@@ -90,4 +90,8 @@ pnpm workspace monorepo using TypeScript. This is a full-stack law firm manageme
 - Cases route now excludes soft-deleted records by default (isNull(deletedAt))
 - Legal config auto-seeds 22 default items on first access
 
+## User Preferences
+
+- **Buttons**: Always use the default primary style (gold) — never `variant="outline"` for action buttons. Only use `variant="outline"` for cancel/secondary actions inside modals.
+
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
