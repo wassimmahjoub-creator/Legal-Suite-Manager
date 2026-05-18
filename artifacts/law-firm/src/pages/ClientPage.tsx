@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CourtSelect } from "@/components/CourtSelect";
+import { useToast } from "@/hooks/use-toast";
 
 const CASE_STAGES = ["ابتدائي", "استئناف", "تعقيب", "تنفيذ", "ختم"];
 
@@ -118,6 +119,7 @@ export default function ClientPage() {
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ClientFull>>({});
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   // Lazy-loaded tab data
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -258,7 +260,7 @@ export default function ClientPage() {
       method: "PUT",
       body: JSON.stringify(editForm),
     });
-    if (r.ok) { setClient(await r.json()); setEditModal(false); }
+    if (r.ok) { setClient(await r.json()); setEditModal(false); toast({ title: "تم حفظ بيانات الحريف" }); }
     setSaving(false);
   }
 
@@ -1431,16 +1433,17 @@ export default function ClientPage() {
               </FormField>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
-            {editForm.clientType !== "company" && (
-              <FormField label="بطاقة التعريف (CIN)" htmlFor="e-cl-cin">
-                <Input id="e-cl-cin" value={editForm.cin ?? ""} onChange={e => setEditForm(f => ({ ...f, cin: e.target.value }))} className={inputCls} dir="ltr" />
-              </FormField>
-            )}
-            <FormField label="المعرف الجبائي" htmlFor="e-cl-tax">
-              <Input id="e-cl-tax" value={editForm.taxId ?? ""} onChange={e => setEditForm(f => ({ ...f, taxId: e.target.value }))} className={inputCls} dir="ltr" placeholder="1234567A/P/M/000" />
+          {editForm.clientType !== "company" && (
+            <FormField label="بطاقة التعريف (CIN)" htmlFor="e-cl-cin">
+              <Input id="e-cl-cin" value={editForm.cin ?? ""} onChange={e => setEditForm(f => ({ ...f, cin: e.target.value }))} className={inputCls} dir="ltr" />
             </FormField>
-          </div>
+          )}
+          {editForm.clientType === "company" && (
+            <FormField label="المعرف الجبائي *" htmlFor="e-cl-tax">
+              <Input id="e-cl-tax" value={editForm.taxId ?? ""} onChange={e => setEditForm(f => ({ ...f, taxId: e.target.value }))} className={inputCls} dir="ltr" placeholder="1234567X/A/M/000" />
+              <p className="text-xs text-muted-foreground mt-1">مثال : 1234567X/A/M/000</p>
+            </FormField>
+          )}
           {editForm.clientType === "company" && (
             <FormField label="رقم الحساب البنكي (RIB)" htmlFor="e-cl-rib">
               <Input id="e-cl-rib" value={editForm.rib ?? ""} onChange={e => setEditForm(f => ({ ...f, rib: e.target.value }))} className={inputCls} dir="ltr" placeholder="20 chiffres" />

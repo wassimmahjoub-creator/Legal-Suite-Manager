@@ -55,7 +55,7 @@ const TR_PRIORITY: Record<string, string> = {
 };
 const TR_CLIENT_SOURCE: Record<string, string> = {
   referral: "توصية", returning_client: "عميل سابق",
-  facebook: "Facebook", google: "Google", partner: "شريك", other: "آخر",
+  facebook: "فيسبوك", google: "جوجل", partner: "شريك", other: "آخر",
 };
 const TR_FEE_METHOD: Record<string, string> = {
   fixed: "مبلغ قار", per_hearing: "بالجلسة",

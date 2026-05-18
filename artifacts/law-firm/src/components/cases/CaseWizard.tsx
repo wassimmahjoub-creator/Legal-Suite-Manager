@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectNative } from "@/components/SelectNative";
 import { CourtSelect } from "@/components/CourtSelect";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -46,8 +47,8 @@ const CASE_PRIORITIES = [
 const CLIENT_SOURCES = [
   { value: "referral", label: "توصية" },
   { value: "returning_client", label: "عميل سابق" },
-  { value: "facebook", label: "Facebook" },
-  { value: "google", label: "Google" },
+  { value: "facebook", label: "فيسبوك" },
+  { value: "google", label: "جوجل" },
   { value: "partner", label: "شريك" },
   { value: "other", label: "آخر" },
 ];
@@ -191,7 +192,7 @@ function RadioGroup({ options, value, onChange }: {
   );
 }
 
-function Step1({ form, upd, clients }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[] }) {
+function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[]; onAddClient: () => void }) {
   return (
     <div className="space-y-4">
       <div>
@@ -203,10 +204,16 @@ function Step1({ form, upd, clients }: { form: WizardForm; upd: (u: Partial<Wiza
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>الحريف <Req /></Label>
-          <SelectNative value={form.clientId} onChange={e => upd({ clientId: e.target.value })} className={cls + " px-3"}>
-            <option value="">اختر حريفاً...</option>
-            {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
-          </SelectNative>
+          <div className="flex gap-2">
+            <SelectNative value={form.clientId} onChange={e => upd({ clientId: e.target.value })} className={cls + " px-3 flex-1"}>
+              <option value="">اختر حريفاً...</option>
+              {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
+            </SelectNative>
+            <button type="button" onClick={onAddClient} title="حريف جديد"
+              className="h-10 px-2.5 rounded-lg border border-border bg-muted/50 hover:bg-primary/10 hover:border-primary text-muted-foreground hover:text-primary transition-all shrink-0">
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div>
           <Label>نوع الملف <Req /></Label>
@@ -436,26 +443,26 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
           </div>
 
           {(form.feeMethod === "fixed" || form.feeMethod === "per_hearing") && (
-            <div>
+            <div className="animate-in slide-in-from-top-2 fade-in duration-200">
               <Label>الأتعاب المتفق عليها (د.ت) <Req /></Label>
-              <Input type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
+              <Input autoFocus type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
                 value={form.agreedFees} onChange={e => upd({ agreedFees: e.target.value })} />
             </div>
           )}
 
           {form.feeMethod === "hourly" && (
-            <div>
+            <div className="animate-in slide-in-from-top-2 fade-in duration-200">
               <Label>التعرفة بالساعة (د.ت) <Req /></Label>
-              <Input type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
+              <Input autoFocus type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
                 value={form.hourlyRate} onChange={e => upd({ hourlyRate: e.target.value })} />
             </div>
           )}
 
           {form.feeMethod === "percentage" && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="animate-in slide-in-from-top-2 fade-in duration-200 grid grid-cols-2 gap-4">
               <div>
                 <Label>النسبة % <Req /></Label>
-                <Input type="number" min="0" max="100" step="0.1" placeholder="10" className={cls} dir="ltr"
+                <Input autoFocus type="number" min="0" max="100" step="0.1" placeholder="10" className={cls} dir="ltr"
                   value={form.percentage} onChange={e => upd({ percentage: e.target.value })} />
               </div>
               <div>
@@ -514,6 +521,9 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const [saving, setSaving] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [step4Err, setStep4Err] = useState(false);
+  const { toast } = useToast();
+  const [quickClientOpen, setQuickClientOpen] = useState(false);
+  const [quickClientForm, setQuickClientForm] = useState({ name: "", clientType: "individual", phone: "", email: "" });
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
 
@@ -521,6 +531,28 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const isDirty = form.title !== df.title || form.clientId !== df.clientId ||
     form.description !== df.description || form.litigationDegree !== df.litigationDegree ||
     form.court !== df.court || form.agreedFees !== df.agreedFees;
+
+  async function createQuickClient() {
+    if (!quickClientForm.name.trim()) return;
+    const r = await authFetch(`${BASE}/api/clients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: quickClientForm.name,
+        clientType: quickClientForm.clientType,
+        phone: quickClientForm.phone || null,
+        email: quickClientForm.email || null,
+      }),
+    });
+    if (r.ok) {
+      const nc = await r.json() as { id: number; name: string };
+      setClients(prev => [...prev, { id: nc.id, name: nc.name }]);
+      upd({ clientId: String(nc.id) });
+      setQuickClientOpen(false);
+      setQuickClientForm({ name: "", clientType: "individual", phone: "", email: "" });
+      toast({ title: "تم إنشاء الحريف بنجاح" });
+    }
+  }
 
   function handleClose() {
     if (isDirty) { setConfirmClose(true); } else { onClose(); }
@@ -589,7 +621,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
           body: JSON.stringify(payload),
         });
         setSaving(false);
-        if (r.ok) onCreated(caseId);
+        if (r.ok) { toast({ title: "تم حفظ التعديلات" }); onCreated(caseId); }
         return;
       }
 
@@ -624,6 +656,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
       }
 
       setSaving(false);
+      toast({ title: "تم إنشاء الملف بنجاح" });
       onCreated(createdId);
     } catch {
       setSaving(false);
@@ -644,6 +677,43 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
               <div className="flex gap-2 justify-center">
                 <Button size="sm" variant="outline" onClick={() => setConfirmClose(false)}>إلغاء</Button>
                 <Button size="sm" variant="destructive" onClick={onClose}>تجاهل وإغلاق</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {quickClientOpen && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 rounded-2xl">
+            <div className="bg-card border border-border rounded-xl p-5 max-w-sm w-full mx-4 space-y-4" dir="rtl">
+              <h3 className="font-semibold">حريف جديد</h3>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">نوع الحريف</label>
+                <div className="flex gap-3">
+                  {([{v:"individual",l:"شخص طبيعي"},{v:"company",l:"شخص معنوي"}] as {v:string;l:string}[]).map(o => (
+                    <button key={o.v} type="button" onClick={() => setQuickClientForm(f => ({ ...f, clientType: o.v }))}
+                      className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${quickClientForm.clientType === o.v ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">الاسم الكامل *</label>
+                <Input autoFocus value={quickClientForm.name} onChange={e => setQuickClientForm(f => ({ ...f, name: e.target.value }))} className={cls} placeholder="الاسم كاملاً..." />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">الهاتف</label>
+                  <Input value={quickClientForm.phone} onChange={e => setQuickClientForm(f => ({ ...f, phone: e.target.value }))} className={cls} dir="ltr" placeholder="+216..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">البريد الإلكتروني</label>
+                  <Input type="email" value={quickClientForm.email} onChange={e => setQuickClientForm(f => ({ ...f, email: e.target.value }))} className={cls} dir="ltr" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setQuickClientOpen(false)} className="px-4">إلغاء</Button>
+                <Button size="sm" className="flex-1" onClick={createQuickClient} disabled={!quickClientForm.name.trim()}>إنشاء الحريف</Button>
               </div>
             </div>
           </div>
@@ -687,7 +757,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">
-          {step === 1 && <Step1 form={form} upd={upd} clients={clients} />}
+          {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} />}
           {step === 2 && <Step2 form={form} upd={upd} />}
           {step === 3 && <Step3 form={form} upd={upd} users={users} />}
           {step === 4 && <Step4 form={form} upd={upd} />}

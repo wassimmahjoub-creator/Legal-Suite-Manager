@@ -75,7 +75,7 @@ function calcEndDate(startDate: string, durationDays: number | string): string {
   return d.toISOString().slice(0, 10);
 }
 
-interface Court { id: number; name: string; nameAr?: string | null }
+interface Court { id: number; name: string; nameAr?: string | null; type?: string | null }
 
 interface Props {
   open: boolean;
@@ -131,6 +131,7 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
   useEffect(() => {
     const opts = getNextStageOptions(stage.stage, outcome);
     setNextStage(opts[0]?.value ?? "");
+    setNextCourtId("");
   }, [stage.stage, outcome]);
 
   useEffect(() => {
@@ -305,10 +306,16 @@ export function StageTransitionModal({ open, stage, caseId, onClose, onDone }: P
               {nextStage !== "execution" ? (
                 <>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">المحكمة للطور القادم *</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">
+                      {nextStage === "appeal" ? "اختر محكمة استئناف *" : nextStage === "cassation" ? "اختر محكمة التعقيب *" : "المحكمة للطور القادم *"}
+                    </label>
                     <select value={nextCourtId} onChange={e => setNextCourtId(e.target.value)} className={inputCls}>
                       <option value="">— اختر المحكمة —</option>
-                      {courts.map(c => (
+                      {courts.filter(c => {
+                        if (nextStage === "appeal") return c.type === "appel";
+                        if (nextStage === "cassation") return c.type === "cassation";
+                        return true;
+                      }).map(c => (
                         <option key={c.id} value={c.id}>{c.nameAr ?? c.name}</option>
                       ))}
                     </select>

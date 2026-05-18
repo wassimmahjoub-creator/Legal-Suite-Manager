@@ -10,6 +10,7 @@ import { ArrowRight, Plus, Trash2, Send, Save, Loader2 } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/skeletons";
 import { calcLine, calcTotals, UNITS, UNIT_LABELS, VAT_RATES } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -55,6 +56,7 @@ export default function InvoiceForm() {
   const [issuing, setIssuing] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const uid = useId();
+  const { toast } = useToast();
 
   const selectedClient = clients.find(c => String(c.id) === clientId);
   const filteredCases = cases.filter(c => !clientId || c.clientId === Number(clientId));
@@ -177,17 +179,18 @@ export default function InvoiceForm() {
       let inv;
       if (isEdit) {
         const r = await authFetch(`${BASE}/api/invoices/${params.id}`, { method: "PUT", headers, body: JSON.stringify(payload) });
-        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل تحديث الفاتورة."); setSaving(false); return; }
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; toast({ title: "خطأ", description: e.error ?? "فشل تحديث الفاتورة.", variant: "destructive" }); setSaving(false); return; }
         inv = await r.json();
       } else {
         const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", headers, body: JSON.stringify(payload) });
-        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل إنشاء الفاتورة."); setSaving(false); return; }
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; toast({ title: "خطأ", description: e.error ?? "فشل إنشاء الفاتورة.", variant: "destructive" }); setSaving(false); return; }
         inv = await r.json();
       }
+      toast({ title: isEdit ? "تم حفظ التعديلات" : "تم إنشاء مسودة الفاتورة" });
       setSaving(false);
       navigate(`/billing/${inv.id}`);
     } catch {
-      alert("حدث خطأ غير متوقع. حاول مجدداً.");
+      toast({ title: "خطأ غير متوقع", description: "حاول مجدداً.", variant: "destructive" });
       setSaving(false);
     }
   }
@@ -201,19 +204,20 @@ export default function InvoiceForm() {
       let id = params.id ? Number(params.id) : null;
       if (!id) {
         const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", headers, body: JSON.stringify(payload) });
-        if (!r.ok) { alert("فشل إنشاء الفاتورة. حاول مجدداً."); setIssuing(false); return; }
+        if (!r.ok) { toast({ title: "خطأ", description: "فشل إنشاء الفاتورة. حاول مجدداً.", variant: "destructive" }); setIssuing(false); return; }
         const inv = await r.json();
         id = inv.id;
       } else {
         const r = await authFetch(`${BASE}/api/invoices/${id}`, { method: "PUT", headers, body: JSON.stringify(payload) });
-        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل تحديث الفاتورة."); setIssuing(false); return; }
+        if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; toast({ title: "خطأ", description: e.error ?? "فشل تحديث الفاتورة.", variant: "destructive" }); setIssuing(false); return; }
       }
       const r = await authFetch(`${BASE}/api/invoices/${id}/issue`, { method: "POST", headers, body: JSON.stringify({ issueDate }) });
-      if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; alert(e.error ?? "فشل إصدار الفاتورة."); setIssuing(false); return; }
+      if (!r.ok) { const e = await r.json().catch(() => ({})) as { error?: string }; toast({ title: "خطأ", description: e.error ?? "فشل إصدار الفاتورة.", variant: "destructive" }); setIssuing(false); return; }
       const inv = await r.json();
+      toast({ title: "تم إصدار الفاتورة بنجاح", description: inv.invoiceNumber ?? undefined });
       navigate(`/billing/${inv.id}`);
     } catch {
-      alert("حدث خطأ غير متوقع. حاول مجدداً.");
+      toast({ title: "خطأ غير متوقع", description: "حاول مجدداً.", variant: "destructive" });
     }
     setIssuing(false);
   }

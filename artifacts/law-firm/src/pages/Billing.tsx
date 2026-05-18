@@ -2,7 +2,7 @@ import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
-import { formatDateTN } from "@/lib/date";
+import { formatDateTN, formatDateLongTN } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -186,7 +186,10 @@ export default function Billing() {
                       </TableCell>
                       <TableCell className="py-3 text-sm hidden lg:table-cell">
                         {inv.dueDate ? (
-                          <span className={isOverdue ? "text-red-500 font-semibold" : "text-muted-foreground"}>
+                          <span
+                            title={formatDateLongTN(inv.dueDate)}
+                            className={isOverdue ? "text-red-500 font-semibold" : "text-muted-foreground"}
+                          >
                             {formatDateTN(inv.dueDate)}
                           </span>
                         ) : "—"}

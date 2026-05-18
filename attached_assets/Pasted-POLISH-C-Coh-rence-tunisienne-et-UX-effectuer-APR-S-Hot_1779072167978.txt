@@ -1,0 +1,232 @@
+POLISH C — Cohérence tunisienne et UX. À effectuer APRÈS Hotfix A et B.
+
+═══════════════════════════════════════════════════════
+C1 — UNIFICATION DU FORMAT NUMÉRIQUE ET DEVISE
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Quatre conventions différentes coexistent dans l'app :
+- `2 200,000 DT` (dashboard)
+- `1500.00` (table factures, sans devise)
+- `د.ت 3,000` (header dossier — devise du mauvais côté)
+- `1.450,000 دت` (time-tracking — sans point sur د.ت)
+- `1500.00 TND` (page /billing — TND interdit)
+
+CORRECTION ATTENDUE :
+
+1. Confirme que le helper formatCurrency() livré en T6 P1 existe bien dans src/lib/currency.ts.
+
+2. Sa signature attendue :
+   export function formatCurrency(amount: number, locale: 'ar' | 'fr' = 'fr'): string;
+
+3. Format de référence (à valider) :
+   - FR : "2 200,000 DT" (séparateur milliers = espace insécable, virgule décimale, 3 décimales, suffixe DT avec espace insécable)
+   - AR : "2 200,000 د.ت" (même structure, suffixe د.ت avec POINT)
+
+4. Composant <Money amount={x} /> qui lit la locale active et appelle formatCurrency.
+
+5. AUDIT GLOBAL :
+   - grep "TND" → 0 occurrence après correction
+   - grep "دت" (sans point) → 0 occurrence
+   - grep des affichages monétaires en dur (genre `${amount.toFixed(2)} DT` ou similaire) → remplacer par <Money />
+   - Vérifie particulièrement : dashboard KPI, /billing list, /billing/new récap, header dossier, time-tracking, expenses
+
+6. Pour la lib de formatting numérique, force numberingSystem 'latn' même en arabe — pas de chiffres orientaux ١٢٣ qui sonnent étrangers en Tunisie :
+   new Intl.NumberFormat('ar-TN', { numberingSystem: 'latn', ... });
+
+═══════════════════════════════════════════════════════
+C2 — SOURCES DE CLIENT EN ARABE
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Dans le dropdown "مصدر الحريف", "Facebook" et "Google" apparaissent en latin pur, contrastant avec "توصية", "عميل سابق", "شريك" en arabe.
+
+CORRECTION :
+
+Option recommandée : conserver les noms de marque en latin (Facebook, Google sont des marques internationales) mais préfixer par leur descriptif arabe :
+- "Facebook (فيسبوك)"
+- "Google (جوجل)"
+
+OU plus simplement uniformiser en arabe pur :
+- "فيسبوك"
+- "جوجل"
+
+Choisir l'une des deux conventions et appliquer. Documenter dans le code.
+
+═══════════════════════════════════════════════════════
+C3 — TYPO "الثنين" → "الإثنين"
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+La grille calendrier affiche "الثنين" au lieu de "الإثنين" (manque la hamza).
+
+CORRECTION :
+
+1. Vérifie le dictionnaire des jours dans src/lib/date.ts ou équivalent.
+
+2. Liste correcte des jours en arabe tunisien :
+   - الأحد
+   - الإثنين  ← (avec hamza)
+   - الثلاثاء
+   - الأربعاء
+   - الخميس
+   - الجمعة
+   - السبت
+
+3. grep "الثنين" dans tout le code et la base de données seed → corriger en "الإثنين".
+
+═══════════════════════════════════════════════════════
+C4 — JOUR DE LA SEMAINE PARTOUT
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Le dashboard et l'agenda affichent le jour de la semaine ("الجمعة 14 ماي 2026") mais la liste des dossiers et la liste des factures affichent juste "14/05/2026".
+
+CORRECTION :
+
+1. Standardise tous les affichages de date :
+   - Format "full" (avec jour semaine) : pages détail, dashboard, agenda, timeline
+   - Format "short" : tables denses (liste dossiers, liste factures) où l'espace est limité
+   - Mais inclure le jour de semaine DANS le tooltip au survol des dates short
+
+2. Utilise le composant <DateDisplay format="..." /> livré en T11 P2.
+
+3. Sur la liste des dossiers et factures : ajouter une colonne "اليوم" si possible, ou afficher dans le format "السبت 14/05" en compact.
+
+═══════════════════════════════════════════════════════
+C5 — TOAST DE SUCCÈS SYSTÉMATIQUE
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+La création de dossier réussit silencieusement (seule la redirection l'indique). Sur d'autres actions, l'absence de feedback fait croire à un bug même quand l'action a réussi.
+
+CORRECTION :
+
+1. Audit des actions de mutation (POST/PATCH/DELETE) dans l'app.
+
+2. Pour CHAQUE mutation réussie, déclencher un toast :
+   - Création : "تم إنشاء [entité] بنجاح" ✓ vert
+   - Modification : "تم حفظ التعديلات" ✓ vert
+   - Suppression : "تم الحذف" ✓ vert (ou info bleu si soft delete avec mention "30 jours pour restaurer")
+   - Émission facture : "تم إصدار الفاتورة [numéro]"
+   - Paiement enregistré : "تم تسجيل الدفعة"
+   - Transition de stade : "تم الانتقال إلى الطور [stade]"
+
+3. Pour les actions destructives ou critiques, garder le toast 4-5 secondes ; pour les actions banales, 2-3 secondes suffisent.
+
+4. Utilise un seul système de toast pour toute l'app (probablement sonner ou react-hot-toast). Vérifier qu'il est bien configuré en RTL.
+
+═══════════════════════════════════════════════════════
+C6 — "+ حريف جديد" INLINE DANS WIZARD
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Dans le wizard de création de dossier étape 1, si le client n'existe pas, l'utilisateur doit quitter le wizard, aller dans /clients, créer, revenir et tout retaper.
+
+CORRECTION :
+
+1. Dans le sélecteur de client de l'étape 1 du wizard, ajouter un bouton "+ حريف جديد" à côté du dropdown.
+
+2. Au clic, ouvrir une SUB-modale (ou un drawer latéral) avec les champs minimum d'un nouveau client :
+   - Nom (AR + FR optionnel)
+   - Type (personne physique / morale) — radio
+   - Téléphone
+   - Email
+   - Matricule fiscal (si personne morale) — voir C9
+
+3. À la sauvegarde de la sub-modale :
+   - Créer le client en DB
+   - Le sélectionner automatiquement dans le sélecteur du wizard
+   - Fermer la sub-modale, ne PAS fermer le wizard
+   - Toast "تم إنشاء الحريف" léger
+
+4. Vérifier que les saisies de l'étape 1 du wizard restent intactes pendant l'ouverture de la sub-modale.
+
+═══════════════════════════════════════════════════════
+C7 — FILTRE JURIDICTIONS PAR STADE
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Dans la modale de transition de stade, après avoir choisi "استئنافي", le sélecteur de cour propose toutes les juridictions (TPI inclus) au lieu de filtrer sur cours d'appel uniquement.
+
+CORRECTION :
+
+1. Dans <StageTransitionModal />, le composant <CourtSelect /> doit recevoir une prop courtTypeFilter :
+   - Si next_stage = 'appeal' → courtTypeFilter = ['appel']
+   - Si next_stage = 'cassation' → courtTypeFilter = ['cassation']
+   - Si next_stage = 'execution' → courtTypeFilter = ['premiere_instance', 'appel'] (l'exécution se fait souvent au siège de l'instance d'origine)
+
+2. Le composant <CourtSelect /> doit filtrer côté API : GET /api/courts?types=appel.
+
+3. Helper text dans le modal : "اختر محكمة استئناف" / "اختر محكمة التعقيب".
+
+═══════════════════════════════════════════════════════
+C8 — VALEUR PAR DÉFAUT DURÉE D'ÉVÉNEMENT
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Le label "مدة الحدث (دقيقة)" affiche "ساعة واحدة" comme valeur par défaut — contradiction entre l'unité (minute) et la valeur (heure).
+
+CORRECTION :
+
+1. Soit le label devient "مدة الحدث" (sans unité forcée) et la valeur reste "ساعة واحدة" en libellé naturel.
+
+2. Soit l'unité reste "دقيقة" et la valeur par défaut devient "60".
+
+3. Choisir l'option 1 (plus humain). Convertir en minutes en interne au moment du save.
+
+═══════════════════════════════════════════════════════
+C9 — MATRICULE FISCAL SUR FICHE CLIENT
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Pas de matricule fiscal sur le formulaire de création client — pourtant la facturation conforme TN l'exigerait du côté client aussi (pour clients personnes morales).
+
+CORRECTION :
+
+1. Vérifie que la colonne `tax_id` existe sur la table `clients` (livrée en T3).
+
+2. Sur le formulaire de création/édition de client :
+   - Si type = "شخص معنوي" (personne morale) : afficher champ "المعرف الجبائي" (REQUIS)
+   - Si type = "شخص طبيعي" (personne physique) : ne pas afficher
+   - Validation format : 8 chiffres + lettre + slash + lettre + slash + lettre + slash + 3 chiffres
+     (ex: "1234567X/A/M/000")
+   - Helper text : "مثال : 1234567X/A/M/000"
+
+3. Sur la fiche client 360° (T3), afficher ce matricule en section "الجباية" avec le taux de retenue.
+
+4. Sur le PDF de facture, vérifier que le matricule fiscal du client apparaît bien (bloc client).
+
+═══════════════════════════════════════════════════════
+C10 — INDICATION VISUELLE DU CHAMP FEES CONDITIONNEL
+═══════════════════════════════════════════════════════
+
+PROBLÈME :
+Le champ fees conditionnel apparaît seulement après sélection de la méthode, sans animation ni indication visuelle — l'utilisateur peut croire qu'un champ manque.
+
+CORRECTION :
+
+1. Sur l'étape 4 du wizard, après sélection de fee_method :
+   - Animation slide-down de 200ms pour l'apparition du champ correspondant
+   - Mise en surbrillance dorée (border-amber-500) pendant 1 seconde pour attirer l'œil
+   - Auto-focus sur le champ
+
+2. Mêmes principes pour tout autre champ conditionnel ailleurs dans l'app.
+
+═══════════════════════════════════════════════════════
+ÉTAPE FINALE — RAPPORT DE VÉRIFICATION
+═══════════════════════════════════════════════════════
+
+Pour chacun des 10 points C1-C10, documente :
+- Avant : capture ou description du problème
+- Après : capture ou description de la correction
+- ✓ ou ✗
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Hotfix A et B restent en place
+- Aucun nouveau bug introduit
+- RTL préservé partout
+- La facturation conforme TN et son PDF continuent de fonctionner avec les nouveaux affichages

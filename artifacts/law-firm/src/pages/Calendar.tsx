@@ -116,7 +116,7 @@ function AgendaToolbar({ date, onNavigate }: ToolbarProps<CalEvent>) {
 
 // ── Custom Week/Day header: day name stacked above date circle ────────────────
 
-const AR_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const AR_DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 function WeekDayHeader({ date }: { date: Date }) {
   const today = new Date();
@@ -639,7 +639,7 @@ export default function CalendarView() {
             </FormField>
           </div>
 
-          <FormField label="مدة الحدث (دقيقة)" htmlFor="ev-duration">
+          <FormField label="مدة الحدث" htmlFor="ev-duration">
             <SelectNative id="ev-duration" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
               className={inputCls + " px-3 cursor-pointer"}>
               <option value="30">30 دقيقة</option>

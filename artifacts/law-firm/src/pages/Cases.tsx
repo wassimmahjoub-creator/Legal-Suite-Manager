@@ -1,7 +1,7 @@
 import { SelectNative } from "@/components/SelectNative";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { formatDateTN } from "@/lib/date";
+import { formatDateTN, formatDateLongTN } from "@/lib/date";
 import { useListCases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -165,7 +165,9 @@ export default function Cases() {
                     <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{c.court || "—"}</TableCell>
                     <TableCell className="py-3"><StatusBadge status={c.status} /></TableCell>
                     <TableCell className="py-3 hidden lg:table-cell">
-                      {c.nextHearing ? formatDateTN(c.nextHearing) : "—"}
+                      {c.nextHearing ? (
+                        <span title={formatDateLongTN(c.nextHearing)}>{formatDateTN(c.nextHearing)}</span>
+                      ) : "—"}
                     </TableCell>
                     <TableCell className="py-3 hidden lg:table-cell">
                       {c.procedureStage ? (
