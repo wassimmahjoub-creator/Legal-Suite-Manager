@@ -141,29 +141,29 @@ export default function InvoicePage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {!isLocked && (
-            <Button variant="outline" size="sm" className="gap-2"
+            <Button size="sm" className="gap-2 text-xs"
               onClick={() => navigate(`/billing/${inv.id}/edit`)}>
               <Edit2 className="h-4 w-4" /> تعديل
             </Button>
           )}
           {!isLocked && (
-            <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            <Button variant="destructive" size="sm" className="gap-2 text-xs"
               onClick={() => setConfirmDelete(true)}>
               <Trash2 className="h-4 w-4" /> حذف المسودة
             </Button>
           )}
           {isLocked && inv.status !== "cancelled" && (
             <>
-              <Button variant="outline" size="sm" className="gap-2"
+              <Button size="sm" className="gap-2 text-xs"
                 onClick={() => setPaymentModal(true)}>
                 <CreditCard className="h-4 w-4" /> تسجيل دفعة
               </Button>
-              <Button variant="outline" size="sm" className="gap-2"
+              <Button size="sm" className="gap-2 text-xs"
                 onClick={() => setConfirmUnlock(true)} disabled={unlockLoading}>
                 {unlockLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                 إلغاء القفل للتعديل
               </Button>
-              <Button variant="outline" size="sm" className="gap-2"
+              <Button size="sm" className="gap-2 text-xs"
                 onClick={() => setConfirmCreditNote(true)} disabled={creditLoading}>
                 {creditLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileX className="h-4 w-4" />}
                 إصدار فاتورة تصحيحية
@@ -171,7 +171,7 @@ export default function InvoicePage() {
             </>
           )}
           {inv && (
-            <Button variant="outline" size="sm" className="gap-2" asChild>
+            <Button size="sm" className="gap-2 text-xs" asChild>
               <span className="cursor-pointer">
                 <Download className="h-4 w-4" />
                 <InvoicePdfButton inv={inv} cab={cab} />
