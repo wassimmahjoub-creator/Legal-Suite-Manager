@@ -58,6 +58,35 @@ function isActive(status: ExportStatus) {
   return status === "pending" || status === "processing";
 }
 
+function useCooldown(exports: DataExport[], userId: number | undefined) {
+  const [remaining, setRemaining] = useState<string | null>(null);
+
+  useEffect(() => {
+    const last = exports
+      .filter(e => e.exportType === "full_cabinet")
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    if (!last) { setRemaining(null); return; }
+
+    const expiresAt = new Date(last.createdAt).getTime() + 24 * 60 * 60 * 1000;
+
+    function tick() {
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) { setRemaining(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setRemaining(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    }
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [exports, userId]);
+
+  return remaining;
+}
+
 export default function DataPrivacy() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -75,6 +104,8 @@ export default function DataPrivacy() {
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [creating, setCreating] = useState(false);
+
+  const cooldown = useCooldown(exports, user?.id);
 
   /* ── polling ── */
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -185,9 +216,22 @@ export default function DataPrivacy() {
             يُنتج ملف ZIP منظّماً مع بصمة SHA-256 لكل ملف.
             <strong className="text-foreground"> تصدير واحد مسموح كل 24 ساعة.</strong>
           </p>
-          <Button onClick={() => setFullModal(true)} className="gap-2 mt-2">
-            <Download className="h-4 w-4" />
-            بدء التصدير الكامل
+          <Button
+            onClick={() => setFullModal(true)}
+            disabled={!!cooldown}
+            className="gap-2 mt-2"
+          >
+            {cooldown ? (
+              <>
+                <Clock className="h-4 w-4" />
+                متاح بعد {cooldown}
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                بدء التصدير الكامل
+              </>
+            )}
           </Button>
         </div>
       )}
@@ -310,12 +354,23 @@ export default function DataPrivacy() {
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-yellow-300 text-xs">
             ⚠️ هذا الملف يحتوي على بيانات سرية. احتفظ به في مكان آمن.
           </div>
+          {cooldown && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 text-blue-300 text-xs flex items-center gap-2">
+              <Clock className="h-4 w-4 shrink-0" />
+              تم إجراء تصدير مؤخراً. يمكنك إعادة التصدير بعد: <strong className="font-mono">{cooldown}</strong>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <Button variant="outline" onClick={() => setFullModal(false)}>إلغاء</Button>
-          <Button onClick={() => createExport("full_cabinet")} disabled={creating} className="gap-2">
-            <Download className="h-4 w-4" />
-            {creating ? "جارٍ إنشاء طلب التصدير..." : "تأكيد وبدء التصدير"}
+          <Button onClick={() => createExport("full_cabinet")} disabled={creating || !!cooldown} className="gap-2">
+            {creating ? (
+              <><RefreshCw className="h-4 w-4 animate-spin" />جارٍ إنشاء طلب التصدير...</>
+            ) : cooldown ? (
+              <><Clock className="h-4 w-4" />متاح بعد {cooldown}</>
+            ) : (
+              <><Download className="h-4 w-4" />تأكيد وبدء التصدير</>
+            )}
           </Button>
         </div>
       </Modal>

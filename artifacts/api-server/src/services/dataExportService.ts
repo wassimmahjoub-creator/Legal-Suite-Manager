@@ -313,13 +313,13 @@ export const DataExportService = {
     exportType: ExportType;
     scopeId?: number;
   }) {
-    // Quota: 1 full_cabinet export per 24 h
+    // Quota: 1 full_cabinet export per 24 h per user
     if (opts.exportType === "full_cabinet") {
       const recent = await db
         .select({ id: dataExportsTable.id })
         .from(dataExportsTable)
         .where(
-          sql`export_type = 'full_cabinet' AND created_at > now() - interval '24 hours'`,
+          sql`export_type = 'full_cabinet' AND requested_by = ${opts.requestedBy} AND created_at > now() - interval '24 hours'`,
         );
       if (recent.length > 0) {
         throw Object.assign(new Error("QUOTA_EXCEEDED"), { code: "QUOTA_EXCEEDED" });
