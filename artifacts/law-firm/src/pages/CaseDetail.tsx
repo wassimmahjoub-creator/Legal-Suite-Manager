@@ -114,7 +114,7 @@ type Relation   = { id: number; relatedCaseId: number; relationType: string; rel
 type UserItem   = { id: number; name: string; email: string; role: string; };
 type Opponent   = { id: number; name: string; lawyerName: string | null; phone: string | null; address: string | null; notes: string | null; caseId: number | null; capacity?: string | null; opponentLawyerPhone?: string | null; };
 type DocItem    = { id: number; name: string; type: string | null; url: string | null; caseId: number | null; createdAt: string; deletedAt?: string | null; };
-type Invoice    = { id: number; invoiceNumber: string | null; amount: number; paidAmount: number | null; status: string; issuedAt: string | null; dueDate: string | null; caseId: number | null; clientId: number | null; description: string | null; deletedAt: string | null; };
+type Invoice    = { id: number; invoiceNumber: string | null; netToPay: number; amountPaid: number | null; status: string; issueDate: string | null; dueDate: string | null; caseId: number | null; clientId: number | null; description: string | null; deletedAt: string | null; };
 type AuditLog   = { id: number; entityType: string; entityId: number | null; action: string; userName: string | null; createdAt: string; details: string | null; };
 type HearingEvent = { id: number; title: string; date: string; time: string | null; type: string; legalStatus: string | null; court: string | null; division: string | null; location: string | null; objective: string | null; result: string | null; };
 
@@ -321,8 +321,8 @@ export default function CaseDetail() {
   const activeDocs    = docs.filter(d => !d.deletedAt);
 
   // Invoice KPIs
-  const totalInvoiced = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
-  const totalPaid     = invoices.reduce((s, i) => s + Number(i.paidAmount ?? 0), 0);
+  const totalInvoiced = invoices.reduce((s, i) => s + Number(i.netToPay ?? 0), 0);
+  const totalPaid     = invoices.reduce((s, i) => s + Number(i.amountPaid ?? 0), 0);
   const totalDue      = totalInvoiced - totalPaid;
   const hasOverdueInv = invoices.some(i => i.status !== "paid" && i.dueDate && i.dueDate < today);
 
@@ -685,9 +685,9 @@ export default function CaseDetail() {
                     return (
                       <tr key={inv.id} onClick={() => navigate(`/billing/${inv.id}`)} className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer">
                         <td className="py-2.5 px-2 font-mono text-xs">{inv.invoiceNumber ?? `#${inv.id}`}</td>
-                        <td className="py-2.5 px-2 text-muted-foreground text-xs">{inv.issuedAt ? formatDateTN(inv.issuedAt) : "—"}</td>
-                        <td className="py-2.5 px-2 font-semibold">{Number(inv.amount).toLocaleString()} د.ت</td>
-                        <td className="py-2.5 px-2 text-green-400">{inv.paidAmount ? `${Number(inv.paidAmount).toLocaleString()} د.ت` : "—"}</td>
+                        <td className="py-2.5 px-2 text-muted-foreground text-xs">{inv.issueDate ? formatDateTN(inv.issueDate) : "—"}</td>
+                        <td className="py-2.5 px-2 font-semibold">{Number(inv.netToPay).toLocaleString()} د.ت</td>
+                        <td className="py-2.5 px-2 text-green-400">{inv.amountPaid ? `${Number(inv.amountPaid).toLocaleString()} د.ت` : "—"}</td>
                         <td className="py-2.5 px-2">
                           <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", inv.status === "paid" ? "bg-green-500/10 text-green-400" : isOverdue ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground")}>
                             {inv.status === "paid" ? "مدفوعة" : isOverdue ? "متأخرة" : "قيد الانتظار"}
