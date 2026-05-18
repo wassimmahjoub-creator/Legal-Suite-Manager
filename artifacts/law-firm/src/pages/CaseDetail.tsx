@@ -525,15 +525,8 @@ export default function CaseDetail() {
           </div>
         )}
 
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">الآجال القانونية</p>
-        {/* Filters */}
-        <div className="flex gap-2 flex-wrap">
-          {(["all","upcoming","past"] as const).map(f => (
-            <button key={f} onClick={() => setDlFilter(f)}
-              className={cn("text-xs px-3 py-1.5 rounded-full border transition-colors", dlFilter === f ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50")}>
-              {f === "all" ? "الكل" : f === "upcoming" ? "القادمة" : "الماضية"}
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">الآجال القانونية</p>
           {overdueCount > 0 && <span className="text-xs px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{overdueCount} متأخر</span>}
         </div>
 
