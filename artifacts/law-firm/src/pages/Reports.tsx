@@ -505,20 +505,20 @@ function CaseProfitability() {
                     <td className="px-3 py-2">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-white/10">{STATUS_AR[r.status] ?? r.status}</span>
                     </td>
-                    <td className="px-3 py-2 text-left tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-left tabular-nums text-orange-300">{fmtNum(r.totalExpenses)}</td>
-                    <td className="px-3 py-2 text-left tabular-nums text-emerald-400">{fmtNum(r.totalCollected)}</td>
-                    <td className={`px-3 py-2 text-left tabular-nums font-bold ${marginColor(r.grossMargin)}`}>{fmtNum(r.grossMargin)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-orange-300">{fmtNum(r.totalExpenses)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-emerald-400">{fmtNum(r.totalCollected)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums font-bold ${marginColor(r.grossMargin)}`}>{fmtNum(r.grossMargin)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot className="border-t border-white/20 bg-white/5">
                 <tr>
                   <td colSpan={4} className="px-3 py-2 text-xs font-bold text-muted-foreground">{sorted.length} ملف</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold text-white">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold text-orange-300">{fmtNum(totals.expenses)}</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold text-emerald-400">{fmtNum(totals.collected)}</td>
-                  <td className={`px-3 py-2 text-left tabular-nums font-bold ${marginColor(totals.margin)}`}>{fmtNum(totals.margin)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-white">{fmtNum(totals.invoiced)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-orange-300">{fmtNum(totals.expenses)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-emerald-400">{fmtNum(totals.collected)}</td>
+                  <td className={`px-3 py-2 text-right tabular-nums font-bold ${marginColor(totals.margin)}`}>{fmtNum(totals.margin)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -650,8 +650,8 @@ function LawyerPerformance() {
                     <td className="px-3 py-2 text-muted-foreground">{ROLE_AR[r.role] ?? r.role}</td>
                     <td className="px-3 py-2 text-center text-emerald-400">{r.activeCases}</td>
                     <td className="px-3 py-2 text-center">{r.totalCases}</td>
-                    <td className="px-3 py-2 text-left tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-left tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         rate(r) >= 80 ? "bg-emerald-500/20 text-emerald-400"
@@ -665,8 +665,8 @@ function LawyerPerformance() {
               <tfoot className="border-t border-white/20 bg-white/5">
                 <tr>
                   <td colSpan={4} className="px-3 py-2 text-xs font-bold text-muted-foreground">{sorted.length} أعضاء</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -748,9 +748,9 @@ function ClientSources() {
                     <td className="px-3 py-2 font-bold text-white">{r.clientTypeLabel}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.clientCount}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.caseCount}</td>
-                    <td className="px-3 py-2 text-left tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-left tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
-                    <td className="px-3 py-2 text-left tabular-nums">{fmtNum(r.avgPerClient)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.avgPerClient)}</td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         r.conversionRate >= 70 ? "bg-emerald-500/20 text-emerald-400"
@@ -766,8 +766,8 @@ function ClientSources() {
                   <td className="px-3 py-2 text-xs font-bold text-muted-foreground">المجموع</td>
                   <td className="px-3 py-2 text-center font-bold">{totals.clients}</td>
                   <td className="px-3 py-2 text-center font-bold">{totals.cases}</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-left tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
                   <td colSpan={2} />
                 </tr>
               </tfoot>
