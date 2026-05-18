@@ -414,7 +414,7 @@ export default function InvoiceForm() {
                 {issuing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 إصدار الفاتورة
               </Button>
-              <Button variant="outline" className="w-full text-muted-foreground" onClick={() => navigate("/billing")}>
+              <Button variant="outline" className="w-full text-muted-foreground" onClick={() => window.history.back()}>
                 إلغاء
               </Button>
             </CardContent>
