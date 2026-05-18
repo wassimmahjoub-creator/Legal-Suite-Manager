@@ -3,8 +3,8 @@ import {
 } from "@react-pdf/renderer";
 import { formatCurrency } from "@/lib/currency";
 import { formatDateTN } from "@/lib/date";
-import cairoRegular from "@fontsource/cairo/files/cairo-arabic-400-normal.woff2?url";
-import cairoBold from "@fontsource/cairo/files/cairo-arabic-700-normal.woff2?url";
+import cairoRegular from "@fontsource/cairo/files/cairo-arabic-400-normal.woff?url";
+import cairoBold from "@fontsource/cairo/files/cairo-arabic-700-normal.woff?url";
 
 Font.register({
   family: "Cairo",
