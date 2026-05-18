@@ -9,6 +9,7 @@ import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { useLocale } from "@/context/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -1093,25 +1094,7 @@ export default function CaseDetail() {
               <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
               <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
               <CasePdfButton caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
-              <Button
-                size="sm"
-                className="gap-1.5 text-xs"
-                title="تصدير الملف القضائي"
-                onClick={async () => {
-                  const r = await authFetch(`${BASE}/api/data-exports`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ exportType: "single_case", scopeId: Number(id) }),
-                  });
-                  if (r.ok) {
-                    toast({ title: "بدأت عملية تصدير الملف", description: "انتقل إلى «البيانات والخصوصية» لمتابعة التقدم" });
-                  } else {
-                    toast({ title: "فشل إنشاء التصدير", variant: "destructive" });
-                  }
-                }}
-              >
-                <Download className="h-3.5 w-3.5" />تصدير
-              </Button>
+              <ExportDropdown apiPath={`/api/exports/cases/${id}`} label="تصدير" />
               <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
             </div>
           </div>

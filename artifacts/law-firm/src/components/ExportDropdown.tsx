@@ -9,12 +9,15 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 export type ExportEndpoint = "clients" | "cases" | "invoices";
 
 interface ExportDropdownProps {
-  endpoint: ExportEndpoint;
+  /** Predefined endpoint name — builds URL as /api/exports/{endpoint} */
+  endpoint?: ExportEndpoint;
+  /** Fully custom API path, e.g. "/api/exports/cases/42" — takes priority over endpoint */
+  apiPath?: string;
   params?: Record<string, string | boolean | undefined>;
   label?: string;
 }
 
-export function ExportDropdown({ endpoint, params = {}, label = "تصدير" }: ExportDropdownProps) {
+export function ExportDropdown({ endpoint, apiPath, params = {}, label = "تصدير" }: ExportDropdownProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,7 +41,8 @@ export function ExportDropdown({ endpoint, params = {}, label = "تصدير" }: 
           qs.set(k, String(v));
         }
       });
-      const r = await authFetch(`${BASE}/api/exports/${endpoint}?${qs.toString()}`);
+      const base = apiPath ? `${BASE}${apiPath}` : `${BASE}/api/exports/${endpoint}`;
+      const r = await authFetch(`${base}?${qs.toString()}`);
       if (!r.ok) {
         toast({ title: "فشل التصدير", variant: "destructive" });
         return;
@@ -49,7 +53,8 @@ export function ExportDropdown({ endpoint, params = {}, label = "تصدير" }: 
       a.href = url;
       const ext = format === "xlsx" ? "xlsx" : "csv";
       const today = new Date().toISOString().slice(0, 10);
-      a.download = `${endpoint}-${today}.${ext}`;
+      const slug = apiPath ? apiPath.split("/").filter(Boolean).join("-") : endpoint;
+      a.download = `${slug}-${today}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();

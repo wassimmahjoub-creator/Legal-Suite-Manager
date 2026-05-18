@@ -1,6 +1,10 @@
 import ExcelJS from "exceljs";
-import { db, clientsTable, casesTable, invoicesTable, invoiceLinesTable } from "@workspace/db";
-import { isNull, isNotNull, ilike, eq, and, or } from "drizzle-orm";
+import {
+  db, clientsTable, casesTable, invoicesTable, invoiceLinesTable,
+  opponentsTable, deadlinesTable, proceduresTable, caseTeamsTable,
+  documentsTable, usersTable,
+} from "@workspace/db";
+import { isNull, isNotNull, eq, and } from "drizzle-orm";
 
 const GOLD_ARGB = "FFD4AF37";
 const WHITE_ARGB = "FFFFFFFF";
@@ -453,4 +457,179 @@ export async function exportInvoicesXlsx(filters: InvoicesExportFilters): Promis
 export async function exportInvoicesCsv(filters: InvoicesExportFilters): Promise<Buffer> {
   const rows = await fetchInvoices(filters);
   return buildCsv(INV_HEADERS, rows.map(invToRow));
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* SINGLE CASE DETAIL EXPORT                                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+function addKeyValueSheet(wb: ExcelJS.Workbook, name: string, pairs: [string, string | number | null][]): void {
+  const ws = wb.addWorksheet(name);
+  ws.views = [{ rightToLeft: true, state: "normal" }];
+  ws.columns = [{ width: 28 }, { width: 40 }];
+  pairs.forEach(([key, val], i) => {
+    const row = ws.addRow([key, val ?? ""]);
+    row.getCell(1).font = { bold: true, name: "Cairo", size: 10, color: { argb: DARK_ARGB } };
+    row.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? "FFF5F0E8" : WHITE_ARGB } };
+    row.getCell(2).alignment = { readingOrder: "rtl" };
+    row.height = 18;
+  });
+}
+
+function addTableSheet(
+  wb: ExcelJS.Workbook,
+  name: string,
+  headers: string[],
+  data: (string | number | null)[][],
+): void {
+  const ws = wb.addWorksheet(name);
+  setRtlView(ws);
+  ws.addRow(headers);
+  applyGoldHeader(ws, headers.length);
+  data.forEach(r => ws.addRow(r));
+  styleDataRows(ws, data.length, headers.length);
+  autoWidths(ws, headers, data);
+  if (data.length > 0) {
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
+  }
+}
+
+export async function exportCaseDetailXlsx(caseId: number): Promise<Buffer> {
+  const [caseRow] = await db
+    .select()
+    .from(casesTable)
+    .where(eq(casesTable.id, caseId))
+    .limit(1);
+  if (!caseRow) throw new Error("case not found");
+
+  let clientName = "";
+  if (caseRow.clientId) {
+    const [cl] = await db.select({ name: clientsTable.name }).from(clientsTable).where(eq(clientsTable.id, caseRow.clientId)).limit(1);
+    clientName = cl?.name ?? "";
+  }
+
+  const [opponents, deadlines, procedures, teams, invoices, documents] = await Promise.all([
+    db.select().from(opponentsTable).where(eq(opponentsTable.caseId, caseId)),
+    db.select().from(deadlinesTable).where(eq(deadlinesTable.caseId, caseId)).orderBy(deadlinesTable.dueDate),
+    db.select().from(proceduresTable).where(eq(proceduresTable.caseId, caseId)).orderBy(proceduresTable.startedAt),
+    db.select().from(caseTeamsTable).where(eq(caseTeamsTable.caseId, caseId)),
+    db.select({
+      id: invoicesTable.id, invoiceNumber: invoicesTable.invoiceNumber,
+      issueDate: invoicesTable.issueDate, dueDate: invoicesTable.dueDate,
+      status: invoicesTable.status, netToPay: invoicesTable.netToPay,
+      amountPaid: invoicesTable.amountPaid, balanceDue: invoicesTable.balanceDue,
+    }).from(invoicesTable).where(and(eq(invoicesTable.caseId, caseId), isNull(invoicesTable.deletedAt))),
+    db.select().from(documentsTable).where(and(eq(documentsTable.caseId, caseId), isNull(documentsTable.deletedAt))),
+  ]);
+
+  const STAGE_LABELS: Record<string, string> = {
+    ibtidai: "ابتدائي", istiinaf: "استئناف", taaqqub: "تعقيب",
+    tanfidh: "تنفيذ", khatm: "ختم",
+  };
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Mahami Plus";
+  wb.created = new Date();
+
+  /* Sheet 1 — Case info */
+  addKeyValueSheet(wb, "معلومات الملف", [
+    ["رقم الملف", caseRow.caseNumber ?? ""],
+    ["عدد القضية بالمحكمة", caseRow.courtCaseNumber ?? ""],
+    ["عنوان القضية", caseRow.title],
+    ["الموكّل", clientName],
+    ["المحكمة", caseRow.court ?? ""],
+    ["الدائرة", caseRow.division ?? ""],
+    ["القاضي", caseRow.judgeName ?? ""],
+    ["محامي المكتب", caseRow.lawyer ?? ""],
+    ["نوع القضية", caseRow.caseType ?? ""],
+    ["درجة التقاضي", caseRow.litigationDegree ?? ""],
+    ["نوع الإجراء", caseRow.procedureType ?? ""],
+    ["المرحلة الإجرائية", STAGE_LABELS[caseRow.procedureStage ?? ""] ?? (caseRow.procedureStage ?? "")],
+    ["الحالة", STATUS_LABELS[caseRow.status] ?? caseRow.status],
+    ["الأولوية", caseRow.casePriority ?? ""],
+    ["الخصم الرئيسي", caseRow.opponentName ?? ""],
+    ["محامي الخصم", caseRow.opponentLawyer ?? ""],
+    ["طريقة الأتعاب", caseRow.feeMethod ?? ""],
+    ["قيمة النزاع (د.ت)", fmtNum(caseRow.disputeValue)],
+    ["الأتعاب المتفق عليها (د.ت)", fmtNum(caseRow.agreedFees)],
+    ["أول جلسة", fmtDate(caseRow.firstHearingDate)],
+    ["الجلسة القادمة", fmtDate(caseRow.nextHearing)],
+    ["تاريخ فتح الملف", fmtDate(caseRow.openedAt ?? caseRow.createdAt)],
+    ["ملاحظات", caseRow.notes ?? ""],
+  ]);
+
+  /* Sheet 2 — Opponents */
+  addTableSheet(wb, "الخصوم", ["الاسم", "الصفة", "الهاتف", "البريد الإلكتروني", "العنوان", "محامي الخصم"],
+    opponents.map(o => [o.name, o.role ?? "", o.phone ?? "", o.email ?? "", o.address ?? "", o.opponentLawyer ?? ""]));
+
+  /* Sheet 3 — Deadlines */
+  addTableSheet(wb, "الآجال",
+    ["النوع", "التاريخ الأصلي", "تاريخ الاستحقاق", "الحالة", "الإلحاحية", "ملاحظات"],
+    deadlines.map(d => [
+      d.deadlineType ?? "", fmtDate(d.originalDate), fmtDate(d.dueDate),
+      d.status ?? "", d.urgency ?? "", d.notes ?? "",
+    ]));
+
+  /* Sheet 4 — Procedures */
+  addTableSheet(wb, "الإجراءات",
+    ["المرحلة", "تاريخ البداية", "تاريخ الإنهاء", "الحالة", "ملاحظات"],
+    procedures.map(p => [
+      p.stage ?? "", fmtDate(p.startedAt), fmtDate(p.endedAt),
+      p.status ?? "", p.notes ?? "",
+    ]));
+
+  /* Sheet 5 — Invoices */
+  addTableSheet(wb, "الفواتير",
+    ["رقم الفاتورة", "تاريخ الإصدار", "الاستحقاق", "الحالة", "صافي للدفع", "المدفوع", "الرصيد"],
+    invoices.map(i => [
+      i.invoiceNumber ?? `#${String(i.id).padStart(4, "0")}`,
+      fmtDate(i.issueDate), fmtDate(i.dueDate),
+      INV_STATUS_LABELS[i.status] ?? i.status,
+      fmtNum(i.netToPay), fmtNum(i.amountPaid), fmtNum(i.balanceDue),
+    ]));
+
+  /* Sheet 6 — Team */
+  addTableSheet(wb, "فريق الملف",
+    ["المستخدم", "الدور"],
+    teams.map(t => [t.userId ?? "", t.role ?? ""]));
+
+  /* Sheet 7 — Documents */
+  addTableSheet(wb, "الوثائق",
+    ["العنوان", "النوع", "تاريخ الرفع"],
+    documents.map(d => [d.title, d.fileType ?? "", fmtDate(d.createdAt)]));
+
+  return wb.xlsx.writeBuffer() as Promise<Buffer>;
+}
+
+export async function exportCaseDetailCsv(caseId: number): Promise<Buffer> {
+  const [caseRow] = await db.select().from(casesTable).where(eq(casesTable.id, caseId)).limit(1);
+  if (!caseRow) throw new Error("case not found");
+
+  let clientName = "";
+  if (caseRow.clientId) {
+    const [cl] = await db.select({ name: clientsTable.name }).from(clientsTable).where(eq(clientsTable.id, caseRow.clientId)).limit(1);
+    clientName = cl?.name ?? "";
+  }
+
+  const headers = ["الحقل", "القيمة"];
+  const rows: (string | number | null)[][] = [
+    ["رقم الملف", caseRow.caseNumber ?? ""],
+    ["عدد القضية بالمحكمة", caseRow.courtCaseNumber ?? ""],
+    ["عنوان القضية", caseRow.title],
+    ["الموكّل", clientName],
+    ["المحكمة", caseRow.court ?? ""],
+    ["الدائرة", caseRow.division ?? ""],
+    ["القاضي", caseRow.judgeName ?? ""],
+    ["محامي المكتب", caseRow.lawyer ?? ""],
+    ["الحالة", STATUS_LABELS[caseRow.status] ?? caseRow.status],
+    ["الخصم الرئيسي", caseRow.opponentName ?? ""],
+    ["محامي الخصم", caseRow.opponentLawyer ?? ""],
+    ["قيمة النزاع (د.ت)", fmtNum(caseRow.disputeValue)],
+    ["الأتعاب المتفق عليها (د.ت)", fmtNum(caseRow.agreedFees)],
+    ["أول جلسة", fmtDate(caseRow.firstHearingDate)],
+    ["الجلسة القادمة", fmtDate(caseRow.nextHearing)],
+    ["تاريخ فتح الملف", fmtDate(caseRow.openedAt ?? caseRow.createdAt)],
+    ["ملاحظات", caseRow.notes ?? ""],
+  ];
+  return buildCsv(headers, rows);
 }

@@ -3,6 +3,7 @@ import {
   exportClientsXlsx, exportClientsCsv,
   exportCasesXlsx, exportCasesCsv,
   exportInvoicesXlsx, exportInvoicesCsv,
+  exportCaseDetailXlsx, exportCaseDetailCsv,
 } from "../services/tableExportService.js";
 
 const router = Router();
@@ -76,6 +77,30 @@ router.get("/exports/invoices", async (req, res) => {
     return res.send(buf);
   } catch (err) {
     req.log.error({ err }, "exports: invoices failed");
+    return res.status(500).json({ error: "فشل إنشاء الملف" });
+  }
+});
+
+/* ── GET /exports/cases/:id ────────────────────────────────────────── */
+router.get("/exports/cases/:id", async (req, res) => {
+  const caseId = parseInt(req.params.id, 10);
+  if (isNaN(caseId)) return res.status(400).json({ error: "معرّف غير صالح" });
+
+  const format = (req.query.format as string) || "xlsx";
+
+  try {
+    if (format === "csv") {
+      const buf = await exportCaseDetailCsv(caseId);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="dossier-${caseId}-${todayStr()}.csv"`);
+      return res.send(buf);
+    }
+    const buf = await exportCaseDetailXlsx(caseId);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="dossier-${caseId}-${todayStr()}.xlsx"`);
+    return res.send(buf);
+  } catch (err) {
+    req.log.error({ err }, "exports: case detail failed");
     return res.status(500).json({ error: "فشل إنشاء الملف" });
   }
 });
