@@ -1,15 +1,8 @@
-import { createRequire } from "module";
-import type * as ArchiverNS from "archiver";
+// archiver v8 is ESM with named class exports
+import { ZipArchive } from "archiver";
 import { createWriteStream, mkdirSync, statSync } from "fs";
 import { join } from "path";
 import { createHmac, createHash } from "crypto";
-
-// archiver is CJS-only — load via createRequire for ESM/CJS interop
-const _cjsRequire = createRequire(import.meta.url);
-const archiver = _cjsRequire("archiver") as (
-  format: string,
-  opts?: { zlib?: { level?: number } }
-) => ArchiverNS.Archiver;
 import {
   db, dataExportsTable,
   clientsTable, casesTable, usersTable, opponentsTable,
@@ -63,7 +56,7 @@ function buildZip(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const output = createWriteStream(filePath);
-    const archive = archiver("zip", { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     const manifest: Array<{ file: string; sha256: string; bytes: number }> = [];
 

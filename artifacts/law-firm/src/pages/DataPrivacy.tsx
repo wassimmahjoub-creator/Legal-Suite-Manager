@@ -135,9 +135,28 @@ export default function DataPrivacy() {
     }
   }
 
-  function downloadUrl(exp: DataExport): string {
-    const token = exp.downloadToken ? `?token=${encodeURIComponent(exp.downloadToken)}` : "";
-    return `${API}/data-exports/${exp.id}/download${token}`;
+  async function handleDownload(exp: DataExport) {
+    try {
+      const token = exp.downloadToken ? `?token=${encodeURIComponent(exp.downloadToken)}` : "";
+      const r = await authFetch(`${API}/data-exports/${exp.id}/download${token}`);
+      if (!r.ok) {
+        toast({ title: "فشل التنزيل", variant: "destructive" });
+        return;
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `export-${exp.id}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      // refresh to update download count
+      fetchExports();
+    } catch {
+      toast({ title: "فشل التنزيل", variant: "destructive" });
+    }
   }
 
   /* ── UI ── */
@@ -251,14 +270,13 @@ export default function DataPrivacy() {
                   <span className="text-muted-foreground">{exp.downloadCount ?? 0}</span>
                   <div>
                     {exp.status === "completed" && !expired ? (
-                      <a
-                        href={downloadUrl(exp)}
-                        download
+                      <button
+                        onClick={() => handleDownload(exp)}
                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
                       >
                         <Download className="h-3.5 w-3.5" />
                         تنزيل
-                      </a>
+                      </button>
                     ) : exp.status === "completed" && expired ? (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <AlertCircle className="h-3.5 w-3.5" />
