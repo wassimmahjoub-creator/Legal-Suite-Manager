@@ -113,9 +113,9 @@ export default function InvoiceForm() {
         setPaymentTerms(inv.paymentTerms ?? "");
         setNotes(inv.notes ?? "");
         if (inv.lines?.length > 0) {
-          setLines(inv.lines.map((l: { description: string; unit: string | null; quantity: number; unitPriceHt: number; vatRate: number }) => ({
+          setLines(inv.lines.map((l: { description: string | null; unit: string | null; quantity: number; unitPriceHt: number; vatRate: number }) => ({
             _id: Math.random().toString(36).slice(2),
-            description: l.description,
+            description: l.description ?? "",
             unit: l.unit ?? "forfait",
             quantity: String(l.quantity),
             unitPriceHt: String(l.unitPriceHt),
@@ -185,21 +185,28 @@ export default function InvoiceForm() {
   }
 
   async function issue() {
-    if (!clientId || lines.every(l => !l.description)) return;
+    if (!clientId) return;
     setIssuing(true);
-    const payload = buildPayload();
-    let id = params.id ? Number(params.id) : null;
-    if (!id) {
-      const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", body: JSON.stringify(payload) });
+    try {
+      const payload = buildPayload();
+      let id = params.id ? Number(params.id) : null;
+      if (!id) {
+        const r = await authFetch(`${BASE}/api/invoices`, { method: "POST", body: JSON.stringify(payload) });
+        if (!r.ok) { alert("فشل إنشاء الفاتورة. حاول مجدداً."); setIssuing(false); return; }
+        const inv = await r.json();
+        id = inv.id;
+      } else {
+        const r = await authFetch(`${BASE}/api/invoices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+        if (!r.ok) { const e = await r.json(); alert(e.error ?? "فشل تحديث الفاتورة."); setIssuing(false); return; }
+      }
+      const r = await authFetch(`${BASE}/api/invoices/${id}/issue`, { method: "POST", body: JSON.stringify({ issueDate }) });
+      if (!r.ok) { const e = await r.json(); alert(e.error ?? "فشل إصدار الفاتورة."); setIssuing(false); return; }
       const inv = await r.json();
-      id = inv.id;
-    } else {
-      await authFetch(`${BASE}/api/invoices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+      navigate(`/billing/${inv.id}`);
+    } catch {
+      alert("حدث خطأ غير متوقع. حاول مجدداً.");
     }
-    const r = await authFetch(`${BASE}/api/invoices/${id}/issue`, { method: "POST", body: JSON.stringify({ issueDate }) });
     setIssuing(false);
-    const inv = await r.json();
-    navigate(`/billing/${inv.id}`);
   }
 
   if (loading) return <SkeletonForm fields={5} className="max-w-2xl mx-auto rounded-2xl border border-border bg-card" />;
