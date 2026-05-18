@@ -3,6 +3,7 @@ import { db, opponentsTable, casesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { ConflictDetectionService } from "../services/conflictDetection.js";
 import type { AuthPayload } from "../middleware/auth.js";
 
 const router = Router();
@@ -54,6 +55,7 @@ router.post("/opponents", requireAuth, async (req, res): Promise<void> => {
       metadata: { opponent_name: name, opponent_id: row.id },
       relatedEntityType: "opponent", relatedEntityId: row.id,
     });
+    void ConflictDetectionService.detectAndStore(Number(caseId), actor?.id ?? null);
   }
   res.status(201).json({ ...row, caseName: null });
 });

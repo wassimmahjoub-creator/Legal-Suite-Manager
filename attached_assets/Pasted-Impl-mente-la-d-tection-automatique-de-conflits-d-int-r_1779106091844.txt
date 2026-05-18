@@ -1,0 +1,175 @@
+Implémente la détection automatique de conflits d'intérêts pour respecter les obligations déontologiques de l'Ordre des avocats tunisien.
+
+PRÉREQUIS : T17 livré (table case_opponents avec FK vers opponents). T3 livré (table clients avec tax_id).
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — SCHÉMA
+═══════════════════════════════════════════════════════
+
+Table conflict_checks :
+
+CREATE TABLE conflict_checks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_id uuid NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  conflict_type enum NOT NULL, -- 'opponent_is_client', 'client_is_opponent_elsewhere', 'shared_party'
+  conflicting_entity_type enum NOT NULL, -- 'client', 'opponent'
+  conflicting_entity_id uuid NOT NULL,
+  matched_on enum NOT NULL, -- 'tax_id_exact', 'name_fuzzy', 'name_exact'
+  match_score numeric, -- 0-1 pour fuzzy match
+  detected_at timestamptz DEFAULT now(),
+  resolved boolean DEFAULT false,
+  resolved_at timestamptz,
+  resolved_by uuid REFERENCES users(id),
+  resolution_justification text, -- justification écrite de l'avocat
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_conflict_checks_case ON conflict_checks(case_id);
+CREATE INDEX idx_conflict_checks_unresolved ON conflict_checks(case_id) WHERE resolved = false;
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — SERVICE DE DÉTECTION
+═══════════════════════════════════════════════════════
+
+Crée src/services/conflictDetection.ts :
+
+class ConflictDetectionService {
+  static async checkForCase(caseId: string): Promise<ConflictCheck[]> {
+    const case = await fetchCase(caseId);
+    const opponents = await fetchCaseOpponents(caseId);
+    const conflicts: ConflictCheck[] = [];
+
+    // Vérification 1 : chaque adversaire de ce dossier est-il client ailleurs ?
+    for (const opponent of opponents) {
+      const matchingClients = await findMatchingClients(opponent);
+      for (const client of matchingClients) {
+        conflicts.push({
+          conflict_type: 'opponent_is_client',
+          conflicting_entity_type: 'client',
+          conflicting_entity_id: client.id,
+          matched_on: client.matchedOn,
+          match_score: client.score
+        });
+      }
+    }
+
+    // Vérification 2 : le client de ce dossier est-il adversaire dans un autre dossier ?
+    const clientAsOpponent = await findClientAsOpponentInOtherCases(case.client_id, caseId);
+    for (const otherCaseOpponent of clientAsOpponent) {
+      conflicts.push({
+        conflict_type: 'client_is_opponent_elsewhere',
+        conflicting_entity_type: 'opponent',
+        conflicting_entity_id: otherCaseOpponent.id,
+        // ...
+      });
+    }
+
+    return conflicts;
+  }
+}
+
+ALGORITHME findMatchingClients :
+1. Si opponent.tax_id existe : SELECT * FROM clients WHERE tax_id = opponent.tax_id → matched_on = 'tax_id_exact', score 1.0
+2. SELECT * FROM clients WHERE 
+     LOWER(name_ar) = LOWER(opponent.name_ar) 
+     OR LOWER(name_fr) = LOWER(opponent.name_fr)
+   → matched_on = 'name_exact', score 0.9
+3. Fuzzy match avec pg_trgm ou similar :
+   SELECT * FROM clients 
+   WHERE similarity(name_ar, opponent.name_ar) > 0.7 
+   OR similarity(name_fr, opponent.name_fr) > 0.7
+   → matched_on = 'name_fuzzy', score = similarity value
+
+Seuil de match : 0.7 minimum pour fuzzy. En dessous, ignoré.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — DÉCLENCHEMENT
+═══════════════════════════════════════════════════════
+
+Appeler ConflictDetectionService.checkForCase() automatiquement à :
+
+1. À la finalisation du wizard de création de dossier (T17), AVANT l'insertion finale.
+2. À chaque ajout/modification d'un case_opponent (T17).
+3. À chaque modification du client_id d'un dossier.
+
+Si des conflits sont détectés :
+- INSERT dans conflict_checks pour chaque conflit
+- Loguer un event 'conflict_detected' via T18a CaseEventLogger
+- AFFICHER UN MODAL BLOQUANT à l'utilisateur :
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — MODAL DE WARNING
+═══════════════════════════════════════════════════════
+
+<ConflictWarningModal conflicts={...} onAccept={...} onCancel={...} />
+
+Layout :
+- Icône ⚠️ rouge en haut
+- Titre : "تنبيه: تعارض محتمل في المصالح"
+- Description : "تم رصد التعارضات التالية:"
+- Liste des conflits, pour chaque :
+  - Type (opponent_is_client / client_is_opponent_elsewhere)
+  - Entité conflictuelle (nom + lien vers la fiche)
+  - Score de match
+  - Pour quel dossier l'autre entité est concernée
+
+Section "تبرير" (REQUIS) :
+- Textarea : "اشرح كيف يمكن المضي قدماً رغم هذا التعارض"
+- Helper text : "هذا التبرير سيُسجَّل في سجل الملف ولن يُعرض للحريف"
+
+Footer :
+- "إلغاء الإجراء" (secondary) — annule l'action en cours (création/modif du dossier)
+- "تأكيد المضي قدماً" (primary, rouge) — disabled tant que justification < 30 caractères
+
+À la confirmation :
+- UPDATE conflict_checks SET resolved = true, resolved_at = now(), resolved_by = current_user, resolution_justification = ?
+- Logger event 'conflict_resolved' avec metadata { justification, resolved_count }
+- Procéder à l'action initialement demandée (création/modif du dossier)
+
+═══════════════════════════════════════════════════════
+ÉTAPE 5 — PAGE /conflicts
+═══════════════════════════════════════════════════════
+
+Nouvelle page accessible depuis le menu principal (ou sous-menu Settings/Admin).
+
+Layout :
+- KPI en haut : nombre de conflits non résolus, conflits résolus ce mois
+- Filtre : non résolus / résolus / tous
+- Table :
+  - Date de détection
+  - Dossier concerné (lien)
+  - Type de conflit (badge)
+  - Entité 1 (lien client)
+  - Entité 2 (lien adversaire)
+  - Match (tax_id / name_exact / name_fuzzy avec score)
+  - Statut (résolu / non résolu)
+  - Justification (si résolu, en tooltip)
+
+═══════════════════════════════════════════════════════
+ÉTAPE 6 — BADGES SUR FICHES
+═══════════════════════════════════════════════════════
+
+Sur la fiche client (T3) et la fiche adversaire :
+- Si conflict_checks WHERE conflicting_entity_id = current entity AND resolved = false existe :
+  - Badge en haut : "⚠ نزاع محتمل" (cliquable vers /conflicts filtré sur cette entité)
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. Migration table conflict_checks.
+2. Service ConflictDetectionService avec tests unitaires (5 cas minimum : match exact tax_id, match exact nom, fuzzy 0.8, fuzzy 0.6 (sous seuil), aucun match).
+3. Hooks de déclenchement dans createCase, updateCase, addCaseOpponent, removeCaseOpponent.
+4. Composant <ConflictWarningModal />.
+5. Page /conflicts avec filtres et table.
+6. Badges sur fiches client et adversaire.
+7. Backfill : faire tourner ConflictDetectionService sur tous les dossiers existants une fois (cron one-shot) pour détecter les conflits préexistants.
+8. Captures : modal de warning, page /conflicts remplie, badge sur fiche.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- La création de dossier (T17) continue de fonctionner pour les dossiers sans conflit.
+- L'auto-log timeline (T18a) capture les events de détection et résolution.
+- Performance : la détection ne doit pas ralentir createCase de plus de 200ms.

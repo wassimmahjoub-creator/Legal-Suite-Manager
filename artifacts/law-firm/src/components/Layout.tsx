@@ -61,6 +61,7 @@ const NAV_SYSTEM = [
   { href: "/bank-accounts", label: "الحسابات البنكية",    icon: Landmark     },
   { href: "/legal-config",  label: "الإعدادات القانونية", icon: Settings2    },
   { href: "/audit-logs",    label: "سجل التعديلات",       icon: ClipboardList},
+  { href: "/conflicts",     label: "تعارض المصالح",       icon: ShieldCheck  },
   { href: "/trash",         label: "سلة المحذوفات",       icon: Trash2       },
 ];
 

@@ -12,6 +12,7 @@ export type CaseEventType =
   | "legal_deadline_added" | "legal_deadline_approaching" | "legal_deadline_missed"
   | "confidentiality_changed" | "internal_note_added"
   | "case_archived" | "case_closed" | "case_reopened"
+  | "conflict_detected" | "conflict_resolved"
   | "manual_entry";
 
 export type RelatedEntityType =

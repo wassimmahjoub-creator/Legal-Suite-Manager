@@ -36,6 +36,7 @@ import casePdfDataRouter from "./case-pdf-data";
 import caseEventsRouter from "./case-events";
 import caseStagesRouter from "./case-stages";
 import expensesRouter from "./expenses";
+import conflictChecksRouter from "./conflict-checks";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -92,5 +93,6 @@ router.use(casePdfDataRouter);
 router.use(caseEventsRouter);
 router.use(caseStagesRouter);
 router.use(expensesRouter);
+router.use(conflictChecksRouter);
 
 export default router;

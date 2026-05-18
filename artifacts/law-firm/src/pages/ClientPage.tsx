@@ -18,7 +18,7 @@ import {
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
   CheckCircle2, AlertCircle, Calendar, Hash, Loader2, Upload,
   FileImage, File, FileSpreadsheet, ArrowUpRight, ArrowDownLeft, ArrowRight, Send,
-  Play, Pause, Square, Timer, TrendingUp,
+  Play, Pause, Square, Timer, TrendingUp, ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CourtSelect } from "@/components/CourtSelect";
@@ -119,6 +119,7 @@ export default function ClientPage() {
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ClientFull>>({});
   const [saving, setSaving] = useState(false);
+  const [unresolvedConflicts, setUnresolvedConflicts] = useState(0);
   const { toast } = useToast();
 
   // Lazy-loaded tab data
@@ -177,9 +178,16 @@ export default function ClientPage() {
   const [savingContact, setSavingContact] = useState(false);
 
   const loadClient = useCallback(async () => {
-    const r = await authFetch(`${BASE}/api/clients/${clientId}`);
+    const [r, cr] = await Promise.all([
+      authFetch(`${BASE}/api/clients/${clientId}`),
+      authFetch(`${BASE}/api/conflict-checks?resolved=false&entityId=${clientId}&entityType=client`),
+    ]);
     if (r.ok) setClient(await r.json());
     else navigate("/clients");
+    if (cr.ok) {
+      const conflicts = await cr.json() as unknown[];
+      setUnresolvedConflicts(conflicts.length);
+    }
     setLoading(false);
   }, [clientId, navigate]);
 
@@ -341,6 +349,15 @@ export default function ClientPage() {
                 )}>
                   {isCompany ? "شخص معنوي" : "شخص طبيعي"}
                 </span>
+                {unresolvedConflicts > 0 && (
+                  <button
+                    onClick={() => navigate(`/conflicts`)}
+                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-semibold bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
+                  >
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                    ⚠ تعارض محتمل ({unresolvedConflicts})
+                  </button>
+                )}
                 {client.legalForm && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                     {client.legalForm}

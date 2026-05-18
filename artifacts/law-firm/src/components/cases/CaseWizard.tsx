@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { SelectNative } from "@/components/SelectNative";
 import { CourtSelect } from "@/components/CourtSelect";
 import { useToast } from "@/hooks/use-toast";
+import { ConflictWarningModal } from "@/components/ConflictWarningModal";
+import type { ConflictData } from "@/components/ConflictWarningModal";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -524,6 +526,8 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const { toast } = useToast();
   const [quickClientOpen, setQuickClientOpen] = useState(false);
   const [quickClientForm, setQuickClientForm] = useState({ name: "", clientType: "individual", phone: "", email: "" });
+  const [pendingConflicts, setPendingConflicts] = useState<ConflictData[]>([]);
+  const [pendingCaseId, setPendingCaseId] = useState<number | null>(null);
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
 
@@ -655,6 +659,20 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         await authFetch(`${BASE}/api/cases/${createdId}/team`, { method: "POST", body: JSON.stringify(t) });
       }
 
+      // Conflict detection
+      try {
+        const detectRes = await authFetch(`${BASE}/api/conflict-checks/detect/${createdId}`, { method: "POST" });
+        if (detectRes.ok) {
+          const { conflicts } = await detectRes.json() as { conflicts: ConflictData[] };
+          if (conflicts.length > 0) {
+            setSaving(false);
+            setPendingConflicts(conflicts);
+            setPendingCaseId(createdId);
+            return;
+          }
+        }
+      } catch { /* non-blocking */ }
+
       setSaving(false);
       toast({ title: "تم إنشاء الملف بنجاح" });
       onCreated(createdId);
@@ -663,7 +681,38 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
     }
   }
 
+  async function confirmConflicts(justification: string) {
+    if (!pendingCaseId) return;
+    setSaving(true);
+    await authFetch(`${BASE}/api/conflict-checks/resolve-case/${pendingCaseId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ justification }),
+    });
+    setSaving(false);
+    const id = pendingCaseId;
+    setPendingConflicts([]);
+    setPendingCaseId(null);
+    toast({ title: "تم إنشاء الملف — التعارض مُبرَّر ومُسجَّل" });
+    onCreated(id);
+  }
+
+  async function cancelConflicts() {
+    if (!pendingCaseId) return;
+    await authFetch(`${BASE}/api/cases/${pendingCaseId}`, { method: "DELETE" });
+    setPendingConflicts([]);
+    setPendingCaseId(null);
+    toast({ title: "تم إلغاء إنشاء الملف بسبب تعارض المصالح", variant: "destructive" });
+  }
+
   return (
+    <>
+    <ConflictWarningModal
+      open={pendingConflicts.length > 0}
+      conflicts={pendingConflicts}
+      saving={saving}
+      onConfirm={confirmConflicts}
+      onCancel={cancelConflicts}
+    />
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" dir="rtl">
@@ -794,5 +843,6 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         </div>
       </div>
     </div>
+    </>
   );
 }
