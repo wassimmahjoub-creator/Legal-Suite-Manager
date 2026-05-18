@@ -4,6 +4,7 @@ import {
   exportCasesXlsx, exportCasesCsv,
   exportInvoicesXlsx, exportInvoicesCsv,
   exportCaseDetailXlsx, exportCaseDetailCsv,
+  generateCaseZip,
 } from "../services/tableExportService.js";
 
 const router = Router();
@@ -102,6 +103,25 @@ router.get("/exports/cases/:id", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "exports: case detail failed");
     return res.status(500).json({ error: "فشل إنشاء الملف" });
+  }
+});
+
+/* ── POST /exports/cases/:id/zip ───────────────────────────────────── */
+router.post("/exports/cases/:id/zip", async (req, res) => {
+  const caseId = parseInt(req.params.id, 10);
+  if (isNaN(caseId)) return res.status(400).json({ error: "معرّف غير صالح" });
+
+  const includeInternal = req.body?.includeInternal === true;
+
+  try {
+    const buf = await generateCaseZip(caseId, { includeInternal });
+    const today = todayStr().replace(/-/g, "");
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="dossier-${caseId}-${today}.zip"`);
+    return res.send(buf);
+  } catch (err) {
+    req.log.error({ err }, "exports: case zip failed");
+    return res.status(500).json({ error: "فشل إنشاء الأرشيف" });
   }
 });
 

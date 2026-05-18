@@ -1,0 +1,47 @@
+═══════════════════════════════════════════════════════
+A.6 — EXPORT D'UN DOSSIER INDIVIDUEL (DÉTAILLÉ)
+═══════════════════════════════════════════════════════
+
+Sur la page détail dossier /cases/:id, dans le menu "..." du header, ajouter deux options distinctes :
+
+───────────────────────────────────────
+OPTION 1 — "تصدير الملف كاملاً (PDF)"
+───────────────────────────────────────
+
+Génère un PDF synthèse complet du dossier (réutilise et enrichit le générateur de T8 P1).
+
+Le PDF contient dans cet ordre :
+1. Page de garde : numéro, titre, dates clés, cabinet
+2. Identification : client + matricule fiscal, adversaires + leurs avocats
+3. Équipe interne : responsable, assigné, collaborateurs
+4. Procédure : juridiction, chambre, type d'instance, stade actuel
+5. Stepper procédural visuel (les 4 stades avec leur statut)
+6. Timeline complète : tous les events de case_events (T18a) chronologiquement
+7. Jugements par stade : pour chaque case_stage avec decision_date, le détail
+8. Délais légaux actifs et passés
+9. Récap financier : honoraires convenus, factures émises avec statut, total facturé, payé, solde
+10. Heures travaillées : par avocat, par mois
+11. Frais engagés : table avec total
+12. Inventaire des pièces : liste sans pièces jointes (juste nom, type, date, taille)
+
+Téléchargement direct du PDF.
+Nom : `ملف-{case_number}-{YYYYMMDD}.pdf` ex: `ملف-2026-001-20260518.pdf`
+
+───────────────────────────────────────
+OPTION 2 — "تصدير الملف مع المرفقات (ZIP)"
+───────────────────────────────────────
+
+Avant la génération, OUVRIR UN MODAL avec options :
+
+Modal "تصدير الملف مع المرفقات" :
+- Texte explicatif : "سيتم تصدير الملف الكامل مع جميع المرفقات في أرشيف ZIP منظم حسب طبيعة الوثائق."
+- Section "خيارات" :
+  - Checkbox "تضمين الوثائق الداخلية (الملاحظات السرية، المسودات)" — DÉCOCHÉE PAR DÉFAUT
+    - Helper text : "هذه الوثائق مخصصة للاستعمال الداخلي للمكتب فقط ولا ينبغي مشاركتها مع الحريف"
+  - Info text si la taille estimée > 100 MB : "حجم تقديري: {size}. قد يستغرق التصدير عدة دقائق."
+  - Info text si > 500 MB : "حجم كبير جداً. سيتم التصدير في الخلفية وستتلقى رسالة بريد إلكتروني عند الانتهاء."
+- Boutons :
+  - "إلغاء" (secondary)
+  - "بدء التصدير" (primary)
+
+À la confirmation du modal, génération du ZIP avec la structure suivante :

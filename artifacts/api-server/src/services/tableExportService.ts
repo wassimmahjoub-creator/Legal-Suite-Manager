@@ -1,8 +1,10 @@
 import ExcelJS from "exceljs";
+import { ZipArchive } from "archiver";
 import {
   db, clientsTable, casesTable, invoicesTable, invoiceLinesTable,
   opponentsTable, deadlinesTable, proceduresTable, caseTeamsTable,
-  documentsTable, usersTable,
+  documentsTable, usersTable, caseStagesTable, caseEventsTable,
+  expensesTable, confidentialNotesTable,
 } from "@workspace/db";
 import { isNull, isNotNull, eq, and } from "drizzle-orm";
 
@@ -632,4 +634,134 @@ export async function exportCaseDetailCsv(caseId: number): Promise<Buffer> {
     ["ملاحظات", caseRow.notes ?? ""],
   ];
   return buildCsv(headers, rows);
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/* CASE ZIP EXPORT                                                         */
+/* ────────────────────────────────────────────────────────────────────── */
+
+export interface CaseZipOptions {
+  includeInternal?: boolean;
+}
+
+function jsonBuf(obj: unknown): Buffer {
+  return Buffer.from(JSON.stringify(obj, null, 2), "utf8");
+}
+
+function pad2(n: number) { return String(n).padStart(2, "0"); }
+function isoDate(d: Date) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+
+export async function generateCaseZip(caseId: number, opts: CaseZipOptions = {}): Promise<Buffer> {
+  const { includeInternal = false } = opts;
+
+  /* ─ Fetch all data ─ */
+  const [caseRow] = await db
+    .select()
+    .from(casesTable)
+    .where(eq(casesTable.id, caseId))
+    .limit(1);
+  if (!caseRow) throw new Error("case not found");
+
+  let clientName = "";
+  if (caseRow.clientId) {
+    const [cl] = await db.select({ name: clientsTable.name }).from(clientsTable)
+      .where(eq(clientsTable.id, caseRow.clientId)).limit(1);
+    clientName = cl?.name ?? "";
+  }
+
+  const [
+    opponents, deadlines, procedures, teams, invoices,
+    documents, stages, events, expenses, confNotes,
+  ] = await Promise.all([
+    db.select().from(opponentsTable).where(eq(opponentsTable.caseId, caseId)),
+    db.select().from(deadlinesTable).where(eq(deadlinesTable.caseId, caseId)).orderBy(deadlinesTable.dueDate),
+    db.select().from(proceduresTable).where(eq(proceduresTable.caseId, caseId)).orderBy(proceduresTable.startedAt),
+    db.select().from(caseTeamsTable).where(eq(caseTeamsTable.caseId, caseId)),
+    db.select().from(invoicesTable).where(and(eq(invoicesTable.caseId, caseId), isNull(invoicesTable.deletedAt))).orderBy(invoicesTable.issueDate),
+    db.select().from(documentsTable).where(and(eq(documentsTable.caseId, caseId), isNull(documentsTable.deletedAt))).orderBy(documentsTable.createdAt),
+    db.select().from(caseStagesTable).where(eq(caseStagesTable.caseId, caseId)).orderBy(caseStagesTable.enteredAt),
+    db.select().from(caseEventsTable).where(eq(caseEventsTable.caseId, caseId)).orderBy(caseEventsTable.occurredAt),
+    db.select().from(expensesTable).where(eq(expensesTable.caseId, caseId)).orderBy(expensesTable.date),
+    includeInternal
+      ? db.select().from(confidentialNotesTable).where(eq(confidentialNotesTable.caseId, caseId)).orderBy(confidentialNotesTable.createdAt)
+      : Promise.resolve([]),
+  ]);
+
+  const today = isoDate(new Date());
+  const caseLabel = (caseRow.caseNumber ?? `case-${caseId}`).replace(/\//g, "-");
+  const dirName = `ملف-${caseLabel}`;
+
+  /* ─ Financial summary ─ */
+  const totalInvoiced = invoices.reduce((s, i) => s + parseFloat(String(i.totalTtc ?? 0)), 0);
+  const totalPaid = invoices.reduce((s, i) => s + parseFloat(String(i.amountPaid ?? 0)), 0);
+  const totalBalance = invoices.reduce((s, i) => s + parseFloat(String(i.balanceDue ?? 0)), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + parseFloat(String(e.amount ?? 0)), 0);
+
+  /* ─ README ─ */
+  const readme = [
+    `ملف القضية: ${caseRow.caseNumber ?? "—"}`,
+    `العنوان: ${caseRow.title}`,
+    `الموكّل: ${clientName}`,
+    `الحالة: ${STATUS_LABELS[caseRow.status] ?? caseRow.status}`,
+    `المحكمة: ${caseRow.court ?? "—"} — الدائرة: ${caseRow.division ?? "—"}`,
+    `الجلسة القادمة: ${caseRow.nextHearing ?? "—"}`,
+    ``,
+    `تاريخ التصدير: ${today}`,
+    `تم الإنشاء بواسطة: محامي بلوس (Mahami Plus)`,
+    ``,
+    `محتويات الأرشيف:`,
+    `  بيانات/القضية.json         — بيانات الملف الكاملة`,
+    `  بيانات/الفواتير.json       — ${invoices.length} فاتورة`,
+    `  بيانات/الآجال.json         — ${deadlines.length} أجل`,
+    `  بيانات/الإجراءات.json      — ${procedures.length} إجراء`,
+    `  بيانات/الطعون.json         — ${stages.length} مرحلة`,
+    `  بيانات/فريق-الملف.json    — ${teams.length} عضو`,
+    `  بيانات/الخصوم.json         — ${opponents.length} خصم`,
+    `  بيانات/الوثائق.json        — قائمة بـ ${documents.length} وثيقة`,
+    `  بيانات/المصاريف.json       — ${expenses.length} مصروف (${totalExpenses.toFixed(3)} د.ت)`,
+    `  بيانات/الأحداث.json        — ${events.length} حدث`,
+    ...(includeInternal ? [`  داخلي/الملاحظات-السرية.json — ${confNotes.length} ملاحظة [داخلي فقط]`] : []),
+    ``,
+    `ملخص مالي:`,
+    `  مجموع الفواتير: ${totalInvoiced.toFixed(3)} د.ت`,
+    `  المدفوع: ${totalPaid.toFixed(3)} د.ت`,
+    `  الرصيد: ${totalBalance.toFixed(3)} د.ت`,
+    `  الأتعاب المتفق عليها: ${parseFloat(String(caseRow.agreedFees ?? 0)).toFixed(3)} د.ت`,
+  ].join("\n");
+
+  /* ─ Build ZIP in memory ─ */
+  return new Promise((resolve, reject) => {
+    const archive = new ZipArchive({ zlib: { level: 6 } });
+    const chunks: Buffer[] = [];
+
+    archive.on("data", (c: Buffer) => chunks.push(c));
+    archive.on("end", () => resolve(Buffer.concat(chunks)));
+    archive.on("error", reject);
+
+    const dir = `${dirName}/`;
+
+    /* README */
+    archive.append(Buffer.from(readme, "utf8"), { name: `${dir}README.txt` });
+
+    /* Data files */
+    archive.append(jsonBuf({ ...caseRow, clientName }), { name: `${dir}بيانات/القضية.json` });
+    archive.append(jsonBuf(invoices), { name: `${dir}بيانات/الفواتير.json` });
+    archive.append(jsonBuf(deadlines), { name: `${dir}بيانات/الآجال.json` });
+    archive.append(jsonBuf(procedures), { name: `${dir}بيانات/الإجراءات.json` });
+    archive.append(jsonBuf(stages), { name: `${dir}بيانات/الطعون.json` });
+    archive.append(jsonBuf(teams), { name: `${dir}بيانات/فريق-الملف.json` });
+    archive.append(jsonBuf(opponents), { name: `${dir}بيانات/الخصوم.json` });
+    archive.append(jsonBuf(documents.map(d => ({
+      id: d.id, title: d.title, fileType: d.fileType, createdAt: d.createdAt,
+    }))), { name: `${dir}بيانات/الوثائق.json` });
+    archive.append(jsonBuf(expenses), { name: `${dir}بيانات/المصاريف.json` });
+    archive.append(jsonBuf(events), { name: `${dir}بيانات/الأحداث.json` });
+
+    /* Internal (optional) */
+    if (includeInternal && confNotes.length > 0) {
+      archive.append(jsonBuf(confNotes), { name: `${dir}داخلي/الملاحظات-السرية.json` });
+    }
+
+    archive.finalize();
+  });
 }

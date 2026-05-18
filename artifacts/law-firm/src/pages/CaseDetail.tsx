@@ -9,7 +9,7 @@ import { formatDateTN } from "@/lib/date";
 import { authFetch } from "@/lib/authFetch";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ExportDropdown } from "@/components/ExportDropdown";
+import { CaseExportMenu } from "@/components/cases/CaseExportMenu";
 import { useLocale } from "@/context/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -1093,8 +1093,7 @@ export default function CaseDetail() {
               {overdueCount > 0 && <span className="text-xs px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر</span>}
               <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
               <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
-              <CasePdfButton caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
-              <ExportDropdown apiPath={`/api/exports/cases/${id}`} label="تصدير" />
+              <CaseExportMenu caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
               <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
             </div>
           </div>
