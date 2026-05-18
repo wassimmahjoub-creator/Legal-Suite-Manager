@@ -169,7 +169,7 @@ export default function Dashboard() {
       )}
 
       {/* Financial Strip */}
-      <Card className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card">
+      <Card onClick={() => navigate("/billing")} className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card cursor-pointer hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-6 items-center">
             <div className="flex items-center gap-2">
@@ -188,9 +188,9 @@ export default function Dashboard() {
                 {loadingSummary ? "..." : summary?.pendingInvoices ?? 0}
               </span>
             </div>
-            <button onClick={() => navigate("/billing")} className="text-xs text-primary hover:underline flex items-center gap-1 mr-auto">
+            <span className="text-xs text-primary flex items-center gap-1 mr-auto">
               تفاصيل <ArrowLeft className="h-3 w-3" />
-            </button>
+            </span>
           </div>
         </CardContent>
       </Card>
