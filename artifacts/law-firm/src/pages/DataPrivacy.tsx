@@ -201,7 +201,7 @@ export default function DataPrivacy() {
         <p className="text-muted-foreground text-sm leading-relaxed">
           استخرج جميع البيانات المتعلقة بموكّل واحد (ملفاته، فواتيره، تواريخ الآجال) — مطابق لحق الاطلاع بموجب التشريع التونسي.
         </p>
-        <Button variant="outline" onClick={() => setClientModal(true)} className="gap-2 mt-2">
+        <Button onClick={() => setClientModal(true)} className="gap-2 mt-2">
           <FileDown className="h-4 w-4" />
           تصدير بيانات موكّل
         </Button>
@@ -216,7 +216,7 @@ export default function DataPrivacy() {
         <p className="text-muted-foreground text-sm leading-relaxed">
           استخرج الملف الكامل لقضية محددة: الخصوم، الفريق، المراحل الإجرائية، الآجال، والفواتير.
         </p>
-        <Button variant="outline" onClick={() => setCaseModal(true)} className="gap-2 mt-2">
+        <Button onClick={() => setCaseModal(true)} className="gap-2 mt-2">
           <FileDown className="h-4 w-4" />
           تصدير ملف قضائي
         </Button>
