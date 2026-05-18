@@ -212,6 +212,7 @@ export default function CaseDetail() {
   const [noteModal, setNoteModal] = useState(false);
   const [hearingEvents, setHearingEvents] = useState<HearingEvent[]>([]);
   const [hForm, setHForm] = useState({ title: "", date: new Date().toISOString().slice(0,10), time: "", type: "hearing", legalStatus: "scheduled", court: "", division: "", location: "", objective: "", duration: "60" });
+  const [hEditId, setHEditId] = useState<number | null>(null);
   const [modal,     setModal]     = useState<string | null>(null);
   const [saving,    setSaving]    = useState(false);
   const [dlFilter,  setDlFilter]  = useState<"all" | "upcoming" | "past">("all");
@@ -511,9 +512,16 @@ export default function CaseDetail() {
                       {h.court && <span>{h.court}{h.division ? ` / ${h.division}` : ""}</span>}
                     </div>
                   </div>
-                  <button onClick={async () => { if (!confirm("حذف هذه الجلسة؟")) return; await authFetch(`${BASE}/api/events/${h.id}`, { method: "DELETE" }); load.hearings(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg shrink-0">
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </button>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => {
+                      setHEditId(h.id);
+                      setHForm({ title: h.title ?? "", date: h.date ?? new Date().toISOString().slice(0,10), time: h.time ?? "", type: h.type ?? "hearing", legalStatus: h.legalStatus ?? "scheduled", court: h.court ?? "", division: h.division ?? "", location: h.location ?? "", objective: h.objective ?? "", duration: "60" });
+                      setModal("hearing");
+                    }} className="p-1.5 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                    <button onClick={async () => { if (!confirm("حذف هذه الجلسة؟")) return; await authFetch(`${BASE}/api/events/${h.id}`, { method: "DELETE" }); load.hearings(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -1217,7 +1225,7 @@ export default function CaseDetail() {
       </Modal>
 
       {/* Hearing modal */}
-      <Modal open={modal === "hearing"} onClose={() => setModal(null)} title="إضافة جلسة" size="lg">
+      <Modal open={modal === "hearing"} onClose={() => { setModal(null); setHEditId(null); }} title={hEditId ? "تعديل الجلسة" : "إضافة جلسة"} size="lg">
         <div className="space-y-4">
           <FormField label="عنوان الجلسة *" htmlFor="h-title">
             <Input id="h-title" value={hForm.title} onChange={e => setHForm({...hForm, title: e.target.value})} className={inputCls} placeholder="مثال: جلسة محكمة تونس الابتدائية" />
@@ -1255,14 +1263,20 @@ export default function CaseDetail() {
           </FormField>
           <div className="flex gap-3">
             <Button className="flex-1" disabled={saving || !hForm.title.trim() || !hForm.date} onClick={() => withSave(async () => {
-              await authFetch(`${BASE}/api/events`, { method: "POST", body: JSON.stringify({
+              const body = JSON.stringify({
                 title: hForm.title, date: hForm.date, time: hForm.time || null,
                 type: hForm.type, legalStatus: hForm.legalStatus || null,
                 court: hForm.court || null, division: hForm.division || null,
                 location: hForm.location || null, caseId: Number(id), duration: Number(hForm.duration) || 60,
-              })});
-            }, load.hearings)}>{saving ? "جارٍ الحفظ..." : "حفظ الجلسة"}</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+              });
+              if (hEditId) {
+                await authFetch(`${BASE}/api/events/${hEditId}`, { method: "PUT", body });
+                setHEditId(null);
+              } else {
+                await authFetch(`${BASE}/api/events`, { method: "POST", body });
+              }
+            }, load.hearings)}>{saving ? "جارٍ الحفظ..." : hEditId ? "حفظ التعديلات" : "حفظ الجلسة"}</Button>
+            <Button variant="outline" onClick={() => { setModal(null); setHEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>
