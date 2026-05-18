@@ -201,6 +201,7 @@ export default function CaseDetail() {
   const [confForm, setConfForm] = useState({ content: "" });
   const [relForm,  setRelForm]  = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
+  const [teamEditId, setTeamEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
@@ -448,7 +449,7 @@ export default function CaseDetail() {
                   </div>
                 )}
                 {team.map(m => (
-                  <div key={m.id} className="flex items-center justify-between">
+                  <div key={m.id} onClick={() => { setTeamEditId(m.id); setTeamForm({ userId: String(m.userId), role: m.role ?? "مساعد" }); setModal("team"); }} className="flex items-center justify-between p-2 -mx-2 rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{(m.userName ?? "م").charAt(0)}</div>
                       <div>
@@ -456,7 +457,7 @@ export default function CaseDetail() {
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{m.role}</span>
                       </div>
                     </div>
-                    <button onClick={() => setConfirmTeamId(m.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={e => { e.stopPropagation(); setConfirmTeamId(m.id); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 ))}
                 {team.length === 0 && !caseData.lawyer && <p className="text-xs text-muted-foreground py-1">لا يوجد فريق مسجل</p>}
@@ -1309,22 +1310,35 @@ export default function CaseDetail() {
       </Modal>
 
       {/* Team modal */}
-      <Modal open={modal === "team"} onClose={() => setModal(null)} title="إضافة عضو للفريق">
+      <Modal open={modal === "team"} onClose={() => { setModal(null); setTeamEditId(null); }} title={teamEditId ? "تعديل دور العضو" : "إضافة عضو للفريق"}>
         <div className="space-y-4">
-          <FormField label="المستخدم" htmlFor="tm-user">
-            <SelectNative id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
-              <option value="">اختر مستخدماً...</option>
-              {allUsers.filter(u => !team.some(t => t.userId === u.id)).map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
-            </SelectNative>
-          </FormField>
+          {!teamEditId && (
+            <FormField label="المستخدم" htmlFor="tm-user">
+              <SelectNative id="tm-user" value={teamForm.userId} onChange={e => setTeamForm({...teamForm, userId: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">اختر مستخدماً...</option>
+                {allUsers.filter(u => !team.some(t => t.userId === u.id)).map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
+              </SelectNative>
+            </FormField>
+          )}
+          {teamEditId && (
+            <p className="text-sm font-medium">{team.find(m => m.id === teamEditId)?.userName}</p>
+          )}
           <FormField label="الدور في القضية" htmlFor="tm-role">
             <SelectNative id="tm-role" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {["مسؤول رئيسي","مساعد","متربص"].map(r => <option key={r} value={r}>{r}</option>)}
             </SelectNative>
           </FormField>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || !teamForm.userId} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) }); }, load.team)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+            <Button className="flex-1" disabled={saving || (!teamEditId && !teamForm.userId)}
+              onClick={() => withSave(async () => {
+                if (teamEditId) {
+                  await authFetch(`${BASE}/api/case-teams/${teamEditId}`, { method: "PUT", body: JSON.stringify({ role: teamForm.role }) });
+                  setTeamEditId(null);
+                } else {
+                  await authFetch(`${BASE}/api/cases/${id}/team`, { method: "POST", body: JSON.stringify({...teamForm, userId: Number(teamForm.userId)}) });
+                }
+              }, load.team)}>{saving ? "جارٍ الحفظ..." : teamEditId ? "حفظ التعديل" : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => { setModal(null); setTeamEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>

@@ -40,6 +40,14 @@ router.post("/cases/:caseId/team", requireAuth, async (req, res): Promise<void> 
   res.status(201).json(row);
 });
 
+router.put("/case-teams/:id", requireAuth, async (req, res) => {
+  const teamId = Number(req.params.id);
+  const { role } = req.body as { role: string };
+  const [row] = await db.update(caseTeamsTable).set({ role }).where(eq(caseTeamsTable.id, teamId)).returning();
+  if (!row) return res.status(404).json({ error: "Not found" });
+  res.json(row);
+});
+
 router.delete("/case-teams/:id", requireAuth, async (req, res) => {
   const teamId = Number(req.params.id);
   const [member] = await db.select({ caseId: caseTeamsTable.caseId, userId: caseTeamsTable.userId, name: usersTable.name })
