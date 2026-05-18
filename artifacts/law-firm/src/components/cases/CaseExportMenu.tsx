@@ -122,6 +122,7 @@ export function CaseExportMenu({ caseId, caseTitle, caseNumber }: Props) {
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <Download className="h-3.5 w-3.5" />}
             تصدير
+            <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
 
