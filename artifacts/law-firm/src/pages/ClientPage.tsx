@@ -17,7 +17,7 @@ import {
   Briefcase, FileText, Clock, MessageSquare, BookOpen,
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
   CheckCircle2, AlertCircle, Calendar, Hash, Loader2, Upload,
-  FileImage, File, FileSpreadsheet, ArrowUpRight, ArrowDownLeft, Send,
+  FileImage, File, FileSpreadsheet, ArrowUpRight, ArrowDownLeft, ArrowRight, Send,
   Play, Pause, Square, Timer, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -312,14 +312,11 @@ export default function ClientPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button onClick={() => window.history.back()} className="hover:text-foreground transition-colors">
-          الحرفاء
-        </button>
-        <ChevronRight className="h-3.5 w-3.5 rotate-180" />
-        <span className="text-foreground font-medium truncate">{client.name}</span>
-      </nav>
+      {/* Back button */}
+      <button onClick={() => window.history.back()}
+        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors">
+        <ArrowRight className="h-3.5 w-3.5" /> رجوع
+      </button>
 
       {/* Header */}
       <div className="rounded-2xl bg-card border border-border p-6">
