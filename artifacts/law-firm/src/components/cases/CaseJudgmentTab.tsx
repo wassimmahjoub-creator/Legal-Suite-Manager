@@ -112,7 +112,6 @@ export function CaseJudgmentTab({ caseId, onStagesChanged }: CaseJudgmentTabProp
             </Button>
             <Button
               size="sm"
-              variant="outline"
               onClick={() => { setPanelStage(activeStage); setPanelMode("active"); }}
             >
               تعديل الملاحظات
