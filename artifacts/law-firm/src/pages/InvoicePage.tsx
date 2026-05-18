@@ -116,9 +116,9 @@ export default function InvoicePage() {
       {/* Breadcrumb + actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <button onClick={() => navigate("/billing")}
+          <button onClick={() => window.history.back()}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-            <ArrowRight className="h-3.5 w-3.5" /> الفوترة
+            <ArrowRight className="h-3.5 w-3.5" /> رجوع
           </button>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold font-mono">
