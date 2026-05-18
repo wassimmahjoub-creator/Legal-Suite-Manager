@@ -29,8 +29,8 @@ interface Props {
 }
 
 const CONFLICT_TYPE_LABELS: Record<string, string> = {
-  opponent_is_client: "الخصم هو حريف في مكتبك",
-  client_is_opponent_elsewhere: "الحريف خصمٌ في دوسية أخرى",
+  opponent_is_client: "الخصم موكّل في المكتب",
+  client_is_opponent_elsewhere: "الموكّل خصمٌ في ملف آخر",
   shared_party: "طرف مشترك",
 };
 
@@ -69,7 +69,7 @@ export function ConflictWarningModal({ open, conflicts, saving, onConfirm, onCan
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-destructive">تنبيه: تعارض محتمل في المصالح</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              تم رصد {conflicts.length} تعارض{conflicts.length > 1 ? "ات" : ""} تستوجب مراجعتك
+              تم رصد {conflicts.length} تعارض{conflicts.length > 1 ? "ات" : ""} في المصالح تستوجب مراجعتك
             </p>
           </div>
           <button onClick={onCancel} className="p-1.5 hover:bg-muted/50 rounded-lg transition-colors shrink-0">
@@ -114,7 +114,7 @@ export function ConflictWarningModal({ open, conflicts, saving, onConfirm, onCan
                 </div>
                 {c.otherCaseName && (
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">الدوسية المرتبطة:</span>
+                    <span className="text-muted-foreground">الملف المرتبط:</span>
                     <div className="font-semibold mt-0.5">
                       <button
                         className="text-primary hover:underline"
@@ -143,7 +143,7 @@ export function ConflictWarningModal({ open, conflicts, saving, onConfirm, onCan
               className="w-full bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <div className="flex items-center justify-between text-xs">
-              <p className="text-muted-foreground">هذا التبرير سيُسجَّل في سجل الملف ولن يُعرض للحريف</p>
+              <p className="text-muted-foreground">هذا التبرير سيُسجَّل في سجل الملف ولن يُعرض للموكّل</p>
               <span className={justification.trim().length >= 30 ? "text-green-400" : "text-muted-foreground"}>
                 {justification.trim().length}/30
               </span>

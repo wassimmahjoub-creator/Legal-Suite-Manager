@@ -17,9 +17,9 @@ interface Stats {
 }
 
 const CONFLICT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  opponent_is_client:           { label: "الخصم هو حريف",          color: "bg-destructive/10 text-destructive"   },
-  client_is_opponent_elsewhere: { label: "الحريف خصمٌ في دوسية أخرى", color: "bg-orange-500/10 text-orange-400"  },
-  shared_party:                 { label: "طرف مشترك",               color: "bg-yellow-500/10 text-yellow-400"     },
+  opponent_is_client:           { label: "الخصم موكّل في المكتب",      color: "bg-destructive/10 text-destructive"   },
+  client_is_opponent_elsewhere: { label: "الموكّل خصمٌ في ملف آخر",    color: "bg-orange-500/10 text-orange-400"    },
+  shared_party:                 { label: "طرف مشترك",                  color: "bg-yellow-500/10 text-yellow-400"    },
 };
 
 const MATCH_LABELS: Record<string, string> = {
@@ -85,7 +85,7 @@ export default function Conflicts() {
           className="gap-1.5 text-xs shrink-0"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${backfilling ? "animate-spin" : ""}`} />
-          {backfilling ? "جارٍ الفحص..." : "فحص شامل للدواسير"}
+          {backfilling ? "جارٍ الفحص..." : "فحص شامل لجميع الملفات"}
         </Button>
       </div>
 
@@ -166,7 +166,7 @@ export default function Conflicts() {
               {/* Table head */}
               <div className="grid grid-cols-[1fr_1.5fr_1fr_1fr_1fr_80px] gap-4 px-5 py-3 bg-muted/40 text-xs font-semibold text-muted-foreground">
                 <span>تاريخ الرصد</span>
-                <span>الدوسية</span>
+                <span>الملف</span>
                 <span>النوع</span>
                 <span>الطرف</span>
                 <span>طريقة الرصد</span>

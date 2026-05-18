@@ -84,7 +84,7 @@ pnpm workspace monorepo using TypeScript. This is a full-stack law firm manageme
 - `lib/api-zod/src/index.ts` must only export from `./generated/api` (not `./generated/types`) to avoid naming conflicts
 - The codegen regenerates `index.ts` — always fix it immediately after running codegen
 - UI is fully RTL with `dir="rtl"` on the `<html>` element
-- All text in Tunisian Arabic (Darija)
+- All text in formal Tunisian administrative Arabic (العربية الإدارية التونسية / فصحى), NOT Darija. Key terms: "موكّل" not "حريف", "ملف" not "دوسية", "خصم" for opponent, "جلسة" for hearing — all MSA terms
 - New pages use `authFetch` helper (not generated hooks)
 - Pre-existing TS errors in tasks.ts, cases.ts, clients.ts, events.ts — do not introduce new ones
 - Cases route now excludes soft-deleted records by default (isNull(deletedAt))
