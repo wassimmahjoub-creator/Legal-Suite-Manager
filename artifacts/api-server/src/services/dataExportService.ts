@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { createWriteStream, mkdirSync, statSync } from "fs";
 import { join } from "path";
-import { createHmac, createHash } from "crypto";
+import { createHmac } from "crypto";
 import {
   db, dataExportsTable,
   clientsTable, casesTable, usersTable, opponentsTable,
@@ -129,8 +129,6 @@ function buildZip(files: Record<string, ZipEntry>, filePath: string): Promise<vo
     const output  = createWriteStream(filePath);
     const archive = new ZipArchive({ zlib: { level: 9 } });
 
-    const manifest: Array<{ file: string; sha256: string; bytes: number }> = [];
-
     output.on("close", resolve);
     output.on("error", reject);
     archive.on("error", reject);
@@ -138,16 +136,8 @@ function buildZip(files: Record<string, ZipEntry>, filePath: string): Promise<vo
 
     for (const [name, content] of Object.entries(files)) {
       const buf = typeof content === "string" ? Buffer.from(content, "utf8") : content;
-      manifest.push({ file: name, sha256: hashEntry(content), bytes: buf.length });
       archive.append(buf, { name });
     }
-
-    const manifestBuf = Buffer.from(JSON.stringify({
-      generatedAt: new Date().toISOString(),
-      system: "محامي بلوس (Mahami Plus)",
-      files: manifest,
-    }, null, 2), "utf8");
-    archive.append(manifestBuf, { name: "audit/manifest.json" });
 
     archive.finalize();
   });
