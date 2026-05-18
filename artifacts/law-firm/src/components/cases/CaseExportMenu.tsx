@@ -131,7 +131,7 @@ export function CaseExportMenu({ caseId, caseTitle, caseNumber }: Props) {
           <DropdownMenuItem
             className="gap-2.5 cursor-pointer"
             disabled={isLoading}
-            onSelect={handlePdf}
+            onSelect={(e) => { e.preventDefault(); setTimeout(handlePdf, 0); }}
           >
             <FileText className="h-4 w-4 text-red-400 shrink-0" />
             <div>
@@ -146,7 +146,7 @@ export function CaseExportMenu({ caseId, caseTitle, caseNumber }: Props) {
           <DropdownMenuItem
             className="gap-2.5 cursor-pointer"
             disabled={isLoading}
-            onSelect={() => handleSpreadsheet("xlsx")}
+            onSelect={(e) => { e.preventDefault(); setTimeout(() => handleSpreadsheet("xlsx"), 0); }}
           >
             <FileSpreadsheet className="h-4 w-4 text-green-400 shrink-0" />
             <span className="text-sm">تصدير Excel (.xlsx)</span>
@@ -156,7 +156,7 @@ export function CaseExportMenu({ caseId, caseTitle, caseNumber }: Props) {
           <DropdownMenuItem
             className="gap-2.5 cursor-pointer"
             disabled={isLoading}
-            onSelect={() => handleSpreadsheet("csv")}
+            onSelect={(e) => { e.preventDefault(); setTimeout(() => handleSpreadsheet("csv"), 0); }}
           >
             <FileText className="h-4 w-4 text-blue-400 shrink-0" />
             <span className="text-sm">تصدير CSV (.csv)</span>
@@ -168,7 +168,7 @@ export function CaseExportMenu({ caseId, caseTitle, caseNumber }: Props) {
           <DropdownMenuItem
             className="gap-2.5 cursor-pointer"
             disabled={isLoading}
-            onSelect={() => setShowZip(true)}
+            onSelect={(e) => { e.preventDefault(); setTimeout(() => setShowZip(true), 0); }}
           >
             <Archive className="h-4 w-4 text-amber-400 shrink-0" />
             <div>
