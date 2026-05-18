@@ -94,18 +94,26 @@ export function CaseJudgmentTab({ caseId, onStagesChanged }: CaseJudgmentTabProp
 
   return (
     <div className="space-y-5" dir="rtl">
-      {/* Active stage CTA — click to open detail panel */}
+      {/* Active stage CTA */}
       {activeStage && activeStage.stage !== "execution" && (
-        <button
-          onClick={() => { setPanelStage(activeStage); setPanelMode("active"); }}
-          className="w-full text-right flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-xl hover:bg-primary/10 hover:border-primary/40 transition-colors group"
-        >
-          <div>
+        <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <button
+            onClick={() => { setPanelStage(activeStage); setPanelMode("active"); }}
+            className="flex-1 text-right group"
+          >
             <p className="text-sm font-semibold">الطور الحالي: <span className="text-primary">{STAGE_LABELS[activeStage.stage] ?? activeStage.stage}</span></p>
-            <p className="text-xs text-muted-foreground mt-0.5">انقر للاطلاع على التفاصيل أو الانتقال للطور التالي</p>
-          </div>
-          <ArrowLeft className="h-4 w-4 text-primary opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
-        </button>
+            <p className="text-xs text-muted-foreground mt-0.5 group-hover:text-foreground/70 transition-colors">انقر للاطلاع على التفاصيل والملاحظات</p>
+          </button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => { setPanelStage(activeStage); setPanelMode("active"); setShowTransition(true); }}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            الانتقال للطور التالي
+          </Button>
+        </div>
       )}
 
       {/* Stages history */}
