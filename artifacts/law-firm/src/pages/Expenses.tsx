@@ -291,8 +291,8 @@ export default function Expenses() {
                 onChange={e => setForm(f => ({ ...f, reimbursable: e.target.checked }))}
                 className="h-4 w-4 accent-primary" />
               <div>
-                <p className="text-sm font-medium">قابل للاسترجاع من الحريف</p>
-                <p className="text-xs text-muted-foreground">سيتم إضافة هذا المصروف إلى فاتورة الحريف</p>
+                <p className="text-sm font-medium">قابل للاسترجاع من الموكّل</p>
+                <p className="text-xs text-muted-foreground">سيتم إضافة هذا المصروف إلى فاتورة الموكّل</p>
               </div>
             </label>
             <div className="flex gap-3 pt-2">

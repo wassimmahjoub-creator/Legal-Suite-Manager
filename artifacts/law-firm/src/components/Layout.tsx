@@ -31,7 +31,7 @@ const NAV_PRIMARY = [
   { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
   { href: "/cases",      label: "القضايا",       icon: Briefcase       },
   { href: "/calendar",   label: "الرزنامة",      icon: CalendarIcon    },
-  { href: "/clients",    label: "الحرفاء",        icon: Users           },
+  { href: "/clients",    label: "الموكّلون",        icon: Users           },
   { href: "/documents",  label: "الوثائق",        icon: FileText        },
   { href: "/billing",    label: "الفواتير",       icon: CreditCard      },
 ];
@@ -69,12 +69,12 @@ const NAV_MOBILE_BOTTOM = [
   { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
   { href: "/cases",    label: "القضايا",  icon: Briefcase       },
   { href: "/calendar", label: "الرزنامة", icon: CalendarIcon    },
-  { href: "/clients",  label: "الحرفاء",  icon: Users           },
+  { href: "/clients",  label: "الموكّلون",  icon: Users           },
 ];
 
 const QUICK_ACTIONS = [
   { label: "قضية جديدة",   href: "/cases",    icon: Briefcase    },
-  { label: "حريف جديد",    href: "/clients",  icon: Users        },
+  { label: "موكّل جديد",    href: "/clients",  icon: Users        },
   { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
   { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
 ];

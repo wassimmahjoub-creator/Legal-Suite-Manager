@@ -85,7 +85,7 @@ export default function Communications() {
         <div className="bg-card rounded-xl shadow-sm">
           <EmptyState
             title="لا توجد اتصالات بعد"
-            description="سجّل مكالماتك واجتماعاتك مع الحرفاء — ستظهر هنا فور تسجيلها بالضغط على الزر أعلاه"
+            description="سجّل مكالماتك واجتماعاتك مع الموكّلون — ستظهر هنا فور تسجيلها بالضغط على الزر أعلاه"
           />
         </div>
       ) : (
@@ -133,7 +133,7 @@ export default function Communications() {
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="رقم القضية" htmlFor="cm-case"><Input id="cm-case" type="number" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
-            <FormField label="رقم الحريف" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
+            <FormField label="رقم الموكّل" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
           </div>
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" onClick={save} disabled={saving || !form.summary || !form.date}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>

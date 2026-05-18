@@ -392,7 +392,7 @@ export default function CaseDetail() {
                 ["نوع الإجراء",     tr(TR_PROCEDURE_TYPE,    c.procedureType)],
                 ["الأولوية",        tr(TR_PRIORITY,          c.casePriority)],
                 ["قيمة النزاع",     c.disputeValue ? `${Number(c.disputeValue).toLocaleString()} د.ت` : null],
-                ["مصدر الحريف",    tr(TR_CLIENT_SOURCE, c.clientSource)],
+                ["مصدر الموكّل",    tr(TR_CLIENT_SOURCE, c.clientSource)],
                 ["اسم القاضي",     c.judgeName],
                 ["تاريخ فتح الملف", c.openedAt ? formatDateTN(c.openedAt) : null],
                 ["أول جلسة",       c.firstHearingDate ? formatDateTN(c.firstHearingDate) : null],
@@ -423,7 +423,7 @@ export default function CaseDetail() {
                     <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{caseData.clientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{caseData.clientName}</p>
-                      <p className="text-[10px] text-muted-foreground">الحريف</p>
+                      <p className="text-[10px] text-muted-foreground">الموكّل</p>
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
@@ -970,7 +970,7 @@ export default function CaseDetail() {
               <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">سري</span>
             </div>
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-xs text-primary flex items-center gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> هذه الملاحظات لا تظهر للحريف في بوابة العميل
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> هذه الملاحظات لا تظهر للموكّل في بوابة العميل
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{c.internalNotes}</p>
           </CardContent></Card>
@@ -1068,7 +1068,7 @@ export default function CaseDetail() {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
                   {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
-                  {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الحريف">📁 {c.clientFileRef}</span>}
+                  {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الموكّل">📁 {c.clientFileRef}</span>}
                   <StatusBadge status={caseData.status} />
                   {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
@@ -1404,7 +1404,7 @@ export default function CaseDetail() {
             <input type="checkbox" checked={timeForm.billable}
               onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))}
               className="h-4 w-4 accent-primary" />
-            <span className="text-sm">هذا الوقت قابل للفوترة للحريف</span>
+            <span className="text-sm">هذا الوقت قابل للفوترة للموكّل</span>
           </label>
           {timeForm.hours && timeForm.rate && parseFloat(timeForm.hours) > 0 && (
             <div className="p-3 bg-primary/10 rounded-lg flex justify-between items-center">
@@ -1459,8 +1459,8 @@ export default function CaseDetail() {
               onChange={e => setExpForm(f => ({ ...f, reimbursable: e.target.checked }))}
               className="h-4 w-4 accent-primary" />
             <div>
-              <p className="text-sm font-medium">قابل للاسترجاع من الحريف</p>
-              <p className="text-xs text-muted-foreground">سيتم إضافة هذا المصروف إلى فاتورة الحريف</p>
+              <p className="text-sm font-medium">قابل للاسترجاع من الموكّل</p>
+              <p className="text-xs text-muted-foreground">سيتم إضافة هذا المصروف إلى فاتورة الموكّل</p>
             </div>
           </label>
           <div className="flex gap-3">
@@ -1628,7 +1628,7 @@ export default function CaseDetail() {
             <FormField label="عدد القضية بالمحكمة" htmlFor="ed-courtnum">
               <Input id="ed-courtnum" value={editForm.courtCaseNumber} onChange={e => setEditForm(f => ({...f, courtCaseNumber: e.target.value}))} className={inputCls} placeholder="12345/2026" dir="ltr" />
             </FormField>
-            <FormField label="مرجع الحريف" htmlFor="ed-clientref">
+            <FormField label="مرجع الموكّل" htmlFor="ed-clientref">
               <Input id="ed-clientref" value={editForm.clientFileRef} onChange={e => setEditForm(f => ({...f, clientFileRef: e.target.value}))} className={inputCls} />
             </FormField>
           </div>

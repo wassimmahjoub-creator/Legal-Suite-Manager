@@ -244,11 +244,11 @@ export default function InvoiceForm() {
           <Card className="border-none shadow-md">
             <CardHeader className="pb-3"><CardTitle className="text-base">معلومات الفاتورة</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="الحريف *" htmlFor={`${uid}-client`}>
+              <FormField label="الموكّل *" htmlFor={`${uid}-client`}>
                 <SelectNative id={`${uid}-client`} value={clientId}
                   onChange={e => { setClientId(e.target.value); setCaseId(""); }}
                   className={inputCls + " w-full px-2 cursor-pointer"}>
-                  <option value="">— اختر حريفاً —</option>
+                  <option value="">— اختر موكّلاً —</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </SelectNative>
               </FormField>
@@ -417,7 +417,7 @@ export default function InvoiceForm() {
 
               {selectedClient?.withholdingExempt && (
                 <p className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded p-2">
-                  الحريف معفى من الخصم في المنبع
+                  الموكّل معفى من الخصم في المنبع
                 </p>
               )}
             </CardContent>

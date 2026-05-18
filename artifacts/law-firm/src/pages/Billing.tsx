@@ -105,7 +105,7 @@ export default function Billing() {
         <div className="relative flex-1">
           <Search className="absolute top-1/2 -translate-y-1/2 end-3 h-4 w-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="بحث بالحريف أو رقم الفاتورة..."
+            placeholder="بحث بالموكّل أو رقم الفاتورة..."
             className="h-10 pe-9 bg-muted/50 border-border rounded-lg" />
         </div>
         <SelectNative value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
@@ -124,7 +124,7 @@ export default function Billing() {
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="text-start py-3 font-semibold">رقم الفاتورة</TableHead>
-                <TableHead className="text-start py-3 font-semibold">الحريف</TableHead>
+                <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden md:table-cell">القضية</TableHead>
                 <TableHead className="text-start py-3 font-semibold">خ.ض</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الصافي</TableHead>

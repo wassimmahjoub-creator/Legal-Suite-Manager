@@ -21,7 +21,7 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 const ENTITY_AR: Record<string, string> = {
-  cases: "قضية", clients: "حريف", invoices: "فاتورة", events: "جلسة",
+  cases: "قضية", clients: "موكّل", invoices: "فاتورة", events: "جلسة",
   documents: "وثيقة", opponents: "خصم", consultations: "استشارة", templates: "نموذج",
 };
 

@@ -26,7 +26,7 @@ interface SearchResult {
 
 const TYPE_CONFIG: Record<ResultType, { label: string; Icon: React.ElementType; color: string }> = {
   case:     { label: "القضايا",    Icon: Briefcase,  color: "text-primary" },
-  client:   { label: "الحرفاء",   Icon: Users,      color: "text-green-400" },
+  client:   { label: "الموكّلون",   Icon: Users,      color: "text-green-400" },
   invoice:  { label: "الفواتير",  Icon: CreditCard, color: "text-yellow-400" },
   document: { label: "الوثائق",   Icon: FileText,   color: "text-blue-400" },
   court:    { label: "المحاكم",   Icon: Building2,  color: "text-purple-400" },
@@ -36,7 +36,7 @@ const TYPE_CONFIG: Record<ResultType, { label: string; Icon: React.ElementType; 
 
 const ACTIONS = [
   { label: "+ قضية جديدة",    href: "/cases",        Icon: Briefcase,      color: "text-primary" },
-  { label: "+ حريف جديد",     href: "/clients",      Icon: Users,          color: "text-green-400" },
+  { label: "+ موكّل جديد",     href: "/clients",      Icon: Users,          color: "text-green-400" },
   { label: "+ فاتورة جديدة",  href: "/billing",      Icon: CreditCard,     color: "text-yellow-400" },
   { label: "+ موعد جديد",     href: "/calendar",     Icon: Calendar,       color: "text-orange-400" },
   { label: "لوحة القيادة",   href: "/",             Icon: LayoutDashboard, color: "text-muted-foreground" },
@@ -163,7 +163,7 @@ export function GlobalSearch() {
               <Command.Input
                 value={q}
                 onValueChange={setQ}
-                placeholder="ابحث عن قضية، حريف، فاتورة، وثيقة..."
+                placeholder="ابحث عن قضية، موكّل، فاتورة، وثيقة..."
                 autoFocus
                 className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base min-w-0"
               />
@@ -203,7 +203,7 @@ export function GlobalSearch() {
 
               {!loading && !q && !showRecent && (
                 <div className="py-10 text-center text-sm text-muted-foreground">
-                  اكتب للبحث عبر القضايا، الحرفاء، الفواتير، الوثائق...
+                  اكتب للبحث عبر القضايا، الموكّلون، الفواتير، الوثائق...
                 </div>
               )}
 

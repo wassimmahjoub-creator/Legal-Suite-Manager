@@ -146,7 +146,7 @@ export default function Correspondances() {
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Mail className="h-6 w-6 text-primary" /> المراسلات
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">المراسلات الرسمية مع الحرفاء ({filtered.length})</p>
+          <p className="text-muted-foreground text-sm mt-1">المراسلات الرسمية مع الموكّلون ({filtered.length})</p>
         </div>
         <Button onClick={openNew} className="bg-primary hover:bg-primary/90 gap-2 shrink-0">
           <Plus className="h-4 w-4" /> مراسلة جديدة
@@ -156,7 +156,7 @@ export default function Correspondances() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="بحث في الموضوع أو الحريف..."
+          placeholder="بحث في الموضوع أو الموكّل..."
           value={search} onChange={e => setSearch(e.target.value)}
           className="h-9 w-56 bg-muted/50 border-border rounded-lg text-sm"
         />
@@ -213,7 +213,7 @@ export default function Correspondances() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                          {c.clientName && <span>الحريف: <span className="text-foreground font-medium">{c.clientName}</span></span>}
+                          {c.clientName && <span>الموكّل: <span className="text-foreground font-medium">{c.clientName}</span></span>}
                           {c.caseName  && <span>القضية: <span className="text-foreground">{c.caseName}</span></span>}
                           {c.reference && <span>المرجع: <span className="font-mono text-primary">{c.reference}</span></span>}
                           <span>{formatDateTN(c.date)}</span>
@@ -251,10 +251,10 @@ export default function Correspondances() {
         }
       >
         <div className="space-y-4">
-          <FormField label="الحريف *" htmlFor="corr-client">
+          <FormField label="الموكّل *" htmlFor="corr-client">
             <SelectNative id="corr-client" className={inputCls + " px-3 cursor-pointer"}
               value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, caseId: "" }))}>
-              <option value="">اختر حريفاً...</option>
+              <option value="">اختر موكّلاً...</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </SelectNative>
           </FormField>
@@ -278,7 +278,7 @@ export default function Correspondances() {
               <SelectNative id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
                 value={form.direction} onChange={e => setForm(f => ({ ...f, direction: e.target.value }))}>
                 <option value="outgoing">صادر (من المكتب)</option>
-                <option value="incoming">وارد (من الحريف)</option>
+                <option value="incoming">وارد (من الموكّل)</option>
               </SelectNative>
             </FormField>
           </div>

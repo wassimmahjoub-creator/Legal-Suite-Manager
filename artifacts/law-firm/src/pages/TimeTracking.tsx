@@ -18,7 +18,7 @@ const CASES = [
 
 const INITIAL_ENTRIES = [
   { id: 1, date: "2026-05-04", case: "قضية ميراث عائلة بن علي", description: "دراسة الملف وتحضير الدفاع", hours: 2.5, rate: 150, billable: true },
-  { id: 2, date: "2026-05-03", case: "قضية عقار الزهراء", description: "اجتماع مع الحريف ومراجعة العقود", hours: 1.5, rate: 150, billable: true },
+  { id: 2, date: "2026-05-03", case: "قضية عقار الزهراء", description: "اجتماع مع الموكّل ومراجعة العقود", hours: 1.5, rate: 150, billable: true },
   { id: 3, date: "2026-05-02", case: "قضية عقد شراكة التريكي", description: "صياغة مذكرة الرد", hours: 3.0, rate: 150, billable: true },
   { id: 4, date: "2026-05-01", case: "قضية ميراث عائلة بن علي", description: "حضور جلسة المحكمة", hours: 2.0, rate: 200, billable: true },
   { id: 5, date: "2026-04-30", case: "قضية عقار الزهراء", description: "مراسلة كاتب المحكمة", hours: 0.5, rate: 150, billable: false },
@@ -236,7 +236,7 @@ export default function TimeTracking() {
               <input type="checkbox" checked={form.billable}
                 onChange={e => setForm(f => ({ ...f, billable: e.target.checked }))}
                 className="h-4 w-4 accent-primary" />
-              <span className="text-sm">هذا الوقت قابل للفوترة للحريف</span>
+              <span className="text-sm">هذا الوقت قابل للفوترة للموكّل</span>
             </label>
           </FormField>
           {form.hours && form.rate && (

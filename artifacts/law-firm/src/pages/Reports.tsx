@@ -276,7 +276,7 @@ export default function Reports() {
         <Card className="border-none shadow-md">
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" /> أبرز الحرفاء
+              <Users className="h-5 w-5 text-primary" /> أبرز الموكّلون
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 space-y-3">
@@ -287,7 +287,7 @@ export default function Reports() {
             ) : !data || data.topClients.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                لا يوجد حرفاء بعد
+                لا يوجد موكّلون بعد
               </div>
             ) : (
               data!.topClients.map((c, i) => (

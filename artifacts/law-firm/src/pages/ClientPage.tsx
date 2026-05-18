@@ -268,12 +268,12 @@ export default function ClientPage() {
       method: "PUT",
       body: JSON.stringify(editForm),
     });
-    if (r.ok) { setClient(await r.json()); setEditModal(false); toast({ title: "تم حفظ بيانات الحريف" }); }
+    if (r.ok) { setClient(await r.json()); setEditModal(false); toast({ title: "تم حفظ بيانات الموكّل" }); }
     setSaving(false);
   }
 
   async function deleteClient() {
-    if (!confirm("حذف هذا الحريف نهائيًا؟")) return;
+    if (!confirm("حذف هذا الموكّل نهائيًا؟")) return;
     await authFetch(`${BASE}/api/clients/${clientId}`, { method: "DELETE" });
     navigate("/clients");
   }
@@ -428,7 +428,7 @@ export default function ClientPage() {
         {activeTab === "info" && (
           <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">بيانات الحريف</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">بيانات الموكّل</h2>
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
                 <Pencil className="h-3.5 w-3.5" /> تعديل
@@ -436,7 +436,7 @@ export default function ClientPage() {
               <button
                 onClick={deleteClient}
                 className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                title="حذف الحريف"
+                title="حذف الموكّل"
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </button>
@@ -758,7 +758,7 @@ export default function ClientPage() {
               </Button>
             </div>
             {corresp.length === 0 ? (
-              <EmptyState icon={<MessageSquare className="h-12 w-12 opacity-20" />} label="لا توجد مراسلات لهذا الحريف" />
+              <EmptyState icon={<MessageSquare className="h-12 w-12 opacity-20" />} label="لا توجد مراسلات لهذا الموكّل" />
             ) : (
               <div className="space-y-3">
                 {corresp.map(c => {
@@ -859,7 +859,7 @@ export default function ClientPage() {
             <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
             <div>
               <p className="font-semibold">{client?.name}</p>
-              <p className="text-xs text-muted-foreground">سيتم ربط الملف بهذا الحريف تلقائياً</p>
+              <p className="text-xs text-muted-foreground">سيتم ربط الملف بهذا الموكّل تلقائياً</p>
             </div>
           </div>
 
@@ -1130,7 +1130,7 @@ export default function ClientPage() {
               <input type="checkbox" checked={timeForm.billable}
                 onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))}
                 className="h-4 w-4 accent-primary" />
-              <span className="text-sm">هذا الوقت قابل للفوترة للحريف</span>
+              <span className="text-sm">هذا الوقت قابل للفوترة للموكّل</span>
             </label>
           </FormField>
           {timeForm.hours && timeForm.rate && (
@@ -1171,7 +1171,7 @@ export default function ClientPage() {
             <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
             <div>
               <p className="font-semibold">{client?.name}</p>
-              <p className="text-xs text-muted-foreground">سيتم ربط المراسلة بهذا الحريف تلقائياً</p>
+              <p className="text-xs text-muted-foreground">سيتم ربط المراسلة بهذا الموكّل تلقائياً</p>
             </div>
           </div>
 
@@ -1190,7 +1190,7 @@ export default function ClientPage() {
               <SelectNative id="corr-dir" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.direction} onChange={e => setCorrForm(f => ({ ...f, direction: e.target.value }))}>
                 <option value="outgoing">صادر (من المكتب)</option>
-                <option value="incoming">وارد (من الحريف)</option>
+                <option value="incoming">وارد (من الموكّل)</option>
               </SelectNative>
             </FormField>
           </div>
@@ -1425,10 +1425,10 @@ export default function ClientPage() {
       </Modal>
 
       {/* Edit Client Modal */}
-      <Modal open={editModal} onClose={() => setEditModal(false)} title="تعديل بيانات الحريف" size="lg">
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="تعديل بيانات الموكّل" size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="نوع الحريف" htmlFor="e-cl-type">
+            <FormField label="نوع الموكّل" htmlFor="e-cl-type">
               <SelectNative id="e-cl-type" className={inputCls + " px-3 cursor-pointer"}
                 value={editForm.clientType ?? "individual"}
                 onChange={e => setEditForm(f => ({ ...f, clientType: e.target.value }))}>
@@ -1497,7 +1497,7 @@ export default function ClientPage() {
             </FormField>
           </div>
           <FormField label="ملاحظات" htmlFor="e-cl-notes">
-            <SmartTextarea id="e-cl-notes" rows={2} aiContext="ملاحظات حريف" value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({ ...f, notes: v }))} />
+            <SmartTextarea id="e-cl-notes" rows={2} aiContext="ملاحظات موكّل" value={editForm.notes ?? ""} onChange={v => setEditForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={saveEdit} disabled={saving || !editForm.name?.trim()}>

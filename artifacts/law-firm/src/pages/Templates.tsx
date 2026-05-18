@@ -19,7 +19,7 @@ const TYPES = ["عريضة", "وكالة", "عقد", "إنذار", "مراسلة
 const EMPTY = { name: "", type: "عريضة", content: "" };
 
 const SAMPLE_VARS = [
-  { key: "{{اسم_الحريف}}", label: "اسم الحريف" },
+  { key: "{{اسم_الموكّل}}", label: "اسم الموكّل" },
   { key: "{{رقم_القضية}}", label: "رقم القضية" },
   { key: "{{المحكمة}}", label: "المحكمة" },
   { key: "{{التاريخ}}", label: "تاريخ اليوم" },
@@ -190,7 +190,7 @@ export default function Templates() {
             <SmartTextarea
               value={form.content} onChange={v => setForm({...form, content: v})}
               rows={9} aiContext="نموذج قانوني"
-              placeholder="اكتب محتوى النموذج هنا... استخدم {{اسم_الحريف}} للمتغيرات"
+              placeholder="اكتب محتوى النموذج هنا... استخدم {{اسم_الموكّل}} للمتغيرات"
             />
           </div>
           <div className="flex gap-3 pt-1">

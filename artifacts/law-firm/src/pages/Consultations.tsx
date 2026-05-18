@@ -146,8 +146,8 @@ export default function Consultations() {
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="رقم الحريف" htmlFor="cs-client">
-              <Input id="cs-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} placeholder="ID الحريف" className={inputCls} dir="ltr" />
+            <FormField label="رقم الموكّل" htmlFor="cs-client">
+              <Input id="cs-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} placeholder="ID الموكّل" className={inputCls} dir="ltr" />
             </FormField>
             <FormField label="الحالة" htmlFor="cs-status">
               <SelectNative id="cs-status" value={form.status} onChange={e => setForm({...form, status: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>

@@ -205,13 +205,13 @@ function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u:
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>الحريف <Req /></Label>
+          <Label>الموكّل <Req /></Label>
           <div className="flex gap-2">
             <SelectNative value={form.clientId} onChange={e => upd({ clientId: e.target.value })} className={cls + " px-3 flex-1"}>
-              <option value="">اختر حريفاً...</option>
+              <option value="">اختر موكّلاً...</option>
               {clients.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
             </SelectNative>
-            <button type="button" onClick={onAddClient} title="حريف جديد"
+            <button type="button" onClick={onAddClient} title="موكّل جديد"
               className="h-10 px-2.5 rounded-lg border border-border bg-muted/50 hover:bg-primary/10 hover:border-primary text-muted-foreground hover:text-primary transition-all shrink-0">
               <Plus className="h-4 w-4" />
             </button>
@@ -242,15 +242,15 @@ function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u:
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>مصدر الحريف</Label>
+          <Label>مصدر الموكّل</Label>
           <SelectNative value={form.clientSource} onChange={e => upd({ clientSource: e.target.value })} className={cls + " px-3"}>
             <option value="">—</option>
             {CLIENT_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </SelectNative>
         </div>
         <div>
-          <Label>مرجع الحريف</Label>
-          <Input placeholder="رقم الملف لدى الحريف" className={cls}
+          <Label>مرجع الموكّل</Label>
+          <Input placeholder="رقم الملف لدى الموكّل" className={cls}
             value={form.clientFileRef} onChange={e => upd({ clientFileRef: e.target.value })} />
         </div>
       </div>
@@ -495,7 +495,7 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
             <Label>ملاحظات داخلية</Label>
             <textarea rows={3} className={txcls} placeholder="ملاحظات للاستخدام الداخلي فقط..."
               value={form.internalNotes} onChange={e => upd({ internalNotes: e.target.value })} />
-            <p className="text-xs text-muted-foreground mt-1">⚠️ هذه الملاحظات لا تظهر للحريف في بوابة العميل</p>
+            <p className="text-xs text-muted-foreground mt-1">⚠️ هذه الملاحظات لا تظهر للموكّل في بوابة العميل</p>
           </div>
         </div>
       </div>
@@ -554,7 +554,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
       upd({ clientId: String(nc.id) });
       setQuickClientOpen(false);
       setQuickClientForm({ name: "", clientType: "individual", phone: "", email: "" });
-      toast({ title: "تم إنشاء الحريف بنجاح" });
+      toast({ title: "تم إنشاء الموكّل بنجاح" });
     }
   }
 
@@ -734,9 +734,9 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         {quickClientOpen && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 rounded-2xl">
             <div className="bg-card border border-border rounded-xl p-5 max-w-sm w-full mx-4 space-y-4" dir="rtl">
-              <h3 className="font-semibold">حريف جديد</h3>
+              <h3 className="font-semibold">موكّل جديد</h3>
               <div>
-                <label className="block text-sm font-medium mb-1.5">نوع الحريف</label>
+                <label className="block text-sm font-medium mb-1.5">نوع الموكّل</label>
                 <div className="flex gap-3">
                   {([{v:"individual",l:"شخص طبيعي"},{v:"company",l:"شخص معنوي"}] as {v:string;l:string}[]).map(o => (
                     <button key={o.v} type="button" onClick={() => setQuickClientForm(f => ({ ...f, clientType: o.v }))}
@@ -762,7 +762,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => setQuickClientOpen(false)} className="px-4">إلغاء</Button>
-                <Button size="sm" className="flex-1" onClick={createQuickClient} disabled={!quickClientForm.name.trim()}>إنشاء الحريف</Button>
+                <Button size="sm" className="flex-1" onClick={createQuickClient} disabled={!quickClientForm.name.trim()}>إنشاء الموكّل</Button>
               </div>
             </div>
           </div>

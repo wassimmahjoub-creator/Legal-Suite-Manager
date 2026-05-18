@@ -121,11 +121,11 @@ export default function Clients() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">الحرفاء</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة معلومات وبيانات الحرفاء</p>
+          <h1 className="text-2xl font-bold">الموكّلون</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">إدارة معلومات وبيانات الموكّلون</p>
         </div>
         <Button onClick={openNew} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" /> حريف جديد
+          <Plus className="h-4 w-4" /> موكّل جديد
         </Button>
       </div>
 
@@ -147,8 +147,8 @@ export default function Clients() {
         <div className="bg-card rounded-xl shadow-sm">
           <EmptyState
             illustration={<EmptyClientsIllustration />}
-            title="لا حرفاء بعد"
-            description="أضف حريفك الأول — سيظهر هنا فور إضافته بالضغط على «+ حريف جديد» أعلاه"
+            title="لا موكّلون بعد"
+            description="أضف موكّلك الأول — سيظهر هنا فور إضافته بالضغط على «+ موكّل جديد» أعلاه"
           />
         </div>
       ) : (
@@ -211,10 +211,10 @@ export default function Clients() {
       )}
 
       {/* New / Edit Modal */}
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? `تعديل: ${editing.name}` : "إضافة حريف جديد"} size="lg">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? `تعديل: ${editing.name}` : "إضافة موكّل جديد"} size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="نوع الحريف" htmlFor="cl-type">
+            <FormField label="نوع الموكّل" htmlFor="cl-type">
               <SelectNative id="cl-type" className={inputCls + " px-3 cursor-pointer"}
                 value={form.clientType} onChange={e => setForm(f => ({ ...f, clientType: e.target.value }))}>
                 <option value="individual">شخص طبيعي</option>
@@ -251,11 +251,11 @@ export default function Clients() {
               value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
           </FormField>
           <FormField label="ملاحظات" htmlFor="cl-notes">
-            <SmartTextarea id="cl-notes" rows={2} placeholder="ملاحظات إضافية حول الحريف..." aiContext="ملاحظات حريف" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
+            <SmartTextarea id="cl-notes" rows={2} placeholder="ملاحظات إضافية حول الموكّل..." aiContext="ملاحظات موكّل" value={form.notes} onChange={v => setForm(f => ({ ...f, notes: v }))} />
           </FormField>
           <div className="flex gap-3 pt-2">
             <Button className="flex-1" onClick={save} disabled={saving || !form.name.trim()}>
-              {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الحريف"}
+              {saving ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "حفظ الموكّل"}
             </Button>
             <Button variant="outline" onClick={() => setModal(false)} className="px-6">إلغاء</Button>
           </div>
@@ -285,11 +285,11 @@ export default function Clients() {
           await authFetch(`${BASE}/api/clients/${clientToDelete!.id}/soft-delete`, { method: "PATCH" });
           await load();
         }}
-        title={`نقل الحريف "${clientToDelete?.name}" إلى سلة المحذوفات؟`}
-        description="سيتم نقل الحريف إلى سلة المحذوفات لمدة 30 يوماً ثم يُحذف نهائياً."
+        title={`نقل الموكّل "${clientToDelete?.name}" إلى سلة المحذوفات؟`}
+        description="سيتم نقل الموكّل إلى سلة المحذوفات لمدة 30 يوماً ثم يُحذف نهائياً."
         consequenceList={[
           "جميع ملفاته المرتبطة ستصبح غير متاحة",
-          "السجل المالي يُحفظ لكن منفصلاً عن الحريف",
+          "السجل المالي يُحفظ لكن منفصلاً عن الموكّل",
         ]}
         confirmationText={clientToDelete?.name}
         confirmLabel="نقل إلى سلة المحذوفات"

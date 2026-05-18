@@ -92,7 +92,7 @@ export default function Trash() {
         <div className="space-y-6">
           <Section title="القضايا" icon={Briefcase} entity="cases"
             items={data.cases.map(c => ({ id: c.id, label: c.title, deletedAt: c.deletedAt }))} />
-          <Section title="الحرفاء" icon={Users} entity="clients"
+          <Section title="الموكّلون" icon={Users} entity="clients"
             items={data.clients.map(c => ({ id: c.id, label: c.name, deletedAt: c.deletedAt }))} />
           <Section title="الوثائق" icon={FileText} entity="documents"
             items={data.documents.map(d => ({ id: d.id, label: d.name, deletedAt: d.deletedAt }))} />

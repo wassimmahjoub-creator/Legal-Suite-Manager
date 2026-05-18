@@ -90,8 +90,8 @@ const LABELS = {
   ar: {
     docTitle: "بطاقة القضية",
     caseFile: "ملف القضية",
-    client: "الحريف",
-    clientType: "صنف الحريف",
+    client: "الموكّل",
+    clientType: "صنف الموكّل",
     taxId: "المعرف الجبائي",
     phone: "الهاتف",
     address: "العنوان",

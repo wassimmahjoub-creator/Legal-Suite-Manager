@@ -70,7 +70,7 @@ export default function Cases() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="بحث بالعنوان، الحريف، أو رقم الملف..."
+            placeholder="بحث بالعنوان، الموكّل، أو رقم الملف..."
             className="pe-9 h-10 bg-card border-border"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -110,7 +110,7 @@ export default function Cases() {
               <TableRow>
                 <TableHead className="text-start py-3 font-semibold w-28">رقم الملف</TableHead>
                 <TableHead className="text-start py-3 font-semibold">القضية</TableHead>
-                <TableHead className="text-start py-3 font-semibold">الحريف</TableHead>
+                <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden md:table-cell">المحكمة</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الحالة</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">الجلسة القادمة</TableHead>

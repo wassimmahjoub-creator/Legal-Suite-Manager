@@ -189,7 +189,7 @@ export default function InvoicePage() {
           <Card className="border-none shadow-md">
             <CardContent className="pt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">الحريف</p>
+                <p className="text-xs text-muted-foreground mb-1">الموكّل</p>
                 <button
                   onClick={() => navigate(`/clients/${inv.clientId}`)}
                   className="flex items-center gap-1.5 font-semibold text-base hover:text-primary transition-colors group text-right"
@@ -345,7 +345,7 @@ export default function InvoicePage() {
         onClose={() => setConfirmUnlock(false)}
         onConfirm={doUnlock}
         title="إلغاء قفل الفاتورة؟"
-        description="ستعود الفاتورة إلى حالة مسودة وستتمكن من تعديل جميع معلوماتها. إذا كانت قد أُرسلت للحريف، تأكد من إعادة إصدارها بعد التعديل."
+        description="ستعود الفاتورة إلى حالة مسودة وستتمكن من تعديل جميع معلوماتها. إذا كانت قد أُرسلت للموكّل، تأكد من إعادة إصدارها بعد التعديل."
         confirmLabel="إلغاء القفل والتعديل"
       />
 
