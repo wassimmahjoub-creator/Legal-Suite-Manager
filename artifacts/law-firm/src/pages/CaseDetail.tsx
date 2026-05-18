@@ -497,7 +497,11 @@ export default function CaseDetail() {
             {sortedHearings.map(h => {
               const isPast = h.date < new Date().toISOString().slice(0, 10);
               return (
-                <div key={h.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isPast ? "border-border bg-muted/10 opacity-60" : "border-primary/20 bg-primary/5"}`}>
+                <div key={h.id} onClick={() => {
+                    setHEditId(h.id);
+                    setHForm({ title: h.title ?? "", date: h.date ?? new Date().toISOString().slice(0,10), time: h.time ?? "", type: h.type ?? "hearing", legalStatus: h.legalStatus ?? "scheduled", court: h.court ?? "", division: h.division ?? "", location: h.location ?? "", objective: h.objective ?? "", duration: "60" });
+                    setModal("hearing");
+                  }} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:border-primary/40 transition-colors ${isPast ? "border-border bg-muted/10 opacity-60" : "border-primary/20 bg-primary/5"}`}>
                   <div className="p-2 rounded-lg bg-primary/10 shrink-0">
                     <Calendar className="h-4 w-4 text-primary" />
                   </div>
@@ -512,16 +516,9 @@ export default function CaseDetail() {
                       {h.court && <span>{h.court}{h.division ? ` / ${h.division}` : ""}</span>}
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => {
-                      setHEditId(h.id);
-                      setHForm({ title: h.title ?? "", date: h.date ?? new Date().toISOString().slice(0,10), time: h.time ?? "", type: h.type ?? "hearing", legalStatus: h.legalStatus ?? "scheduled", court: h.court ?? "", division: h.division ?? "", location: h.location ?? "", objective: h.objective ?? "", duration: "60" });
-                      setModal("hearing");
-                    }} className="p-1.5 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                    <button onClick={async () => { if (!confirm("حذف هذه الجلسة؟")) return; await authFetch(`${BASE}/api/events/${h.id}`, { method: "DELETE" }); load.hearings(); }} className="p-1.5 hover:bg-destructive/10 rounded-lg">
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </button>
-                  </div>
+                  <button onClick={e => { e.stopPropagation(); if (!confirm("حذف هذه الجلسة؟")) return; authFetch(`${BASE}/api/events/${h.id}`, { method: "DELETE" }).then(() => load.hearings()); }} className="p-1.5 hover:bg-destructive/10 rounded-lg shrink-0">
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </button>
                 </div>
               );
             })}
@@ -548,10 +545,14 @@ export default function CaseDetail() {
               const isOver = !d.completedAt && d.dueDate < today;
               const days   = daysFromNow(d.dueDate);
               return (
-                <div key={d.id} className={`p-4 rounded-xl border ${d.completedAt ? "opacity-50 border-border bg-muted/20" : URGENCY_COLORS[d.urgency]}`}>
+                <div key={d.id} onClick={() => {
+                    setDlEditId(d.id);
+                    setDlForm({ title: d.title, type: d.type, dueDate: d.dueDate ?? "", urgency: d.urgency, notes: d.notes ?? "" });
+                    setModal("deadline");
+                  }} className={`p-4 rounded-xl border cursor-pointer hover:border-primary/40 transition-colors ${d.completedAt ? "opacity-50 border-border bg-muted/20" : URGENCY_COLORS[d.urgency]}`}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <button onClick={async () => { if (d.completedAt) return; await authFetch(`${BASE}/api/deadlines/${d.id}/complete`, { method: "PATCH" }); load.deadlines(); }} className={d.completedAt ? "text-green-400" : "text-muted-foreground hover:text-green-400 transition-colors"}>
+                      <button onClick={e => { e.stopPropagation(); if (d.completedAt) return; authFetch(`${BASE}/api/deadlines/${d.id}/complete`, { method: "PATCH" }).then(() => load.deadlines()); }} className={d.completedAt ? "text-green-400" : "text-muted-foreground hover:text-green-400 transition-colors"}>
                         {d.completedAt ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
                       </button>
                       <div>
@@ -564,14 +565,7 @@ export default function CaseDetail() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => {
-                        setDlEditId(d.id);
-                        setDlForm({ title: d.title, type: d.type, dueDate: d.dueDate ?? "", urgency: d.urgency, notes: d.notes ?? "" });
-                        setModal("deadline");
-                      }} className="p-1 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                      <button onClick={() => setConfirmDeadlineId(d.id)} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
-                    </div>
+                    <button onClick={e => { e.stopPropagation(); setConfirmDeadlineId(d.id); }} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 </div>
               );
@@ -617,22 +611,21 @@ export default function CaseDetail() {
         ) : (
           <div className="space-y-2">
             {filtered.map(doc => (
-              <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border">
+              <div key={doc.id} onClick={() => {
+                  setDocEditId(doc.id);
+                  setDocForm({ name: doc.name ?? "", fileType: doc.fileType ?? "عقد", url: doc.url ?? "" });
+                  setModal("upload-doc");
+                }} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border cursor-pointer hover:border-primary/40 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"><FileText className="h-4 w-4" /></div>
                   <div>
                     <p className="font-medium text-sm">{doc.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatDateTN(doc.createdAt)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTN(doc.createdAt)}{doc.fileType ? ` · ${doc.fileType}` : ""}</p>
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  {doc.url && <a href={doc.url} target="_blank" rel="noreferrer" className="p-1.5 hover:bg-muted rounded-lg"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></a>}
-                  <button onClick={() => {
-                    setDocEditId(doc.id);
-                    setDocForm({ name: doc.name ?? "", fileType: doc.fileType ?? "عقد", url: doc.url ?? "" });
-                    setModal("upload-doc");
-                  }} className="p-1.5 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                  <button onClick={() => setConfirmDocId(doc.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                  {doc.url && <a href={doc.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="p-1.5 hover:bg-muted rounded-lg"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></a>}
+                  <button onClick={e => { e.stopPropagation(); setConfirmDocId(doc.id); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                 </div>
               </div>
             ))}
