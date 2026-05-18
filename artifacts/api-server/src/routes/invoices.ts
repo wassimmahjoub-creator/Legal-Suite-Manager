@@ -204,6 +204,26 @@ router.post("/invoices/:id/issue", async (req, res) => {
   res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
 });
 
+// ── Unlock ────────────────────────────────────────────────────────────────────
+
+router.post("/invoices/:id/unlock", async (req, res) => {
+  const id = Number(req.params.id);
+  const [existing] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
+  if (!existing) return res.status(404).json({ error: "Not found" });
+  if (!existing.lockedAt) return res.status(409).json({ error: "Facture déjà déverrouillée" });
+  if (existing.cancelledByInvoiceId) return res.status(409).json({ error: "Facture annulée, impossible de déverrouiller" });
+
+  await db.update(invoicesTable).set({
+    lockedAt: null,
+    status: "draft",
+    updatedAt: new Date(),
+  }).where(eq(invoicesTable.id, id));
+
+  const [fresh] = await withJoins().where(eq(invoicesTable.id, id));
+  const lines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id)).orderBy(invoiceLinesTable.position);
+  res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
+});
+
 // ── Record Payment ────────────────────────────────────────────────────────────
 
 router.post("/invoices/:id/payment", async (req, res) => {

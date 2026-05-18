@@ -46,8 +46,10 @@ export default function InvoicePage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
   const [creditLoading, setCreditLoading] = useState(false);
+  const [unlockLoading, setUnlockLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmCreditNote, setConfirmCreditNote] = useState(false);
+  const [confirmUnlock, setConfirmUnlock] = useState(false);
 
   async function load() {
     const [invRes, cabRes] = await Promise.all([
@@ -73,6 +75,15 @@ export default function InvoicePage() {
     setSavingPayment(false);
     setPaymentModal(false);
     setPaymentAmount("");
+  }
+
+  async function doUnlock() {
+    if (!inv) return;
+    setUnlockLoading(true);
+    const r = await authFetch(`${BASE}/api/invoices/${inv.id}/unlock`, { method: "POST" });
+    if (r.ok) { await load(); }
+    setUnlockLoading(false);
+    setConfirmUnlock(false);
   }
 
   async function doCreditNote() {
@@ -146,6 +157,11 @@ export default function InvoicePage() {
               <Button variant="outline" size="sm" className="gap-2"
                 onClick={() => setPaymentModal(true)}>
                 <CreditCard className="h-4 w-4" /> تسجيل دفعة
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2 text-orange-400 hover:text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                onClick={() => setConfirmUnlock(true)} disabled={unlockLoading}>
+                {unlockLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                إلغاء القفل للتعديل
               </Button>
               <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive"
                 onClick={() => setConfirmCreditNote(true)} disabled={creditLoading}>
@@ -321,6 +337,16 @@ export default function InvoicePage() {
         description="سيتم نقل هذه المسودة إلى سلة المحذوفات."
         confirmationText={inv?.invoiceNumber ?? undefined}
         confirmLabel="حذف المسودة"
+      />
+
+      {/* Confirm unlock */}
+      <ConfirmDestructive
+        open={confirmUnlock}
+        onClose={() => setConfirmUnlock(false)}
+        onConfirm={doUnlock}
+        title="إلغاء قفل الفاتورة؟"
+        description="ستعود الفاتورة إلى حالة مسودة وستتمكن من تعديل جميع معلوماتها. إذا كانت قد أُرسلت للحريف، تأكد من إعادة إصدارها بعد التعديل."
+        confirmLabel="إلغاء القفل والتعديل"
       />
 
       {/* Confirm credit note */}
