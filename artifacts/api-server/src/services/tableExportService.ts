@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import {
@@ -647,16 +649,30 @@ export interface CaseZipOptions {
 function pad2(n: number) { return String(n).padStart(2, "0"); }
 function isoDate(d: Date) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 
-/** Derive a safe filename from a document name + fileType stored in DB */
-function docFilename(name: string, fileType: string | null, index: number): string {
+/** Derive a safe filename from a document name, using actual file extension from URL when available */
+function docFilename(name: string, url: string | null, index: number): string {
   const safe = name.replace(/[<>:"/\\|?*\x00-\x1F]/g, "-").trim() || `وثيقة-${index + 1}`;
-  const ext = fileType ? `.${fileType.toLowerCase().replace(/^\./, "")}` : "";
-  return ext && safe.toLowerCase().endsWith(ext) ? safe : `${safe}${ext}`;
+  // Extract real extension from URL (e.g. /api/uploads/files/uuid.pdf → .pdf)
+  const urlExt = url ? path.extname(url.split("?")[0]).toLowerCase() : "";
+  if (urlExt && !safe.toLowerCase().endsWith(urlExt)) return `${safe}${urlExt}`;
+  return safe;
 }
 
-/** Try to download a document from its URL; returns null if unavailable */
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
+const UPLOADS_URL_PREFIX = /^(?:\/[^/]+)?\/api\/uploads\/files\//;
+
+/** Try to read a document; handles local uploads directly from disk, falls back to HTTP fetch */
 async function fetchDocumentBuffer(url: string): Promise<Buffer | null> {
   try {
+    const localMatch = url.match(UPLOADS_URL_PREFIX);
+    if (localMatch) {
+      const filename = url.slice(localMatch[0].length);
+      const filePath = path.join(UPLOADS_DIR, filename);
+      if (!fs.existsSync(filePath)) return null;
+      return fs.readFileSync(filePath);
+    }
+    // External URL — fetch over HTTP
+    if (!url.startsWith("http://") && !url.startsWith("https://")) return null;
     const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) return null;
     return Buffer.from(await r.arrayBuffer());
@@ -703,7 +719,7 @@ export async function generateCaseZip(caseId: number, opts: CaseZipOptions = {})
     if (!doc.url) continue;
     const buf = await fetchDocumentBuffer(doc.url);
     if (buf) {
-      docFiles.push({ filename: docFilename(doc.name, doc.fileType, i), buf });
+      docFiles.push({ filename: docFilename(doc.name, doc.url, i), buf });
     }
   }
 
