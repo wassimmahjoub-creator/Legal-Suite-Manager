@@ -197,6 +197,7 @@ export default function CaseDetail() {
   const [oppForm,  setOppForm]  = useState({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" });
   const [procForm, setProcForm] = useState({ stage: "ابتدائي", status: "جارية", notes: "", startedAt: "", endedAt: "" });
   const [dlForm,   setDlForm]   = useState({ title: "", type: "custom", dueDate: "", urgency: "normal", notes: "" });
+  const [dlEditId, setDlEditId] = useState<number | null>(null);
   const [confForm, setConfForm] = useState({ content: "" });
   const [relForm,  setRelForm]  = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
@@ -554,7 +555,14 @@ export default function CaseDetail() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => setConfirmDeadlineId(d.id)} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => {
+                        setDlEditId(d.id);
+                        setDlForm({ title: d.title, type: d.type, dueDate: d.dueDate ?? "", urgency: d.urgency, notes: d.notes ?? "" });
+                        setModal("deadline");
+                      }} className="p-1 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                      <button onClick={() => setConfirmDeadlineId(d.id)} className="p-1 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1254,7 +1262,7 @@ export default function CaseDetail() {
       </Modal>
 
       {/* Deadline modal */}
-      <Modal open={modal === "deadline"} onClose={() => setModal(null)} title="إضافة أجل قانوني">
+      <Modal open={modal === "deadline"} onClose={() => { setModal(null); setDlEditId(null); }} title={dlEditId ? "تعديل الأجل القانوني" : "إضافة أجل قانوني"}>
         <div className="space-y-4">
           <FormField label="نوع الأجل" htmlFor="dl-type">
             <SelectNative id="dl-type" value={dlForm.type} onChange={e => setDlForm({...dlForm, type: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
@@ -1275,8 +1283,15 @@ export default function CaseDetail() {
             </FormField>
           </div>
           <div className="flex gap-3">
-            <Button className="flex-1" disabled={saving || (dlForm.type === "custom" && !dlForm.dueDate)} onClick={() => withSave(async () => { await authFetch(`${BASE}/api/cases/${id}/deadlines`, { method: "POST", body: JSON.stringify(dlForm) }); }, load.deadlines)}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
-            <Button variant="outline" onClick={() => setModal(null)} className="px-5">إلغاء</Button>
+            <Button className="flex-1" disabled={saving || (dlForm.type === "custom" && !dlForm.dueDate)} onClick={() => withSave(async () => {
+              if (dlEditId) {
+                await authFetch(`${BASE}/api/deadlines/${dlEditId}`, { method: "PUT", body: JSON.stringify(dlForm) });
+                setDlEditId(null);
+              } else {
+                await authFetch(`${BASE}/api/cases/${id}/deadlines`, { method: "POST", body: JSON.stringify(dlForm) });
+              }
+            }, load.deadlines)}>{saving ? "جارٍ الحفظ..." : dlEditId ? "حفظ التعديلات" : "حفظ"}</Button>
+            <Button variant="outline" onClick={() => { setModal(null); setDlEditId(null); }} className="px-5">إلغاء</Button>
           </div>
         </div>
       </Modal>

@@ -80,6 +80,20 @@ router.post("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
   res.status(201).json(row);
 });
 
+router.put("/deadlines/:id", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const { title, type, dueDate, urgency, notes } = req.body;
+  const [row] = await db.update(deadlinesTable).set({
+    ...(title     !== undefined && { title }),
+    ...(type      !== undefined && { type }),
+    ...(dueDate   !== undefined && { dueDate: dueDate || null }),
+    ...(urgency   !== undefined && { urgency }),
+    ...(notes     !== undefined && { notes: notes || null }),
+  }).where(eq(deadlinesTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "غير موجود" }); return; }
+  res.json(row);
+});
+
 router.patch("/deadlines/:id/complete", requireAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [row] = await db.update(deadlinesTable).set({ completedAt: new Date() }).where(eq(deadlinesTable.id, id)).returning();
