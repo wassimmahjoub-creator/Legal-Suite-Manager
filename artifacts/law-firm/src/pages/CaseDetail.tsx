@@ -1093,7 +1093,6 @@ export default function CaseDetail() {
               <CasePdfButton caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
               <Button
                 size="sm"
-                variant="outline"
                 className="gap-1.5 text-xs"
                 title="تصدير الملف القضائي"
                 onClick={async () => {
