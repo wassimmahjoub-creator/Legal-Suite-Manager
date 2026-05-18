@@ -104,7 +104,7 @@ function toDateKey(dateStr: string): string {
 
 function entityLink(type: string | null | undefined, id: number | null | undefined): string | null {
   if (!type || !id) return null;
-  if (type === "invoice") return `/invoices/${id}`;
+  if (type === "invoice") return `/billing/${id}`;
   if (type === "document") return `/documents`;
   if (type === "hearing") return `/agenda?event=${id}`;
   if (type === "opponent") return `/opponents`;
