@@ -252,7 +252,7 @@ export function CaseJudgmentTab({ caseId, onStagesChanged }: CaseJudgmentTabProp
           open={showTransition}
           stage={panelStage}
           caseId={caseId}
-          onClose={() => setShowTransition(false)}
+          onClose={() => { setShowTransition(false); setPanelStage(null); }}
           onDone={handleTransitionDone}
         />
       )}
