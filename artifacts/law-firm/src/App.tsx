@@ -44,6 +44,7 @@ import Subscription from "@/pages/Subscription";
 import Pricing from "@/pages/Pricing";
 import ComponentsDevPage from "@/pages/dev/Components";
 import Conflicts from "@/pages/Conflicts";
+import DataPrivacy from "@/pages/DataPrivacy";
 
 const queryClient = new QueryClient();
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -135,6 +136,7 @@ function Router() {
               <Route path="/settings" component={Settings} />
               <Route path="/users" component={UserManagement} />
               <Route path="/conflicts" component={Conflicts} />
+              <Route path="/data-privacy" component={DataPrivacy} />
               <Route path="/subscription" component={Subscription} />
               <Route path="/pricing" component={Pricing} />
               {import.meta.env.DEV && (

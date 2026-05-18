@@ -18,7 +18,7 @@ import {
   ChevronRight, MoreHorizontal, Star, CreditCard, Receipt,
   CheckCircle2, AlertCircle, Calendar, Hash, Loader2, Upload,
   FileImage, File, FileSpreadsheet, ArrowUpRight, ArrowDownLeft, ArrowRight, Send,
-  Play, Pause, Square, Timer, TrendingUp, ShieldAlert,
+  Play, Pause, Square, Timer, TrendingUp, ShieldAlert, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CourtSelect } from "@/components/CourtSelect";
@@ -432,6 +432,26 @@ export default function ClientPage() {
             <div className="flex items-center gap-2">
               <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs">
                 <Pencil className="h-3.5 w-3.5" /> تعديل
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                title="تصدير بيانات الموكّل"
+                className="gap-1.5 text-xs"
+                onClick={async () => {
+                  const r = await authFetch(`${BASE}/api/data-exports`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ exportType: "single_client", scopeId: client?.id }),
+                  });
+                  if (r.ok) {
+                    toast({ title: "بدأت عملية التصدير", description: "انتقل إلى «البيانات والخصوصية» لمتابعة التقدم" });
+                  } else {
+                    toast({ title: "فشل إنشاء التصدير", variant: "destructive" });
+                  }
+                }}
+              >
+                <Download className="h-3.5 w-3.5" /> تصدير
               </Button>
               <button
                 onClick={deleteClient}

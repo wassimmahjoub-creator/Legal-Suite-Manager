@@ -1,0 +1,166 @@
+Implémente le système d'export complet RGPD-like + obligation déontologique tunisienne.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — SCHÉMA
+═══════════════════════════════════════════════════════
+
+Table data_exports :
+
+CREATE TABLE data_exports (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cabinet_id uuid REFERENCES cabinets(id), -- ou organization_id
+  requested_by uuid REFERENCES users(id) NOT NULL,
+  export_type enum NOT NULL, -- 'full_cabinet', 'single_client', 'single_case'
+  scope_id uuid, -- client_id ou case_id selon export_type
+  status enum DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
+  started_at timestamptz,
+  completed_at timestamptz,
+  file_path text, -- chemin du ZIP généré
+  file_size_bytes bigint,
+  download_url text, -- URL signée temporaire (expire 7 jours)
+  download_expires_at timestamptz,
+  download_count int DEFAULT 0,
+  error_message text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_data_exports_cabinet ON data_exports(cabinet_id);
+CREATE INDEX idx_data_exports_user ON data_exports(requested_by);
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — SERVICE D'EXPORT
+═══════════════════════════════════════════════════════
+
+Crée src/services/dataExportService.ts :
+
+class DataExportService {
+  static async createExport(opts: ExportOptions): Promise<DataExport> {
+    // 1. Insert data_exports ligne avec status='pending'
+    // 2. Enqueue job background (BullMQ, Inngest, ou similaire)
+    // 3. Return le data_export id pour suivi
+  }
+
+  static async processExport(exportId: string): Promise<void> {
+    // Job worker exécute cette méthode
+    // 1. UPDATE status='processing', started_at=now()
+    // 2. Construction de l'archive selon type
+    // 3. Upload vers storage (S3, R2, ou disque local)
+    // 4. Génération URL signée (expire 7j)
+    // 5. UPDATE status='completed', completed_at, file_path, download_url, download_expires_at
+    // 6. Send email à requested_by avec lien
+  }
+}
+
+CONTENU DU ZIP selon export_type :
+
+Pour 'full_cabinet' :
+/
+├── README.txt (explications, structure du ZIP, date d'export)
+├── cabinet/
+│   └── settings.json
+├── users/
+│   └── users.json (liste des avocats du cabinet, sans mots de passe)
+├── clients/
+│   ├── clients.json (tous les clients avec leurs champs)
+│   └── per-client/
+│       └── client-{id}/
+│           ├── client.json
+│           ├── contacts.json
+│           └── financial-summary.json
+├── opponents/
+│   └── opponents.json
+├── cases/
+│   ├── cases.json (résumé tous dossiers)
+│   └── per-case/
+│       └── case-{id}/
+│           ├── case.json (tous les champs)
+│           ├── case-opponents.json
+│           ├── case-team.json
+│           ├── case-stages.json
+│           ├── case-events.json (timeline complète)
+│           ├── legal-deadlines.json
+│           ├── invoices.json
+│           ├── time-entries.json
+│           ├── expenses.json
+│           ├── documents/
+│           │   └── [tous les documents originaux uploadés]
+│           ├── conflicts.json (si conflict_checks existent)
+│           └── full-case-report.pdf (export PDF du dossier livré en T8)
+├── invoices/
+│   └── per-invoice/
+│       └── invoice-{number}/
+│           ├── invoice.json
+│           ├── invoice-lines.json
+│           ├── payments.json
+│           └── invoice.pdf
+└── audit/
+    └── data-export-manifest.json (signature numérique des fichiers, hash SHA-256 de chaque fichier)
+
+Pour 'single_client' :
+Même structure mais filtrée sur ce client uniquement (lui + ses dossiers + ses factures + ses paiements).
+
+Pour 'single_case' :
+Même structure mais filtrée sur ce dossier uniquement.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — UI
+═══════════════════════════════════════════════════════
+
+Page Settings → "البيانات والخصوصية" :
+
+Section 1 — "تصدير كامل لبيانات المكتب" :
+- Description : "احصل على نسخة كاملة لجميع بيانات مكتبك (الملفات، الحرفاء، الفواتير، الوثائق...)"
+- Bouton primaire "بدء التصدير الكامل"
+- Au clic : modal de confirmation explicative
+- Après confirmation : insert data_exports + toast "بدأت عملية التصدير. ستتلقى رسالة بريد إلكتروني عند الانتهاء"
+
+Section 2 — "صادراتي" :
+- Table des data_exports passés du cabinet
+- Colonnes : date, type, statut, taille, lien de téléchargement (si actif), expiration
+- Si export en cours : afficher "جاري المعالجة..." avec spinner
+
+Section 3 — "تصدير حسب الحريف (حق المحو)" :
+- Autocomplete client
+- Bouton "تصدير وحذف" (en rouge — destructif)
+- À l'usage : modal de double confirmation, génère un export du client puis offre un soft delete (le client reste en DB mais marqué as_exported_for_deletion)
+
+Section 4 — "سجل عمليات التصدير" :
+- Audit log : qui a exporté quoi, quand, taille du fichier
+- Pour conformité
+
+Sur la fiche client (T3) :
+- Bouton "تصدير بيانات هذا الحريف" dans le menu actions
+
+Sur la fiche dossier (T17b) :
+- Bouton "تصدير هذا الملف" dans le menu actions du header
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — SÉCURITÉ ET CONFORMITÉ
+═══════════════════════════════════════════════════════
+
+1. URLs de téléchargement signées (HMAC-signed, expirent 7 jours).
+2. Quota : 1 export complet par cabinet par 24h (anti-abus).
+3. Audit log immutable des exports (qui a téléchargé, quand).
+4. Hash SHA-256 de chaque fichier dans le manifest pour intégrité.
+5. Si le ZIP > 500 MB, le découper en parties (zip multipart).
+6. Suppression automatique du fichier ZIP du storage après expiration (7 jours).
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. Migration data_exports.
+2. Service DataExportService avec job background.
+3. Page /settings/data-privacy.
+4. Boutons d'export sur fiche client et fiche dossier.
+5. Templates d'email "Votre export est prêt" (AR + FR).
+6. Tests : export complet d'un cabinet de test, vérifier la structure du ZIP.
+7. Capture : page settings + email reçu + structure du ZIP.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Le job d'export ne doit pas bloquer le système (workers séparés).
+- Les exports ne lisent que (jamais d'écriture / suppression accidentelle).
+- Performance : un cabinet avec 100 dossiers doit générer un export en moins de 10 minutes.

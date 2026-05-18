@@ -7,7 +7,7 @@ import {
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X, Crown, AlertTriangle,
+  MoreHorizontal, X, Crown, AlertTriangle, Download,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -62,6 +62,7 @@ const NAV_SYSTEM = [
   { href: "/legal-config",  label: "الإعدادات القانونية", icon: Settings2    },
   { href: "/audit-logs",    label: "سجل التعديلات",       icon: ClipboardList},
   { href: "/conflicts",     label: "تعارض المصالح",       icon: ShieldCheck  },
+  { href: "/data-privacy",  label: "البيانات والخصوصية",  icon: Download     },
   { href: "/trash",         label: "سلة المحذوفات",       icon: Trash2       },
 ];
 

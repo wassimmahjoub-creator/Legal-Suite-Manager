@@ -26,7 +26,7 @@ import {
   Archive, Hash, Layers, Shield, Pencil, DollarSign,
   BarChart2, Timer, FolderOpen, Receipt, ArrowUpRight,
   ExternalLink, Scale, Upload, Banknote, TrendingDown,
-  Play, Pause, Square, TrendingUp,
+  Play, Pause, Square, TrendingUp, Download,
 } from "lucide-react";
 import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
@@ -1091,6 +1091,26 @@ export default function CaseDetail() {
               <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
               <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
               <CasePdfButton caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                title="تصدير الملف القضائي"
+                onClick={async () => {
+                  const r = await authFetch(`${BASE}/api/data-exports`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ exportType: "single_case", scopeId: Number(id) }),
+                  });
+                  if (r.ok) {
+                    toast({ title: "بدأت عملية تصدير الملف", description: "انتقل إلى «البيانات والخصوصية» لمتابعة التقدم" });
+                  } else {
+                    toast({ title: "فشل إنشاء التصدير", variant: "destructive" });
+                  }
+                }}
+              >
+                <Download className="h-3.5 w-3.5" />تصدير
+              </Button>
               <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
             </div>
           </div>
