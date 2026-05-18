@@ -175,7 +175,6 @@ export default function CaseDetail() {
     if (p in TAB_ALIASES) return TAB_ALIASES[p];
     return "overview";
   };
-  const [, navigate]    = useLocation();
   const fromReports     = new URLSearchParams(window.location.search).get("from") === "reports";
   const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL);
   const changeTab = useCallback((t: TabId) => {
