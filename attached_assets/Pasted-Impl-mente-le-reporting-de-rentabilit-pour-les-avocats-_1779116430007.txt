@@ -1,0 +1,130 @@
+Implémente le reporting de rentabilité pour les avocats tunisiens.
+
+PRÉREQUIS : T8 (time-entries), T7 (expenses), T4 (invoices), T17 (case_team, client_source) tous livrés.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — VUES SQL POUR AGRÉGATION
+═══════════════════════════════════════════════════════
+
+Crée des vues matérialisées (refresh quotidien) pour performance.
+
+CREATE MATERIALIZED VIEW case_profitability AS
+SELECT 
+  c.id AS case_id,
+  c.case_number,
+  c.title_ar,
+  c.client_id,
+  c.case_type,
+  c.opened_at,
+  c.status,
+  COALESCE(SUM(te.duration_minutes), 0) / 60.0 AS total_hours,
+  COALESCE(SUM(te.duration_minutes * c.hourly_rate / 60), 0) AS billable_value,
+  COALESCE(SUM(e.amount), 0) AS total_expenses,
+  COALESCE(SUM(i.total_ttc) FILTER (WHERE i.status != 'draft' AND i.status != 'cancelled'), 0) AS total_invoiced,
+  COALESCE(SUM(i.amount_paid), 0) AS total_collected,
+  COALESCE(SUM(i.amount_paid), 0) - COALESCE(SUM(e.amount), 0) AS gross_margin
+FROM cases c
+LEFT JOIN time_entries te ON te.case_id = c.id
+LEFT JOIN expenses e ON e.case_id = c.id
+LEFT JOIN invoices i ON i.case_id = c.id
+GROUP BY c.id;
+
+CREATE UNIQUE INDEX idx_case_profitability_id ON case_profitability(case_id);
+
+CREATE MATERIALIZED VIEW lawyer_performance AS
+SELECT 
+  u.id AS user_id,
+  u.name,
+  DATE_TRUNC('month', te.started_at) AS month,
+  COALESCE(SUM(te.duration_minutes), 0) / 60.0 AS total_hours,
+  COALESCE(SUM(te.duration_minutes) FILTER (WHERE te.is_billable), 0) / 60.0 AS billable_hours,
+  COUNT(DISTINCT te.case_id) AS distinct_cases,
+  COALESCE(SUM(te.duration_minutes * c.hourly_rate / 60) FILTER (WHERE te.is_billable), 0) AS revenue_generated
+FROM users u
+LEFT JOIN time_entries te ON te.user_id = u.id
+LEFT JOIN cases c ON c.id = te.case_id
+GROUP BY u.id, u.name, DATE_TRUNC('month', te.started_at);
+
+CREATE INDEX idx_lawyer_performance ON lawyer_performance(user_id, month);
+
+Cron quotidien : REFRESH MATERIALIZED VIEW CONCURRENTLY case_profitability; idem lawyer_performance.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — UI
+═══════════════════════════════════════════════════════
+
+Page /reports avec 3 onglets :
+
+ONGLET 1 — "ربحية الملفات"
+
+Filtres en haut :
+- Période : ce mois / ce trimestre / cette année / personnalisé (date range)
+- Statut : actifs / archivés / tous
+- Type de dossier
+- Avocat responsable
+
+KPI en haut :
+- إجمالي الساعات
+- إجمالي المفوتر
+- إجمالي المقبوض
+- الهامش الإجمالي
+
+Table principale :
+| رقم الملف | عنوان | حريف | المسؤول | ساعات | مصاريف | مفوتر | مقبوض | الهامش | معدل ساعي فعلي |
+
+معدل ساعي فعلي = total_collected / total_hours
+Coloration : vert si > seuil (à paramétrer, default 100 DT/h), orange entre 50-100, rouge < 50.
+
+Tri par défaut : marge décroissante.
+
+Bouton "تصدير CSV" en haut.
+
+ONGLET 2 — "أداء المحامين"
+
+Pour chaque avocat du cabinet, carte avec :
+- Avatar + nom
+- Ce mois : heures totales, heures facturables, taux de réalisation (%), CA généré, dossiers actifs
+
+Table détaillée :
+| المحامي | الساعات | الساعات الفوترية | معدل الفوترة | الملفات | المداخيل |
+
+ONGLET 3 — "مصدر الحريف"
+
+Pour chaque valeur de client_source (T17), agréger :
+- Nombre de clients
+- Nombre de dossiers ouverts
+- CA total généré
+- CA moyen par client
+- Taux de conversion (clients qui ont au moins 1 dossier / total clients)
+
+Affichage en table simple. Pas de graphique camembert au stade pilote.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — EXPORT CSV
+═══════════════════════════════════════════════════════
+
+Pour chaque onglet, bouton "تصدير CSV" qui génère :
+- Encodage UTF-8 BOM (pour Excel arabe)
+- Séparateur ; (Excel français)
+- En-têtes en arabe
+- Format numérique : virgule décimale, espace milliers
+
+═══════════════════════════════════════════════════════
+LIVRABLES
+═══════════════════════════════════════════════════════
+
+1. 2 vues matérialisées + cron de refresh.
+2. Page /reports avec 3 onglets.
+3. Endpoint GET /api/reports/case-profitability avec filtres.
+4. Endpoint GET /api/reports/lawyer-performance.
+5. Endpoint GET /api/reports/client-sources.
+6. Export CSV pour chaque rapport.
+7. Captures des 3 onglets remplis.
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Les pages existantes (dashboard, /billing) qui agrègent des données continuent de fonctionner.
+- Les vues matérialisées sont rafraîchies sans bloquer les écritures (CONCURRENTLY).
+- RTL préservé sur les tables.

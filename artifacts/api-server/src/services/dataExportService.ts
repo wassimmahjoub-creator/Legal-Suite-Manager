@@ -119,11 +119,6 @@ function addSheet(
 
 type ZipEntry = Buffer | string;
 
-function hashEntry(entry: ZipEntry): string {
-  const buf = typeof entry === "string" ? Buffer.from(entry, "utf8") : entry;
-  return createHash("sha256").update(buf).digest("hex");
-}
-
 function buildZip(files: Record<string, ZipEntry>, filePath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const output  = createWriteStream(filePath);
