@@ -224,8 +224,10 @@ export default function CaseDetail() {
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
     clientFileRef: "", opponentName: "", opponentLawyer: "", judgmentText: "",
   });
-  const [docForm,   setDocForm]   = useState({ name: "", fileType: "عقد", url: "" });
-  const [docEditId, setDocEditId] = useState<number | null>(null);
+  const [docForm,      setDocForm]      = useState({ name: "", fileType: "عقد", url: "" });
+  const [docEditId,    setDocEditId]    = useState<number | null>(null);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docUploadErr, setDocUploadErr] = useState<string | null>(null);
   const [noteText,  setNoteText]  = useState("");
   const [noteModal, setNoteModal] = useState(false);
   const [hearingEvents, setHearingEvents] = useState<HearingEvent[]>([]);
@@ -1497,24 +1499,76 @@ export default function CaseDetail() {
       <Modal open={modal === "upload-doc"} onClose={() => { setModal(null); setDocEditId(null); }} title={docEditId ? "تعديل الوثيقة" : "رفع وثيقة جديدة"}>
         <div className="space-y-4">
           {!docEditId && (
-            <label
-              className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
-              htmlFor="cd-doc-file"
-            >
-              <Upload className="h-10 w-10 text-muted-foreground/40" />
-              <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
-              <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
-              <input
-                id="cd-doc-file"
-                type="file"
-                className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file && !docForm.name) setDocForm(f => ({ ...f, name: file.name }));
-                }}
-              />
-            </label>
+            <div className="space-y-2">
+              <label
+                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer
+                  ${docUploading ? "border-primary/30 bg-primary/5 cursor-not-allowed" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                htmlFor="cd-doc-file"
+              >
+                {docUploading ? (
+                  <>
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <p className="font-medium text-sm text-primary">جارٍ رفع الملف…</p>
+                  </>
+                ) : docForm.url ? (
+                  <>
+                    <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-6 w-6 text-green-500" />
+                    </div>
+                    <p className="font-medium text-sm text-green-500">تم رفع الملف بنجاح</p>
+                    <p className="text-xs text-muted-foreground">انقر لاستبدال الملف</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-10 w-10 text-muted-foreground/40" />
+                    <p className="font-medium text-muted-foreground text-sm">اسحب الملف هنا أو انقر للاختيار</p>
+                    <p className="text-xs text-muted-foreground/60">PDF, Word, Excel, صور — حتى 20MB</p>
+                  </>
+                )}
+                <input
+                  id="cd-doc-file"
+                  type="file"
+                  className="hidden"
+                  disabled={docUploading}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif,.webp"
+                  onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setDocUploading(true);
+                    setDocUploadErr(null);
+                    try {
+                      const fd = new FormData();
+                      fd.append("file", file);
+                      const r = await authFetch(`${BASE}/api/uploads`, { method: "POST", body: fd });
+                      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "فشل الرفع");
+                      const { url } = await r.json();
+                      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+                      const extToType: Record<string, string> = {
+                        pdf: "وثيقة رسمية", doc: "عقد", docx: "عقد",
+                        xls: "تقرير خبرة", xlsx: "تقرير خبرة",
+                        csv: "أخرى", jpg: "أخرى", jpeg: "أخرى", png: "أخرى",
+                      };
+                      setDocForm(f => ({
+                        ...f,
+                        url,
+                        name: f.name || file.name.replace(/\.[^.]+$/, ""),
+                        fileType: extToType[ext] ?? f.fileType,
+                      }));
+                    } catch (err: unknown) {
+                      setDocUploadErr(err instanceof Error ? err.message : "فشل رفع الملف");
+                    } finally {
+                      setDocUploading(false);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </label>
+              {docUploadErr && (
+                <p className="text-xs text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{docUploadErr}
+                </p>
+              )}
+            </div>
           )}
           <FormField label="اسم الوثيقة *" htmlFor="cd-doc-name">
             <Input

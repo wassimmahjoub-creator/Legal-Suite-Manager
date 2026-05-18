@@ -39,6 +39,7 @@ import expensesRouter from "./expenses";
 import conflictChecksRouter from "./conflict-checks";
 import dataExportsRouter from "./data-exports.js";
 import exportsRouter from "./exports.js";
+import uploadsRouter from "./uploads.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -98,5 +99,6 @@ router.use(expensesRouter);
 router.use(conflictChecksRouter);
 router.use(dataExportsRouter);
 router.use(exportsRouter);
+router.use(uploadsRouter);
 
 export default router;
