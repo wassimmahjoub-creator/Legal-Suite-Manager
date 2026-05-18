@@ -537,6 +537,7 @@ function CaseProfitability() {
 ══════════════════════════════════════════════════════════════ */
 
 function LawyerPerformance() {
+  const [, navigate]          = useLocation();
   const [data, setData]       = useState<LawyerPerfRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -584,7 +585,9 @@ function LawyerPerformance() {
           {sorted.map(r => {
             const rt = rate(r);
             return (
-              <div key={r.userId} className="bg-[#1a2236] border border-white/10 rounded-xl p-4 space-y-3">
+              <div key={r.userId}
+                onClick={() => navigate(`/cases?userId=${r.userId}&userName=${encodeURIComponent(r.name)}&from=reports&fromTab=lawyers`)}
+                className="bg-[#1a2236] border border-white/10 rounded-xl p-4 space-y-3 cursor-pointer hover:border-[#D4AF37]/40 hover:bg-[#1e2840] transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center shrink-0">
                     <span className="text-[#D4AF37] font-bold text-sm">{r.name.charAt(0)}</span>
@@ -648,7 +651,9 @@ function LawyerPerformance() {
               </thead>
               <tbody>
                 {sorted.map((r, i) => (
-                  <tr key={r.userId} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                  <tr key={r.userId}
+                    onClick={() => navigate(`/cases?userId=${r.userId}&userName=${encodeURIComponent(r.name)}&from=reports&fromTab=lawyers`)}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
                     <td className="px-3 py-2 font-medium">{r.name}</td>
                     <td className="px-3 py-2 text-muted-foreground">{ROLE_AR[r.role] ?? r.role}</td>
                     <td className="px-3 py-2 text-center text-emerald-400">{r.activeCases}</td>
@@ -686,6 +691,7 @@ function LawyerPerformance() {
 ══════════════════════════════════════════════════════════════ */
 
 function ClientSources() {
+  const [, navigate]          = useLocation();
   const [data, setData]       = useState<ClientSourceRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -747,7 +753,9 @@ function ClientSources() {
               </thead>
               <tbody>
                 {sorted.map((r, i) => (
-                  <tr key={r.clientType} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                  <tr key={r.clientType}
+                    onClick={() => navigate(`/clients?type=${encodeURIComponent(r.clientType)}&typeName=${encodeURIComponent(r.clientTypeLabel)}&from=reports&fromTab=clients`)}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
                     <td className="px-3 py-2 font-bold text-white">{r.clientTypeLabel}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.clientCount}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.caseCount}</td>

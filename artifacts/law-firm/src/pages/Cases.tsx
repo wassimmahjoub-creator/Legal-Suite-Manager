@@ -1,6 +1,7 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { authFetch } from "@/lib/authFetch";
 import { formatDateTN, formatDateLongTN } from "@/lib/date";
 import { useListCases } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,15 +17,32 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyCasesIllustration } from "@/components/illustrations/EmptyCases";
 import { CaseWizard } from "@/components/cases/CaseWizard";
 
+const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
 export default function Cases() {
+  const params        = new URLSearchParams(window.location.search);
+  const userIdParam   = params.get("userId");
+  const userNameParam = params.get("userName");
+  const fromParam     = params.get("from");
+  const fromTabParam  = params.get("fromTab");
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewArchived, setViewArchived] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
   const [, navigate] = useLocation();
   const { data: cases, isLoading, refetch } = useListCases();
 
-  const filteredCases = cases?.filter((c: any) => {
+  useEffect(() => {
+    if (!userIdParam) { setLawyerCases(null); return; }
+    authFetch(`${BASE}/api/cases?userId=${userIdParam}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setLawyerCases);
+  }, [userIdParam]);
+
+  const casesSource = lawyerCases ?? cases;
+  const filteredCases = casesSource?.filter((c: any) => {
     if (viewArchived) {
       if (!c.archivedAt) return false;
     } else {
@@ -37,6 +55,18 @@ export default function Cases() {
 
   return (
     <div className="space-y-6">
+      {/* Back-to-reports banner */}
+      {fromParam === "reports" && userNameParam && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+          <button onClick={() => navigate(`/reports?tab=${fromTabParam ?? "lawyers"}`)}
+            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors shrink-0">
+            <ArrowRight className="h-3.5 w-3.5" /> التقارير
+          </button>
+          <span className="text-xs text-muted-foreground">ملفات المحامي:</span>
+          <span className="text-xs font-bold text-white">{userNameParam}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-start gap-3">

@@ -35,6 +35,12 @@ const EMPTY = { name: "", clientType: "individual", phone: "", email: "", addres
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
 
 export default function Clients() {
+  const urlParams  = new URLSearchParams(window.location.search);
+  const typeParam  = urlParams.get("type");
+  const typeNameParam = urlParams.get("typeName");
+  const fromParam  = urlParams.get("from");
+  const fromTabParam = urlParams.get("fromTab");
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -111,15 +117,26 @@ export default function Clients() {
     setClientToDelete(client);
   }
 
-  const filtered = clients.filter(c =>
-    !search ||
-    c.name.includes(search) ||
-    (c.phone && c.phone.includes(search)) ||
-    (c.email && c.email.includes(search))
-  );
+  const filtered = clients.filter(c => {
+    if (typeParam && c.clientType !== typeParam) return false;
+    if (!search) return true;
+    return c.name.includes(search) || (c.phone && c.phone.includes(search)) || (c.email && c.email.includes(search));
+  });
 
   return (
     <div className="space-y-6">
+      {/* Back-to-reports banner */}
+      {fromParam === "reports" && typeNameParam && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+          <button onClick={() => navigate(`/reports?tab=${fromTabParam ?? "clients"}`)}
+            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors shrink-0">
+            <ArrowRight className="h-3.5 w-3.5" /> التقارير
+          </button>
+          <span className="text-xs text-muted-foreground">تصفية حسب نوع الموكّل:</span>
+          <span className="text-xs font-bold text-white">{typeNameParam}</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">الموكّلون</h1>

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, casesTable, clientsTable } from "@workspace/db";
-import { eq, isNull, like, sql } from "drizzle-orm";
+import { eq, isNull, like, sql, inArray } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 
@@ -81,7 +81,7 @@ function extractExtras(body: Record<string, unknown>) {
 }
 
 router.get("/cases", async (req, res) => {
-  const { status, court, clientId, search, archived } = req.query as Record<string, string>;
+  const { status, court, clientId, search, archived, userId } = req.query as Record<string, string>;
   const rows = await db
     .select(caseFields)
     .from(casesTable)
@@ -98,6 +98,15 @@ router.get("/cases", async (req, res) => {
   if (status) filtered = filtered.filter((r) => r.status === status);
   if (court) filtered = filtered.filter((r) => r.court === court);
   if (clientId) filtered = filtered.filter((r) => r.clientId === Number(clientId));
+  if (userId) {
+    const { caseTeamsTable } = await import("@workspace/db");
+    const teamRows = await db
+      .select({ caseId: caseTeamsTable.caseId })
+      .from(caseTeamsTable)
+      .where(eq(caseTeamsTable.userId, Number(userId)));
+    const caseIds = new Set(teamRows.map((r) => r.caseId));
+    filtered = filtered.filter((r) => caseIds.has(r.id));
+  }
   if (search) filtered = filtered.filter((r) =>
     r.title.toLowerCase().includes(search.toLowerCase()) ||
     (r.caseNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
