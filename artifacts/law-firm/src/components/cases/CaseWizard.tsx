@@ -140,8 +140,9 @@ const defaultForm = (): WizardForm => ({
 
 // ── Validation ──────────────────────────────────────────────────────────
 
-function isStepValid(step: number, f: WizardForm) {
-  if (step === 1) return f.title.trim() !== "" && f.clientId !== "" && f.caseType !== "" && f.openedAt !== "";
+function isStepValid(step: number, f: WizardForm, editMode = false) {
+  if (step === 1) return f.title.trim() !== "" && f.clientId !== "";
+  if (editMode) return true; // steps 2-4 are optional when editing
   if (step === 2) return f.litigationDegree !== "" && f.procedureType !== "";
   if (step === 3) return f.opponents.some(o => o.name.trim() !== "") && f.responsibleUserId !== "";
   if (step === 4) {
@@ -499,9 +500,13 @@ interface CaseWizardProps {
   open: boolean;
   onClose: () => void;
   onCreated: (caseId: number) => void;
+  /** When provided, wizard runs in edit mode */
+  caseId?: number;
+  initialData?: Partial<WizardForm>;
 }
 
-export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
+export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: CaseWizardProps) {
+  const editMode = !!caseId;
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<WizardForm>(defaultForm());
   const [clients, setClients] = useState<Client[]>([]);
@@ -512,7 +517,7 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
 
   useEffect(() => {
     if (!open) return;
-    setForm(defaultForm());
+    setForm(editMode && initialData ? { ...defaultForm(), ...initialData } : defaultForm());
     setStep(1);
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
     authFetch(`${BASE}/api/auth/users`).then(r => r.ok ? r.json() : []).then(setUsers);
@@ -531,15 +536,14 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
       const payload = {
         title: form.title,
         clientId: Number(form.clientId),
-        status: "active",
-        procedureStage: stageMap[form.litigationDegree] || "ابتدائي",
-        lawyer: responsibleUser?.name || responsibleUser?.email || null,
+        ...(editMode ? {} : { status: "active" }),
+        procedureStage: form.litigationDegree ? (stageMap[form.litigationDegree] || "ابتدائي") : undefined,
+        lawyer: responsibleUser ? (responsibleUser.name || responsibleUser.email || null) : undefined,
         court: form.court || null,
         division: form.division || null,
         description: form.description || null,
         clientFileRef: form.clientFileRef || null,
         courtCaseNumber: form.courtCaseNumber || null,
-        // Wizard fields
         caseType: form.caseType || null,
         litigationDegree: form.litigationDegree || null,
         procedureType: form.procedureType || null,
@@ -558,31 +562,36 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
         internalNotes: form.internalNotes || null,
       };
 
+      if (editMode && caseId) {
+        const r = await authFetch(`${BASE}/api/cases/${caseId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        setSaving(false);
+        if (r.ok) onCreated(caseId);
+        return;
+      }
+
       const r = await authFetch(`${BASE}/api/cases`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
       if (!r.ok) { setSaving(false); return; }
       const created = await r.json();
-      const caseId = created.id as number;
+      const createdId = created.id as number;
 
-      // Create opponents
       for (const opp of form.opponents) {
         if (!opp.name.trim()) continue;
         await authFetch(`${BASE}/api/opponents`, {
           method: "POST",
           body: JSON.stringify({
-            name: opp.name,
-            lawyerName: opp.lawyerName || null,
+            name: opp.name, lawyerName: opp.lawyerName || null,
             opponentLawyerPhone: opp.lawyerPhone || null,
-            capacity: opp.capacity || null,
-            notes: opp.notes || null,
-            caseId,
+            capacity: opp.capacity || null, notes: opp.notes || null, caseId: createdId,
           }),
         });
       }
 
-      // Create case team
       const teamRows = [
         form.responsibleUserId ? { userId: Number(form.responsibleUserId), role: "المحامي المسؤول" } : null,
         form.assignedUserId ? { userId: Number(form.assignedUserId), role: "المكلف بالملف" } : null,
@@ -590,14 +599,11 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
       ].filter(Boolean) as Array<{ userId: number; role: string }>;
 
       for (const t of teamRows) {
-        await authFetch(`${BASE}/api/cases/${caseId}/team`, {
-          method: "POST",
-          body: JSON.stringify(t),
-        });
+        await authFetch(`${BASE}/api/cases/${createdId}/team`, { method: "POST", body: JSON.stringify(t) });
       }
 
       setSaving(false);
-      onCreated(caseId);
+      onCreated(createdId);
     } catch {
       setSaving(false);
     }
@@ -611,7 +617,7 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
         {/* Header + stepper */}
         <div className="p-5 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold">ملف قضائي جديد</h2>
+            <h2 className="text-xl font-bold">{editMode ? "تعديل الملف القضائي" : "ملف قضائي جديد"}</h2>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
               <X className="h-5 w-5 text-muted-foreground" />
             </button>
@@ -662,9 +668,9 @@ export function CaseWizard({ open, onClose, onCreated }: CaseWizardProps) {
             <div className="flex-1" />
             <span className="text-xs text-muted-foreground">{step} / 4</span>
             {step < 4
-              ? <Button onClick={() => setStep(s => s + 1)} disabled={!isStepValid(step, form)} className="px-5">التالي</Button>
-              : <Button onClick={handleSubmit} disabled={!isStepValid(4, form) || saving} className="px-6">
-                  {saving ? "جارٍ الإنشاء..." : "إنشاء الملف"}
+              ? <Button onClick={() => setStep(s => s + 1)} disabled={!isStepValid(step, form, editMode)} className="px-5">التالي</Button>
+              : <Button onClick={handleSubmit} disabled={!isStepValid(4, form, editMode) || saving} className="px-6">
+                  {saving ? "جارٍ الحفظ..." : editMode ? "حفظ التعديلات" : "إنشاء الملف"}
                 </Button>
             }
           </div>

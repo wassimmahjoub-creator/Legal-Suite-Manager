@@ -1,4 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
+import { CaseWizard } from "@/components/cases/CaseWizard";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
@@ -202,6 +203,7 @@ export default function CaseDetail() {
   const [relForm,  setRelForm]  = useState({ relatedCaseId: "", relationType: "مرتبطة" });
   const [teamForm, setTeamForm] = useState({ userId: "", role: "مساعد" });
   const [teamEditId, setTeamEditId] = useState<number | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "", clientId: "", court: "", division: "", lawyer: "", status: "active",
     nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "",
@@ -1074,7 +1076,7 @@ export default function CaseDetail() {
             </div>
             <div className="flex gap-2 flex-wrap shrink-0">
               {overdueCount > 0 && <span className="text-xs px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر</span>}
-              <Button size="sm" onClick={openEdit} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
+              <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
               <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
               <CasePdfButton caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
               <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
@@ -1692,6 +1694,45 @@ export default function CaseDetail() {
         onConfirm={async () => { await authFetch(`${BASE}/api/case-relations/${confirmRelationId}`, { method: "DELETE" }); await load.relations(); }}
         title="فك الارتباط بين القضيتين؟" description="سيتم حذف هذا الرابط. القضيتان تبقيان موجودتين في قاعدة البيانات." confirmLabel="فك الارتباط"
       />
+
+      {/* Edit via CaseWizard */}
+      {showWizard && (() => {
+        const cx = caseData as unknown as Record<string, unknown>;
+        const initialData = {
+          title:               String(caseData.title ?? ""),
+          clientId:            String(caseData.clientId ?? ""),
+          description:         String(cx.description ?? ""),
+          clientFileRef:       String(cx.clientFileRef ?? ""),
+          court:               String(caseData.court ?? ""),
+          division:            String(cx.division ?? ""),
+          courtCaseNumber:     String(cx.courtCaseNumber ?? ""),
+          firstHearingDate:    caseData.nextHearing ? String(caseData.nextHearing).slice(0, 10) : "",
+          openedAt:            cx.openedAt ? String(cx.openedAt).slice(0, 10) : new Date().toISOString().slice(0, 10),
+          caseType:            String(cx.caseType ?? ""),
+          litigationDegree:    String(cx.litigationDegree ?? ""),
+          procedureType:       String(cx.procedureType ?? ""),
+          casePriority:        String(cx.casePriority ?? "normal"),
+          clientSource:        String(cx.clientSource ?? ""),
+          judgeName:           String(cx.judgeName ?? ""),
+          feeMethod:           String(cx.feeMethod ?? ""),
+          agreedFees:          cx.agreedFees ? String(cx.agreedFees) : "",
+          hourlyRate:          cx.hourlyRate ? String(cx.hourlyRate) : "",
+          percentage:          cx.percentage ? String(cx.percentage) : "",
+          percentageBasis:     String(cx.percentageBasis ?? ""),
+          disputeValue:        cx.disputeValue ? String(cx.disputeValue) : "",
+          confidentialityLevel: String(cx.confidentialityLevel ?? "normal"),
+          internalNotes:       String(cx.internalNotes ?? ""),
+        };
+        return (
+          <CaseWizard
+            open={showWizard}
+            onClose={() => setShowWizard(false)}
+            caseId={Number(id)}
+            initialData={initialData}
+            onCreated={() => { setShowWizard(false); refetch(); }}
+          />
+        );
+      })()}
     </div>
   );
 }
