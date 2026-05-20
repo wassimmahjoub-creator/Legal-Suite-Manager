@@ -27,9 +27,11 @@ router.get("/clients", async (req, res) => {
   const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
   const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
 
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const orgFilter = eq(clientsTable.orgId, actor.orgId ?? 0);
   const condition = search
-    ? and(isNull(clientsTable.deletedAt), ilike(clientsTable.name, `%${search}%`))
-    : isNull(clientsTable.deletedAt);
+    ? and(orgFilter, isNull(clientsTable.deletedAt), ilike(clientsTable.name, `%${search}%`))
+    : and(orgFilter, isNull(clientsTable.deletedAt));
 
   const clients = await db.select().from(clientsTable)
     .where(condition)
@@ -46,10 +48,14 @@ router.post("/clients", async (req, res) => {
 
   const year = new Date().getFullYear();
   const yearPrefix = `${year}/`;
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
   const [count] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(clientsTable)
-    .where(like(clientsTable.officeSeq, `${yearPrefix}%`));
+    .where(and(
+      eq(clientsTable.orgId, actor.orgId ?? 0),
+      like(clientsTable.officeSeq, `${yearPrefix}%`)
+    ));
   const next = (count?.cnt ?? 0) + 1;
   const officeSeq = `${year}/${String(next).padStart(3, "0")}`;
 
@@ -57,6 +63,7 @@ router.post("/clients", async (req, res) => {
   const [client] = await db.insert(clientsTable).values({
     ...parsed.data,
     ...extras,
+    orgId: actor.orgId ?? 0,
     officeSeq: extras.officeSeq ?? officeSeq,
   }).returning();
   res.status(201).json(client);
