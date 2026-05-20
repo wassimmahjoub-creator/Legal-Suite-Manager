@@ -10,7 +10,7 @@ export const usersTable = pgTable("users", {
   role: text("role").notNull().default("lawyer"),
   phone: text("phone"),
   status: text("status").notNull().default("active"),
-  orgId: integer("org_id"),
+  orgId: integer("org_id").notNull(),
   permissions: jsonb("permissions"),
   icalToken: text("ical_token").unique(),
   preferredLocale: text("preferred_locale").default("ar"),
