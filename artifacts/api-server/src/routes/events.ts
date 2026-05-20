@@ -33,7 +33,8 @@ router.get("/events", async (req, res) => {
   const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
   const limit = Math.min(500, Math.max(1, parseInt((req.query.limit as string) ?? "100") || 100));
 
-  const conditions: SQL[] = [];
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const conditions: SQL[] = [eq(eventsTable.orgId, actor.orgId ?? 0)];
   if (caseId) conditions.push(eq(eventsTable.caseId, Number(caseId)));
   if (from)   conditions.push(gte(eventsTable.date, from));
   if (to)     conditions.push(lte(eventsTable.date, to));
@@ -50,7 +51,11 @@ router.get("/events", async (req, res) => {
 router.post("/events", async (req, res) => {
   const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const [row] = await db.insert(eventsTable).values(parsed.data).returning();
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const [row] = await db.insert(eventsTable).values({
+    ...parsed.data,
+    orgId: actor.orgId ?? 0,
+  }).returning();
   if (row.caseId && (row.type === "audience" || row.type === "hearing" || !row.type || row.type === "other")) {
     void CaseEventLogger.log({
       caseId: row.caseId, eventType: "hearing_scheduled",
