@@ -70,9 +70,11 @@ router.post("/events", async (req, res) => {
 
 router.put("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const [row] = await db.update(eventsTable).set(parsed.data).where(eq(eventsTable.id, id)).returning();
+  const [row] = await db.update(eventsTable).set(parsed.data)
+    .where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   res.json({ ...row, caseName: null });
 });
@@ -81,19 +83,22 @@ router.put("/events/:id", async (req, res) => {
 
 router.patch("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const body = req.body as Record<string, unknown>;
   const updates: Partial<typeof eventsTable.$inferSelect> = {};
   if (typeof body.date === "string") updates.date = body.date;
   if (typeof body.time === "string" || body.time === null) updates.time = body.time as string | null;
   if (typeof body.duration === "number") updates.duration = body.duration;
-  const [row] = await db.update(eventsTable).set(updates).where(eq(eventsTable.id, id)).returning();
+  const [row] = await db.update(eventsTable).set(updates)
+    .where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   res.json(row);
 });
 
 router.delete("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
-  await db.delete(eventsTable).where(eq(eventsTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  await db.delete(eventsTable).where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0)));
   res.status(204).send();
 });
 
