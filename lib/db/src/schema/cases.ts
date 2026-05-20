@@ -1,7 +1,8 @@
-import { pgTable, text, serial, integer, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clientsTable } from "./clients";
+import { organizationsTable } from "./organizations";
 
 export const casesTable = pgTable("cases", {
   id: serial("id").primaryKey(),
@@ -10,6 +11,7 @@ export const casesTable = pgTable("cases", {
   clientFileRef: text("client_file_ref"),
   officeRef: text("office_ref"),
   title: text("title").notNull(),
+  orgId: integer("org_id").references(() => organizationsTable.id).notNull(),
   clientId: integer("client_id").references(() => clientsTable.id).notNull(),
   status: text("status").notNull().default("active"),
   court: text("court"),
@@ -45,7 +47,11 @@ export const casesTable = pgTable("cases", {
   archivedAt: timestamp("archived_at"),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  orgStatusIdx:  index("cases_org_status_idx").on(table.orgId, table.status, table.deletedAt),
+  orgClientIdx:  index("cases_org_client_idx").on(table.orgId, table.clientId),
+  orgCreatedIdx: index("cases_org_created_idx").on(table.orgId, table.createdAt),
+}));
 
 export const insertCaseSchema = createInsertSchema(casesTable).omit({ id: true, createdAt: true, archivedAt: true, deletedAt: true });
 export type InsertCase = z.infer<typeof insertCaseSchema>;
