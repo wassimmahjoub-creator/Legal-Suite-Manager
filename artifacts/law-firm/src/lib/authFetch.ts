@@ -1,12 +1,12 @@
 export function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const token = localStorage.getItem("mtoken");
   const isFormData = options.body instanceof FormData;
   return fetch(url, {
+    credentials: "include",          // httpOnly cookie envoyé automatiquement
     ...options,
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Plus d'Authorization header — le cookie gère l'auth
     },
   });
 }
