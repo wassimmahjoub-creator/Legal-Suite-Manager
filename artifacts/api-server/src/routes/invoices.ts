@@ -115,7 +115,9 @@ router.post("/invoices", async (req, res) => {
   const clientId = Number(body.clientId);
   if (!clientId) return res.status(400).json({ error: "clientId required" });
 
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [inv] = await db.insert(invoicesTable).values({
+    orgId: actor?.orgId ?? 0,
     clientId,
     caseId: body.caseId ? Number(body.caseId) : null,
     issueDate: (body.issueDate as string) || null,
@@ -144,7 +146,7 @@ router.post("/invoices", async (req, res) => {
 router.get("/invoices/:id", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
-  const [row] = await withJoins().where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+  const [row] = await withJoins().where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!row) return res.status(404).json({ error: "Not found" });
   const lines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id)).orderBy(invoiceLinesTable.position);
   res.json({ ...fmtInvoice(row), lines: lines.map(fmtLine) });
@@ -156,7 +158,7 @@ router.put("/invoices/:id", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [existing] = await db.select().from(invoicesTable)
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!existing) return res.status(404).json({ error: "Not found" });
   if (existing.lockedAt) return res.status(409).json({ error: "Facture verrouillée. Créez un avoir pour la corriger." });
 
@@ -188,7 +190,7 @@ router.post("/invoices/:id/issue", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [existing] = await db.select().from(invoicesTable)
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!existing) return res.status(404).json({ error: "Not found" });
   if (existing.lockedAt) return res.status(409).json({ error: "Facture déjà émise" });
 
@@ -222,7 +224,7 @@ router.post("/invoices/:id/unlock", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [existing] = await db.select().from(invoicesTable)
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!existing) return res.status(404).json({ error: "Not found" });
   if (!existing.lockedAt) return res.status(409).json({ error: "Facture déjà déverrouillée" });
   if (existing.cancelledByInvoiceId) return res.status(409).json({ error: "Facture annulée, impossible de déverrouiller" });
@@ -244,7 +246,7 @@ router.post("/invoices/:id/payment", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [existing] = await db.select().from(invoicesTable)
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!existing) return res.status(404).json({ error: "Not found" });
   if (!existing.lockedAt) return res.status(409).json({ error: "Émettez d'abord la facture" });
 
@@ -294,7 +296,7 @@ router.post("/invoices/:id/credit-note", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [original] = await db.select().from(invoicesTable)
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!original) return res.status(404).json({ error: "Not found" });
   if (!original.lockedAt) return res.status(409).json({ error: "Seules les factures émises peuvent être avoirs" });
   if (original.status === "cancelled") return res.status(409).json({ error: "Facture déjà annulée" });
@@ -352,7 +354,7 @@ router.patch("/invoices/:id/soft-delete", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   await db.update(invoicesTable).set({ deletedAt: new Date() })
-    .where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   res.json({ deleted: true });
 });
 
@@ -360,7 +362,7 @@ router.delete("/invoices/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [existing] = await db.select({ lockedAt: invoicesTable.lockedAt })
-    .from(invoicesTable).where(and(eq(invoicesTable.id, id), eq((invoicesTable as any).orgId, actor?.orgId ?? 0)));
+    .from(invoicesTable).where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
   if (existing.lockedAt) {
     res.status(409).json({ error: "لا يمكن حذف فاتورة مُصدَرة. أنشئ أولاً فاتورة تصحيحية (avoir)." });

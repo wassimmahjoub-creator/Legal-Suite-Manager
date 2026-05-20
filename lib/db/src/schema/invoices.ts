@@ -1,12 +1,14 @@
-import { pgTable, text, serial, integer, numeric, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { organizationsTable } from "./organizations";
 import { clientsTable } from "./clients";
 import { casesTable } from "./cases";
 
 // status: draft | issued | partially_paid | paid | cancelled
 export const invoicesTable = pgTable("invoices", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id).notNull(),
   invoiceNumber: text("invoice_number").unique(),
   clientId: integer("client_id").references(() => clientsTable.id).notNull(),
   caseId: integer("case_id").references(() => casesTable.id),
@@ -28,7 +30,10 @@ export const invoicesTable = pgTable("invoices", {
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  orgStatusIdx: index("invoices_org_status_idx").on(table.orgId, table.status, table.deletedAt),
+  orgClientIdx: index("invoices_org_client_idx").on(table.orgId, table.clientId),
+}));
 
 export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({
   id: true,
