@@ -80,6 +80,22 @@ function PageLoader() {
   );
 }
 
+function PrefetchOnAuth() {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => {
+      void import("@/pages/Dashboard");
+      void import("@/pages/Cases");
+      void import("@/pages/Clients");
+      void import("@/pages/Billing");
+      void import("@/pages/Calendar");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [user]);
+  return null;
+}
+
 function PageContentSkeleton() {
   return (
     <div className="p-6 space-y-4 animate-pulse" dir="rtl">
@@ -219,6 +235,7 @@ function App() {
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Router />
             </WouterRouter>
+            <PrefetchOnAuth />
             <Toaster />
           </TooltipProvider>
         </KeypadProvider>
