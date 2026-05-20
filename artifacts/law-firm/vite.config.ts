@@ -68,6 +68,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
+    target: "es2020",
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     chunkSizeWarningLimit: 600,
@@ -75,6 +76,8 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           // PDF renderer est très lourd (~1.5MB) — chunk isolé
+          if (id.includes("@tanstack"))                                       return "vendor-query";
+          if (id.includes("react-hook-form") || id.includes("@hookform") || id.includes("/zod/")) return "vendor-forms";
           if (id.includes("@react-pdf")) return "vendor-pdf";
           // Recharts + D3 — uniquement sur la page Reports
           if (id.includes("recharts") || id.includes("/d3-")) return "vendor-charts";
