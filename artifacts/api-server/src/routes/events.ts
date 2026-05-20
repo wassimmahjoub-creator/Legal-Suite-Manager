@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, eventsTable, casesTable, insertEventSchema } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, SQL } from "drizzle-orm";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 
 const router = Router();
@@ -30,10 +30,20 @@ const withJoins = () =>
 
 router.get("/events", async (req, res) => {
   const { caseId, from, to } = req.query as Record<string, string>;
-  let rows = await withJoins().orderBy(eventsTable.date);
-  if (caseId) rows = rows.filter((r) => r.caseId === Number(caseId));
-  if (from) rows = rows.filter((r) => r.date >= from);
-  if (to) rows = rows.filter((r) => r.date <= to);
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(500, Math.max(1, parseInt((req.query.limit as string) ?? "100") || 100));
+
+  const conditions: SQL[] = [];
+  if (caseId) conditions.push(eq(eventsTable.caseId, Number(caseId)));
+  if (from)   conditions.push(gte(eventsTable.date, from));
+  if (to)     conditions.push(lte(eventsTable.date, to));
+
+  const rows = await withJoins()
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(eventsTable.date)
+    .limit(limit)
+    .offset(page * limit);
+
   res.json(rows);
 });
 
