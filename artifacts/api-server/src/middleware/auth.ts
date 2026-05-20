@@ -47,6 +47,19 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
 }
 
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const actor = (req as Request & { user?: AuthPayload }).user;
+  if (!actor) {
+    res.status(401).json({ error: "غير مصرح" });
+    return;
+  }
+  if (actor.role !== "admin") {
+    res.status(403).json({ error: "هذا الإجراء مخصص للمدير فقط" });
+    return;
+  }
+  next();
+}
+
 export function signToken(payload: AuthPayload): string {
   return jwt.sign(payload, SECRET, { expiresIn: "7d" });
 }
