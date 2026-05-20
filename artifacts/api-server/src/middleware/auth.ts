@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env["SESSION_SECRET"] ?? "fallback-secret";
+const _secret = process.env["SESSION_SECRET"];
+if (!_secret) throw new Error("SESSION_SECRET environment variable is required");
+const SECRET: string = _secret;
 
 export interface AuthPayload {
   id: number;
