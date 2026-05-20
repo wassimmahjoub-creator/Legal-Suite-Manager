@@ -1,0 +1,43 @@
+Correction A — POST /cases : ajouter orgId sur insert + corriger compteur
+Fichier : artifacts/api-server/src/routes/cases.ts
+
+Trouve (lignes 134–171, le handler router.post("/cases", ...) entier) :
+
+router.post("/cases", async (req, res) => {
+  const parsed = CreateCaseBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
+  const year = new Date().getFullYear();
+  const yearPrefix = `${year}-`;
+  const [count] = await db
+    .select({ cnt: sql<number>`count(*)::int` })
+    .from(casesTable)
+    .where(like(casesTable.caseNumber, `${yearPrefix}%`));
+  const next = (count?.cnt ?? 0) + 1;
+  const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
+
+  const extras = extractExtras(req.body as Record<string, unknown>);
+  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, ...extras }).returning();
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
+  const actor = (req as typeof req & { user?: { id: number } }).user;
+Remplace par :
+
+router.post("/cases", async (req, res) => {
+  const parsed = CreateCaseBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
+  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
+  const orgId = actor?.orgId ?? 0;
+
+  const year = new Date().getFullYear();
+  const yearPrefix = `${year}-`;
+  const [count] = await db
+    .select({ cnt: sql<number>`count(*)::int` })
+    .from(casesTable)
+    .where(and(eq(casesTable.orgId, orgId), like(casesTable.caseNumber, `${yearPrefix}%`)));
+  const next = (count?.cnt ?? 0) + 1;
+  const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
+
+  const extras = extractExtras(req.body as Record<string, unknown>);
+  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, orgId, ...extras }).returning();
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
