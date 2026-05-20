@@ -1,0 +1,168 @@
+F.2 — Audit trail : câblage des événements auth + filtres SQL
+F.2.1 — artifacts/api-server/src/routes/audit-logs.ts
+Remplacement complet (filtres SQL, isolation org via userId) :
+
+import { Router } from "express";
+import { db, auditLogsTable, usersTable } from "@workspace/db";
+import { and, desc, gte, ilike, inArray, lte } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
+
+const router = Router();
+
+router.get("/audit-logs", requireAuth, async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const { entityType, userName, from, to } = req.query as Record<string, string>;
+
+  // Scope to current org via userId subquery
+  const orgUsers = db.select({ id: usersTable.id }).from(usersTable).where(
+    // usersTable.orgId was added in Bloc C schema
+    (usersTable as typeof usersTable & { orgId?: unknown }).orgId
+      ? require("drizzle-orm").eq(usersTable.orgId, orgId)
+      : undefined,
+  );
+
+  const conditions = [inArray(auditLogsTable.userId, orgUsers)];
+  if (entityType) conditions.push(require("drizzle-orm").eq(auditLogsTable.entityType, entityType));
+  if (userName)   conditions.push(ilike(auditLogsTable.userName, `%${userName}%`));
+  if (from)       conditions.push(gte(auditLogsTable.createdAt, new Date(from)));
+  if (to)         conditions.push(lte(auditLogsTable.createdAt, new Date(to + "T23:59:59")));
+
+  const rows = await db.select().from(auditLogsTable)
+    .where(and(...conditions as [typeof conditions[0], ...typeof conditions]))
+    .orderBy(desc(auditLogsTable.createdAt))
+    .limit(200);
+
+  res.json(rows);
+});
+
+export async function logAudit(opts: {
+  entityType: string;
+  entityId?: number;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  userId?: number;
+  userName?: string;
+  ipAddress?: string;
+}) {
+  await db.insert(auditLogsTable).values({
+    entityType: opts.entityType,
+    entityId:   opts.entityId   ?? null,
+    action:     opts.action,
+    oldValue:   opts.oldValue   ?? null,
+    newValue:   opts.newValue   ?? null,
+    userId:     opts.userId     ?? null,
+    userName:   opts.userName   ?? null,
+    ipAddress:  opts.ipAddress  ?? null,
+  }).catch(() => {});
+}
+
+export default router;
+⚠️ Note : le filtre inArray(userId, orgUsers) fonctionne si usersTable a bien la colonne orgId (ajoutée en Bloc C). Si tu vois une erreur TypeScript sur usersTable.orgId, remplace la condition par eq(usersTable.orgId, orgId) directement avec l'import eq depuis drizzle-orm.
+
+En attendant, voici la version simplifiée sans le require dynamique — utilise cette version à la place :
+
+import { Router } from "express";
+import { db, auditLogsTable, usersTable } from "@workspace/db";
+import { and, desc, eq, gte, ilike, inArray, lte } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
+
+const router = Router();
+
+router.get("/audit-logs", requireAuth, async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const { entityType, userName, from, to } = req.query as Record<string, string>;
+
+  const orgUsers = db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.orgId, orgId));
+
+  const conditions: ReturnType<typeof eq>[] = [
+    inArray(auditLogsTable.userId, orgUsers) as ReturnType<typeof eq>,
+  ];
+  if (entityType) conditions.push(eq(auditLogsTable.entityType, entityType));
+  if (userName)   conditions.push(ilike(auditLogsTable.userName, `%${userName}%`) as ReturnType<typeof eq>);
+  if (from)       conditions.push(gte(auditLogsTable.createdAt, new Date(from)) as ReturnType<typeof eq>);
+  if (to)         conditions.push(lte(auditLogsTable.createdAt, new Date(to + "T23:59:59")) as ReturnType<typeof eq>);
+
+  const rows = await db
+    .select()
+    .from(auditLogsTable)
+    .where(and(...(conditions as [ReturnType<typeof eq>, ...ReturnType<typeof eq>[]])))
+    .orderBy(desc(auditLogsTable.createdAt))
+    .limit(200);
+
+  res.json(rows);
+});
+
+export async function logAudit(opts: {
+  entityType: string;
+  entityId?: number;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  userId?: number;
+  userName?: string;
+  ipAddress?: string;
+}) {
+  await db.insert(auditLogsTable).values({
+    entityType: opts.entityType,
+    entityId:   opts.entityId   ?? null,
+    action:     opts.action,
+    oldValue:   opts.oldValue   ?? null,
+    newValue:   opts.newValue   ?? null,
+    userId:     opts.userId     ?? null,
+    userName:   opts.userName   ?? null,
+    ipAddress:  opts.ipAddress  ?? null,
+  }).catch(() => {});
+}
+
+export default router;
+F.2.2 — artifacts/api-server/src/routes/auth.ts : câble les événements audit
+① Ajoute l'import en haut du fichier :
+
+import { logAudit } from "./audit-logs.js";
+② Après le login réussi — juste avant res.cookie(...), ajoute :
+
+  void logAudit({
+    entityType: "user",
+    entityId: user.id,
+    action: "login",
+    userId: user.id,
+    userName: user.email,
+    ipAddress: req.ip,
+  });
+③ Dans POST /auth/logout — remplace :
+
+// AVANT :
+router.post("/auth/logout", (_req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: "/" }).json({ ok: true });
+});
+
+// APRÈS :
+router.post("/auth/logout", requireAuth, (req, res) => {
+  const actor = getActor(req);
+  void logAudit({
+    entityType: "user",
+    entityId: actor.id,
+    action: "logout",
+    userId: actor.id,
+    userName: actor.email,
+    ipAddress: req.ip,
+  });
+  res.clearCookie(COOKIE_NAME, { path: "/" }).json({ ok: true });
+});
+④ Dans POST /auth/register — juste avant res.cookie(...) :
+
+  void logAudit({
+    entityType: "organization",
+    entityId: org.id,
+    action: "register",
+    userId: user.id,
+    userName: user.email,
+    ipAddress: req.ip,
+    newValue: JSON.stringify({ officeName: officeName.trim(), plan: "solo" }),
+  });

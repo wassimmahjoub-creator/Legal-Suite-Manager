@@ -6,6 +6,7 @@ import { eq, sql, and, isNull } from "drizzle-orm";
 import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "../middleware/auth.js";
 import { loginLimiter, forgotPasswordLimiter } from "../middleware/security.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -59,6 +60,15 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }).returning();
   await db.update(organizationsTable).set({ ownerId: user.id }).where(eq(organizationsTable.id, org.id));
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: org.id });
+  void logAudit({
+    entityType: "organization",
+    entityId: org.id,
+    action: "register",
+    userId: user.id,
+    userName: user.email,
+    ipAddress: req.ip,
+    newValue: JSON.stringify({ officeName: officeName.trim(), plan: "solo" }),
+  });
   res.cookie(COOKIE_NAME, token, cookieOptions()).status(201).json({ user: fmtUser(user) });
 });
 
@@ -117,6 +127,14 @@ router.post("/auth/login", loginLimiter, async (req, res): Promise<void> => {
   }
 
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: user.orgId ?? undefined });
+  void logAudit({
+    entityType: "user",
+    entityId: user.id,
+    action: "login",
+    userId: user.id,
+    userName: user.email,
+    ipAddress: req.ip,
+  });
   res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(user) });
 });
 
@@ -203,7 +221,16 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   res.json({ message: "تم تغيير كلمة المرور بنجاح" });
 });
 
-router.post("/auth/logout", (_req, res) => {
+router.post("/auth/logout", requireAuth, (req, res) => {
+  const actor = getActor(req);
+  void logAudit({
+    entityType: "user",
+    entityId: actor.id,
+    action: "logout",
+    userId: actor.id,
+    userName: actor.email,
+    ipAddress: req.ip,
+  });
   res.clearCookie(COOKIE_NAME, { path: "/" }).json({ ok: true });
 });
 
