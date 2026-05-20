@@ -58,9 +58,11 @@ const ComponentsDevPage = import.meta.env.DEV
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,   // données fraîches 5 minutes
+      staleTime: 1000 * 60 * 5,   // 5 min — données fraîches
+      gcTime:    1000 * 60 * 15,  // 15 min — garde en cache après stale
       retry: 1,
       refetchOnWindowFocus: false,
+      placeholderData: (prev: unknown) => prev,  // affiche données précédentes pendant refetch
     },
   },
 });
