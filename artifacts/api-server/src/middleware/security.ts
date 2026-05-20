@@ -10,7 +10,6 @@ export const loginLimiter = rateLimit({
   message: { error: "عدد المحاولات كثير جداً، حاول مجدداً بعد 15 دقيقة" },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? "unknown",
 });
 
 export const forgotPasswordLimiter = rateLimit({
@@ -19,7 +18,6 @@ export const forgotPasswordLimiter = rateLimit({
   message: { error: "عدد الطلبات كثير جداً، حاول مجدداً بعد ساعة" },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip ?? "unknown",
 });
 
 export const generalApiLimiter = rateLimit({
