@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { generalApiLimiter, sanitizeBody } from "./middleware/security.js";
 
 const app: Express = express();
 
@@ -30,9 +31,21 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isDev = process.env["NODE_ENV"] === "development";
+    if (isDev) return callback(null, true);
+    const allowed = (process.env["FRONTEND_URL"] ?? "").split(",").map((u) => u.trim()).filter(Boolean);
+    if (allowed.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(sanitizeBody);
+app.use("/api", generalApiLimiter);
 
 app.use("/api", router);
 
