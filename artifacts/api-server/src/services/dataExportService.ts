@@ -440,8 +440,16 @@ export const DataExportService = {
       .returning();
 
     setImmediate(() => {
-      void DataExportService.processExport(row.id).catch((err) => {
+      void DataExportService.processExport(row.id).catch(async (err) => {
         logger.error({ err, exportId: row.id }, "data-export: unhandled error in processExport");
+        try {
+          await db
+            .update(dataExportsTable)
+            .set({ status: "failed" })
+            .where(eq(dataExportsTable.id, row.id));
+        } catch {
+          // ignore secondary DB error
+        }
       });
     });
 
