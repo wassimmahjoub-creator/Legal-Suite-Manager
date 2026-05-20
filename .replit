@@ -42,3 +42,4 @@ channel = "stable-25_05"
 
 [userenv.production]
 FRONTEND_URL = "https://8c4fd9c1-3450-40fe-baf2-96850260380e-00-x1v77sjwn8xn.janeway.replit.dev"
+NODE_ENV = "production"
