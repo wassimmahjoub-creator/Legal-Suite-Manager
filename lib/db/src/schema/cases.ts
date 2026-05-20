@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, index, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clientsTable } from "./clients";
@@ -30,11 +30,11 @@ export const casesTable = pgTable("cases", {
   procedureType: text("procedure_type"),
   casePriority: text("case_priority").default("normal"),
   feeMethod: text("fee_method"),
-  agreedFees: text("agreed_fees"),
-  hourlyRate: text("hourly_rate"),
-  percentage: text("percentage"),
-  percentageBasis: text("percentage_basis"),
-  disputeValue: text("dispute_value"),
+  agreedFees:       numeric("agreed_fees",   { precision: 12, scale: 3 }),
+  hourlyRate:       numeric("hourly_rate",   { precision: 12, scale: 3 }),
+  percentage:       numeric("percentage",    { precision: 5,  scale: 2 }),
+  percentageBasis:  text("percentage_basis"),
+  disputeValue:     numeric("dispute_value", { precision: 14, scale: 3 }),
   clientSource: text("client_source"),
   judgeName: text("judge_name"),
   firstHearingDate: date("first_hearing_date"),
