@@ -1,6 +1,13 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
+const REQUIRED_ENV = ["PORT", "DATABASE_URL", "SESSION_SECRET"] as const;
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
