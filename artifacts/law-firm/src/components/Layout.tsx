@@ -256,6 +256,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 
   const quickRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
@@ -287,8 +288,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      document.querySelector<HTMLElement>("[data-nav-active='true']")
-        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const nav = navRef.current;
+      if (!nav) return;
+      const active = nav.querySelector<HTMLElement>("[data-nav-active='true']");
+      if (!active) return;
+      const navRect = nav.getBoundingClientRect();
+      const itemRect = active.getBoundingClientRect();
+      if (itemRect.top < navRect.top || itemRect.bottom > navRect.bottom) {
+        nav.scrollBy({ top: itemRect.top - navRect.top - navRect.height / 2, behavior: "smooth" });
+      }
     }, 60);
     return () => clearTimeout(t);
   }, [location]);
@@ -340,6 +348,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Scrollable nav */}
       <nav
+        ref={navRef}
         className="flex-1 overflow-y-auto overflow-x-hidden py-1 px-1.5 space-y-px scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent"
         dir="rtl"
       >
