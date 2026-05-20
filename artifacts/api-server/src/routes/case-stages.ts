@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, caseStagesTable, legalDeadlinesTable, casesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { getActor } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -78,99 +79,107 @@ router.patch("/legal-deadlines/:id", async (req, res): Promise<void> => {
 
 router.post("/cases/:caseId/stages/transition", async (req, res): Promise<void> => {
   const caseId = Number(req.params.caseId);
-  const user = (req as typeof req & { user?: { id: number } }).user;
+  const actor  = getActor(req);
   const {
-    currentStageId,
-    decisionDate,
-    decisionOutcome,
-    decisionSummary,
-    nextStage,
-    nextCourtId,
-    nextCourtCaseNumber,
-    executionNotes,
-    deadlines,
+    currentStageId, decisionDate, decisionOutcome, decisionSummary,
+    nextStage, nextCourtId, nextCourtCaseNumber, executionNotes, deadlines,
   } = req.body as {
-    currentStageId: number;
-    decisionDate: string;
-    decisionOutcome: string;
-    decisionSummary?: string;
-    nextStage: string;
-    nextCourtId?: number;
-    nextCourtCaseNumber?: string;
-    executionNotes?: string;
+    currentStageId: number; decisionDate: string; decisionOutcome: string;
+    decisionSummary?: string; nextStage: string; nextCourtId?: number;
+    nextCourtCaseNumber?: string; executionNotes?: string;
     deadlines: Array<{
-      nameAr: string;
-      deadlineType: string;
-      startDate: string;
-      durationDays: number;
-      reminderDaysBefore: number;
+      nameAr: string; deadlineType: string; startDate: string;
+      durationDays: number; reminderDaysBefore: number;
     }>;
   };
 
   if (!currentStageId || !decisionDate || !decisionOutcome || !nextStage) {
-    res.status(400).json({ error: "المعطيات ناقصة" });
-    return;
+    res.status(400).json({ error: "المعطيات ناقصة" }); return;
   }
 
+  // Vérification avant transaction (lecture seule)
   const [currentStage] = await db
-    .select()
-    .from(caseStagesTable)
+    .select().from(caseStagesTable)
     .where(and(eq(caseStagesTable.id, Number(currentStageId)), eq(caseStagesTable.caseId, caseId)));
   if (!currentStage) { res.status(404).json({ error: "الطور الحالي غير موجود" }); return; }
   if (currentStage.exitedAt) { res.status(400).json({ error: "الطور الحالي منتهٍ بالفعل" }); return; }
 
-  await db.update(caseStagesTable).set({
-    exitedAt: new Date(),
-    decisionDate: decisionDate || null,
-    decisionSummary: decisionSummary || null,
-    decisionOutcome: decisionOutcome || null,
-  }).where(eq(caseStagesTable.id, Number(currentStageId)));
+  let newStage: typeof caseStagesTable.$inferSelect;
+  let insertedDeadlines: typeof legalDeadlinesTable.$inferSelect[] = [];
 
-  const [newStage] = await db.insert(caseStagesTable).values({
-    caseId,
-    stage: nextStage,
-    enteredAt: new Date(),
-    courtId: nextCourtId ? Number(nextCourtId) : null,
-    courtCaseNumber: nextCourtCaseNumber || null,
-    executionNotes: executionNotes || null,
-    createdBy: user?.id ?? null,
-  }).returning();
+  try {
+    const result = await db.transaction(async (tx) => {
+      // 1. Clôturer le stage courant
+      await tx.update(caseStagesTable).set({
+        exitedAt: new Date(),
+        decisionDate: decisionDate || null,
+        decisionSummary: decisionSummary || null,
+        decisionOutcome: decisionOutcome || null,
+      }).where(eq(caseStagesTable.id, Number(currentStageId)));
 
-  const insertedDeadlines = [];
-  for (const dl of (deadlines ?? [])) {
-    const sd = new Date(dl.startDate);
-    sd.setDate(sd.getDate() + Number(dl.durationDays));
-    const endDate = sd.toISOString().slice(0, 10);
-    const [ins] = await db.insert(legalDeadlinesTable).values({
-      caseId,
-      caseStageId: newStage.id,
-      deadlineType: dl.deadlineType || "custom",
-      nameAr: dl.nameAr,
-      startDate: dl.startDate,
-      durationDays: Number(dl.durationDays),
-      endDate,
-      reminderDaysBefore: dl.reminderDaysBefore ?? 7,
-      createdBy: user?.id ?? null,
-    }).returning();
-    insertedDeadlines.push(ins);
+      // 2. Créer le nouveau stage
+      const [created] = await tx.insert(caseStagesTable).values({
+        caseId, stage: nextStage, enteredAt: new Date(),
+        courtId: nextCourtId ? Number(nextCourtId) : null,
+        courtCaseNumber: nextCourtCaseNumber || null,
+        executionNotes: executionNotes || null,
+        createdBy: actor.id ?? null,
+      }).returning();
+
+      // 3. Bulk insert des délais (1 requête au lieu de N)
+      let dlRows: typeof legalDeadlinesTable.$inferSelect[] = [];
+      if (deadlines?.length > 0) {
+        const dlValues = deadlines.map((dl) => {
+          const end = new Date(dl.startDate);
+          end.setDate(end.getDate() + Number(dl.durationDays));
+          return {
+            caseId, caseStageId: created.id,
+            deadlineType: dl.deadlineType || "custom",
+            nameAr: dl.nameAr, startDate: dl.startDate,
+            durationDays: Number(dl.durationDays),
+            endDate: end.toISOString().slice(0, 10),
+            reminderDaysBefore: dl.reminderDaysBefore ?? 7,
+            createdBy: actor.id ?? null,
+          };
+        });
+        dlRows = await tx.insert(legalDeadlinesTable).values(dlValues).returning();
+      }
+
+      // 4. Mettre à jour le degré de litige sur le dossier
+      await tx.update(casesTable)
+        .set({ litigationDegree: nextStage })
+        .where(eq(casesTable.id, caseId));
+
+      return { newStage: created, deadlines: dlRows };
+    });
+
+    newStage          = result.newStage;
+    insertedDeadlines = result.deadlines;
+  } catch (err) {
+    console.error("[stages/transition] transaction failed:", err);
+    res.status(500).json({ error: "فشل تغيير الطور. يرجى المحاولة مجدداً." });
+    return;
   }
 
-  await db.update(casesTable).set({ litigationDegree: nextStage }).where(eq(casesTable.id, caseId));
-
+  // Logs événements — hors transaction, non-bloquants
   void CaseEventLogger.log({
-    caseId, eventType: "judgment_recorded", actorUserId: user?.id ?? null,
-    metadata: { outcome: decisionOutcome, summary: decisionSummary ?? "", stage: STAGE_LABELS[currentStage.stage] ?? currentStage.stage },
+    caseId, eventType: "judgment_recorded", actorUserId: actor.id ?? null,
+    metadata: { outcome: decisionOutcome, summary: decisionSummary ?? "",
+      stage: STAGE_LABELS[currentStage.stage] ?? currentStage.stage },
   });
   void CaseEventLogger.log({
-    caseId, eventType: "stage_transitioned", actorUserId: user?.id ?? null,
+    caseId, eventType: "stage_transitioned", actorUserId: actor.id ?? null,
     metadata: {
-      from_stage: currentStage.stage, from_stage_ar: STAGE_LABELS[currentStage.stage] ?? currentStage.stage,
-      to_stage: nextStage, new_stage_ar: STAGE_LABELS[nextStage] ?? nextStage, outcome: decisionOutcome,
+      from_stage: currentStage.stage,
+      from_stage_ar: STAGE_LABELS[currentStage.stage] ?? currentStage.stage,
+      to_stage: nextStage,
+      new_stage_ar: STAGE_LABELS[nextStage] ?? nextStage,
+      outcome: decisionOutcome,
     },
   });
   for (const dl of insertedDeadlines) {
     void CaseEventLogger.log({
-      caseId, eventType: "legal_deadline_added", actorUserId: user?.id ?? null,
+      caseId, eventType: "legal_deadline_added", actorUserId: actor.id ?? null,
       metadata: { deadline_name: dl.nameAr, end_date: dl.endDate },
     });
   }
