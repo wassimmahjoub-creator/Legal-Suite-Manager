@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyCasesIllustration } from "@/components/illustrations/EmptyCases";
 import { CaseWizard } from "@/components/cases/CaseWizard";
+import { useQueryClient } from "@tanstack/react-query";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -32,7 +33,8 @@ export default function Cases() {
   const [showWizard, setShowWizard] = useState(false);
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
   const [, navigate] = useLocation();
-  const { data: cases, isLoading, refetch } = useListCases();
+  const { data: cases, isLoading } = useListCases();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!userIdParam) { setLawyerCases(null); return; }
@@ -223,7 +225,7 @@ export default function Cases() {
         onClose={() => setShowWizard(false)}
         onCreated={(id) => {
           setShowWizard(false);
-          refetch();
+          queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
           navigate(`/cases/${id}`);
         }}
       />
