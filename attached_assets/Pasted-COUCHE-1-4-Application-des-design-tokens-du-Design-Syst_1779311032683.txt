@@ -1,0 +1,186 @@
+COUCHE 1/4 — Application des design tokens du Design System Mohamy Plus v1.
+
+NE TOUCHE À AUCUN ÉCRAN. On modifie uniquement le thème central (index.css + tailwind.config.ts) et le chargement des polices. shadcn/ui propagera automatiquement.
+
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — POLICES
+═══════════════════════════════════════════════════════
+
+Dans index.html (ou le fichier HTML racine), ajouter dans le <head> :
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+═══════════════════════════════════════════════════════
+ÉTAPE 2 — CSS VARIABLES (index.css)
+═══════════════════════════════════════════════════════
+
+Remplace le bloc :root et .dark existant de index.css par les valeurs suivantes.
+IMPORTANT : shadcn utilise le format HSL sans la fonction hsl(). Je donne les valeurs HSL.
+
+:root {
+  /* Surfaces */
+  --background: 60 14% 97%;        /* #F9F9F7 canvas blanc cassé chaud */
+  --foreground: 0 0% 10%;          /* #1A1A1A texte principal */
+  --card: 0 0% 100%;               /* #FFFFFF */
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+
+  /* Primary — Bleu profond institutionnel #1B4F8C */
+  --primary: 211 67% 33%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary — surface subtile */
+  --secondary: 48 12% 95%;         /* #F4F4F1 */
+  --secondary-foreground: 0 0% 10%;
+
+  /* Muted */
+  --muted: 45 14% 91%;             /* #ECEBE6 */
+  --muted-foreground: 0 0% 36%;    /* #5C5C5C secondary text */
+
+  /* Accent */
+  --accent: 211 67% 95%;           /* primary-50 #EFF4FB pour hovers */
+  --accent-foreground: 211 67% 24%;
+
+  /* Destructive — Rose #BE123C */
+  --destructive: 347 82% 41%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Bordures et inputs */
+  --border: 0 0% 90%;
+  --input: 0 0% 88%;
+  --ring: 211 67% 33%;             /* primary pour focus */
+
+  /* Rayon de base */
+  --radius: 0.5rem;                /* 8px */
+
+  /* Variables custom Mohamy (non-shadcn) */
+  --success: 160 94% 24%;          /* Emerald #047857 */
+  --success-foreground: 0 0% 100%;
+  --warning: 27 91% 36%;           /* Amber #B45309 */
+  --warning-foreground: 0 0% 100%;
+  --info: 244 55% 49%;             /* Indigo #4338CA */
+  --info-foreground: 0 0% 100%;
+
+  /* Échelle primary complète */
+  --primary-50: 211 67% 96%;
+  --primary-100: 211 56% 89%;
+  --primary-500: 211 67% 33%;
+  --primary-600: 211 66% 26%;
+  --primary-700: 211 68% 20%;
+}
+
+.dark {
+  --background: 222 43% 7%;         /* #0A0E1A */
+  --foreground: 220 33% 96%;        /* #F2F4F8 */
+  --card: 222 31% 11%;             /* #131826 */
+  --card-foreground: 220 33% 96%;
+  --popover: 222 28% 15%;
+  --popover-foreground: 220 33% 96%;
+
+  --primary: 211 43% 51%;          /* #4A7BB8 plus clair en dark */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 222 27% 17%;
+  --secondary-foreground: 220 33% 96%;
+
+  --muted: 222 29% 22%;
+  --muted-foreground: 218 16% 60%;
+
+  --accent: 211 40% 20%;
+  --accent-foreground: 211 56% 80%;
+
+  --destructive: 347 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 100% / 0.10;
+  --input: 0 0% 100% / 0.12;
+  --ring: 211 43% 51%;
+
+  --success: 160 50% 45%;
+  --warning: 35 70% 50%;
+  --info: 244 45% 65%;
+}
+
+═══════════════════════════════════════════════════════
+ÉTAPE 3 — TAILWIND CONFIG (familles de polices)
+═══════════════════════════════════════════════════════
+
+Dans tailwind.config.ts, étendre theme.extend.fontFamily :
+
+fontFamily: {
+  serif: ['Fraunces', 'Cambria', 'Georgia', 'serif'],
+  sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+  arabic: ['IBM Plex Sans Arabic', 'Noto Naskh Arabic', 'system-ui', 'sans-serif'],
+  mono: ['SF Mono', 'Menlo', 'Consolas', 'monospace'],
+},
+
+Et dans theme.extend.colors, ajouter les sémantiques custom :
+
+colors: {
+  // ... mappings shadcn existants
+  success: {
+    DEFAULT: 'hsl(var(--success))',
+    foreground: 'hsl(var(--success-foreground))',
+  },
+  warning: {
+    DEFAULT: 'hsl(var(--warning))',
+    foreground: 'hsl(var(--warning-foreground))',
+  },
+  info: {
+    DEFAULT: 'hsl(var(--info))',
+    foreground: 'hsl(var(--info-foreground))',
+  },
+},
+
+═══════════════════════════════════════════════════════
+ÉTAPE 4 — APPLICATION DES POLICES SELON LA LANGUE
+═══════════════════════════════════════════════════════
+
+Dans index.css, après les variables, ajouter :
+
+body {
+  font-family: theme('fontFamily.arabic'), theme('fontFamily.sans');
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir="ltr"] body {
+  font-family: theme('fontFamily.sans'), theme('fontFamily.arabic');
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: theme('fontFamily.serif');
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] .font-display {
+  font-family: theme('fontFamily.arabic');
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+═══════════════════════════════════════════════════════
+LIVRABLES COUCHE 1
+═══════════════════════════════════════════════════════
+
+1. Polices chargées dans index.html
+2. CSS variables réécrites (light + dark)
+3. tailwind.config.ts étendu
+4. Règles de base pour application des polices selon dir
+5. Capture : un écran existant montrant le nouveau bleu et les nouvelles polices
+
+═══════════════════════════════════════════════════════
+NON-RÉGRESSION
+═══════════════════════════════════════════════════════
+
+- Aucun écran modifié manuellement
+- Le toggle light/dark continue de fonctionner
+- Le RTL continue de fonctionner
+- Aucune couleur cassée (vérifier login, dashboard, liste, détail)
