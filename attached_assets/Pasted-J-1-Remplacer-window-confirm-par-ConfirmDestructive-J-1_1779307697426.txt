@@ -1,0 +1,155 @@
+J.1 — Remplacer window.confirm() par ConfirmDestructive
+J.1.1 — artifacts/law-firm/src/pages/Correspondances.tsx
+Étape 1 — En haut du fichier, ajouter cet import à la suite des imports existants :
+
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+Étape 2 — Dans le bloc de useState, ajouter un état après les autres :
+
+const [confirmId, setConfirmId] = useState<number | null>(null);
+Étape 3 — Remplacer la fonction remove existante :
+
+Chercher exactement :
+
+async function remove(id: number) {
+  if (!confirm("حذف المراسلة؟")) return;
+  await authFetch(`${BASE}/api/correspondances/${id}`, { 
+    method: "DELETE" 
+  });
+  await load();
+}
+Remplacer par :
+
+async function remove(id: number) {
+  await authFetch(`${BASE}/api/correspondances/${id}`, { method: "DELETE" });
+  setConfirmId(null);
+  await load();
+}
+Étape 4 — Dans le JSX, trouver chaque bouton supprimer qui appelle remove(...) et remplacer le onClick. Chercher :
+
+onClick={() => remove(
+Remplacer par :
+
+onClick={() => setConfirmId(
+Étape 5 — Juste avant la dernière balise fermante </div> ou </> du return, ajouter :
+
+<ConfirmDestructive
+  open={confirmId !== null}
+  onClose={() => setConfirmId(null)}
+  onConfirm={() => remove(confirmId!)}
+  title="حذف المراسلة؟"
+  description="سيتم حذف هذه المراسلة نهائياً ولا يمكن التراجع عن هذا الإجراء."
+  confirmLabel="حذف"
+/>
+J.1.2 — artifacts/law-firm/src/pages/Communications.tsx
+Étape 1 — Ajouter l'import :
+
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+Étape 2 — Ajouter l'état :
+
+const [confirmId, setConfirmId] = useState<number | null>(null);
+Étape 3 — Remplacer la fonction remove :
+
+Chercher :
+
+async function remove(id: number) {
+  if (!confirm("حذف السجل؟")) return;
+  await authFetch(`${BASE}/api/communications/${id}`, 
+    { method: "DELETE" }
+  );
+  await load();
+}
+Remplacer par :
+
+async function remove(id: number) {
+  await authFetch(`${BASE}/api/communications/${id}`, { method: "DELETE" });
+  setConfirmId(null);
+  await load();
+}
+Étape 4 — Dans le JSX, remplacer onClick={() => remove( par onClick={() => setConfirmId(
+
+Étape 5 — Ajouter avant la fermeture du return :
+
+<ConfirmDestructive
+  open={confirmId !== null}
+  onClose={() => setConfirmId(null)}
+  onConfirm={() => remove(confirmId!)}
+  title="حذف السجل؟"
+  description="سيتم حذف هذا السجل نهائياً ولا يمكن التراجع عن هذا الإجراء."
+  confirmLabel="حذف"
+/>
+J.1.3 — artifacts/law-firm/src/pages/Trash.tsx
+Étape 1 — Ajouter l'import :
+
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+Étape 2 — Ajouter l'état :
+
+const [confirmPerm, setConfirmPerm] = useState<{ entity: string; id: number } | null>(null);
+Étape 3 — Remplacer la fonction permanent :
+
+Chercher :
+
+async function permanent(entity: string, id: number) {
+  if (!confirm("حذف نهائي لا يمكن التراجع عنه؟")) return;
+  await authFetch(`${BASE}/api/trash/permanent/${entity}/${id}`, { method: "DELETE" });
+  await load();
+}
+Remplacer par :
+
+async function permanent(entity: string, id: number) {
+  await authFetch(`${BASE}/api/trash/permanent/${entity}/${id}`, { method: "DELETE" });
+  setConfirmPerm(null);
+  await load();
+}
+Étape 4 — Dans le JSX, remplacer chaque onClick={() => permanent( par onClick={() => setConfirmPerm({ entity: en adaptant la syntaxe. Concrètement, pour chaque catégorie, chercher le pattern :
+
+onClick={() => permanent("cases", item.id)
+Remplacer par :
+
+onClick={() => setConfirmPerm({ entity: "cases", id: item.id })
+Même chose pour "clients", "documents", "invoices".
+
+Étape 5 — Ajouter avant la fermeture du return :
+
+<ConfirmDestructive
+  open={confirmPerm !== null}
+  onClose={() => setConfirmPerm(null)}
+  onConfirm={() => permanent(confirmPerm!.entity, confirmPerm!.id)}
+  title="حذف نهائي لا رجعة فيه"
+  description="سيتم حذف هذا العنصر إلى الأبد. هذا الإجراء لا يمكن التراجع عنه."
+  confirmLabel="حذف نهائياً"
+/>
+J.1.4 — artifacts/law-firm/src/pages/UserManagement.tsx
+Étape 1 — Ajouter l'import :
+
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+Étape 2 — Ajouter l'état (le type AppUser est déjà défini dans ce fichier) :
+
+const [confirmArchive, setConfirmArchive] = useState<AppUser | null>(null);
+Étape 3 — Remplacer la fonction archiveUser :
+
+Chercher :
+
+async function archiveUser(u: AppUser) {
+  if (!confirm(`هل تريد أرشفة المستخدم ${u.name}؟`)) return;
+  const r = await authFetch(`${BASE}/api/users/${u.id}`, { method: "DELETE" });
+  if (r.ok) { toast({ title: "تم الأرشفة" }); loadAll(); }
+}
+Remplacer par :
+
+async function archiveUser(u: AppUser) {
+  const r = await authFetch(`${BASE}/api/users/${u.id}`, { method: "DELETE" });
+  if (r.ok) { toast({ title: "تم الأرشفة" }); loadAll(); }
+  setConfirmArchive(null);
+}
+Étape 4 — Dans le JSX, remplacer onClick={() => archiveUser(u)} par onClick={() => setConfirmArchive(u)}
+
+Étape 5 — Ajouter avant la fermeture du return :
+
+<ConfirmDestructive
+  open={confirmArchive !== null}
+  onClose={() => setConfirmArchive(null)}
+  onConfirm={() => archiveUser(confirmArchive!)}
+  title="أرشفة المستخدم؟"
+  description={`سيتم إلغاء وصول ${confirmArchive?.name ?? "هذا المستخدم"} إلى النظام فوراً. يمكن استرجاعه لاحقاً.`}
+  confirmLabel="أرشفة"
+/>

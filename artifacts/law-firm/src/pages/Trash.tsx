@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -19,6 +20,7 @@ interface TrashData {
 export default function Trash() {
   const [data, setData] = useState<TrashData>({ cases: [], clients: [], documents: [], invoices: [] });
   const [loading, setLoading] = useState(true);
+  const [confirmPerm, setConfirmPerm] = useState<{ entity: string; id: number } | null>(null);
   const { user } = useAuth();
 
   async function load() { setLoading(true); const r = await authFetch(`${BASE}/api/trash`); if (r.ok) setData(await r.json()); setLoading(false); }
@@ -30,8 +32,8 @@ export default function Trash() {
   }
 
   async function permanent(entity: string, id: number) {
-    if (!confirm("حذف نهائي لا يمكن التراجع عنه؟")) return;
     await authFetch(`${BASE}/api/trash/permanent/${entity}/${id}`, { method: "DELETE" });
+    setConfirmPerm(null);
     await load();
   }
 
@@ -55,7 +57,7 @@ export default function Trash() {
                   <RotateCcw className="h-3 w-3" /> استرجاع
                 </Button>
                 {isAdmin && (
-                  <Button size="sm" variant="destructive" onClick={() => permanent(entity, item.id)} className="gap-1.5 text-xs h-8">
+                  <Button size="sm" variant="destructive" onClick={() => setConfirmPerm({ entity, id: item.id })} className="gap-1.5 text-xs h-8">
                     <Trash2 className="h-3 w-3" /> حذف نهائي
                   </Button>
                 )}
@@ -100,6 +102,14 @@ export default function Trash() {
             items={data.invoices.map(i => ({ id: i.id, label: formatCurrency(Number(i.amount)), deletedAt: i.deletedAt }))} />
         </div>
       )}
+      <ConfirmDestructive
+        open={confirmPerm !== null}
+        onClose={() => setConfirmPerm(null)}
+        onConfirm={() => permanent(confirmPerm!.entity, confirmPerm!.id)}
+        title="حذف نهائي لا رجعة فيه"
+        description="سيتم حذف هذا العنصر إلى الأبد. هذا الإجراء لا يمكن التراجع عنه."
+        confirmLabel="حذف نهائياً"
+      />
     </div>
   );
 }

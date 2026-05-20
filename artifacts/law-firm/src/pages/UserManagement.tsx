@@ -12,6 +12,7 @@ import {
   Shield, ShieldOff, Users, Link2, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -82,6 +83,7 @@ export default function UserManagement() {
   const [newPwd, setNewPwd] = useState("");
   const [saving, setSaving] = useState(false);
   const [lastInviteToken, setLastInviteToken] = useState("");
+  const [confirmArchive, setConfirmArchive] = useState<AppUser | null>(null);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -151,9 +153,9 @@ export default function UserManagement() {
   }
 
   async function archiveUser(u: AppUser) {
-    if (!confirm(`هل تريد أرشفة المستخدم ${u.name}؟`)) return;
     const r = await authFetch(`${BASE}/api/users/${u.id}`, { method: "DELETE" });
     if (r.ok) { toast({ title: "تم الأرشفة" }); loadAll(); }
+    setConfirmArchive(null);
   }
 
   async function toggleStatus(u: AppUser) {
@@ -251,7 +253,7 @@ export default function UserManagement() {
                     {u.status === "active" ? <ShieldOff className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
                     {u.status === "active" ? "إيقاف" : "تفعيل"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => archiveUser(u)} className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive">
+                  <Button size="sm" variant="outline" onClick={() => setConfirmArchive(u)} className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive">
                     <Trash2 className="h-3 w-3" /> حذف
                   </Button>
                 </div>
@@ -411,6 +413,15 @@ export default function UserManagement() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDestructive
+        open={confirmArchive !== null}
+        onClose={() => setConfirmArchive(null)}
+        onConfirm={() => archiveUser(confirmArchive!)}
+        title="أرشفة المستخدم؟"
+        description={`سيتم إلغاء وصول ${confirmArchive?.name ?? "هذا المستخدم"} إلى النظام فوراً. يمكن استرجاعه لاحقاً.`}
+        confirmLabel="أرشفة"
+      />
 
       {/* Reset Password Modal */}
       <Modal open={modal === "reset-pwd"} onClose={() => setModal(null)} title={`إعادة تعيين كلمة مرور: ${selected?.name}`}>

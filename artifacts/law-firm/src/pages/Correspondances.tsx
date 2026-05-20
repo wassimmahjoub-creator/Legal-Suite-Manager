@@ -12,6 +12,7 @@ import { MicButton } from "@/components/MicButton";
 import { Mail, Plus, Pencil, Trash2, FileText, ArrowUpRight, ArrowDownLeft, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -68,6 +69,7 @@ export default function Correspondances() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dirFilter, setDirFilter] = useState("all");
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const [clients, setClients] = useState<Array<{ id: number; name: string }>>([]);
   const [cases, setCases] = useState<Array<{ id: number; title: string; clientId: number }>>([]);
 
@@ -118,8 +120,8 @@ export default function Correspondances() {
   }
 
   async function remove(id: number) {
-    if (!confirm("حذف المراسلة؟")) return;
     await authFetch(`${BASE}/api/correspondances/${id}`, { method: "DELETE" });
+    setConfirmId(null);
     await load();
   }
 
@@ -225,7 +227,7 @@ export default function Correspondances() {
                       <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => remove(c.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive">
+                      <button onClick={() => setConfirmId(c.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -320,6 +322,15 @@ export default function Correspondances() {
           </FormField>
         </div>
       </Modal>
+
+      <ConfirmDestructive
+        open={confirmId !== null}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => remove(confirmId!)}
+        title="حذف المراسلة؟"
+        description="سيتم حذف هذه المراسلة نهائياً ولا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف"
+      />
     </div>
   );
 }

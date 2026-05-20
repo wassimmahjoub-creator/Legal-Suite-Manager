@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface Comm { id: number; caseId: number | null; clientId: number | null; caseName: string | null; clientName: string | null; type: string; date: string; summary: string; createdBy: string | null; }
@@ -35,6 +36,7 @@ export default function Communications() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   async function load() { setLoading(true); const r = await authFetch(`${BASE}/api/communications`); if (r.ok) setData(await r.json()); setLoading(false); }
   useEffect(() => { load(); }, []);
@@ -51,8 +53,9 @@ export default function Communications() {
   }
 
   async function remove(id: number) {
-    if (!confirm("حذف السجل؟")) return;
-    await authFetch(`${BASE}/api/communications/${id}`, { method: "DELETE" }); await load();
+    await authFetch(`${BASE}/api/communications/${id}`, { method: "DELETE" });
+    setConfirmId(null);
+    await load();
   }
 
   const filtered = data.filter(c =>
@@ -108,7 +111,7 @@ export default function Communications() {
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <button onClick={() => openEdit(c)} className="p-1.5 hover:bg-muted rounded-lg"><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                    <button onClick={() => remove(c.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    <button onClick={() => setConfirmId(c.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
                   </div>
                 </CardContent>
               </Card>
@@ -141,6 +144,15 @@ export default function Communications() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDestructive
+        open={confirmId !== null}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => remove(confirmId!)}
+        title="حذف السجل؟"
+        description="سيتم حذف هذا السجل نهائياً ولا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف"
+      />
     </div>
   );
 }
