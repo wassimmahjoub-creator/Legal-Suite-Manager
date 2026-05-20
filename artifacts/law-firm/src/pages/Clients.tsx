@@ -14,6 +14,7 @@ import { SmartTextarea } from "@/components/SmartTextarea";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { useMutate } from "../hooks/useMutate";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -51,6 +52,7 @@ export default function Clients() {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteBlock, setDeleteBlock] = useState<string | null>(null);
   const [, navigate] = useLocation();
+  const mutate = useMutate();
 
   async function load() {
     setLoading(true);
@@ -85,25 +87,36 @@ export default function Clients() {
   async function save() {
     if (!form.name.trim()) return;
     setSaving(true);
-    const url = editing
-      ? `${BASE}/api/clients/${editing.id}`
-      : `${BASE}/api/clients`;
-    await authFetch(url, {
-      method: editing ? "PUT" : "POST",
-      body: JSON.stringify({
-        name:       form.name,
-        clientType: form.clientType || "individual",
-        phone:      form.phone || null,
-        email:      form.email || null,
-        address:    form.address || null,
-        cin:        form.cin || null,
-        taxId:      form.taxId || null,
-        notes:      form.notes || null,
-      }),
-    });
-    await load();
-    setSaving(false);
-    setModal(false);
+    try {
+      const url = editing
+        ? `${BASE}/api/clients/${editing.id}`
+        : `${BASE}/api/clients`;
+      const result = await mutate(
+        () => authFetch(url, {
+          method: editing ? "PUT" : "POST",
+          body: JSON.stringify({
+            name:       form.name,
+            clientType: form.clientType || "individual",
+            phone:      form.phone || null,
+            email:      form.email || null,
+            address:    form.address || null,
+            cin:        form.cin || null,
+            taxId:      form.taxId || null,
+            notes:      form.notes || null,
+          }),
+        }),
+        {
+          successMsg: editing ? "تم تحديث بيانات الموكّل" : "تم إضافة الموكّل بنجاح",
+          errorMsg:   editing ? "فشل تحديث الموكّل"       : "فشل إضافة الموكّل",
+        },
+      );
+      if (result !== null) {
+        await load();
+        setModal(false);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(client: Client) {
@@ -303,8 +316,14 @@ export default function Clients() {
         open={!!clientToDelete}
         onClose={() => setClientToDelete(null)}
         onConfirm={async () => {
-          await authFetch(`${BASE}/api/clients/${clientToDelete!.id}/soft-delete`, { method: "PATCH" });
-          await load();
+          const ok = await mutate(
+            () => authFetch(`${BASE}/api/clients/${clientToDelete!.id}/soft-delete`, { method: "PATCH" }),
+            { successMsg: "تم نقل الموكّل إلى سلة المحذوفات", errorMsg: "فشل حذف الموكّل" },
+          );
+          if (ok !== null) {
+            await load();
+            setClientToDelete(null);
+          }
         }}
         title={`نقل الموكّل "${clientToDelete?.name}" إلى سلة المحذوفات؟`}
         description="سيتم نقل الموكّل إلى سلة المحذوفات لمدة 30 يوماً ثم يُحذف نهائياً."
