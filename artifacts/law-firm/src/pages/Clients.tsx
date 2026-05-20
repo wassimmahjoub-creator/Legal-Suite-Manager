@@ -1,5 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyClientsIllustration } from "@/components/illustrations/EmptyClients";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { useMutate } from "../hooks/useMutate";
+import { useClients, useInvalidateClients } from "../hooks/useClients";
+import { useDebounce } from "../hooks/useDebounce";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -42,8 +44,6 @@ export default function Clients() {
   const fromParam  = urlParams.get("from");
   const fromTabParam = urlParams.get("fromTab");
 
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
@@ -53,15 +53,12 @@ export default function Clients() {
   const [deleteBlock, setDeleteBlock] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const mutate = useMutate();
-
-  async function load() {
-    setLoading(true);
-    const r = await authFetch(`${BASE}/api/clients`);
-    if (r.ok) setClients(await r.json());
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
+  const debouncedSearch = useDebounce(search, 300);
+  const { data: clients = [], isLoading: loading } = useClients({
+    search: debouncedSearch || undefined,
+    type:   typeParam      || undefined,
+  });
+  const invalidateClients = useInvalidateClients();
 
   function openNew() {
     setEditing(null);
@@ -111,7 +108,7 @@ export default function Clients() {
         },
       );
       if (result !== null) {
-        await load();
+        invalidateClients();
         setModal(false);
       }
     } finally {
@@ -130,11 +127,9 @@ export default function Clients() {
     setClientToDelete(client);
   }
 
-  const filtered = clients.filter(c => {
-    if (typeParam && c.clientType !== typeParam) return false;
-    if (!search) return true;
-    return c.name.includes(search) || (c.phone && c.phone.includes(search)) || (c.email && c.email.includes(search));
-  });
+  const filtered = typeParam
+    ? (clients as any[]).filter(c => c.clientType === typeParam)
+    : (clients as any[]);
 
   return (
     <div className="space-y-6">
@@ -321,7 +316,7 @@ export default function Clients() {
             { successMsg: "تم نقل الموكّل إلى سلة المحذوفات", errorMsg: "فشل حذف الموكّل" },
           );
           if (ok !== null) {
-            await load();
+            invalidateClients();
             setClientToDelete(null);
           }
         }}
