@@ -24,15 +24,19 @@ function extractExtras(body: Record<string, unknown>) {
 
 router.get("/clients", async (req, res) => {
   const { search } = req.query as { search?: string };
-  let clients;
-  if (search) {
-    clients = await db.select().from(clientsTable)
-      .where(ilike(clientsTable.name, `%${search}%`));
-  } else {
-    clients = await db.select().from(clientsTable)
-      .where(isNull(clientsTable.deletedAt))
-      .orderBy(clientsTable.createdAt);
-  }
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
+
+  const condition = search
+    ? and(isNull(clientsTable.deletedAt), ilike(clientsTable.name, `%${search}%`))
+    : isNull(clientsTable.deletedAt);
+
+  const clients = await db.select().from(clientsTable)
+    .where(condition)
+    .orderBy(clientsTable.createdAt)
+    .limit(limit)
+    .offset(page * limit);
+
   res.json(clients);
 });
 
@@ -188,7 +192,7 @@ router.post("/clients/:id/events", async (req, res): Promise<void> => {
 router.get("/clients/:id/cases", async (req, res) => {
   const clientId = Number(req.params.id);
   const cases = await db.select().from(casesTable)
-    .where(eq(casesTable.clientId, clientId))
+    .where(and(eq(casesTable.clientId, clientId), isNull(casesTable.deletedAt)))
     .orderBy(casesTable.createdAt);
   res.json(cases);
 });
@@ -196,7 +200,7 @@ router.get("/clients/:id/cases", async (req, res) => {
 router.get("/clients/:id/invoices", async (req, res) => {
   const clientId = Number(req.params.id);
   const invoices = await db.select().from(invoicesTable)
-    .where(eq(invoicesTable.clientId, clientId))
+    .where(and(eq(invoicesTable.clientId, clientId), isNull(invoicesTable.deletedAt)))
     .orderBy(invoicesTable.createdAt);
   res.json(invoices);
 });

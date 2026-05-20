@@ -1,0 +1,81 @@
+FICHIER 2 — artifacts/api-server/src/routes/clients.ts
+Correction 2.1 — GET /clients : filtre deletedAt manquant sur la recherche + pagination
+Trouve (lignes 25–37) :
+
+router.get("/clients", async (req, res) => {
+  const { search } = req.query as { search?: string };
+  let clients;
+  if (search) {
+    clients = await db.select().from(clientsTable)
+      .where(ilike(clientsTable.name, `%${search}%`));
+  } else {
+    clients = await db.select().from(clientsTable)
+      .where(isNull(clientsTable.deletedAt))
+      .orderBy(clientsTable.createdAt);
+  }
+  res.json(clients);
+});
+Remplace par :
+
+router.get("/clients", async (req, res) => {
+  const { search } = req.query as { search?: string };
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
+
+  const condition = search
+    ? and(isNull(clientsTable.deletedAt), ilike(clientsTable.name, `%${search}%`))
+    : isNull(clientsTable.deletedAt);
+
+  const clients = await db.select().from(clientsTable)
+    .where(condition)
+    .orderBy(clientsTable.createdAt)
+    .limit(limit)
+    .offset(page * limit);
+
+  res.json(clients);
+});
+Pourquoi : Le chemin avec search retournait les clients supprimés (soft-deleted) parce que le filtre isNull(deletedAt) n'était appliqué que dans l'autre branche else. Un client archivé apparaissait dans les résultats de recherche.
+
+Correction 2.2 — GET /clients/:id/cases : retournait les dossiers supprimés
+Trouve (lignes 186–192) :
+
+router.get("/clients/:id/cases", async (req, res) => {
+  const clientId = Number(req.params.id);
+  const cases = await db.select().from(casesTable)
+    .where(eq(casesTable.clientId, clientId))
+    .orderBy(casesTable.createdAt);
+  res.json(cases);
+});
+Remplace par :
+
+router.get("/clients/:id/cases", async (req, res) => {
+  const clientId = Number(req.params.id);
+  const cases = await db.select().from(casesTable)
+    .where(and(eq(casesTable.clientId, clientId), isNull(casesTable.deletedAt)))
+    .orderBy(casesTable.createdAt);
+  res.json(cases);
+});
+Correction 2.3 — GET /clients/:id/invoices : retournait les factures supprimées
+Trouve (lignes 194–200) :
+
+router.get("/clients/:id/invoices", async (req, res) => {
+  const clientId = Number(req.params.id);
+  const invoices = await db.select().from(invoicesTable)
+    .where(eq(invoicesTable.clientId, clientId))
+    .orderBy(invoicesTable.createdAt);
+  res.json(invoices);
+});
+Remplace par :
+
+router.get("/clients/:id/invoices", async (req, res) => {
+  const clientId = Number(req.params.id);
+  const invoices = await db.select().from(invoicesTable)
+    .where(and(eq(invoicesTable.clientId, clientId), isNull(invoicesTable.deletedAt)))
+    .orderBy(invoicesTable.createdAt);
+  res.json(invoices);
+});
+Correction 2.4 — Import manquant pour les nouvelles conditions
+Trouve (ligne 3) :
+
+import { eq, ilike, isNull, sql, like, and } from "drizzle-orm";
+Vérifie que and est bien présent (il y est déjà). Aucun changement nécessaire ici.
