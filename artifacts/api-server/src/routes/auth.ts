@@ -5,6 +5,7 @@ import { db, usersTable, organizationsTable, passwordResetsTable } from "@worksp
 import { eq, sql, and, isNull } from "drizzle-orm";
 import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "../middleware/auth.js";
 import { loginLimiter, forgotPasswordLimiter } from "../middleware/security.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -169,19 +170,21 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
   res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(updated) });
 });
 
-/* ── Forgot password: returns reset token (no email server) ── */
+/* ── Forgot password ── */
 router.post("/auth/forgot-password", forgotPasswordLimiter, async (req, res): Promise<void> => {
   const { email } = req.body as { email: string };
   if (!email) { res.status(400).json({ error: "البريد الإلكتروني مطلوب" }); return; }
+  // Always return same message to prevent email enumeration
+  const SAFE_MSG = "إذا كان البريد الإلكتروني مسجّلاً، ستتلقى رابط إعادة التعيين قريباً";
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
-  if (!user) {
-    res.json({ message: "إذا كان البريد الإلكتروني مسجّلاً، ستجد رابط إعادة التعيين أدناه", token: null });
-    return;
-  }
+  if (!user) { res.json({ message: SAFE_MSG }); return; }
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
   await db.insert(passwordResetsTable).values({ userId: user.id, token, expiresAt });
-  res.json({ message: "تم توليد رابط إعادة تعيين كلمة المرور", token });
+  await sendPasswordResetEmail(user.email, token).catch((err) =>
+    console.error("Failed to send reset email:", err),
+  );
+  res.json({ message: SAFE_MSG });
 });
 
 /* ── Reset password ── */
