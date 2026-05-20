@@ -351,6 +351,8 @@ export default function Expenses() {
             </div>
           </div>
         </Modal>
+      </div>
+
       <ConfirmDestructive
         open={confirmId !== null}
         onClose={() => setConfirmId(null)}
