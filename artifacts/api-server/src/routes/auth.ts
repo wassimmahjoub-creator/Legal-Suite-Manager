@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { db, usersTable, organizationsTable, passwordResetsTable } from "@workspace/db";
 import { eq, sql, and, isNull } from "drizzle-orm";
 import { signToken, requireAuth } from "../middleware/auth.js";
+import { loginLimiter, forgotPasswordLimiter } from "../middleware/security.js";
 
 const router = Router();
 
@@ -85,7 +86,7 @@ router.post("/auth/setup", async (req, res): Promise<void> => {
 });
 
 /* ── Login ── */
-router.post("/auth/login", async (req, res): Promise<void> => {
+router.post("/auth/login", loginLimiter, async (req, res): Promise<void> => {
   const { email, password } = req.body as { email: string; password: string };
   if (!email || !password) {
     res.status(400).json({ error: "البريد الإلكتروني وكلمة المرور مطلوبان" }); return;
@@ -172,7 +173,7 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
 });
 
 /* ── Forgot password: returns reset token (no email server) ── */
-router.post("/auth/forgot-password", async (req, res): Promise<void> => {
+router.post("/auth/forgot-password", forgotPasswordLimiter, async (req, res): Promise<void> => {
   const { email } = req.body as { email: string };
   if (!email) { res.status(400).json({ error: "البريد الإلكتروني مطلوب" }); return; }
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
