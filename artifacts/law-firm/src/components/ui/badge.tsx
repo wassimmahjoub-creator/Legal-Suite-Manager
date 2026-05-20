@@ -4,24 +4,30 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  // @replit
-  // Whitespace-nowrap: Badges should never wrap.
-  "whitespace-nowrap inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" +
-  " hover-elevate ",
+  "whitespace-nowrap inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-primary text-primary-foreground shadow-xs",
+          "border-transparent bg-primary/10 text-primary dark:bg-primary/20",
+        primary:
+          "border-transparent bg-primary/10 text-primary dark:bg-primary/20",
         secondary:
-          // @replit no hover because we use hover-elevate
           "border-transparent bg-secondary text-secondary-foreground",
         destructive:
-          // @replit shadow-xs instead of shadow, no hover because we use hover-elevate
-          "border-transparent bg-destructive text-destructive-foreground shadow-xs",
-          // @replit shadow-xs" - use badge outline variable
-        outline: "text-foreground border [border-color:var(--badge-outline)]",
+          "border-transparent bg-destructive/10 text-destructive dark:bg-destructive/20",
+        success:
+          "border-transparent bg-success/10 text-success dark:bg-success/20",
+        warning:
+          "border-transparent bg-warning/10 text-warning dark:bg-warning/20",
+        danger:
+          "border-transparent bg-destructive/10 text-destructive dark:bg-destructive/20",
+        info:
+          "border-transparent bg-info/10 text-info dark:bg-info/20",
+        neutral:
+          "border-transparent bg-muted text-muted-foreground",
+        outline:
+          "text-foreground border [border-color:var(--badge-outline)]",
       },
     },
     defaultVariants: {

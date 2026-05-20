@@ -1,0 +1,63 @@
+COUCHE 2/4 — Ajustement des composants primitifs shadcn pour le Design System Mohamy Plus v1.
+
+On affine les composants dans components/ui/. La plupart héritent déjà des variables (Couche 1), on ajuste variantes, tailles, espacements.
+
+BUTTON (components/ui/button.tsx) :
+- default (primary) : bg-primary text-primary-foreground hover:bg-primary/90, h-[38px], rounded-md, font-medium
+- secondary : bg-card border border-border text-foreground hover:bg-secondary
+- ghost : hover:bg-secondary text-muted-foreground hover:text-foreground
+- destructive : bg-destructive text-destructive-foreground hover:bg-destructive/90
+Tailles : sm (h-8 px-3 text-sm), default (h-[38px] px-4 text-sm), lg (h-11 px-5), icon (h-[38px] w-[38px])
+Focus : focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1
+
+INPUT (components/ui/input.tsx) :
+- h-[38px] px-3 rounded-md border-input
+- hover:border-muted-foreground/40
+- focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary
+- placeholder:text-muted-foreground transition-colors
+
+BADGE (components/ui/badge.tsx) — ajouter variantes :
+- default (primary) : bg-primary/10 text-primary border-transparent
+- success : bg-success/10 text-success
+- warning : bg-warning/10 text-warning
+- danger : bg-destructive/10 text-destructive
+- info : bg-info/10 text-info
+- neutral : bg-muted text-muted-foreground
+Style commun : rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5
+En dark, passer les /10 en /20 pour lisibilité.
+
+CARD (components/ui/card.tsx) :
+- bg-card border border-border rounded-xl shadow-sm
+- CardHeader p-6 (ou p-5), CardContent px-6 pb-6
+- CardTitle hérite font-serif/arabic des règles globales
+
+TABLE (components/ui/table.tsx) — style dense :
+- th : bg-secondary text-muted-foreground text-xs uppercase tracking-wide font-medium py-2.5 px-4
+- tr : border-b border-border/50 hover:bg-secondary transition-colors cursor-pointer
+- td : py-3 px-4 text-sm align-middle
+- dernière ligne sans border
+
+TOAST (sonner) :
+- Configurer Toaster : bg-popover border-border rounded-lg shadow-md
+- 4 types avec icônes lucide : success (CheckCircle/success), warning (AlertTriangle/warning), error (XCircle/destructive), info (Info/primary)
+- Position RTL-aware
+
+AUTRES À VÉRIFIER (ajustements mineurs) :
+- dialog.tsx : rounded-xl, overlay bg-black/40
+- sheet.tsx (drawer) : 400px desktop, slide depuis le bon côté en RTL
+- select.tsx : aligner sur input
+- tabs.tsx : couleur active primary
+- skeleton.tsx : bg-muted pulse
+- avatar.tsx : bg-primary/10 text-primary
+- separator.tsx : bg-border
+
+LIVRABLES :
+1. button/input/badge/card/table/toast ajustés
+2. Vérification dialog/sheet/select/tabs/skeleton/avatar
+3. Capture page liste (tables+badges+boutons)
+4. Capture formulaire (inputs+selects)
+
+NON-RÉGRESSION :
+- Composants fonctionnels (pas de régression interaction)
+- RTL préservé, light+dark fonctionnels
+- Props existantes compatibles (ne pas casser usages actuels)
