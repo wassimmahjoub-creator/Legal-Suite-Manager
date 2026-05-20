@@ -97,7 +97,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-xs text-muted-foreground">
-          محامي بلوس — برنامج إدارة المكاتب القانونية التونية
+          محامي بلوس — برنامج إدارة المكاتب القانونية
         </p>
       </div>
     </div>
