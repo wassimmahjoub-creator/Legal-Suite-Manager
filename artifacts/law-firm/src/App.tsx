@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { KeypadProvider } from "@/context/KeypadContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Layout } from "@/components/Layout";
+import { AdminGuard } from "./components/AdminGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
 
@@ -157,13 +158,21 @@ function Router() {
                   <Route path="/correspondances"       component={Correspondances} />
                   <Route path="/insurance-companies"   component={InsuranceCompanies} />
                   <Route path="/bank-accounts"         component={BankAccounts} />
-                  <Route path="/legal-config"          component={LegalConfig} />
-                  <Route path="/audit-logs"            component={AuditLogs} />
+                  <Route path="/legal-config">
+                    <AdminGuard><LegalConfig /></AdminGuard>
+                  </Route>
+                  <Route path="/audit-logs">
+                    <AdminGuard><AuditLogs /></AdminGuard>
+                  </Route>
                   <Route path="/trash"                 component={Trash} />
                   <Route path="/settings"              component={Settings} />
-                  <Route path="/users"                 component={UserManagement} />
+                  <Route path="/users">
+                    <AdminGuard><UserManagement /></AdminGuard>
+                  </Route>
                   <Route path="/conflicts"             component={Conflicts} />
-                  <Route path="/data-privacy"          component={DataPrivacy} />
+                  <Route path="/data-privacy">
+                    <AdminGuard><DataPrivacy /></AdminGuard>
+                  </Route>
                   <Route path="/subscription"          component={Subscription} />
                   <Route path="/pricing"               component={Pricing} />
                   {ComponentsDevPage && (
