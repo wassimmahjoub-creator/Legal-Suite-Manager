@@ -3,6 +3,7 @@ import { db, casesTable } from "@workspace/db";
 import { expensesTable } from "@workspace/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { getActor } from "../middleware/auth.js";
+import { z } from "zod";
 
 const router = Router();
 
@@ -33,22 +34,36 @@ router.get("/expenses", async (req, res) => {
   res.json(rows.map(fmt));
 });
 
+const CreateExpenseBody = z.object({
+  caseId:      z.number({ invalid_type_error: "معرّف القضية مطلوب" }).int().positive(),
+  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة (YYYY-MM-DD)"),
+  typeValue:   z.string().min(1, "نوع المصروف مطلوب"),
+  description: z.string().min(1, "الوصف مطلوب"),
+  amount:      z.number({ invalid_type_error: "المبلغ يجب أن يكون رقماً" }).positive("المبلغ يجب أن يكون موجباً"),
+  reimbursable: z.boolean().optional().default(true),
+});
+
 router.post("/expenses", async (req, res): Promise<void> => {
   const actor = getActor(req);
   const orgId = actor.orgId ?? 0;
-  const body = req.body as Record<string, unknown>;
+  const parsed = CreateExpenseBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" });
+    return;
+  }
+  const body = parsed.data;
 
   const [c] = await db.select({ id: casesTable.id }).from(casesTable)
-    .where(and(eq(casesTable.id, Number(body.caseId)), eq(casesTable.orgId, orgId)));
+    .where(and(eq(casesTable.id, body.caseId), eq(casesTable.orgId, orgId)));
   if (!c) { res.status(403).json({ error: "غير مصرح" }); return; }
 
   const [row] = await db.insert(expensesTable).values({
-    caseId: Number(body.caseId),
-    date: body.date as string,
-    typeValue: body.typeValue as string,
-    description: (body.description as string) ?? "",
-    amount: String(body.amount),
-    reimbursable: Boolean(body.reimbursable ?? true),
+    caseId:      body.caseId,
+    date:        body.date,
+    typeValue:   body.typeValue,
+    description: body.description,
+    amount:      String(body.amount),
+    reimbursable: body.reimbursable,
   }).returning();
   res.status(201).json(fmt(row));
 });

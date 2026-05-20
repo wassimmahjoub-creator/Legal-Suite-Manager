@@ -1,0 +1,48 @@
+K.4 — Backend : artifacts/api-server/src/routes/expenses.ts
+Étape 1 — Ajouter l'import Zod en haut du fichier (après les imports existants)
+import { z } from "zod";
+Étape 2 — Ajouter le schéma (juste avant router.post)
+const CreateExpenseBody = z.object({
+  caseId:      z.number({ invalid_type_error: "معرّف القضية مطلوب" }).int().positive(),
+  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة (YYYY-MM-DD)"),
+  typeValue:   z.string().min(1, "نوع المصروف مطلوب"),
+  description: z.string().min(1, "الوصف مطلوب"),
+  amount:      z.number({ invalid_type_error: "المبلغ يجب أن يكون رقماً" }).positive("المبلغ يجب أن يكون موجباً"),
+  reimbursable: z.boolean().optional().default(true),
+});
+Étape 3 — Utiliser le schéma dans le POST handler
+Chercher dans le handler router.post("/expenses", ...) :
+
+const body = req.body as Record<string, unknown>;
+
+const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+  .where(and(eq(casesTable.id, Number(body.caseId)), eq(casesTable.orgId, orgId)));
+if (!c) { res.status(403).json({ error: "غير مصرح" }); return; }
+
+const [row] = await db.insert(expensesTable).values({
+  caseId: Number(body.caseId),
+  date: body.date as string,
+  typeValue: body.typeValue as string,
+  description: (body.description as string) ?? "",
+  amount: String(body.amount),
+  reimbursable: Boolean(body.reimbursable ?? true),
+Remplacer par :
+
+const parsed = CreateExpenseBody.safeParse(req.body);
+if (!parsed.success) {
+  res.status(400).json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" });
+  return;
+}
+const body = parsed.data;
+
+const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+  .where(and(eq(casesTable.id, body.caseId), eq(casesTable.orgId, orgId)));
+if (!c) { res.status(403).json({ error: "غير مصرح" }); return; }
+
+const [row] = await db.insert(expensesTable).values({
+  caseId:      body.caseId,
+  date:        body.date,
+  typeValue:   body.typeValue,
+  description: body.description,
+  amount:      String(body.amount),
+  reimbursable: body.reimbursable,
