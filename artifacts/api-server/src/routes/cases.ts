@@ -85,7 +85,11 @@ router.get("/cases", async (req, res) => {
   const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
   const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
 
-  const conditions: ReturnType<typeof isNull>[] = [isNull(casesTable.deletedAt)];
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const conditions: ReturnType<typeof isNull>[] = [
+    isNull(casesTable.deletedAt),
+    eq(casesTable.orgId, actor.orgId ?? 0) as any,
+  ];
 
   if (archived === "true")       conditions.push(isNotNull(casesTable.archivedAt) as any);
   else if (archived !== "all")   conditions.push(isNull(casesTable.archivedAt));
