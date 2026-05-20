@@ -32,3 +32,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 export function signToken(payload: AuthPayload): string {
   return jwt.sign(payload, SECRET, { expiresIn: "7d" });
 }
+
+export function getActor(req: import("express").Request): AuthPayload {
+  return (req as import("express").Request & { user: AuthPayload }).user;
+}
