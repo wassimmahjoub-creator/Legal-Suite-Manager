@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, casesTable, clientsTable, documentsTable, invoicesTable, eventsTable } from "@workspace/db";
 import { isNotNull, eq } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -33,7 +33,7 @@ router.patch("/trash/restore/:entity/:id", requireAuth, async (req, res): Promis
   res.json({ ok: true });
 });
 
-router.delete("/trash/permanent/:entity/:id", requireAuth, async (req, res): Promise<void> => {
+router.delete("/trash/permanent/:entity/:id", requireAdmin, async (req, res): Promise<void> => {
   const { entity, id } = req.params;
   const numId = Number(id);
   if (entity === "cases") {

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, legalConfigItemsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -39,14 +39,14 @@ router.get("/legal-config", requireAuth, async (_req, res) => {
   res.json(rows);
 });
 
-router.post("/legal-config", requireAuth, async (req, res): Promise<void> => {
+router.post("/legal-config", requireAdmin, async (req, res): Promise<void> => {
   const { category, value, label } = req.body as Record<string, string>;
   if (!category || !value || !label) { res.status(400).json({ error: "جميع الحقول مطلوبة" }); return; }
   const [row] = await db.insert(legalConfigItemsTable).values({ category, value, label }).returning();
   res.status(201).json(row);
 });
 
-router.put("/legal-config/:id", requireAuth, async (req, res): Promise<void> => {
+router.put("/legal-config/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { label, sortOrder } = req.body as Record<string, string>;
   const [row] = await db.update(legalConfigItemsTable).set({ label, sortOrder: sortOrder ? Number(sortOrder) : undefined }).where(eq(legalConfigItemsTable.id, id)).returning();
@@ -54,7 +54,7 @@ router.put("/legal-config/:id", requireAuth, async (req, res): Promise<void> => 
   res.json(row);
 });
 
-router.delete("/legal-config/:id", requireAuth, async (req, res) => {
+router.delete("/legal-config/:id", requireAdmin, async (req, res) => {
   await db.delete(legalConfigItemsTable).where(eq(legalConfigItemsTable.id, Number(req.params.id)));
   res.status(204).send();
 });

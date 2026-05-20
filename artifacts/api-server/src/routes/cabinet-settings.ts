@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requireAdmin } from "../middleware/auth.js";
 import { db, cabinetSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
@@ -13,7 +14,7 @@ router.get("/cabinet-settings", async (_req, res) => {
   res.json(row);
 });
 
-router.put("/cabinet-settings", async (req, res) => {
+router.put("/cabinet-settings", requireAdmin, async (req, res) => {
   const body = req.body as Record<string, string>;
   const str = (k: string) => typeof body[k] === "string" ? body[k] || null : null;
 
