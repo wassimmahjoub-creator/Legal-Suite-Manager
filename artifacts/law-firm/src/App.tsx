@@ -80,6 +80,24 @@ function PageLoader() {
   );
 }
 
+function PageContentSkeleton() {
+  return (
+    <div className="p-6 space-y-4 animate-pulse" dir="rtl">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-7 w-44 bg-muted rounded-lg" />
+          <div className="h-4 w-64 bg-muted rounded" />
+        </div>
+        <div className="h-9 w-28 bg-muted rounded-lg" />
+      </div>
+      <div className="h-px bg-border" />
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div key={i} className="h-14 bg-muted/50 rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
 // ── Guards ────────────────────────────────────────────────────────────────────
 function PublicOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -134,7 +152,8 @@ function Router() {
           ) : (
             <ErrorBoundary>
               <Layout>
-                <Switch>
+            <Suspense fallback={<PageContentSkeleton />}>
+            <Switch>
                   <Route path="/"                      component={Dashboard} />
                   <Route path="/cases"                 component={Cases} />
                   <Route path="/cases/:id"             component={CaseDetail} />
@@ -180,6 +199,7 @@ function Router() {
                   )}
                   <Route component={NotFound} />
                 </Switch>
+            </Suspense>
               </Layout>
             </ErrorBoundary>
           )}
