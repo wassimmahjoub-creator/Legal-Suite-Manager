@@ -1,7 +1,8 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { authFetch } from "@/lib/authFetch";
+import { useInvoices, useInvalidateInvoices } from "../hooks/useInvoices";
+import { useDebounce } from "../hooks/useDebounce";
 import { formatDateTN, formatDateLongTN } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,33 +41,17 @@ interface Invoice {
 }
 
 export default function Billing() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [, navigate] = useLocation();
-
-  async function load() {
-    setLoading(true);
-    const r = await authFetch(`${BASE}/api/invoices`);
-    if (r.ok) setInvoices(await r.json());
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
-
-  const filtered = invoices.filter(inv => {
-    if (statusFilter && inv.status !== statusFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        (inv.clientName?.toLowerCase().includes(q)) ||
-        (inv.invoiceNumber?.toLowerCase().includes(q)) ||
-        (inv.caseName?.toLowerCase().includes(q))
-      );
-    }
-    return true;
+  const debouncedSearch = useDebounce(search, 300);
+  const { data: invoices = [], isLoading: loading } = useInvoices({
+    search: debouncedSearch || undefined,
+    status: statusFilter   || undefined,
   });
+  const invalidateInvoices = useInvalidateInvoices();
+
+  const filtered = invoices as any[];
 
   const totalNet = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.netToPay, 0);
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
