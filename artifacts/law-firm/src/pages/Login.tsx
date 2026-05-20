@@ -1,26 +1,35 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import { Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const LoginSchema = z.object({
+  email: z.string()
+    .min(1, "البريد الإلكتروني مطلوب")
+    .email("صيغة البريد الإلكتروني غير صحيحة"),
+  password: z.string()
+    .min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
+});
+
+type LoginForm = z.infer<typeof LoginSchema>;
+
 export default function Login() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
+    resolver: zodResolver(LoginSchema),
+  });
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  async function onSubmit(data: LoginForm) {
+    setServerError(null);
     try {
-      await login(email, password);
+      await login(data.email, data.password);
     } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setServerError((err as Error).message);
     }
   }
 
@@ -39,30 +48,48 @@ export default function Login() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 bg-card rounded-2xl p-6 border border-border shadow-lg">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 bg-card rounded-2xl p-6 border border-border shadow-lg">
           <div className="space-y-1">
             <label className="text-sm font-medium">البريد الإلكتروني</label>
             <Input
-              type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="example@cabinet.tn" className={inputCls} dir="ltr" required
+              {...register("email")}
+              type="email"
+              placeholder="example@cabinet.tn"
+              className={inputCls}
+              dir="ltr"
+              autoComplete="email"
             />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email.message}</p>
+            )}
           </div>
+
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">كلمة المرور</label>
               <a href="forgot-password" className="text-xs text-primary hover:underline">نسيت كلمة المرور؟</a>
             </div>
             <Input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" className={inputCls} dir="ltr" required minLength={6}
+              {...register("password")}
+              type="password"
+              placeholder="••••••••"
+              className={inputCls}
+              dir="ltr"
+              autoComplete="current-password"
             />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password.message}</p>
+            )}
           </div>
-          {error && (
-            <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>
+
+          {serverError && (
+            <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{serverError}</p>
           )}
-          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
-            {loading ? "جارٍ..." : "تسجيل الدخول"}
+
+          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isSubmitting}>
+            {isSubmitting ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
           </Button>
+
           <div className="text-center text-sm text-muted-foreground">
             ليس لديك حساب؟{" "}
             <a href="register" className="text-primary hover:underline font-medium">إنشاء حساب جديد</a>
