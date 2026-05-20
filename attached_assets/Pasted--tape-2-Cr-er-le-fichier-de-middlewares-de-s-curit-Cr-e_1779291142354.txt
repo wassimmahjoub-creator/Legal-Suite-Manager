@@ -1,0 +1,64 @@
+Étape 2 — Créer le fichier de middlewares de sécurité
+Crée le fichier artifacts/api-server/src/middleware/security.ts avec ce contenu exact :
+
+import { type Request, type Response, type NextFunction } from "express";
+import rateLimit from "express-rate-limit";
+import xss from "xss";
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "عدد المحاولات كثير جداً، حاول مجدداً بعد 15 دقيقة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? "unknown",
+});
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "عدد الطلبات كثير جداً، حاول مجدداً بعد ساعة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? "unknown",
+});
+
+export const generalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { error: "عدد الطلبات كثير جداً، حاول لاحقاً" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === "GET",
+});
+
+// ── XSS sanitisation ──────────────────────────────────────────────────────────
+
+const XSS_OPTIONS = new xss.FilterXSS({
+  whiteList: {},
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ["script", "style"],
+});
+
+function sanitizeValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : XSS_OPTIONS.process(trimmed);
+  }
+  if (Array.isArray(value)) return value.map(sanitizeValue);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, sanitizeValue(v)])
+    );
+  }
+  return value;
+}
+
+export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
+  if (req.body && typeof req.body === "object") {
+    req.body = sanitizeValue(req.body) as Record<string, unknown>;
+  }
+  next();
+}
