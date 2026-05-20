@@ -1,0 +1,150 @@
+D.2 — Stockage objet pour les uploads (Cloudflare R2 / S3)
+Les fichiers uploadés sur Replit disparaissent à chaque redémarrage. Cloudflare R2 = stockage S3-compatible, tier gratuit généreux (10 Go, 1M requêtes/mois, zéro frais de sortie).
+
+D.2.1 — Installation des packages
+Dans le terminal Replit :
+
+pnpm --filter @workspace/api-server add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+D.2.2 — Nouveau fichier : artifacts/api-server/src/services/objectStorage.ts
+Crée ce fichier (nouveau) :
+
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "crypto";
+import path from "path";
+
+function requireEnv(key: string): string {
+  const v = process.env[key];
+  if (!v) throw new Error(`Missing required env var: ${key}`);
+  return v;
+}
+
+let _s3: S3Client | null = null;
+
+function getS3(): S3Client {
+  if (!_s3) {
+    _s3 = new S3Client({
+      endpoint: process.env["S3_ENDPOINT"],
+      region: "auto",
+      credentials: {
+        accessKeyId: requireEnv("S3_ACCESS_KEY_ID"),
+        secretAccessKey: requireEnv("S3_SECRET_ACCESS_KEY"),
+      },
+    });
+  }
+  return _s3;
+}
+
+const BUCKET = () => requireEnv("S3_BUCKET");
+const PUBLIC_URL = () => (process.env["S3_PUBLIC_URL"] ?? "").replace(/\/$/, "");
+
+export async function uploadToStorage(
+  buffer: Buffer,
+  originalName: string,
+  mimeType: string,
+): Promise<{ key: string; url: string }> {
+  const ext = path.extname(originalName).toLowerCase();
+  const key = `uploads/${randomUUID()}${ext}`;
+  await getS3().send(
+    new PutObjectCommand({
+      Bucket: BUCKET(),
+      Key: key,
+      Body: buffer,
+      ContentType: mimeType,
+    }),
+  );
+  const url = `${PUBLIC_URL()}/${key}`;
+  return { key, url };
+}
+
+export async function deleteFromStorage(key: string): Promise<void> {
+  await getS3().send(new DeleteObjectCommand({ Bucket: BUCKET(), Key: key }));
+}
+
+export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<string> {
+  return getSignedUrl(getS3(), new GetObjectCommand({ Bucket: BUCKET(), Key: key }), { expiresIn });
+}
+D.2.3 — artifacts/api-server/src/routes/uploads.ts
+Remplacement complet du fichier :
+
+import { Router } from "express";
+import multer from "multer";
+import { uploadToStorage } from "../services/objectStorage.js";
+
+const router = Router();
+
+const ALLOWED_MIME = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/zip",
+  "text/plain",
+]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    ALLOWED_MIME.has(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error("نوع الملف غير مسموح به"));
+  },
+});
+
+router.post("/uploads", upload.single("file"), async (req, res): Promise<void> => {
+  if (!req.file) {
+    res.status(400).json({ error: "لم يتم تحميل أي ملف" });
+    return;
+  }
+  try {
+    const { key, url } = await uploadToStorage(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+    res.status(201).json({
+      filename: key,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      url,
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "فشل رفع الملف، يرجى المحاولة مجدداً" });
+  }
+});
+
+export default router;
+D.2.4 — artifacts/api-server/src/app.ts : supprimer le static uploads
+Dans app.ts, supprime ces 3 lignes (local disk, inutile avec S3) :
+
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+Et plus bas :
+
+app.use(`${basePath}/api/uploads/files`, express.static(UPLOADS_DIR, {
+  setHeaders(res) {
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+  },
+}));
+Si path et fs ne sont plus utilisés ailleurs dans app.ts, supprime aussi leurs imports.
+
+D.2.5 — Variables d'environnement à configurer sur Replit
+Dans l'onglet Secrets de Replit, ajoute :
+
+Clé	Valeur exemple
+S3_ENDPOINT	https://<account-id>.r2.cloudflarestorage.com
+S3_BUCKET	legal-suite-files
+S3_ACCESS_KEY_ID	(depuis le dashboard Cloudflare R2 → API tokens)
+S3_SECRET_ACCESS_KEY	(depuis le dashboard Cloudflare R2 → API tokens)
+S3_PUBLIC_URL	https://pub-xxx.r2.dev ou ton domaine custom R2
+Pour créer les credentials R2 : dashboard.cloudflare.com → R2 → Manage R2 API Tokens → Create API Token → "Object Read & Write" sur le bucket.
+
