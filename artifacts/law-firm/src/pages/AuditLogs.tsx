@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -80,7 +81,11 @@ export default function AuditLogs() {
       {loading ? (
         <SkeletonTable rows={8} cols={5} />
       ) : data.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground"><ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-20" /><p>لا توجد سجلات</p></div>
+        <EmptyState
+          illustration={<ClipboardList className="h-20 w-20 text-muted-foreground/30" />}
+          title="لا توجد سجلات"
+          description="ستظهر هنا سجلات النشاط والأحداث فور تنفيذ أي عملية"
+        />
       ) : (
         <div className="border border-border rounded-2xl overflow-hidden">
           <table className="w-full text-sm">

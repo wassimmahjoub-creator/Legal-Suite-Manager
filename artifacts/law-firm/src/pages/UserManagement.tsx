@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -264,7 +265,10 @@ export default function UserManagement() {
       ) : (
         <div className="space-y-3">
           {invitations.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12 text-sm">لا توجد دعوات معلقة</div>
+            <EmptyState
+              title="لا توجد دعوات معلقة"
+              description="أرسل دعوة لمحامٍ أو مساعد — ستظهر هنا ريثما يقبلها"
+            />
           ) : invitations.map(inv => (
             <div key={inv.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
               <div>

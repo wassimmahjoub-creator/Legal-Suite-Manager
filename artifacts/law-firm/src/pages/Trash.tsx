@@ -7,6 +7,7 @@ import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCar
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -86,10 +87,11 @@ export default function Trash() {
       {loading ? (
         <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
       ) : total === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Trash2 className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p>سلة المحذوفات فارغة</p>
-        </div>
+        <EmptyState
+          illustration={<Trash2 className="h-20 w-20 text-muted-foreground/30" />}
+          title="سلة المحذوفات فارغة"
+          description="لا توجد عناصر محذوفة — العناصر المحذوفة تُحفظ هنا لمدة 30 يوماً قبل الحذف التلقائي"
+        />
       ) : (
         <div className="space-y-6">
           <Section title="القضايا" icon={Briefcase} entity="cases"
