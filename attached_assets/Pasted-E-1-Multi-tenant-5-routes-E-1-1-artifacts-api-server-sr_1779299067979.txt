@@ -1,0 +1,335 @@
+E.1 — Multi-tenant : 5 routes
+E.1.1 — artifacts/api-server/src/routes/tasks.ts
+Remplacement complet du fichier :
+
+import { Router } from "express";
+import { db, tasksTable, casesTable } from "@workspace/db";
+import { and, eq, inArray } from "drizzle-orm";
+import { CreateTaskBody, UpdateTaskBody } from "@workspace/api-zod";
+import { getActor } from "../middleware/auth.js";
+
+const router = Router();
+
+router.get("/tasks", async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const { caseId, done } = req.query as Record<string, string>;
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+
+  let rows = await db
+    .select({
+      id: tasksTable.id,
+      title: tasksTable.title,
+      caseId: tasksTable.caseId,
+      caseName: casesTable.title,
+      done: tasksTable.done,
+      dueDate: tasksTable.dueDate,
+      createdAt: tasksTable.createdAt,
+    })
+    .from(tasksTable)
+    .leftJoin(casesTable, eq(tasksTable.caseId, casesTable.id))
+    .where(inArray(tasksTable.caseId, orgCases))
+    .orderBy(tasksTable.createdAt);
+
+  if (caseId) rows = rows.filter((r) => r.caseId === Number(caseId));
+  if (done !== undefined) rows = rows.filter((r) => r.done === (done === "true"));
+  res.json(rows);
+});
+
+router.post("/tasks", async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const parsed = CreateTaskBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
+  if (parsed.data.caseId) {
+    const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+      .where(and(eq(casesTable.id, parsed.data.caseId), eq(casesTable.orgId, orgId)));
+    if (!c) return res.status(403).json({ error: "غير مصرح" });
+  }
+
+  const [row] = await db.insert(tasksTable).values(parsed.data).returning();
+  res.status(201).json({ ...row, caseName: null });
+});
+
+router.put("/tasks/:id", async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const id = Number(req.params.id);
+  const parsed = UpdateTaskBody.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: tasksTable.id }).from(tasksTable)
+    .where(and(eq(tasksTable.id, id), inArray(tasksTable.caseId, orgCases)));
+  if (!own) return res.status(404).json({ error: "غير موجود" });
+
+  const [row] = await db.update(tasksTable).set(parsed.data).where(eq(tasksTable.id, id)).returning();
+  res.json({ ...row, caseName: null });
+});
+
+router.delete("/tasks/:id", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const id = Number(req.params.id);
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: tasksTable.id }).from(tasksTable)
+    .where(and(eq(tasksTable.id, id), inArray(tasksTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+
+  await db.delete(tasksTable).where(eq(tasksTable.id, id));
+  res.status(204).send();
+});
+
+export default router;
+E.1.2 — artifacts/api-server/src/routes/expenses.ts
+Remplacement complet du fichier :
+
+import { Router } from "express";
+import { db, casesTable } from "@workspace/db";
+import { expensesTable } from "@workspace/db/schema";
+import { and, eq, inArray } from "drizzle-orm";
+import { getActor } from "../middleware/auth.js";
+
+const router = Router();
+
+function fmt(row: typeof expensesTable.$inferSelect) {
+  return {
+    id: row.id,
+    caseId: row.caseId,
+    date: row.date,
+    typeValue: row.typeValue,
+    description: row.description,
+    amount: Number(row.amount),
+    reimbursable: row.reimbursable,
+    createdAt: row.createdAt,
+  };
+}
+
+router.get("/expenses", async (req, res) => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const caseId = req.query.caseId ? Number(req.query.caseId) : null;
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+
+  const rows = await db.select().from(expensesTable)
+    .where(caseId
+      ? and(eq(expensesTable.caseId, caseId), inArray(expensesTable.caseId, orgCases))
+      : inArray(expensesTable.caseId, orgCases));
+  res.json(rows.map(fmt));
+});
+
+router.post("/expenses", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const body = req.body as Record<string, unknown>;
+
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, Number(body.caseId)), eq(casesTable.orgId, orgId)));
+  if (!c) { res.status(403).json({ error: "غير مصرح" }); return; }
+
+  const [row] = await db.insert(expensesTable).values({
+    caseId: Number(body.caseId),
+    date: body.date as string,
+    typeValue: body.typeValue as string,
+    description: (body.description as string) ?? "",
+    amount: String(body.amount),
+    reimbursable: Boolean(body.reimbursable ?? true),
+  }).returning();
+  res.status(201).json(fmt(row));
+});
+
+router.put("/expenses/:id", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const id = Number(req.params.id);
+  const body = req.body as Record<string, unknown>;
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: expensesTable.id }).from(expensesTable)
+    .where(and(eq(expensesTable.id, id), inArray(expensesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+
+  const [row] = await db.update(expensesTable).set({
+    date: body.date as string,
+    typeValue: body.typeValue as string,
+    description: (body.description as string) ?? "",
+    amount: String(body.amount),
+    reimbursable: Boolean(body.reimbursable ?? true),
+  }).where(eq(expensesTable.id, id)).returning();
+  res.json(fmt(row!));
+});
+
+router.delete("/expenses/:id", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const id = Number(req.params.id);
+
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: expensesTable.id }).from(expensesTable)
+    .where(and(eq(expensesTable.id, id), inArray(expensesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+
+  await db.delete(expensesTable).where(eq(expensesTable.id, id));
+  res.json({ ok: true });
+});
+
+export default router;
+E.1.3 — artifacts/api-server/src/routes/deadlines.ts
+4 modifications ciblées dans le fichier existant :
+
+① Ajoute inArray aux imports Drizzle et getActor depuis auth :
+
+// AVANT :
+import { eq, isNull } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+
+// APRÈS :
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
+② GET /deadlines — ajoute le filtre orgId :
+
+// AVANT :
+router.get("/deadlines", requireAuth, async (_req, res) => {
+  const rows = await db
+    .select({ ... })
+    .from(deadlinesTable)
+    .leftJoin(casesTable, eq(deadlinesTable.caseId, casesTable.id))
+    .orderBy(deadlinesTable.dueDate);
+  res.json(rows);
+});
+
+// APRÈS :
+router.get("/deadlines", requireAuth, async (req, res) => {
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const rows = await db
+    .select({
+      id: deadlinesTable.id,
+      caseId: deadlinesTable.caseId,
+      caseName: casesTable.title,
+      title: deadlinesTable.title,
+      type: deadlinesTable.type,
+      dueDate: deadlinesTable.dueDate,
+      urgency: deadlinesTable.urgency,
+      notes: deadlinesTable.notes,
+      completedAt: deadlinesTable.completedAt,
+      createdAt: deadlinesTable.createdAt,
+    })
+    .from(deadlinesTable)
+    .leftJoin(casesTable, eq(deadlinesTable.caseId, casesTable.id))
+    .where(inArray(deadlinesTable.caseId, orgCases))
+    .orderBy(deadlinesTable.dueDate);
+  res.json(rows);
+});
+③ GET /deadlines/upcoming — ajoute le filtre orgId :
+
+// AVANT :
+router.get("/deadlines/upcoming", requireAuth, async (_req, res) => {
+  const rows = await db.select().from(deadlinesTable).where(isNull(deadlinesTable.completedAt)).orderBy(deadlinesTable.dueDate);
+  res.json(rows.slice(0, 20));
+});
+
+// APRÈS :
+router.get("/deadlines/upcoming", requireAuth, async (req, res) => {
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const rows = await db.select().from(deadlinesTable)
+    .where(and(isNull(deadlinesTable.completedAt), inArray(deadlinesTable.caseId, orgCases)))
+    .orderBy(deadlinesTable.dueDate);
+  res.json(rows.slice(0, 20));
+});
+④ PUT /deadlines/:id et PATCH /deadlines/:id/complete et DELETE /deadlines/:id — ajoute vérification de propriété. Trouve les 3 handlers et, pour chacun, ajoute juste avant la requête de modification :
+
+// Ajoute AU DÉBUT de chaque handler PUT, PATCH, DELETE (après const id = ...):
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: deadlinesTable.id }).from(deadlinesTable)
+    .where(and(eq(deadlinesTable.id, id), inArray(deadlinesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+E.1.4 — artifacts/api-server/src/routes/opponents.ts
+3 modifications ciblées :
+
+① Ajoute inArray et getActor aux imports :
+
+// AVANT :
+import { eq } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+
+// APRÈS :
+import { and, eq, inArray } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
+② GET /opponents — filtre par org via subquery :
+
+// AVANT :
+  let rows = await withCase().orderBy(opponentsTable.createdAt);
+  if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
+
+// APRÈS :
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  let rows = await withCase()
+    .where(inArray(opponentsTable.caseId, orgCases))
+    .orderBy(opponentsTable.createdAt);
+  if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
+③ PUT /opponents/:id et DELETE /opponents/:id — ajoute vérification. Même pattern : juste après const id = Number(...), insère :
+
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: opponentsTable.id }).from(opponentsTable)
+    .where(and(eq(opponentsTable.id, id), inArray(opponentsTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+E.1.5 — artifacts/api-server/src/routes/communications.ts
+3 modifications ciblées :
+
+① Ajoute les imports manquants :
+
+// AVANT :
+import { eq } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
+
+// APRÈS :
+import { and, eq, inArray, or } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
+② GET /communications — filtre par org (case OU client) :
+
+// AVANT :
+  let rows = await withRefs().orderBy(communicationsTable.date);
+  if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
+  if (clientId) rows = rows.filter(r => r.clientId === Number(clientId));
+
+// APRÈS :
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const orgClients = db.select({ id: clientsTable.id }).from(clientsTable).where(eq(clientsTable.orgId, orgId));
+  let rows = await withRefs()
+    .where(or(inArray(communicationsTable.caseId, orgCases), inArray(communicationsTable.clientId, orgClients)))
+    .orderBy(communicationsTable.date);
+  if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
+  if (clientId) rows = rows.filter(r => r.clientId === Number(clientId));
+③ DELETE /communications/:id — ajoute vérification :
+
+// AVANT :
+router.delete("/communications/:id", requireAuth, async (req, res) => {
+  await db.delete(communicationsTable).where(eq(communicationsTable.id, Number(req.params.id)));
+  res.status(204).send();
+});
+
+// APRÈS :
+router.delete("/communications/:id", requireAuth, async (req, res): Promise<void> => {
+  const orgId = getActor(req).orgId ?? 0;
+  const id = Number(req.params.id);
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const orgClients = db.select({ id: clientsTable.id }).from(clientsTable).where(eq(clientsTable.orgId, orgId));
+  const [own] = await db.select({ id: communicationsTable.id }).from(communicationsTable)
+    .where(and(
+      eq(communicationsTable.id, id),
+      or(inArray(communicationsTable.caseId, orgCases), inArray(communicationsTable.clientId, orgClients)),
+    ));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+  await db.delete(communicationsTable).where(eq(communicationsTable.id, id));
+  res.status(204).send();
+});

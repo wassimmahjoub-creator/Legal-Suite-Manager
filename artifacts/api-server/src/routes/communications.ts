@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, communicationsTable, clientsTable, casesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { and, eq, inArray, or } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -22,7 +22,12 @@ const withRefs = () => db.select({
 
 router.get("/communications", requireAuth, async (req, res) => {
   const { caseId, clientId } = req.query as Record<string, string>;
-  let rows = await withRefs().orderBy(communicationsTable.date);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const orgClients = db.select({ id: clientsTable.id }).from(clientsTable).where(eq(clientsTable.orgId, orgId));
+  let rows = await withRefs()
+    .where(or(inArray(communicationsTable.caseId, orgCases), inArray(communicationsTable.clientId, orgClients)))
+    .orderBy(communicationsTable.date);
   if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
   if (clientId) rows = rows.filter(r => r.clientId === Number(clientId));
   res.json(rows.reverse());
@@ -47,8 +52,18 @@ router.put("/communications/:id", requireAuth, async (req, res): Promise<void> =
   res.json({ ...row, caseName: null, clientName: null });
 });
 
-router.delete("/communications/:id", requireAuth, async (req, res) => {
-  await db.delete(communicationsTable).where(eq(communicationsTable.id, Number(req.params.id)));
+router.delete("/communications/:id", requireAuth, async (req, res): Promise<void> => {
+  const orgId = getActor(req).orgId ?? 0;
+  const id = Number(req.params.id);
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const orgClients = db.select({ id: clientsTable.id }).from(clientsTable).where(eq(clientsTable.orgId, orgId));
+  const [own] = await db.select({ id: communicationsTable.id }).from(communicationsTable)
+    .where(and(
+      eq(communicationsTable.id, id),
+      or(inArray(communicationsTable.caseId, orgCases), inArray(communicationsTable.clientId, orgClients)),
+    ));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+  await db.delete(communicationsTable).where(eq(communicationsTable.id, id));
   res.status(204).send();
 });
 

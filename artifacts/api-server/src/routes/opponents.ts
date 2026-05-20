@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, opponentsTable, casesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { and, eq, inArray } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 import { ConflictDetectionService } from "../services/conflictDetection.js";
 import type { AuthPayload } from "../middleware/auth.js";
@@ -27,7 +27,11 @@ const withCase = () =>
 
 router.get("/opponents", requireAuth, async (req, res) => {
   const { caseId } = req.query as Record<string, string>;
-  let rows = await withCase().orderBy(opponentsTable.createdAt);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  let rows = await withCase()
+    .where(inArray(opponentsTable.caseId, orgCases))
+    .orderBy(opponentsTable.createdAt);
   if (caseId) rows = rows.filter(r => r.caseId === Number(caseId));
   res.json(rows);
 });
@@ -62,6 +66,11 @@ router.post("/opponents", requireAuth, async (req, res): Promise<void> => {
 
 router.put("/opponents/:id", requireAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: opponentsTable.id }).from(opponentsTable)
+    .where(and(eq(opponentsTable.id, id), inArray(opponentsTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
   const { name, lawyerName, phone, address, notes, caseId, capacity, opponentLawyerPhone } = req.body as Record<string, string>;
   const [row] = await db.update(opponentsTable).set({
     name,
@@ -80,14 +89,19 @@ router.put("/opponents/:id", requireAuth, async (req, res): Promise<void> => {
   res.json({ ...row, caseName: null });
 });
 
-router.delete("/opponents/:id", requireAuth, async (req, res) => {
-  const oppId = Number(req.params.id);
-  const [opp] = await db.select().from(opponentsTable).where(eq(opponentsTable.id, oppId));
-  await db.delete(opponentsTable).where(eq(opponentsTable.id, oppId));
+router.delete("/opponents/:id", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: opponentsTable.id }).from(opponentsTable)
+    .where(and(eq(opponentsTable.id, id), inArray(opponentsTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+  const [opp] = await db.select().from(opponentsTable).where(eq(opponentsTable.id, id));
+  await db.delete(opponentsTable).where(eq(opponentsTable.id, id));
   if (opp?.caseId) {
-    const actor = (req as typeof req & { user?: AuthPayload }).user;
     void CaseEventLogger.log({
-      caseId: opp.caseId, eventType: "opponent_removed", actorUserId: actor?.id ?? null,
+      caseId: opp.caseId, eventType: "opponent_removed", actorUserId: actor.id ?? null,
       metadata: { opponent_name: opp.name },
     });
   }

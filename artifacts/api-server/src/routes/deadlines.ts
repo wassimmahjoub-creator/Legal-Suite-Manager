@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, deadlinesTable, casesTable } from "@workspace/db";
-import { eq, isNull } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import { requireAuth, getActor } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -13,7 +13,9 @@ const DEADLINE_RULES: Record<string, { days: number; urgency: string; label: str
   custom: { days: 0, urgency: "normal", label: "أجل مخصص" },
 };
 
-router.get("/deadlines", requireAuth, async (_req, res) => {
+router.get("/deadlines", requireAuth, async (req, res) => {
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
   const rows = await db
     .select({
       id: deadlinesTable.id,
@@ -29,6 +31,7 @@ router.get("/deadlines", requireAuth, async (_req, res) => {
     })
     .from(deadlinesTable)
     .leftJoin(casesTable, eq(deadlinesTable.caseId, casesTable.id))
+    .where(inArray(deadlinesTable.caseId, orgCases))
     .orderBy(deadlinesTable.dueDate);
   res.json(rows);
 });
@@ -39,8 +42,12 @@ router.get("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
   res.json(rows);
 });
 
-router.get("/deadlines/upcoming", requireAuth, async (_req, res) => {
-  const rows = await db.select().from(deadlinesTable).where(isNull(deadlinesTable.completedAt)).orderBy(deadlinesTable.dueDate);
+router.get("/deadlines/upcoming", requireAuth, async (req, res) => {
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const rows = await db.select().from(deadlinesTable)
+    .where(and(isNull(deadlinesTable.completedAt), inArray(deadlinesTable.caseId, orgCases)))
+    .orderBy(deadlinesTable.dueDate);
   res.json(rows.slice(0, 20));
 });
 
@@ -82,6 +89,11 @@ router.post("/cases/:caseId/deadlines", requireAuth, async (req, res) => {
 
 router.put("/deadlines/:id", requireAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: deadlinesTable.id }).from(deadlinesTable)
+    .where(and(eq(deadlinesTable.id, id), inArray(deadlinesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
   const { title, type, dueDate, urgency, notes } = req.body;
   const [row] = await db.update(deadlinesTable).set({
     ...(title     !== undefined && { title }),
@@ -96,13 +108,24 @@ router.put("/deadlines/:id", requireAuth, async (req, res): Promise<void> => {
 
 router.patch("/deadlines/:id/complete", requireAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: deadlinesTable.id }).from(deadlinesTable)
+    .where(and(eq(deadlinesTable.id, id), inArray(deadlinesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
   const [row] = await db.update(deadlinesTable).set({ completedAt: new Date() }).where(eq(deadlinesTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "غير موجود" }); return; }
   res.json(row);
 });
 
-router.delete("/deadlines/:id", requireAuth, async (req, res) => {
-  await db.delete(deadlinesTable).where(eq(deadlinesTable.id, Number(req.params.id)));
+router.delete("/deadlines/:id", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const orgId = getActor(req).orgId ?? 0;
+  const orgCases = db.select({ id: casesTable.id }).from(casesTable).where(eq(casesTable.orgId, orgId));
+  const [own] = await db.select({ id: deadlinesTable.id }).from(deadlinesTable)
+    .where(and(eq(deadlinesTable.id, id), inArray(deadlinesTable.caseId, orgCases)));
+  if (!own) { res.status(404).json({ error: "غير موجود" }); return; }
+  await db.delete(deadlinesTable).where(eq(deadlinesTable.id, id));
   res.status(204).send();
 });
 
