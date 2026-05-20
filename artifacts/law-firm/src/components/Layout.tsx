@@ -29,12 +29,12 @@ interface OrgTrial {
 /* ─────────────────────── nav data ─────────────────────── */
 
 const NAV_PRIMARY = [
+  { href: "/today",      label: "لوحة اليوم",    icon: CalendarIcon    },
   { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
   { href: "/cases",      label: "القضايا",       icon: Briefcase       },
-  { href: "/calendar",   label: "الرزنامة",      icon: CalendarIcon    },
-  { href: "/clients",    label: "الموكّلون",        icon: Users           },
-  { href: "/documents",  label: "الوثائق",        icon: FileText        },
-  { href: "/billing",    label: "الفواتير",       icon: CreditCard      },
+  { href: "/clients",    label: "الموكّلون",     icon: Users           },
+  { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
+  { href: "/documents",  label: "الوثائق",       icon: FileText        },
 ];
 
 const NAV_SECONDARY = [

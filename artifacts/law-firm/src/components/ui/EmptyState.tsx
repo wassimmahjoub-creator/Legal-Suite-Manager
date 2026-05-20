@@ -22,17 +22,19 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center text-center py-16 px-6 gap-5",
+      "flex flex-col items-center justify-center text-center py-20 px-6 gap-6",
       className
     )}>
       {illustration && (
-        <div className="w-40 h-40 flex items-center justify-center opacity-80">
+        <div className="w-44 h-44 flex items-center justify-center opacity-60">
           {illustration}
         </div>
       )}
 
-      <div className="space-y-2 max-w-sm">
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      <div className="space-y-2 max-w-xs">
+        <h3 className="text-base font-semibold text-foreground leading-snug">
+          {title}
+        </h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
       </div>
 
@@ -41,7 +43,7 @@ export function EmptyState({
           {primaryAction && (
             <button
               onClick={primaryAction.onClick}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 h-[38px] px-5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               {primaryAction.icon}
               {primaryAction.label}
@@ -50,7 +52,7 @@ export function EmptyState({
           {secondaryAction && (
             <button
               onClick={secondaryAction.onClick}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg border border-border bg-card text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              className="inline-flex items-center gap-2 h-[38px] px-5 rounded-md border border-border bg-card text-sm font-medium text-foreground hover:bg-secondary transition-colors"
             >
               {secondaryAction.icon}
               {secondaryAction.label}

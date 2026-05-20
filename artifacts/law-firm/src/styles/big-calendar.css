@@ -1,65 +1,72 @@
-/* react-big-calendar dark navy + gold theme overrides */
+/* react-big-calendar — Design System v1 theme (CSS vars, light + dark) */
 
 .rbc-calendar {
   background: transparent;
   color: inherit;
-  font-family: "Cairo", sans-serif;
+  font-family: var(--app-font-arabic, "Cairo"), sans-serif;
 }
 
-/* Header / toolbar (we use a custom toolbar; hide the default) */
+/* Hide default toolbar — we use a custom one */
 .rbc-toolbar { display: none; }
 
-/* Month view cell borders */
+/* ── Borders & containers ─────────────────────────────────────────────────── */
+
 .rbc-month-view,
 .rbc-time-view,
 .rbc-agenda-view {
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
   overflow: hidden;
 }
 
+.rbc-month-row,
+.rbc-day-bg + .rbc-day-bg,
+.rbc-header + .rbc-header,
+.rbc-month-row { border-color: hsl(var(--border) / 0.6); }
+
+/* ── Header row (day names) ────────────────────────────────────────────────── */
+
 .rbc-header {
-  background: rgba(15,35,66,0.8);
-  border-color: rgba(255,255,255,0.08);
-  color: #d4a017;
+  background: hsl(var(--secondary));
+  border-color: hsl(var(--border) / 0.6);
+  color: hsl(var(--primary));
   font-weight: 600;
   padding: 8px 4px;
   font-size: 0.8rem;
 }
 
-.rbc-month-row,
-.rbc-day-bg + .rbc-day-bg,
-.rbc-header + .rbc-header {
-  border-color: rgba(255,255,255,0.06);
-}
-
-.rbc-month-row { border-color: rgba(255,255,255,0.06); }
+/* ── Day cells ─────────────────────────────────────────────────────────────── */
 
 .rbc-day-bg {
   background: transparent;
 }
 
 .rbc-day-bg.rbc-today {
-  background: rgba(212,160,23,0.08);
+  background: hsl(var(--primary) / 0.06);
+}
+
+.rbc-today {
+  background: hsl(var(--primary) / 0.05);
 }
 
 .rbc-off-range-bg {
-  background: rgba(0,0,0,0.15);
+  background: hsl(var(--muted) / 0.4);
 }
 
 .rbc-off-range .rbc-button-link {
-  color: rgba(255,255,255,0.25);
+  color: hsl(var(--muted-foreground) / 0.4);
 }
 
 .rbc-date-cell {
-  color: rgba(255,255,255,0.7);
+  color: hsl(var(--foreground) / 0.7);
   padding: 4px 6px;
   font-size: 0.8rem;
 }
 
+/* Today's date — filled circle */
 .rbc-date-cell.rbc-now .rbc-button-link {
-  background: #d4a017;
-  color: #0f2342;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -69,7 +76,8 @@
   font-weight: 700;
 }
 
-/* Event pills */
+/* ── Event pills ────────────────────────────────────────────────────────────── */
+
 .rbc-event {
   border: none !important;
   border-radius: 4px;
@@ -79,101 +87,105 @@
 }
 
 .rbc-event.rbc-selected {
-  box-shadow: 0 0 0 2px #d4a017;
+  box-shadow: 0 0 0 2px hsl(var(--primary));
 }
 
 .rbc-show-more {
-  color: #d4a017;
+  color: hsl(var(--primary));
   font-size: 0.72rem;
   background: transparent;
 }
 
-/* Time view */
+/* ── Time view ─────────────────────────────────────────────────────────────── */
+
 .rbc-time-content {
-  border-color: rgba(255,255,255,0.06);
+  border-color: hsl(var(--border) / 0.5);
 }
 
 .rbc-timeslot-group {
-  border-color: rgba(255,255,255,0.05);
+  border-color: hsl(var(--border) / 0.4);
 }
 
 .rbc-time-slot {
-  color: rgba(255,255,255,0.35);
+  color: hsl(var(--muted-foreground) / 0.6);
   font-size: 0.72rem;
 }
 
 .rbc-time-header-content {
-  border-color: rgba(255,255,255,0.08);
+  border-color: hsl(var(--border) / 0.5);
 }
 
 .rbc-time-header-gutter,
 .rbc-time-gutter {
-  background: rgba(15,35,66,0.6);
+  background: hsl(var(--secondary));
 }
 
 .rbc-current-time-indicator {
-  background: #d4a017;
+  background: hsl(var(--primary));
   height: 2px;
 }
 
 .rbc-day-slot .rbc-time-slot {
-  border-color: rgba(255,255,255,0.03);
+  border-color: hsl(var(--border) / 0.25);
 }
 
 .rbc-day-slot .rbc-event {
   border: none !important;
 }
 
-.rbc-today {
-  background: rgba(212,160,23,0.06);
-}
+/* ── Agenda / list view ────────────────────────────────────────────────────── */
 
-/* Agenda list view */
 .rbc-agenda-view table {
-  border-color: rgba(255,255,255,0.06);
+  border-color: hsl(var(--border) / 0.5);
 }
 
 .rbc-agenda-date-cell,
 .rbc-agenda-time-cell {
-  color: rgba(255,255,255,0.5);
+  color: hsl(var(--muted-foreground));
   font-size: 0.78rem;
 }
 
 .rbc-agenda-event-cell {
-  color: rgba(255,255,255,0.85);
+  color: hsl(var(--foreground) / 0.9);
 }
 
 .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
-  border-color: rgba(255,255,255,0.04);
+  border-color: hsl(var(--border) / 0.3);
 }
 
 .rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td {
-  border-color: rgba(255,255,255,0.04);
+  border-color: hsl(var(--border) / 0.3);
 }
 
 .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
-  background: rgba(15,35,66,0.8);
-  color: #d4a017;
-  border-color: rgba(255,255,255,0.08);
+  background: hsl(var(--secondary));
+  color: hsl(var(--primary));
+  border-color: hsl(var(--border) / 0.5);
   padding: 8px 12px;
   font-weight: 600;
 }
 
-/* Drag & Drop */
+/* ── Drag & Drop ────────────────────────────────────────────────────────────── */
+
 .rbc-addons-dnd-drag-preview {
   opacity: 0.75;
 }
 
 .rbc-addons-dnd-over {
-  background: rgba(212,160,23,0.12);
+  background: hsl(var(--primary) / 0.1);
 }
 
-/* Scroll */
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+
 .rbc-time-content::-webkit-scrollbar { width: 4px; }
 .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
-.rbc-time-content::-webkit-scrollbar-thumb { background: rgba(212,160,23,0.3); border-radius: 2px; }
+.rbc-time-content::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 2px;
+}
 
-/* Equal column widths in week/day view + vertical centering */
+/* ── Equal column widths in week/day view ──────────────────────────────────── */
+
 .rbc-time-header-content .rbc-header {
   flex: 1 1 0% !important;
   padding: 0 !important;
@@ -185,34 +197,11 @@
   justify-content: center !important;
 }
 
-/* ── RTL: لنده أقصى اليمين، الأحد أقصى اليسار ──────────── */
+/* ── RTL: السبت أقصى اليمين، الأحد أقصى اليسار ───────────────────────────── */
 
-/* vue mois — entête des jours */
-.rbc-month-header {
-  flex-direction: row-reverse;
-}
-
-/* vue mois — fond des cellules jour */
-.rbc-row-bg {
-  flex-direction: row-reverse;
-}
-
-/* vue mois — chiffres et événements */
-.rbc-row-content .rbc-row {
-  flex-direction: row-reverse;
-}
-
-/* vue semaine/jour — bandeau d'entête (gutter + colonnes jours) */
-.rbc-time-header {
-  flex-direction: row-reverse;
-}
-
-/* vue semaine/jour — entêtes des jours dans le contenu */
-.rbc-time-header-content .rbc-row {
-  flex-direction: row-reverse;
-}
-
-/* vue semaine/jour — colonnes horaires (gutter + créneaux) */
-.rbc-time-content {
-  flex-direction: row-reverse;
-}
+.rbc-month-header   { flex-direction: row-reverse; }
+.rbc-row-bg         { flex-direction: row-reverse; }
+.rbc-row-content .rbc-row { flex-direction: row-reverse; }
+.rbc-time-header    { flex-direction: row-reverse; }
+.rbc-time-header-content .rbc-row { flex-direction: row-reverse; }
+.rbc-time-content   { flex-direction: row-reverse; }

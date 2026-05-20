@@ -51,7 +51,7 @@ export function CaseStageStepper({ caseId, onStageClick, refreshKey }: CaseStage
   for (const s of stages) stageMap.set(s.stage, s);
 
   return (
-    <div className="flex items-center justify-center gap-0 py-2 sm:py-3 px-2 sm:px-4 bg-card/50 border-b border-border/40 overflow-x-auto">
+    <div className="flex items-center justify-center gap-0 py-3 sm:py-4 px-2 sm:px-6 bg-secondary/50 border-b border-border overflow-x-auto">
       {STAGES.map((slot, idx) => {
         const data = stageMap.get(slot.value);
         const isDone   = !!data && !!data.exitedAt;
@@ -59,19 +59,19 @@ export function CaseStageStepper({ caseId, onStageClick, refreshKey }: CaseStage
         const isReached = isDone || isActive;
 
         const circleClass = isDone
-          ? "bg-green-600 border-green-600 text-white"
+          ? "bg-success border-success text-white"
           : isActive
-            ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/25"
-            : "bg-muted border-border text-muted-foreground";
+            ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/20"
+            : "bg-background border-border text-muted-foreground";
 
         const labelClass = isActive
           ? "text-primary font-semibold"
           : isDone
-            ? "text-green-400 font-medium"
+            ? "text-success font-medium"
             : "text-muted-foreground";
 
         const lineClass = isDone
-          ? "bg-green-600"
+          ? "bg-success"
           : isActive
             ? "bg-primary/40"
             : "bg-border";
@@ -89,29 +89,29 @@ export function CaseStageStepper({ caseId, onStageClick, refreshKey }: CaseStage
 
         return (
           <div key={slot.value} className="flex items-center shrink-0">
-            <div className="flex flex-col items-center gap-0.5 group relative">
+            <div className="flex flex-col items-center gap-1 group relative">
               <button
                 title={tooltip}
                 disabled={!isReached}
                 onClick={handleClick}
                 className={cn(
-                  "w-7 h-7 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 font-bold text-xs sm:text-sm shrink-0",
+                  "w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center transition-all duration-200 font-bold text-xs sm:text-sm shrink-0",
                   circleClass,
-                  isReached && "cursor-pointer hover:scale-110",
-                  !isReached && "cursor-not-allowed opacity-50"
+                  isReached && "cursor-pointer hover:scale-110 shadow-sm",
+                  !isReached && "cursor-not-allowed opacity-40"
                 )}
               >
-                {isDone ? <Check className="h-3 w-3 sm:h-4 sm:w-4 text-white" /> : idx + 1}
+                {isDone ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : idx + 1}
               </button>
-              <span className={cn("text-[9px] sm:text-xs transition-colors text-center leading-tight", labelClass)}>
+              <span className={cn("text-[10px] sm:text-xs font-medium transition-colors text-center leading-tight", labelClass)}>
                 {slot.label}
               </span>
-              <span className={cn("text-[9px] text-muted-foreground leading-tight hidden sm:block", !isReached && "invisible")}>
+              <span className={cn("text-[9px] text-muted-foreground/70 leading-tight hidden sm:block", !isReached && "invisible")}>
                 {isReached && data ? formatDateTN(data.enteredAt.slice(0, 10)) : "–"}
               </span>
             </div>
             {idx < STAGES.length - 1 && (
-              <div className={cn("h-0.5 w-5 sm:w-12 md:w-20 mx-1 mt-[-14px] sm:mt-[-20px] transition-colors shrink-0", lineClass)} />
+              <div className={cn("h-0.5 w-6 sm:w-14 md:w-24 mx-1.5 mt-[-22px] sm:mt-[-26px] transition-colors shrink-0 rounded-full", lineClass)} />
             )}
           </div>
         );
