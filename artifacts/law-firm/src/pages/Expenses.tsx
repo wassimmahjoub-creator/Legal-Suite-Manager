@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useLocale } from "@/context/LocaleContext";
 import { authFetch } from "@/lib/authFetch";
+import { SkeletonTable } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { useMutate } from "@/hooks/useMutate";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -71,6 +75,9 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [filterCase, setFilterCase] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const mutate = useMutate();
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split("T")[0],
@@ -81,24 +88,64 @@ export default function Expenses() {
     reimbursable: true,
   });
 
-  useEffect(() => {
-    authFetch(`${BASE}/api/cases`)
-      .then(r => r.ok ? r.json() : [])
-      .then((data: CaseOption[]) => {
-        const active = data.filter((c: any) => !c.deletedAt);
-        setCases(active);
-        if (active.length > 0 && !form.caseId) {
-          setForm(f => ({ ...f, caseId: String(active[0].id) }));
-        }
-        setExpenses([
-          { id: 1, date: "2026-05-03", caseId: active[0]?.id ?? null, caseTitle: active[0]?.title ?? "—", typeValue: "court_fees",  description: "دفع حقوق تسجيل الدعوى",      amount: 120, reimbursable: true  },
-          { id: 2, date: "2026-05-01", caseId: active[1]?.id ?? null, caseTitle: active[1]?.title ?? "—", typeValue: "expert_fees", description: "أتعاب خبير عقاري",            amount: 800, reimbursable: true  },
-          { id: 3, date: "2026-04-28", caseId: active[2]?.id ?? null, caseTitle: active[2]?.title ?? "—", typeValue: "bailiff",     description: "تبليغ استدعاء",               amount: 45,  reimbursable: true  },
-          { id: 4, date: "2026-04-25", caseId: active[0]?.id ?? null, caseTitle: active[0]?.title ?? "—", typeValue: "travel",      description: "تنقل للمحكمة الابتدائية",    amount: 30,  reimbursable: false },
-          { id: 5, date: "2026-04-20", caseId: active[1]?.id ?? null, caseTitle: active[1]?.title ?? "—", typeValue: "stamps",      description: "طوابع الطعن بالاستئناف",      amount: 15,  reimbursable: true  },
-        ]);
-      });
-  }, []);
+  async function load() {
+    setIsLoading(true);
+    try {
+      const [casesRes, expensesRes] = await Promise.all([
+        authFetch(`${BASE}/api/cases`),
+        authFetch(`${BASE}/api/expenses`),
+      ]);
+      const casesData: CaseOption[] = casesRes.ok ? await casesRes.json() : [];
+      const expensesData: any[] = expensesRes.ok ? await expensesRes.json() : [];
+      const active = casesData.filter((c: any) => !c.deletedAt);
+      setCases(active);
+      if (active.length > 0 && !form.caseId) {
+        setForm(f => ({ ...f, caseId: String(active[0].id) }));
+      }
+      setExpenses(expensesData.map((e: any) => ({
+        ...e,
+        caseTitle: active.find(c => c.id === e.caseId)?.title ?? "—",
+      })));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function saveExpense() {
+    if (!form.description || !form.amount || !form.caseId) return;
+    const ok = await mutate(
+      () => authFetch(`${BASE}/api/expenses`, {
+        method: "POST",
+        body: JSON.stringify({
+          date: form.date,
+          caseId: Number(form.caseId),
+          typeValue: form.typeValue,
+          description: form.description,
+          amount: parseFloat(form.amount),
+          reimbursable: form.reimbursable,
+        }),
+      }),
+      { successMsg: "تمت إضافة المصروف", errorMsg: "فشل حفظ المصروف" }
+    );
+    if (ok !== null) {
+      setForm(f => ({ ...f, description: "", amount: "" }));
+      setShowModal(false);
+      await load();
+    }
+  }
+
+  async function deleteExpense(id: number) {
+    const ok = await mutate(
+      () => authFetch(`${BASE}/api/expenses/${id}`, { method: "DELETE" }),
+      { successMsg: "تم حذف المصروف", errorMsg: "فشل الحذف" }
+    );
+    if (ok !== null) {
+      setConfirmId(null);
+      await load();
+    }
+  }
 
   const filtered = filterCase === "all"
     ? expenses
@@ -184,13 +231,16 @@ export default function Expenses() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-16 text-center text-muted-foreground">
-                        <Receipt className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                        <p>لا توجد مصاريف مسجلة</p>
-                      </td>
-                    </tr>
+                  {isLoading ? (
+                    <tr><td colSpan={7} className="p-0"><SkeletonTable rows={5} cols={7} /></td></tr>
+                  ) : filtered.length === 0 ? (
+                    <tr><td colSpan={7} className="py-0">
+                      <EmptyState
+                        illustration={<Receipt className="h-16 w-16 text-muted-foreground/30" />}
+                        title="لا توجد مصاريف مسجلة"
+                        description="سجّل مصاريف القضايا — ستظهر هنا فور إضافتها"
+                      />
+                    </td></tr>
                   ) : filtered.map(e => {
                     const label = getTypeLabel(e.typeValue, locale);
                     const alt   = getTypeAlt(e.typeValue, locale);
@@ -229,7 +279,7 @@ export default function Expenses() {
                         </td>
                         <td className="py-3 px-4 text-center" onClick={ev => ev.stopPropagation()}>
                           <button
-                            onClick={() => setExpenses(es => es.filter(x => x.id !== e.id))}
+                            onClick={() => setConfirmId(e.id)}
                             className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -296,28 +346,19 @@ export default function Expenses() {
               </div>
             </label>
             <div className="flex gap-3 pt-2">
-              <Button className="flex-1" onClick={() => {
-                if (form.description && form.amount && form.caseId) {
-                  const c = cases.find(c => String(c.id) === form.caseId);
-                  setExpenses(es => [{
-                    id: Date.now(),
-                    date: form.date,
-                    caseId: Number(form.caseId),
-                    caseTitle: c?.title ?? "—",
-                    typeValue: form.typeValue,
-                    description: form.description,
-                    amount: parseFloat(form.amount),
-                    reimbursable: form.reimbursable,
-                  }, ...es]);
-                  setForm(f => ({ ...f, description: "", amount: "" }));
-                }
-                setShowModal(false);
-              }}>حفظ المصروف</Button>
+              <Button className="flex-1" onClick={saveExpense}>حفظ المصروف</Button>
               <Button variant="outline" onClick={() => setShowModal(false)} className="px-5">إلغاء</Button>
             </div>
           </div>
         </Modal>
-      </div>
+      <ConfirmDestructive
+        open={confirmId !== null}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => deleteExpense(confirmId!)}
+        title="حذف المصروف؟"
+        description="سيتم حذف هذا المصروف نهائياً. هذا الإجراء لا يمكن التراجع عنه."
+        confirmLabel="حذف"
+      />
     </TooltipProvider>
   );
 }

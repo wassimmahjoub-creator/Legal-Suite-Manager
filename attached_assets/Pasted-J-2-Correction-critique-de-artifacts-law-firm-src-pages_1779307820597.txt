@@ -1,0 +1,122 @@
+J.2 — Correction critique de artifacts/law-firm/src/pages/Expenses.tsx
+⚠️ Cette page utilise des données 100% fictives et les opérations create/delete ne touchent pas l'API. On corrige tout ici.
+
+Étape 1 — Ajouter des imports (après les imports existants) :
+
+import { SkeletonTable } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { useMutate } from "@/hooks/useMutate";
+Étape 2 — Dans le bloc des useState, ajouter ces deux états et le hook useMutate :
+
+const [isLoading, setIsLoading] = useState(true);
+const [confirmId, setConfirmId] = useState<number | null>(null);
+const { mutate } = useMutate();
+Étape 3 — Remplacer l'useEffect entier (le seul qui charge les cases + définit les expenses hardcodées). Chercher depuis useEffect(() => { jusqu'à la ligne }, []); qui contient les données fictives, et remplacer par :
+
+async function load() {
+  setIsLoading(true);
+  try {
+    const [casesRes, expensesRes] = await Promise.all([
+      authFetch(`${BASE}/api/cases`),
+      authFetch(`${BASE}/api/expenses`),
+    ]);
+    const casesData: CaseOption[] = casesRes.ok ? await casesRes.json() : [];
+    const expensesData: any[] = expensesRes.ok ? await expensesRes.json() : [];
+    const active = casesData.filter((c: any) => !c.deletedAt);
+    setCases(active);
+    if (active.length > 0 && !form.caseId) {
+      setForm(f => ({ ...f, caseId: String(active[0].id) }));
+    }
+    setExpenses(expensesData.map((e: any) => ({
+      ...e,
+      caseTitle: active.find(c => c.id === e.caseId)?.title ?? "—",
+    })));
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+useEffect(() => { load(); }, []);
+Étape 4 — Ajouter la fonction saveExpense (avant le return) :
+
+async function saveExpense() {
+  if (!form.description || !form.amount || !form.caseId) return;
+  const ok = await mutate(
+    () => authFetch(`${BASE}/api/expenses`, {
+      method: "POST",
+      body: JSON.stringify({
+        date: form.date,
+        caseId: Number(form.caseId),
+        typeValue: form.typeValue,
+        description: form.description,
+        amount: parseFloat(form.amount),
+        reimbursable: form.reimbursable,
+      }),
+    }),
+    { successMsg: "تمت إضافة المصروف", errorMsg: "فشل حفظ المصروف" }
+  );
+  if (ok !== null) {
+    setForm(f => ({ ...f, description: "", amount: "" }));
+    setShowModal(false);
+    await load();
+  }
+}
+Étape 5 — Ajouter la fonction deleteExpense (avant le return) :
+
+async function deleteExpense(id: number) {
+  const ok = await mutate(
+    () => authFetch(`${BASE}/api/expenses/${id}`, { method: "DELETE" }),
+    { successMsg: "تم حذف المصروف", errorMsg: "فشل الحذف" }
+  );
+  if (ok !== null) {
+    setConfirmId(null);
+    await load();
+  }
+}
+Étape 6 — Remplacer le onClick du bouton de sauvegarde dans la modale. Chercher :
+
+onClick={() => {
+  if (form.description && form.amount && form.caseId) {
+Remplacer tout le bloc onClick={() => { ... }} du bouton confirmer de la modale par :
+
+onClick={saveExpense}
+Étape 7 — Remplacer le onClick du bouton supprimer dans le tableau. Chercher :
+
+onClick={() => setExpenses(es => es.filter(x => x.id !== e.id))}
+Remplacer par :
+
+onClick={() => setConfirmId(e.id)}
+Étape 8 — Dans le JSX du tableau, chercher le rendu conditionnel du chargement (il n'y en a pas actuellement). Trouver la balise <tbody> (ou l'équivalent) et envelopper son contenu avec un contrôle isLoading. Chercher le début du rendu des lignes expenses dans le <tbody>, par exemple :
+
+{filtered.map((e) => (
+  <tr key={e.id}
+Et envelopper l'ensemble du {filtered.map(...)...} + la condition filtered.length === 0 avec :
+
+{isLoading ? (
+  <tr><td colSpan={7} className="p-0"><SkeletonTable rows={5} cols={7} /></td></tr>
+) : filtered.length === 0 ? (
+  <tr><td colSpan={7} className="py-0">
+    <EmptyState
+      illustration={<Receipt className="h-16 w-16 text-muted-foreground/30" />}
+      title="لا توجد مصاريف مسجلة"
+      description="سجّل مصاريف القضايا — ستظهر هنا فور إضافتها"
+    />
+  </td></tr>
+) : filtered.map((e) => (
+  <tr key={e.id}
+    ...
+  </tr>
+))}
+(garder le reste du code de chaque ligne intact — seul le wrapper change)
+
+Étape 9 — Ajouter ConfirmDestructive avant la fermeture du return :
+
+<ConfirmDestructive
+  open={confirmId !== null}
+  onClose={() => setConfirmId(null)}
+  onConfirm={() => deleteExpense(confirmId!)}
+  title="حذف المصروف؟"
+  description="سيتم حذف هذا المصروف نهائياً. هذا الإجراء لا يمكن التراجع عنه."
+  confirmLabel="حذف"
+/>
