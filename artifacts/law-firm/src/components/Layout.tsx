@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Briefcase, Calendar as CalendarIcon, Users, FileText,
-  Settings as SettingsIcon, CreditCard, LayoutDashboard, Scale,
+  Settings as SettingsIcon, CreditCard, LayoutDashboard,
   Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
@@ -128,19 +128,14 @@ function NavItem({ href, label, icon: Icon, active, collapsed, favorited, onTogg
               ? "px-2 py-[5px] me-1"
               : "px-2.5 py-[5px]",
           active
-            ? "text-primary font-semibold"
-            : "text-foreground/85 hover:text-foreground hover:bg-muted/50 font-medium"
+            ? "bg-primary text-primary-foreground font-semibold"
+            : "text-muted-foreground hover:bg-secondary hover:text-foreground font-medium"
         )}
-        style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
       >
-        {/* Start-side accent for active — rounded-l-full intentional-ltr: no TW4 logical equiv */}
-        {active && !collapsed && (
-          <span className="absolute end-0 top-1/2 -translate-y-1/2 h-[18px] w-[2.5px] bg-primary rounded-l-full" />
-        )}
         <Icon className={cn(
           "shrink-0 transition-colors duration-150",
           collapsed ? "h-[17px] w-[17px]" : "h-[15px] w-[15px]",
-          active ? "text-primary" : "text-foreground/40"
+          active ? "text-primary-foreground" : "text-muted-foreground/60"
         )} />
         {!collapsed && (
           <span className="truncate leading-[1.4]">{label}</span>
@@ -335,8 +330,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         "flex items-center shrink-0 border-b border-border/60 transition-all duration-300",
         collapsed ? "justify-center px-2 py-3" : "gap-2 px-3.5 py-3"
       )}>
-        <div className="bg-primary/10 p-1.5 rounded-md shrink-0">
-          <Scale className="h-4 w-4 text-primary" />
+        <div className="bg-primary h-7 w-7 rounded-md shrink-0 flex items-center justify-center text-primary-foreground font-bold text-[15px]">
+          م
         </div>
         {!collapsed && (
           <div className="min-w-0">
@@ -698,15 +693,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}>
 
           {/* Topbar */}
-          <header className="sticky top-0 z-20 bg-card/90 backdrop-blur-md border-b border-border/50">
-            <div className="flex items-center h-[50px] px-4 gap-3">
-              {/* Mobile logo */}
+          <header className="sticky top-0 z-20 bg-card/85 backdrop-blur border-b border-border/50">
+            <div className="flex items-center h-[56px] px-4 gap-2">
+              {/* Mobile logo + hamburger */}
               <Link href="/" className="flex items-center gap-2 lg:hidden">
-                <div className="bg-primary/10 p-1 rounded-md">
-                  <Scale className="h-3.5 w-3.5 text-primary" />
+                <div className="bg-primary h-7 w-7 rounded-md flex items-center justify-center text-primary-foreground font-bold text-[15px]">
+                  م
                 </div>
                 <span className="text-[13px] font-bold text-primary">محامي بلوس</span>
               </Link>
+              <button
+                onClick={() => setMobileSheetOpen(true)}
+                className="lg:hidden p-1.5 rounded-md hover:bg-muted/50 text-muted-foreground transition-colors"
+                title="القائمة"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </button>
 
               {/* Desktop breadcrumb */}
               {/* intentional-ltr: ChevronLeft = "precedes page name" separator, mirrored in LTR */}
@@ -716,7 +718,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="flex-1" />
+
+              {/* Search */}
               <GlobalSearch />
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-muted/50 text-muted-foreground transition-colors"
+                title={isDark ? "الوضع الفاتح" : "الوضع الداكن"}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
             </div>
           </header>
 
