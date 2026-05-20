@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
 import { X, Check, Plus, Trash2, UserCircle } from "lucide-react";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
@@ -201,6 +202,7 @@ function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u:
         <Label>عنوان الملف <Req /></Label>
         <Input placeholder="مثال: قضية ميراث عائلة بن علي" className={cls}
           value={form.title} onChange={e => upd({ title: e.target.value })} />
+        {stepErrors.title && <p className="text-xs text-destructive mt-1">{stepErrors.title}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -216,6 +218,7 @@ function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u:
               <Plus className="h-4 w-4" />
             </button>
           </div>
+          {stepErrors.clientId && <p className="text-xs text-destructive mt-1">{stepErrors.clientId}</p>}
         </div>
         <div>
           <Label>نوع الملف <Req /></Label>
@@ -270,6 +273,7 @@ function Step2({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
       <div>
         <Label>درجة التقاضي <Req /></Label>
         <RadioGroup options={LITIGATION_DEGREES} value={form.litigationDegree} onChange={v => upd({ litigationDegree: v })} />
+        {stepErrors.litigationDegree && <p className="text-xs text-destructive mt-1">{stepErrors.litigationDegree}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -279,6 +283,7 @@ function Step2({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
             <option value="">اختر الإجراء...</option>
             {PROCEDURE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </SelectNative>
+          {stepErrors.procedureType && <p className="text-xs text-destructive mt-1">{stepErrors.procedureType}</p>}
         </div>
         <div>
           <Label>المحكمة</Label>
@@ -393,6 +398,7 @@ function Step3({ form, upd, users }: { form: WizardForm; upd: (u: Partial<Wizard
                 <option value="">اختر...</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
               </SelectNative>
+              {stepErrors.responsibleUserId && <p className="text-xs text-destructive mt-1">{stepErrors.responsibleUserId}</p>}
             </div>
             <div>
               <Label>المكلف بالملف</Label>
@@ -514,6 +520,20 @@ interface CaseWizardProps {
   initialData?: Partial<WizardForm>;
 }
 
+const Step1Schema = z.object({
+  title:    z.string().min(2, "عنوان القضية مطلوب (حرفان على الأقل)"),
+  clientId: z.string().min(1, "يجب اختيار موكّل"),
+});
+
+const Step2Schema = z.object({
+  litigationDegree: z.string().min(1, "درجة التقاضي مطلوبة"),
+  procedureType:    z.string().min(1, "نوع الإجراء مطلوب"),
+});
+
+const Step3Schema = z.object({
+  responsibleUserId: z.string().min(1, "يجب تعيين محامٍ مسؤول"),
+});
+
 export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: CaseWizardProps) {
   const editMode = !!caseId;
   const [step, setStep] = useState(1);
@@ -528,6 +548,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const [quickClientForm, setQuickClientForm] = useState({ name: "", clientType: "individual", phone: "", email: "" });
   const [pendingConflicts, setPendingConflicts] = useState<ConflictData[]>([]);
   const [pendingCaseId, setPendingCaseId] = useState<number | null>(null);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
 
@@ -821,13 +842,31 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
           )}
           <div className="flex items-center gap-3">
             {step > 1
-              ? <Button variant="outline" onClick={() => setStep(s => s - 1)} className="px-5">السابق</Button>
+              ? <Button variant="outline" onClick={() => { setStepErrors({}); setStep(s => s - 1); }} className="px-5">السابق</Button>
               : <Button variant="outline" onClick={handleClose} className="px-5">إلغاء</Button>
             }
             <div className="flex-1" />
             <span className="text-xs text-muted-foreground">{step} / 4</span>
             {step < 4
-              ? <Button onClick={() => setStep(s => s + 1)} disabled={!isStepValid(step, form, editMode)} className="px-5">التالي</Button>
+              ? <Button onClick={() => {
+                  const schemas: Record<number, z.ZodTypeAny> = {
+                    1: Step1Schema,
+                    2: editMode ? z.object({}) : Step2Schema,
+                    3: editMode ? z.object({}) : Step3Schema,
+                  };
+                  const schema = schemas[step];
+                  if (schema) {
+                    const res = schema.safeParse(form);
+                    if (!res.success) {
+                      const errs: Record<string, string> = {};
+                      res.error.issues.forEach(i => { errs[String(i.path[0])] = i.message; });
+                      setStepErrors(errs);
+                      return;
+                    }
+                  }
+                  setStepErrors({});
+                  setStep(s => s + 1);
+                }} className="px-5">التالي</Button>
               : <Button
                   onClick={() => {
                     if (!isStepValid(4, form, editMode)) { setStep4Err(true); return; }

@@ -1,0 +1,94 @@
+K.3 — artifacts/law-firm/src/components/cases/CaseWizard.tsx
+Étape 1 — Ajouter l'import
+import { z } from "zod";
+Étape 2 — Ajouter les schémas par étape (juste avant la ligne export function CaseWizard)
+const Step1Schema = z.object({
+  title:    z.string().min(2, "عنوان القضية مطلوب (حرفان على الأقل)"),
+  clientId: z.string().min(1, "يجب اختيار موكّل"),
+});
+
+const Step2Schema = z.object({
+  litigationDegree: z.string().min(1, "درجة التقاضي مطلوبة"),
+  procedureType:    z.string().min(1, "نوع الإجراء مطلوب"),
+});
+
+const Step3Schema = z.object({
+  responsibleUserId: z.string().min(1, "يجب تعيين محامٍ مسؤول"),
+});
+
+const Step4Schema = z.object({
+  feeMethod:          z.string().min(1, "يجب اختيار طريقة الأتعاب"),
+  confidentialityLevel: z.string().min(1, "يجب تحديد مستوى السرية"),
+});
+Étape 3 — Ajouter l'état des erreurs (dans le bloc des useState)
+const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+Étape 4 — Remplacer le bouton "التالي" dans la navigation du bas
+Chercher :
+
+{step < 4
+  ? <Button onClick={() => setStep(s => s + 1)} 
+      disabled={!isStepValid(step, form, editMode)} 
+      className="px-5">
+      التالي
+    </Button>
+Remplacer par :
+
+{step < 4
+  ? <Button onClick={() => {
+      const schemas: Record<number, z.ZodTypeAny> = {
+        1: Step1Schema,
+        2: editMode ? z.object({}) : Step2Schema,
+        3: editMode ? z.object({}) : Step3Schema,
+      };
+      const schema = schemas[step];
+      if (schema) {
+        const res = schema.safeParse(form);
+        if (!res.success) {
+          const errs: Record<string, string> = {};
+          res.error.issues.forEach(i => { errs[String(i.path[0])] = i.message; });
+          setStepErrors(errs);
+          return;
+        }
+      }
+      setStepErrors({});
+      setStep(s => s + 1);
+    }} className="px-5">
+      التالي
+    </Button>
+Étape 5 — Ajouter les messages d'erreur dans le JSX de l'étape 1
+Dans le JSX de l'étape 1, trouver le champ titre (Input lié à form.title). Ajouter juste après :
+
+{stepErrors.title && (
+  <p className="text-xs text-destructive mt-1">{stepErrors.title}</p>
+)}
+Trouver le champ SelectNative pour le choix du client (lié à form.clientId). Ajouter juste après :
+
+{stepErrors.clientId && (
+  <p className="text-xs text-destructive mt-1">{stepErrors.clientId}</p>
+)}
+Étape 6 — Ajouter les messages d'erreur dans le JSX de l'étape 2
+Après le composant RadioGroup de litigationDegree :
+
+{stepErrors.litigationDegree && (
+  <p className="text-xs text-destructive mt-1">{stepErrors.litigationDegree}</p>
+)}
+Après le SelectNative de procedureType :
+
+{stepErrors.procedureType && (
+  <p className="text-xs text-destructive mt-1">{stepErrors.procedureType}</p>
+)}
+Étape 7 — Ajouter les messages d'erreur dans le JSX de l'étape 3
+Après le SelectNative de responsibleUserId :
+
+{stepErrors.responsibleUserId && (
+  <p className="text-xs text-destructive mt-1">{stepErrors.responsibleUserId}</p>
+)}
+Étape 8 — Nettoyer stepErrors à chaque changement d'étape (étapes précédentes)
+Chercher le bouton "السابق" :
+
+<Button variant="outline" onClick={() => setStep(s => s - 1)} 
+  className="px-5">السابق</Button>
+Remplacer par :
+
+<Button variant="outline" onClick={() => { setStepErrors({}); setStep(s => s - 1); }} 
+  className="px-5">السابق</Button>
