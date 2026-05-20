@@ -37,8 +37,8 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   if (password !== confirmPassword) {
     res.status(400).json({ error: "كلمة المرور وتأكيدها غير متطابقتين" }); return;
   }
-  if (password.length < 6) {
-    res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }); return;
+  if (password.length < 12) {
+    res.status(400).json({ error: "كلمة المرور يجب أن تكون 12 حرفاً على الأقل" }); return;
   }
   const existing = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
   if (existing.length > 0) {
@@ -191,7 +191,7 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   const { token, password, confirmPassword } = req.body as { token: string; password: string; confirmPassword: string };
   if (!token || !password) { res.status(400).json({ error: "الرابط وكلمة المرور مطلوبان" }); return; }
   if (password !== confirmPassword) { res.status(400).json({ error: "كلمتا المرور غير متطابقتين" }); return; }
-  if (password.length < 6) { res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }); return; }
+  if (password.length < 12) { res.status(400).json({ error: "كلمة المرور يجب أن تكون 12 حرفاً على الأقل" }); return; }
   const [reset] = await db.select().from(passwordResetsTable)
     .where(and(eq(passwordResetsTable.token, token), isNull(passwordResetsTable.usedAt)));
   if (!reset) { res.status(400).json({ error: "رابط غير صالح أو مستخدم بالفعل" }); return; }
