@@ -4,28 +4,40 @@ import { Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const RegisterSchema = z.object({
+  officeName:      z.string().min(2, "اسم المكتب مطلوب (حرفان على الأقل)"),
+  fullName:        z.string().min(2, "الاسم الكامل مطلوب"),
+  email:           z.string().min(1, "البريد الإلكتروني مطلوب").email("صيغة البريد غير صحيحة"),
+  phone:           z.string().optional(),
+  password:        z.string().min(12, "كلمة المرور يجب أن تكون 12 حرفاً على الأقل"),
+  confirmPassword: z.string().min(1, "تأكيد كلمة المرور مطلوب"),
+}).refine(d => d.password === d.confirmPassword, {
+  message: "كلمتا المرور غير متطابقتين",
+  path: ["confirmPassword"],
+});
+
+type RegisterForm = z.infer<typeof RegisterSchema>;
 
 export default function Register() {
-  const { register } = useAuth();
-  const [form, setForm] = useState({ fullName: "", email: "", password: "", confirmPassword: "", officeName: "", phone: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { register: registerUser } = useAuth();
 
-  function set(k: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
-  }
+  const {
+    register: field,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterForm>({ resolver: zodResolver(RegisterSchema) });
+  const [serverError, setServerError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    if (form.password !== form.confirmPassword) { setError("كلمتا المرور غير متطابقتين"); return; }
-    setLoading(true);
+  async function onSubmit(data: RegisterForm) {
+    setServerError("");
     try {
-      await register(form);
+      await registerUser(data);
     } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setServerError((err as Error).message);
     }
   }
 
@@ -44,39 +56,44 @@ export default function Register() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 bg-card rounded-2xl p-6 border border-border shadow-lg">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 bg-card rounded-2xl p-6 border border-border shadow-lg">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1 col-span-2">
               <label className="text-sm font-medium">اسم المكتب / المكتب القانوني *</label>
-              <Input value={form.officeName} onChange={set("officeName")} placeholder="مكتب المحامي..." className={inputCls} required />
+              <Input {...field("officeName")} placeholder="مكتب المحامي..." className={inputCls} />
+              {errors.officeName && <p className="text-xs text-destructive mt-1">{errors.officeName.message}</p>}
             </div>
             <div className="space-y-1 col-span-2">
               <label className="text-sm font-medium">الاسم الكامل *</label>
-              <Input value={form.fullName} onChange={set("fullName")} placeholder="المحامي محمد..." className={inputCls} required />
+              <Input {...field("fullName")} placeholder="المحامي محمد..." className={inputCls} />
+              {errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName.message}</p>}
             </div>
             <div className="space-y-1 col-span-2">
               <label className="text-sm font-medium">البريد الإلكتروني *</label>
-              <Input type="email" value={form.email} onChange={set("email")} placeholder="example@cabinet.tn" className={inputCls} dir="ltr" required />
+              <Input type="email" {...field("email")} placeholder="example@cabinet.tn" className={inputCls} dir="ltr" />
+              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">رقم الهاتف</label>
-              <Input type="tel" value={form.phone} onChange={set("phone")} placeholder="+216..." className={inputCls} dir="ltr" />
+              <Input type="tel" {...field("phone")} placeholder="+216..." className={inputCls} dir="ltr" />
             </div>
             <div className="space-y-1" />
             <div className="space-y-1">
               <label className="text-sm font-medium">كلمة المرور *</label>
-              <Input type="password" value={form.password} onChange={set("password")} placeholder="••••••••" className={inputCls} dir="ltr" required minLength={6} />
+              <Input type="password" {...field("password")} placeholder="••••••••" className={inputCls} dir="ltr" />
+              {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">تأكيد كلمة المرور *</label>
-              <Input type="password" value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="••••••••" className={inputCls} dir="ltr" required minLength={6} />
+              <Input type="password" {...field("confirmPassword")} placeholder="••••••••" className={inputCls} dir="ltr" />
+              {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>}
             </div>
           </div>
 
-          {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</p>}
+          {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
 
-          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={loading}>
-            {loading ? "جارٍ الإنشاء..." : "إنشاء الحساب والبدء"}
+          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isSubmitting}>
+            {isSubmitting ? "جارٍ الإنشاء..." : "إنشاء الحساب والبدء"}
           </Button>
 
           <div className="text-center">
@@ -91,7 +108,7 @@ export default function Register() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          محامي بلوس — برنامج إدارة المكاتب القانونية التونية
+          محامي بلوس — برنامج إدارة المكاتب القانونية
         </p>
       </div>
     </div>

@@ -1,0 +1,127 @@
+K.1 — artifacts/law-firm/src/pages/Register.tsx
+Étape 1 — Ajouter les imports (après les imports existants)
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+Étape 2 — Ajouter le schéma Zod (juste avant la ligne export default function Register)
+const RegisterSchema = z.object({
+  officeName:      z.string().min(2, "اسم المكتب مطلوب (حرفان على الأقل)"),
+  fullName:        z.string().min(2, "الاسم الكامل مطلوب"),
+  email:           z.string().min(1, "البريد الإلكتروني مطلوب").email("صيغة البريد غير صحيحة"),
+  phone:           z.string().optional(),
+  password:        z.string().min(12, "كلمة المرور يجب أن تكون 12 حرفاً على الأقل"),
+  confirmPassword: z.string().min(1, "تأكيد كلمة المرور مطلوب"),
+}).refine(d => d.password === d.confirmPassword, {
+  message: "كلمتا المرور غير متطابقتين",
+  path: ["confirmPassword"],
+});
+
+type RegisterForm = z.infer<typeof RegisterSchema>;
+Étape 3 — Renommer register de useAuth pour éviter la collision
+Chercher :
+
+const { register } = useAuth();
+Remplacer par :
+
+const { register: registerUser } = useAuth();
+Étape 4 — Remplacer les 3 useState du formulaire
+Chercher et supprimer ces 3 lignes :
+
+const [form, setForm] = useState({ 
+  fullName: "", 
+  email: "", 
+  password: "", 
+  confirmPassword: "", 
+  officeName: "", 
+  phone: "" 
+});
+const [error, setError] = useState("");
+const [loading, setLoading] = useState(false);
+Remplacer par :
+
+const {
+  register: field,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+} = useForm<RegisterForm>({ resolver: zodResolver(RegisterSchema) });
+const [serverError, setServerError] = useState("");
+Étape 5 — Remplacer la fonction handleSubmit
+Chercher :
+
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setError("");
+  if (form.password !== form.confirmPassword) { 
+    setError("كلمتا المرور غير متطابقتين"); 
+    return; 
+  }
+  setLoading(true);
+  try {
+    await register(form);
+  } catch (err) {
+    setError((err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+}
+Remplacer par :
+
+async function onSubmit(data: RegisterForm) {
+  setServerError("");
+  try {
+    await registerUser(data);
+  } catch (err) {
+    setServerError((err as Error).message);
+  }
+}
+Étape 6 — Mettre à jour la balise <form>
+Chercher :
+
+<form onSubmit={handleSubmit}
+Remplacer par :
+
+<form onSubmit={handleSubmit(onSubmit)}
+Étape 7 — Remplacer les 6 champs Input
+Pour chaque champ : supprimer value={...} et onChange={...}, ajouter {...field("nom")}, et ajouter la ligne d'erreur juste dessous.
+
+Champ officeName :
+
+{/* Avant */}
+<Input value={form.officeName} onChange={set("officeName")} />
+
+{/* Après */}
+<Input {...field("officeName")} />
+{errors.officeName && <p className="text-xs text-destructive mt-1">{errors.officeName.message}</p>}
+Champ fullName :
+
+<Input {...field("fullName")} />
+{errors.fullName && <p className="text-xs text-destructive mt-1">{errors.fullName.message}</p>}
+Champ email :
+
+<Input type="email" {...field("email")} />
+{errors.email && <p className="text-xs text-destructive mt-1">{errors.email.message}</p>}
+Champ phone :
+
+<Input type="tel" {...field("phone")} />
+Champ password :
+
+<Input type="password" {...field("password")} />
+{errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
+Champ confirmPassword :
+
+<Input type="password" {...field("confirmPassword")} />
+{errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>}
+Étape 8 — Mettre à jour l'affichage d'erreur serveur et le bouton
+Chercher :
+
+{error && <p className=
+Remplacer la ligne entière par :
+
+{serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
+Chercher le disabled={loading} sur le bouton de soumission. Remplacer par :
+
+disabled={isSubmitting}
+Et supprimer la ligne avec la fonction set helper :
+
+const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+(Cette ligne n'est plus utilisée)
