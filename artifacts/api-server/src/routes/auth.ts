@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { db, usersTable, organizationsTable, passwordResetsTable } from "@workspace/db";
 import { eq, sql, and, isNull } from "drizzle-orm";
 import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "../middleware/auth.js";
-import { loginLimiter, forgotPasswordLimiter } from "../middleware/security.js";
+import { loginLimiter, forgotPasswordLimiter, registerLimiter } from "../middleware/security.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
 import { logAudit } from "./audit-logs.js";
 
@@ -29,7 +29,7 @@ router.get("/auth/status", async (_req, res) => {
 });
 
 /* ── Register (create org + admin user, starts 3-month trial) ── */
-router.post("/auth/register", async (req, res): Promise<void> => {
+router.post("/auth/register", registerLimiter, async (req, res): Promise<void> => {
   const { fullName, email, password, confirmPassword, officeName, phone } = req.body as {
     fullName: string; email: string; password: string; confirmPassword: string;
     officeName: string; phone?: string;

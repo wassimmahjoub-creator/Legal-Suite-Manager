@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { invitationLimiter } from "../middleware/security.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { db, invitationsTable, usersTable, organizationsTable } from "@workspace/db";
@@ -40,7 +41,7 @@ const CreateInvitationBody = z.object({
   role:  z.enum(VALID_ROLES_BE, { errorMap: () => ({ message: "الدور المحدد غير صالح" }) }),
 });
 
-router.post("/invitations", requireAuth, async (req, res): Promise<void> => {
+router.post("/invitations", invitationLimiter, requireAuth, async (req, res): Promise<void> => {
   const u = getUser(req);
   if (u.role !== "admin") { res.status(403).json({ error: "غير مصرح لك" }); return; }
   if (!u.orgId) { res.status(400).json({ error: "لا يوجد مكتب" }); return; }
