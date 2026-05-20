@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, casesTable, clientsTable } from "@workspace/db";
-import { eq, isNull, like, sql, inArray } from "drizzle-orm";
+import { eq, isNull, isNotNull, like, sql, inArray, and, or } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 
@@ -82,39 +82,49 @@ function extractExtras(body: Record<string, unknown>) {
 
 router.get("/cases", async (req, res) => {
   const { status, court, clientId, search, archived, userId } = req.query as Record<string, string>;
-  const rows = await db
-    .select(caseFields)
-    .from(casesTable)
-    .leftJoin(clientsTable, eq(casesTable.clientId, clientsTable.id))
-    .where(isNull(casesTable.deletedAt))
-    .orderBy(casesTable.createdAt);
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
 
-  let filtered = rows;
-  if (archived === "true") {
-    filtered = filtered.filter((r) => r.archivedAt !== null);
-  } else if (archived !== "all") {
-    filtered = filtered.filter((r) => r.archivedAt === null);
-  }
-  if (status) filtered = filtered.filter((r) => r.status === status);
-  if (court) filtered = filtered.filter((r) => r.court === court);
-  if (clientId) filtered = filtered.filter((r) => r.clientId === Number(clientId));
+  const conditions: ReturnType<typeof isNull>[] = [isNull(casesTable.deletedAt)];
+
+  if (archived === "true")       conditions.push(isNotNull(casesTable.archivedAt) as any);
+  else if (archived !== "all")   conditions.push(isNull(casesTable.archivedAt));
+  if (status)   conditions.push(eq(casesTable.status,   status)          as any);
+  if (court)    conditions.push(eq(casesTable.court,    court)           as any);
+  if (clientId) conditions.push(eq(casesTable.clientId, Number(clientId)) as any);
+
   if (userId) {
     const { caseTeamsTable } = await import("@workspace/db");
     const teamRows = await db
       .select({ caseId: caseTeamsTable.caseId })
       .from(caseTeamsTable)
       .where(eq(caseTeamsTable.userId, Number(userId)));
-    const caseIds = new Set(teamRows.map((r) => r.caseId));
-    filtered = filtered.filter((r) => caseIds.has(r.id));
+    if (teamRows.length === 0) return res.json([]);
+    conditions.push(inArray(casesTable.id, teamRows.map((r) => r.caseId)) as any);
   }
-  if (search) filtered = filtered.filter((r) =>
-    r.title.toLowerCase().includes(search.toLowerCase()) ||
-    (r.caseNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.courtCaseNumber ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.clientName ?? "").toLowerCase().includes(search.toLowerCase())
-  );
 
-  res.json(filtered);
+  if (search) {
+    const term = `%${search}%`;
+    conditions.push(
+      or(
+        like(casesTable.title,          term),
+        like(casesTable.caseNumber,     term),
+        like(casesTable.courtCaseNumber,term),
+        like(clientsTable.name,         term)
+      ) as any
+    );
+  }
+
+  const rows = await db
+    .select(caseFields)
+    .from(casesTable)
+    .leftJoin(clientsTable, eq(casesTable.clientId, clientsTable.id))
+    .where(and(...conditions))
+    .orderBy(casesTable.createdAt)
+    .limit(limit)
+    .offset(page * limit);
+
+  res.json(rows);
 });
 
 router.post("/cases", async (req, res) => {
