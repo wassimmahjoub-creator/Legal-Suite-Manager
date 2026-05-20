@@ -20,6 +20,22 @@ export const forgotPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+export const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "عدد عمليات التسجيل كثير جداً، حاول مجدداً بعد ساعة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const invitationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: { error: "عدد الدعوات كثير جداً، حاول مجدداً بعد ساعة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export const generalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
