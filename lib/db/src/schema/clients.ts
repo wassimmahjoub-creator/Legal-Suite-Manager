@@ -1,9 +1,11 @@
-import { pgTable, text, serial, timestamp, numeric, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, numeric, boolean, index } from "drizzle-orm/pg-core";
+import { organizationsTable } from "./organizations";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const clientsTable = pgTable("clients", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id).notNull(),
   name: text("name").notNull(),
   clientType: text("client_type").default("individual"),
   legalForm: text("legal_form"),
@@ -20,7 +22,10 @@ export const clientsTable = pgTable("clients", {
   notes: text("notes"),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  orgDeletedIdx: index("clients_org_deleted_idx").on(table.orgId, table.deletedAt),
+  orgCreatedIdx: index("clients_org_created_idx").on(table.orgId, table.createdAt),
+}));
 
 export const insertClientSchema = createInsertSchema(clientsTable).omit({ id: true, createdAt: true });
 export type InsertClient = z.infer<typeof insertClientSchema>;
