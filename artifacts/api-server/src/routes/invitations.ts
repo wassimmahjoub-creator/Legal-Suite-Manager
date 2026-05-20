@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { db, invitationsTable, usersTable, organizationsTable } from "@workspace/db";
@@ -32,12 +33,23 @@ router.get("/invitations", requireAuth, async (req, res): Promise<void> => {
   res.json(rows.map(r => ({ ...r, roleLabel: ROLES[r.role] ?? r.role })));
 });
 
+const VALID_ROLES_BE = ["admin", "partner", "lawyer", "secretary", "trainee", "accountant"] as const;
+
+const CreateInvitationBody = z.object({
+  email: z.string().email("صيغة البريد الإلكتروني غير صحيحة"),
+  role:  z.enum(VALID_ROLES_BE, { errorMap: () => ({ message: "الدور المحدد غير صالح" }) }),
+});
+
 router.post("/invitations", requireAuth, async (req, res): Promise<void> => {
   const u = getUser(req);
   if (u.role !== "admin") { res.status(403).json({ error: "غير مصرح لك" }); return; }
   if (!u.orgId) { res.status(400).json({ error: "لا يوجد مكتب" }); return; }
-  const { email, role } = req.body as { email: string; role: string };
-  if (!email) { res.status(400).json({ error: "البريد الإلكتروني مطلوب" }); return; }
+  const parsed = CreateInvitationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "بيانات غير صحيحة" });
+    return;
+  }
+  const { email, role } = parsed.data;
 
   // Collaborator limit check
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, u.orgId));
