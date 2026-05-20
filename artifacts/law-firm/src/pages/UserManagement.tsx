@@ -15,8 +15,16 @@ import { cn } from "@/lib/utils";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonCard } from "@/components/ui/skeletons";
+import { z } from "zod";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+
+const VALID_ROLES = ["admin", "partner", "lawyer", "secretary", "trainee", "accountant"] as const;
+
+const InviteSchema = z.object({
+  email: z.string().min(1, "البريد الإلكتروني مطلوب").email("صيغة البريد غير صحيحة"),
+  role:  z.enum(VALID_ROLES, { errorMap: () => ({ message: "الدور غير صحيح" }) }),
+});
 
 const ROLES = [
   { value: "admin", label: "مدير" },
@@ -80,6 +88,7 @@ export default function UserManagement() {
 
   const [addForm, setAddForm] = useState({ name: "", email: "", password: "", role: "lawyer", phone: "" });
   const [inviteForm, setInviteForm] = useState({ email: "", role: "lawyer" });
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", role: "lawyer", phone: "", status: "active" });
   const [perms, setPerms] = useState<Record<string, boolean>>({});
   const [newPwd, setNewPwd] = useState("");
@@ -115,6 +124,12 @@ export default function UserManagement() {
   }
 
   async function sendInvite() {
+    setInviteError(null);
+    const parsed = InviteSchema.safeParse(inviteForm);
+    if (!parsed.success) {
+      setInviteError(parsed.error.issues[0]?.message ?? "خطأ في البيانات");
+      return;
+    }
     setSaving(true);
     try {
       const r = await authFetch(`${BASE}/api/invitations`, { method: "POST", body: JSON.stringify(inviteForm) });
@@ -336,6 +351,9 @@ export default function UserManagement() {
                 <label className="text-sm font-medium">البريد الإلكتروني</label>
                 <Input type="email" value={inviteForm.email} dir="ltr" onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
                   placeholder="example@cabinet.tn" className={inputCls} />
+                {inviteError && (
+                  <p className="text-xs text-destructive mt-1">{inviteError}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">الدور</label>
