@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonCard } from "@/components/ui/skeletons";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -212,7 +213,7 @@ export default function UserManagement() {
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted/30 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map(i => <SkeletonCard key={i} withButton={false} />)}
         </div>
       ) : tab === "users" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

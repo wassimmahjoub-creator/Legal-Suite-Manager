@@ -10,9 +10,9 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
 import { Mail, Plus, Pencil, Trash2, FileText, ArrowUpRight, ArrowDownLeft, Send } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { SkeletonTable } from "@/components/ui/skeletons";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -178,7 +178,7 @@ export default function Correspondances() {
       {/* List */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+          <SkeletonTable rows={4} cols={4} />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-card rounded-xl shadow-sm">
