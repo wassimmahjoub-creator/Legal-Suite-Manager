@@ -12,6 +12,7 @@ import {
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "../hooks/useRole";
 import { authFetch } from "@/lib/authFetch";
 import { cn } from "@/lib/utils";
 import { FEATURE_DICTATION } from "@/config/features";
@@ -65,6 +66,8 @@ const NAV_SYSTEM = [
   { href: "/data-privacy",  label: "البيانات والخصوصية",  icon: Download     },
   { href: "/trash",         label: "سلة المحذوفات",       icon: Trash2       },
 ];
+
+const ADMIN_ONLY_HREFS = new Set(["/users", "/legal-config", "/audit-logs", "/data-privacy"]);
 
 const NAV_MOBILE_BOTTOM = [
   { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
@@ -233,6 +236,7 @@ function ExpandableSection({
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { isAdmin } = useRole();
 
   const [collapsed, setCollapsed] = useState(() =>
     localStorage.getItem("sidebar_collapsed") === "true"
@@ -388,7 +392,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           collapsed={collapsed}
           hasActive={inAdmin}
         >
-          {NAV_ADMIN.map(item => (
+          {NAV_ADMIN.filter(item => !ADMIN_ONLY_HREFS.has(item.href) || isAdmin).map(item => (
             <NavItem key={item.href} {...item}
               active={isActive(item.href)} collapsed={collapsed}
               favorited={favorites.includes(item.href)}
@@ -407,7 +411,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           collapsed={collapsed}
           hasActive={inSystem}
         >
-          {NAV_SYSTEM.map(item => (
+          {NAV_SYSTEM.filter(item => !ADMIN_ONLY_HREFS.has(item.href) || isAdmin).map(item => (
             <NavItem key={item.href} {...item}
               active={isActive(item.href)} collapsed={collapsed}
               favorited={favorites.includes(item.href)}
@@ -632,7 +636,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <div>
                   <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>الإدارة</p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {[...NAV_ADMIN, ...NAV_SYSTEM].map(item => {
+                    {[...NAV_ADMIN, ...NAV_SYSTEM].filter(item => !ADMIN_ONLY_HREFS.has(item.href) || isAdmin).map(item => {
                       const Icon = item.icon;
                       const active = isActive(item.href);
                       return (
