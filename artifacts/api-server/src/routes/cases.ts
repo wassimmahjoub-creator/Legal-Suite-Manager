@@ -3,6 +3,7 @@ import { db, casesTable, clientsTable } from "@workspace/db";
 import { eq, isNull, isNotNull, like, sql, inArray, and, or } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { getActor } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -131,45 +132,68 @@ router.get("/cases", async (req, res) => {
   res.json(rows);
 });
 
-router.post("/cases", async (req, res) => {
+router.post("/cases", async (req, res): Promise<void> => {
   const parsed = CreateCaseBody.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
-  const orgId = actor?.orgId ?? 0;
+  const actor = getActor(req);
+  const orgId = actor.orgId ?? 0;
+  const year  = new Date().getFullYear();
+  const { caseStagesTable } = await import("@workspace/db");
 
-  const year = new Date().getFullYear();
-  const yearPrefix = `${year}-`;
-  const [count] = await db
-    .select({ cnt: sql<number>`count(*)::int` })
-    .from(casesTable)
-    .where(and(eq(casesTable.orgId, orgId), like(casesTable.caseNumber, `${yearPrefix}%`)));
-  const next = (count?.cnt ?? 0) + 1;
-  const caseNumber = `${year}-${String(next).padStart(4, "0")}`;
+  let newCase: typeof casesTable.$inferSelect;
+  let clientName = "";
 
-  const extras = extractExtras(req.body as Record<string, unknown>);
-  const [row] = await db.insert(casesTable).values({ ...parsed.data, caseNumber, orgId, ...extras }).returning();
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
-
-  // Auto-create initial stage
   try {
-    const { caseStagesTable } = await import("@workspace/db");
-    const initialStage = (extras.litigationDegree as string) || "first_instance";
-    await db.insert(caseStagesTable).values({
-      caseId: row.id,
-      stage: initialStage,
-      enteredAt: row.openedAt ? new Date(row.openedAt) : row.createdAt,
-      createdBy: actor?.id ?? null,
-    });
-  } catch { /* non-blocking */ }
+    const result = await db.transaction(async (tx) => {
+      // 1. Numéro de dossier — dans la transaction pour éviter les doublons sous charge
+      const [count] = await tx
+        .select({ cnt: sql<number>`count(*)::int` })
+        .from(casesTable)
+        .where(and(eq(casesTable.orgId, orgId), like(casesTable.caseNumber, `${year}-%`)));
+      const caseNumber = `${year}-${String((count?.cnt ?? 0) + 1).padStart(4, "0")}`;
 
+      // 2. Créer le dossier avec orgId
+      const extras = extractExtras(req.body as Record<string, unknown>);
+      const [created] = await tx.insert(casesTable).values({
+        ...parsed.data, caseNumber, orgId, ...extras,
+      }).returning();
+
+      // 3. Créer le stage initial — atomique avec le dossier
+      const initialStage = (extras.litigationDegree as string) || "first_instance";
+      await tx.insert(caseStagesTable).values({
+        caseId: created.id,
+        stage: initialStage,
+        enteredAt: created.openedAt ? new Date(created.openedAt) : created.createdAt,
+        createdBy: actor.id ?? null,
+      });
+
+      // 4. Nom du client (lecture seule, dans la même tx)
+      const [client] = await tx
+        .select({ name: clientsTable.name })
+        .from(clientsTable)
+        .where(eq(clientsTable.id, created.clientId));
+
+      return { created, clientName: client?.name ?? "" };
+    });
+
+    newCase    = result.created;
+    clientName = result.clientName;
+  } catch (err) {
+    console.error("[POST /cases] transaction failed:", err);
+    res.status(500).json({ error: "فشل إنشاء الملف. يرجى المحاولة مجدداً." });
+    return;
+  }
+
+  // Logging en dehors de la transaction : non-critique, ne doit pas bloquer
   void CaseEventLogger.log({
-    caseId: row.id,
+    caseId: newCase.id,
     eventType: "case_filed",
-    occurredAt: row.openedAt ? new Date(row.openedAt) : row.createdAt,
-    actorUserId: actor?.id ?? null,
+    occurredAt: newCase.openedAt ? new Date(newCase.openedAt) : newCase.createdAt,
+    actorUserId: actor.id ?? null,
   });
-  res.status(201).json({ ...row, clientName: client?.name ?? "" });
+
+  res.status(201).json({ ...newCase, clientName });
 });
 
 router.get("/cases/:id", async (req, res) => {
