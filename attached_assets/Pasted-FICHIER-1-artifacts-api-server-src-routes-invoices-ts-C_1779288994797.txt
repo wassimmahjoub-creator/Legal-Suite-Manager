@@ -1,0 +1,113 @@
+FICHIER 1 — artifacts/api-server/src/routes/invoices.ts
+Correction 1.1 — Bug upsertLines : propriété dupliquée
+Trouve (lignes 347–366, la fonction upsertLines entière) :
+
+async function upsertLines(invoiceId: number, lines: Array<Record<string, unknown>>) {
+  const values = lines.map((l, i) => {
+    const qty = Number(l.quantity ?? 1);
+    const price = Number(l.unitPriceHt ?? 0);
+    const vatRate = Number(l.vatRate ?? 19);
+    const calc = calcLine({ quantity: qty, unitPriceHt: price, vatRate });
+    return {
+      invoiceId,
+      position: i,
+      description: String(l.description ?? ""),
+      unit: (l.unit as string) || "forfait",
+      quantity: qty.toFixed(3),
+      quantity: price.toFixed(3),
+      vatRate: vatRate.toFixed(2),
+      lineTotalHt: calc.lineTotalHt.toFixed(3),
+      lineVat: calc.lineVat.toFixed(3),
+    };
+  });
+  if (values.length > 0) await db.insert(invoiceLinesTable).values(values);
+}
+Remplace par :
+
+async function upsertLines(invoiceId: number, lines: Array<Record<string, unknown>>) {
+  const values = lines.map((l, i) => {
+    const qty = Number(l.quantity ?? 1);
+    const price = Number(l.unitPriceHt ?? 0);
+    const vatRate = Number(l.vatRate ?? 19);
+    const calc = calcLine({ quantity: qty, unitPriceHt: price, vatRate });
+    return {
+      invoiceId,
+      position: i,
+      description: String(l.description ?? ""),
+      unit: (l.unit as string) || "forfait",
+      quantity: qty.toFixed(3),
+      unitPriceHt: price.toFixed(3),
+      vatRate: vatRate.toFixed(2),
+      lineTotalHt: calc.lineTotalHt.toFixed(3),
+      lineVat: calc.lineVat.toFixed(3),
+    };
+  });
+  if (values.length > 0) await db.insert(invoiceLinesTable).values(values);
+}
+Pourquoi : unitPriceHt n'était jamais enregistré. quantity prenait la valeur du prix unitaire. Toutes les lignes de facture créées jusqu'ici ont leurs montants corrompus.
+
+Correction 1.2 — GET /invoices : filtrage SQL + pagination
+Étape A — Trouve (ligne 9) :
+
+import { eq, isNull, desc } from "drizzle-orm";
+Remplace par :
+
+import { eq, isNull, desc, and, SQL } from "drizzle-orm";
+Étape B — Trouve (lignes 92–102) :
+
+router.get("/invoices", async (req, res) => {
+  const { status, clientId, deleted } = req.query as Record<string, string>;
+  const base = withJoins();
+  const rows = deleted === "1"
+    ? await base.orderBy(desc(invoicesTable.createdAt))
+    : await base.where(isNull(invoicesTable.deletedAt)).orderBy(desc(invoicesTable.createdAt));
+  let filtered = rows;
+  if (status) filtered = filtered.filter((r) => r.status === status);
+  if (clientId) filtered = filtered.filter((r) => r.clientId === Number(clientId));
+  res.json(filtered.map(fmtInvoice));
+});
+Remplace par :
+
+router.get("/invoices", async (req, res) => {
+  const { status, clientId, deleted } = req.query as Record<string, string>;
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
+
+  const conditions: SQL[] = [];
+  if (deleted !== "1") conditions.push(isNull(invoicesTable.deletedAt));
+  if (status)   conditions.push(eq(invoicesTable.status,   status));
+  if (clientId) conditions.push(eq(invoicesTable.clientId, Number(clientId)));
+
+  const rows = await withJoins()
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(invoicesTable.createdAt))
+    .limit(limit)
+    .offset(page * limit);
+
+  res.json(rows.map(fmtInvoice));
+});
+Correction 1.3 — DELETE /invoices/:id : bloquer la suppression d'une facture émise
+Trouve (lignes 338–343) :
+
+router.delete("/invoices/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id));
+  await db.delete(invoicesTable).where(eq(invoicesTable.id, id));
+  res.status(204).send();
+});
+Remplace par :
+
+router.delete("/invoices/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [existing] = await db.select({ lockedAt: invoicesTable.lockedAt })
+    .from(invoicesTable).where(eq(invoicesTable.id, id));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  if (existing.lockedAt) {
+    res.status(409).json({ error: "لا يمكن حذف فاتورة مُصدَرة. أنشئ أولاً فاتورة تصحيحية (avoir)." });
+    return;
+  }
+  await db.delete(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id));
+  await db.delete(invoicesTable).where(eq(invoicesTable.id, id));
+  res.status(204).send();
+});
+Pourquoi : Il était possible de supprimer définitivement une facture émise et comptabilisée, sans passer par le processus d'avoir. Cela crée des trous dans la numérotation séquentielle et des incohérences comptables.

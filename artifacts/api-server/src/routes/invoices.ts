@@ -6,7 +6,7 @@ import {
   clientsTable,
   casesTable,
 } from "@workspace/db";
-import { eq, isNull, desc } from "drizzle-orm";
+import { eq, isNull, desc, and, SQL } from "drizzle-orm";
 import { calcLine, calcTotals } from "../services/invoiceCalculator";
 import { generateInvoiceNumber } from "../services/invoiceNumberService";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
@@ -91,14 +91,21 @@ const withJoins = () =>
 
 router.get("/invoices", async (req, res) => {
   const { status, clientId, deleted } = req.query as Record<string, string>;
-  const base = withJoins();
-  const rows = deleted === "1"
-    ? await base.orderBy(desc(invoicesTable.createdAt))
-    : await base.where(isNull(invoicesTable.deletedAt)).orderBy(desc(invoicesTable.createdAt));
-  let filtered = rows;
-  if (status) filtered = filtered.filter((r) => r.status === status);
-  if (clientId) filtered = filtered.filter((r) => r.clientId === Number(clientId));
-  res.json(filtered.map(fmtInvoice));
+  const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
+  const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
+
+  const conditions: SQL[] = [];
+  if (deleted !== "1") conditions.push(isNull(invoicesTable.deletedAt));
+  if (status)   conditions.push(eq(invoicesTable.status,   status));
+  if (clientId) conditions.push(eq(invoicesTable.clientId, Number(clientId)));
+
+  const rows = await withJoins()
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(invoicesTable.createdAt))
+    .limit(limit)
+    .offset(page * limit);
+
+  res.json(rows.map(fmtInvoice));
 });
 
 // ── Create (draft) ────────────────────────────────────────────────────────────
@@ -335,8 +342,15 @@ router.patch("/invoices/:id/soft-delete", async (req, res) => {
   res.json({ deleted: true });
 });
 
-router.delete("/invoices/:id", async (req, res) => {
+router.delete("/invoices/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
+  const [existing] = await db.select({ lockedAt: invoicesTable.lockedAt })
+    .from(invoicesTable).where(eq(invoicesTable.id, id));
+  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  if (existing.lockedAt) {
+    res.status(409).json({ error: "لا يمكن حذف فاتورة مُصدَرة. أنشئ أولاً فاتورة تصحيحية (avoir)." });
+    return;
+  }
   await db.delete(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id));
   await db.delete(invoicesTable).where(eq(invoicesTable.id, id));
   res.status(204).send();
