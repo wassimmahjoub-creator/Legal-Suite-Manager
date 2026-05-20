@@ -40,38 +40,30 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("mtoken"));
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
 
   function applyToken(t: string | null) {
-    if (t) {
-      localStorage.setItem("mtoken", t);
-      setAuthTokenGetter(() => t);
-    } else {
-      localStorage.removeItem("mtoken");
-      setAuthTokenGetter(() => null as unknown as string);
-    }
+    localStorage.removeItem("mtoken");
+    setAuthTokenGetter(null);
     setToken(t);
   }
 
   useEffect(() => {
-    const saved = localStorage.getItem("mtoken");
-    if (saved) setAuthTokenGetter(() => saved);
+    localStorage.removeItem("mtoken");
+    setAuthTokenGetter(null);
 
-    fetch(`${BASE_URL}/api/auth/status`)
-      .then(r => r.json())
-      .then(async (d: { hasUsers: boolean }) => {
-        setHasUsers(d.hasUsers);
-        if (d.hasUsers && saved) {
-          const me = await fetch(`${BASE_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${saved}` },
-          });
-          if (me.ok) {
-            setUser(await me.json());
-          } else {
-            applyToken(null);
-          }
+    const statusP = fetch(`${BASE_URL}/api/auth/status`).then(r => r.json() as Promise<{ hasUsers: boolean }>);
+    const meP = fetch(`${BASE_URL}/api/auth/me`, { credentials: "include" });
+
+    Promise.all([statusP, meP])
+      .then(async ([status, meRes]) => {
+        setHasUsers(status.hasUsers);
+        if (meRes.ok) {
+          const me = await meRes.json() as AuthUser;
+          setUser(me);
+          setToken("cookie");
         }
       })
       .catch(() => setHasUsers(true))
@@ -81,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const r = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
@@ -88,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const d = await r.json() as { error: string };
       throw new Error(d.error ?? "خطأ في تسجيل الدخول");
     }
-    const d = await r.json() as { token: string; user: AuthUser };
-    applyToken(d.token);
+    const d = await r.json() as { user: AuthUser };
+    setToken("cookie");
     setUser(d.user);
     setHasUsers(true);
   }
@@ -97,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function register(data: RegisterData) {
     const r = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -104,8 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const d = await r.json() as { error: string };
       throw new Error(d.error ?? "خطأ في إنشاء الحساب");
     }
-    const d = await r.json() as { token: string; user: AuthUser };
-    applyToken(d.token);
+    const d = await r.json() as { user: AuthUser };
+    setToken("cookie");
     setUser(d.user);
     setHasUsers(true);
   }
@@ -113,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function setup(name: string, email: string, password: string) {
     const r = await fetch(`${BASE_URL}/api/auth/setup`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
     });
@@ -120,35 +115,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const d = await r.json() as { error: string };
       throw new Error(d.error ?? "خطأ في الإعداد");
     }
-    const d = await r.json() as { token: string; user: AuthUser };
-    applyToken(d.token);
+    const d = await r.json() as { user: AuthUser };
+    setToken("cookie");
     setUser(d.user);
     setHasUsers(true);
   }
 
   function logout() {
-    applyToken(null);
+    fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
+    setToken(null);
     setUser(null);
   }
 
   async function updateProfile(data: { name?: string; email?: string; currentPassword?: string; newPassword?: string }) {
     const r = await fetch(`${BASE_URL}/api/auth/me`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("mtoken")}` },
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!r.ok) {
       const d = await r.json() as { error: string };
       throw new Error(d.error ?? "خطأ في التحديث");
     }
-    const d = await r.json() as { token: string; user: AuthUser };
-    applyToken(d.token);
+    const d = await r.json() as { user: AuthUser };
+    setToken("cookie");
     setUser(d.user);
   }
 
   async function acceptInvite(token: string, name: string, password: string) {
     const r = await fetch(`${BASE_URL}/api/invitations/accept/${token}`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, password }),
     });
@@ -156,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const d = await r.json() as { error: string };
       throw new Error(d.error ?? "خطأ في قبول الدعوة");
     }
-    const d = await r.json() as { token: string; user: AuthUser };
-    applyToken(d.token);
+    const d = await r.json() as { user: AuthUser };
+    setToken("cookie");
     setUser(d.user);
     setHasUsers(true);
   }

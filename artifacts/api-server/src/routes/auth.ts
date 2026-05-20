@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { db, usersTable, organizationsTable, passwordResetsTable } from "@workspace/db";
 import { eq, sql, and, isNull } from "drizzle-orm";
-import { signToken, requireAuth } from "../middleware/auth.js";
+import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "../middleware/auth.js";
 import { loginLimiter, forgotPasswordLimiter } from "../middleware/security.js";
 
 const router = Router();
@@ -58,7 +58,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }).returning();
   await db.update(organizationsTable).set({ ownerId: user.id }).where(eq(organizationsTable.id, org.id));
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: org.id });
-  res.status(201).json({ token, user: fmtUser(user) });
+  res.cookie(COOKIE_NAME, token, cookieOptions()).status(201).json({ user: fmtUser(user) });
 });
 
 /* ── Setup (first-run: kept for backward compat, creates org too) ── */
@@ -82,7 +82,7 @@ router.post("/auth/setup", async (req, res): Promise<void> => {
   const [user] = await db.insert(usersTable).values({ email, passwordHash, name, role: "admin", orgId: org.id, status: "active" }).returning();
   await db.update(organizationsTable).set({ ownerId: user.id }).where(eq(organizationsTable.id, org.id));
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: org.id });
-  res.json({ token, user: fmtUser(user) });
+  res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(user) });
 });
 
 /* ── Login ── */
@@ -116,15 +116,12 @@ router.post("/auth/login", loginLimiter, async (req, res): Promise<void> => {
   }
 
   const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: user.orgId ?? undefined });
-  res.json({ token, user: fmtUser(user) });
+  res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(user) });
 });
 
 /* ── Me ── */
-router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
-  const u = (req as typeof req & { user: { id: number } }).user;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, u.id));
-  if (!user) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
-  res.json(fmtUser(user));
+router.get("/auth/me", requireAuth, (req, res) => {
+  res.json(getActor(req));
 });
 
 /* ── Create collaborator (admin, old endpoint) ── */
@@ -169,7 +166,7 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
   if (Object.keys(updates).length === 0) { res.status(400).json({ error: "لا توجد تغييرات" }); return; }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, u.id)).returning();
   const token = signToken({ id: updated.id, email: updated.email, name: updated.name, role: updated.role, orgId: u.orgId });
-  res.json({ token, user: fmtUser(updated) });
+  res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(updated) });
 });
 
 /* ── Forgot password: returns reset token (no email server) ── */
@@ -201,6 +198,10 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, reset.userId));
   await db.update(passwordResetsTable).set({ usedAt: new Date() }).where(eq(passwordResetsTable.id, reset.id));
   res.json({ message: "تم تغيير كلمة المرور بنجاح" });
+});
+
+router.post("/auth/logout", (_req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: "/" }).json({ ok: true });
 });
 
 export default router;

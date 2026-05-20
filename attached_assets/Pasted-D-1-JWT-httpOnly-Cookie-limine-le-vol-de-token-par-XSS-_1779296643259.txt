@@ -1,0 +1,219 @@
+D.1 — JWT httpOnly Cookie (élimine le vol de token par XSS)
+D.1.1 — artifacts/api-server/src/app.ts
+Ajoute l'import en haut du fichier (avec les autres imports) :
+
+import cookieParser from "cookie-parser";
+Puis, juste après la ligne app.use(express.urlencoded(...)), insère :
+
+app.use(cookieParser());
+D.1.2 — artifacts/api-server/src/middleware/auth.ts
+Remplacement complet du fichier (inclut les ajouts de Bloc A + le support cookie) :
+
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+const _secret = process.env["SESSION_SECRET"];
+if (!_secret) throw new Error("SESSION_SECRET environment variable is required");
+const SECRET: string = _secret;
+
+export interface AuthPayload {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  orgId?: number;
+}
+
+export const COOKIE_NAME = "token";
+
+export function cookieOptions() {
+  const isProd = process.env["NODE_ENV"] === "production";
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+}
+
+export function getActor(req: Request): AuthPayload {
+  return (req as Request & { user: AuthPayload }).user;
+}
+
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const cookieToken = (req as Request & { cookies?: Record<string, string> }).cookies?.[COOKIE_NAME];
+  const header = req.headers["authorization"];
+  const token = cookieToken ?? (header?.startsWith("Bearer ") ? header.slice(7) : undefined);
+  if (!token) {
+    res.status(401).json({ error: "غير مصرح" });
+    return;
+  }
+  try {
+    const payload = jwt.verify(token, SECRET) as AuthPayload;
+    (req as Request & { user: AuthPayload }).user = payload;
+    next();
+  } catch {
+    res.status(401).json({ error: "جلسة منتهية، يرجى تسجيل الدخول مجدداً" });
+  }
+}
+
+export function signToken(payload: AuthPayload): string {
+  return jwt.sign(payload, SECRET, { expiresIn: "7d" });
+}
+D.1.3 — artifacts/api-server/src/routes/auth.ts
+4 modifications ciblées :
+
+① Modifie la ligne d'import (ligne 1) :
+
+// AVANT :
+import { signToken, requireAuth } from "../middleware/auth.js";
+
+// APRÈS :
+import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "../middleware/auth.js";
+② Réponse du login — trouve ce bloc exact à la fin du handler POST /auth/login :
+
+// AVANT :
+  const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: user.orgId ?? undefined });
+  res.json({ token, user: fmtUser(user) });
+
+// APRÈS :
+  const token = signToken({ id: user.id, email: user.email, name: user.name, role: user.role, orgId: user.orgId ?? undefined });
+  res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(user) });
+③ Réponse du register :
+
+// AVANT :
+  res.status(201).json({ token, user: fmtUser(user) });
+
+// APRÈS :
+  res.cookie(COOKIE_NAME, token, cookieOptions()).status(201).json({ user: fmtUser(user) });
+④ Réponse du setup — trouve le bloc dans POST /auth/setup :
+
+// AVANT :
+  res.json({ token, user: fmtUser(user) });
+
+// APRÈS (setup seulement — login a déjà été modifié ci-dessus) :
+  res.cookie(COOKIE_NAME, token, cookieOptions()).json({ user: fmtUser(user) });
+⑤ Ajoute ces 2 routes à la fin du fichier, juste avant export default router; :
+
+router.get("/auth/me", requireAuth, (req, res) => {
+  res.json(getActor(req));
+});
+
+router.post("/auth/logout", (_req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: "/" }).json({ ok: true });
+});
+D.1.4 — lib/api-client-react/src/custom-fetch.ts
+1 seule ligne à modifier. Trouve la ligne :
+
+  const response = await fetch(input, { ...init, method, headers });
+Remplace par :
+
+  const response = await fetch(input, { credentials: "include", ...init, method, headers });
+D.1.5 — artifacts/law-firm/src/context/AuthContext.tsx
+5 modifications ciblées :
+
+① Initial state du token — trouve :
+
+const [token, setToken] = useState<string | null>(() => localStorage.getItem("mtoken"));
+Remplace par :
+
+const [token, setToken] = useState<string | null>(null);
+② Fonction applyToken — trouve le bloc complet :
+
+function applyToken(t: string | null) {
+  if (t) {
+    localStorage.setItem("mtoken", t);
+    setAuthTokenGetter(() => t);
+  } else {
+    localStorage.removeItem("mtoken");
+    setAuthTokenGetter(() => null as unknown as string);
+  }
+  setToken(t);
+}
+Remplace par :
+
+function applyToken(t: string | null) {
+  localStorage.removeItem("mtoken");
+  setAuthTokenGetter(null);
+  setToken(t);
+}
+③ useEffect au montage — trouve le bloc complet :
+
+useEffect(() => {
+  const saved = localStorage.getItem("mtoken");
+  if (saved) setAuthTokenGetter(() => saved);
+
+  fetch(`${BASE_URL}/api/auth/status`)
+    .then(r => r.json())
+    .then(async (d: { hasUsers: boolean }) => {
+      setHasUsers(d.hasUsers);
+      if (d.hasUsers && saved) {
+        const me = await fetch(`${BASE_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${saved}` },
+        });
+        if (me.ok) {
+          setUser(await me.json());
+        } else {
+          applyToken(null);
+        }
+      }
+    })
+    .catch(() => setHasUsers(true))
+    .finally(() => setLoading(false));
+}, []);
+Remplace par :
+
+useEffect(() => {
+  localStorage.removeItem("mtoken");
+  setAuthTokenGetter(null);
+
+  const statusP = fetch(`${BASE_URL}/api/auth/status`).then(r => r.json() as Promise<{ hasUsers: boolean }>);
+  const meP = fetch(`${BASE_URL}/api/auth/me`, { credentials: "include" });
+
+  Promise.all([statusP, meP])
+    .then(async ([status, meRes]) => {
+      setHasUsers(status.hasUsers);
+      if (meRes.ok) {
+        const me = await meRes.json() as AuthUser;
+        setUser(me);
+        setToken("cookie");
+      }
+    })
+    .catch(() => setHasUsers(true))
+    .finally(() => setLoading(false));
+}, []);
+④ Fonction login — trouve ces lignes à l'intérieur du handler login :
+
+  const d = await r.json() as { token: string; user: AuthUser };
+  applyToken(d.token);
+  setUser(d.user);
+  setHasUsers(true);
+Remplace par :
+
+  const d = await r.json() as { user: AuthUser };
+  setToken("cookie");
+  setUser(d.user);
+  setHasUsers(true);
+⑤ Fonction logout — trouve :
+
+function logout() {
+  applyToken(null);
+  setUser(null);
+}
+Remplace par :
+
+function logout() {
+  fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
+  setToken(null);
+  setUser(null);
+}
+⑥ Fonction updateProfile — cherche dans cette fonction toute occurrence de Authorization: \Bearer ${localStorage.getItem("mtoken")}`et remplace parcredentials: "include"dans les options fetch, en supprimant l'en-têteAuthorization`. Exemple :
+
+// AVANT :
+  headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("mtoken")}` },
+
+// APRÈS :
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+Idem pour register() et setup() si ces fonctions : a) font un appel fetch direct (pas via customFetch), et b) lisent d.token dans la réponse → supprimer d.token et appeler setToken("cookie") à la place.
