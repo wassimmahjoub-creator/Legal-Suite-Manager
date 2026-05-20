@@ -138,8 +138,12 @@ router.post("/auth/users", requireAuth, async (req, res): Promise<void> => {
 });
 
 /* ── List users (admin) ── */
-router.get("/auth/users", requireAuth, async (_req, res) => {
-  const rows = await db.select().from(usersTable);
+router.get("/auth/users", requireAuth, async (req, res) => {
+  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.orgId, actor.orgId ?? 0));
   res.json(rows.map(fmtUser));
 });
 
