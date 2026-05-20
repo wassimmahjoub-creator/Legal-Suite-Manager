@@ -71,17 +71,21 @@ router.post("/clients", async (req, res) => {
 
 router.get("/clients/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [client] = await db.select().from(clientsTable)
+    .where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
   if (!client) return res.status(404).json({ error: "Not found" });
   res.json(client);
 });
 
 router.put("/clients/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const parsed = UpdateClientBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const extras = extractExtras(req.body as Record<string, unknown>);
-  const [client] = await db.update(clientsTable).set({ ...parsed.data, ...extras }).where(eq(clientsTable.id, id)).returning();
+  const [client] = await db.update(clientsTable).set({ ...parsed.data, ...extras })
+    .where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0))).returning();
   if (!client) return res.status(404).json({ error: "Not found" });
   res.json(client);
 });
@@ -111,13 +115,16 @@ router.get("/clients/:id/delete-check", async (req, res): Promise<void> => {
 
 router.patch("/clients/:id/soft-delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  await db.update(clientsTable).set({ deletedAt: new Date() }).where(eq(clientsTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  await db.update(clientsTable).set({ deletedAt: new Date() })
+    .where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
   res.json({ deleted: true });
 });
 
 router.delete("/clients/:id", async (req, res) => {
   const id = Number(req.params.id);
-  await db.delete(clientsTable).where(eq(clientsTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  await db.delete(clientsTable).where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
   res.status(204).send();
 });
 
