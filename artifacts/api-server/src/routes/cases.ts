@@ -174,21 +174,24 @@ router.post("/cases", async (req, res) => {
 
 router.get("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const [row] = await db
     .select(caseFields)
     .from(casesTable)
     .leftJoin(clientsTable, eq(casesTable.clientId, clientsTable.id))
-    .where(eq(casesTable.id, id));
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   if (!row) return res.status(404).json({ error: "Not found" });
   res.json(row);
 });
 
 router.put("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   const parsed = UpdateCaseBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const extras = extractExtras(req.body as Record<string, unknown>);
-  const [row] = await db.update(casesTable).set({ ...parsed.data, ...extras }).where(eq(casesTable.id, id)).returning();
+  const [row] = await db.update(casesTable).set({ ...parsed.data, ...extras })
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
   res.json({ ...row, clientName: client?.name ?? "" });
@@ -197,6 +200,7 @@ router.put("/cases/:id", async (req, res) => {
 // Partial update — used by wizard, CaseDetail tabs, draft saves
 router.patch("/cases/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
   const b = req.body as Record<string, unknown>;
 
   const set: Record<string, unknown> = {};
@@ -219,17 +223,18 @@ router.patch("/cases/:id", async (req, res): Promise<void> => {
   if (Object.keys(set).length === 0) { res.status(400).json({ error: "No fields" }); return; }
 
   // Fetch before for case_updated diff
-  const [before] = await db.select().from(casesTable).where(eq(casesTable.id, id));
+  const [before] = await db.select().from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [row] = await db.update(casesTable).set(set as any).where(eq(casesTable.id, id)).returning();
+  const [row] = await db.update(casesTable).set(set as any)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
 
   if (before) {
     const watchedFields = ["title", "caseType", "litigationDegree", "procedureType", "feeMethod", "disputeValue", "agreedFees", "confidentialityLevel"] as const;
     const changed = watchedFields.filter(f => f in set && String((before as Record<string, unknown>)[f] ?? "") !== String(set[f] ?? ""));
     if (changed.length > 0) {
-      const actor = (req as typeof req & { user?: { id: number } }).user;
       void CaseEventLogger.log({ caseId: id, eventType: "case_updated", actorUserId: actor?.id ?? null, metadata: { changed_fields: changed } });
     }
   }
@@ -239,24 +244,29 @@ router.patch("/cases/:id", async (req, res): Promise<void> => {
 
 router.patch("/cases/:id/archive", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  const [row] = await db.select().from(casesTable).where(eq(casesTable.id, id));
+  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
+  const [row] = await db.select().from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   const archivedAt = row.archivedAt ? null : new Date();
-  await db.update(casesTable).set({ archivedAt, status: archivedAt ? "archived" : "active" }).where(eq(casesTable.id, id));
-  const actor = (req as typeof req & { user?: { id: number } }).user;
+  await db.update(casesTable).set({ archivedAt, status: archivedAt ? "archived" : "active" })
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   void CaseEventLogger.log({ caseId: id, eventType: archivedAt ? "case_archived" : "case_reopened", actorUserId: actor?.id ?? null });
   res.json({ archived: !!archivedAt });
 });
 
 router.patch("/cases/:id/soft-delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  await db.update(casesTable).set({ deletedAt: new Date() }).where(eq(casesTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  await db.update(casesTable).set({ deletedAt: new Date() })
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   res.json({ deleted: true });
 });
 
 router.delete("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
-  await db.delete(casesTable).where(eq(casesTable.id, id));
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  await db.delete(casesTable).where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   res.status(204).send();
 });
 
