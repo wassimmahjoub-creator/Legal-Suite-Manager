@@ -111,7 +111,7 @@ export default function TimeTracking() {
             <div className="flex gap-3">
               <button
                 onClick={() => setRunning(r => !r)}
-                className={`p-4 rounded-full transition-all shadow-md ${running ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"} text-primary-foreground`}
+                className={`p-4 rounded-full transition-all shadow-md ${running ? "bg-warning hover:bg-warning/90" : "bg-primary hover:bg-primary/90"} text-primary-foreground`}
               >
                 {running ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
               </button>
@@ -131,10 +131,10 @@ export default function TimeTracking() {
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "إجمالي الساعات", value: `${totalHours.toFixed(1)} س`, icon: Clock, color: "text-blue-400" },
+          { label: "إجمالي الساعات", value: `${totalHours.toFixed(1)} س`, icon: Clock, color: "text-info" },
           { label: "ساعات قابلة للفوترة", value: `${billableHours.toFixed(1)} س`, icon: Timer, color: "text-primary" },
-          { label: "المبلغ القابل للفوترة", value: formatCurrency(totalAmount, "ar"), icon: TrendingUp, color: "text-green-400" },
-          { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1)} س`, icon: Receipt, color: "text-purple-400" },
+          { label: "المبلغ القابل للفوترة", value: formatCurrency(totalAmount, "ar"), icon: TrendingUp, color: "text-success" },
+          { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1)} س`, icon: Receipt, color: "text-muted-foreground" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
             <CardContent className="p-4 flex items-center gap-3">
@@ -190,7 +190,7 @@ export default function TimeTracking() {
                     <td className="py-3 px-4 text-muted-foreground" dir="ltr"><Money amount={e.rate} />/س</td>
                     <td className="py-3 px-4 font-bold" dir="ltr"><Money amount={e.hours * e.rate} /></td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2 py-1 rounded-full ${e.billable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${e.billable ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                         {e.billable ? "نعم" : "لا"}
                       </span>
                     </td>

@@ -13,11 +13,11 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface AuditLog { id: number; entityType: string; entityId: number | null; action: string; oldValue: string | null; newValue: string | null; userName: string | null; ipAddress: string | null; createdAt: string; }
 
 const ACTION_COLORS: Record<string, string> = {
-  create: "bg-green-500/10 text-green-400",
-  update: "bg-blue-500/10 text-blue-400",
-  delete: "bg-red-500/10 text-red-400",
-  archive: "bg-orange-500/10 text-orange-400",
-  restore: "bg-purple-500/10 text-purple-400",
+  create: "bg-success/10 text-success",
+  update: "bg-info/10 text-info",
+  delete: "bg-destructive/10 text-destructive",
+  archive: "bg-warning/10 text-warning",
+  restore: "bg-muted/50 text-muted-foreground",
   login: "bg-primary/10 text-primary",
 };
 
@@ -51,7 +51,7 @@ export default function AuditLogs() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-yellow-500/10 rounded-xl"><ClipboardList className="h-6 w-6 text-yellow-400" /></div>
+        <div className="p-2.5 bg-warning/10 rounded-xl"><ClipboardList className="h-6 w-6 text-warning" /></div>
         <div><h1 className="text-2xl font-bold">سجل التعديلات</h1><p className="text-muted-foreground text-sm">تاريخ كل العمليات على النظام</p></div>
       </div>
 

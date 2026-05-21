@@ -178,7 +178,7 @@ export default function Expenses() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border-none shadow-sm">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 bg-red-500/10 rounded-xl"><TrendingDown className="h-5 w-5 text-red-400" /></div>
+              <div className="p-3 bg-destructive/10 rounded-xl"><TrendingDown className="h-5 w-5 text-destructive" /></div>
               <div>
                 <p className="text-xs text-muted-foreground">إجمالي المصاريف</p>
                 <Money amount={total} className="text-xl font-bold" />
@@ -187,7 +187,7 @@ export default function Expenses() {
           </Card>
           <Card className="border-none shadow-sm">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 bg-green-500/10 rounded-xl"><Banknote className="h-5 w-5 text-green-500" /></div>
+              <div className="p-3 bg-success/10 rounded-xl"><Banknote className="h-5 w-5 text-success" /></div>
               <div>
                 <p className="text-xs text-muted-foreground">قابلة للاسترجاع</p>
                 <Money amount={reimbursable} className="text-xl font-bold" />
@@ -196,7 +196,7 @@ export default function Expenses() {
           </Card>
           <Card className="border-none shadow-sm">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 bg-orange-500/10 rounded-xl"><Scale className="h-5 w-5 text-orange-500" /></div>
+              <div className="p-3 bg-warning/10 rounded-xl"><Scale className="h-5 w-5 text-warning" /></div>
               <div>
                 <p className="text-xs text-muted-foreground">مصاريف المكتب</p>
                 <Money amount={notReimbursable} className="text-xl font-bold" />
@@ -273,7 +273,7 @@ export default function Expenses() {
                         <td className="py-3 px-4 text-muted-foreground hidden md:table-cell">{e.description}</td>
                         <td className="py-3 px-4 font-bold" dir="ltr"><Money amount={e.amount} /></td>
                         <td className="py-3 px-4 text-center">
-                          <span className={`text-xs px-2 py-1 rounded-full ${e.reimbursable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                          <span className={`text-xs px-2 py-1 rounded-full ${e.reimbursable ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                             {e.reimbursable ? "نعم" : "لا"}
                           </span>
                         </td>

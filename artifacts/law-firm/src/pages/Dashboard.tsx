@@ -22,9 +22,9 @@ const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 type RecentCase = { id: number; title: string; status: string; clientName?: string | null; };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: "نشطة", color: "text-green-400 bg-green-500/10" },
-  pending: { label: "انتظار", color: "text-orange-400 bg-orange-500/10" },
-  suspended: { label: "موقوفة", color: "text-yellow-400 bg-yellow-500/10" },
+  active: { label: "نشطة", color: "text-success bg-success/10" },
+  pending: { label: "انتظار", color: "text-warning bg-warning/10" },
+  suspended: { label: "موقوفة", color: "text-warning bg-warning/10" },
   closed: { label: "مغلقة", color: "text-muted-foreground bg-muted/50" },
 };
 
@@ -98,19 +98,19 @@ export default function Dashboard() {
           {
             title: "المداخيل هذا الشهر",
             value: loadingSummary ? null : formatCurrency(Number(summary?.monthlyIncome ?? 0)),
-            icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10",
+            icon: TrendingUp, color: "text-success", bg: "bg-success/10",
             action: () => navigate("/billing"),
           },
           {
             title: "فواتير معلقة",
             value: loadingSummary ? null : summary?.pendingInvoices ?? 0,
-            icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10",
+            icon: Clock, color: "text-warning", bg: "bg-warning/10",
             action: () => navigate("/billing"),
           },
           {
             title: "آجال قريبة",
             value: loadingSummary ? null : summary?.upcomingDeadlines ?? 0,
-            icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10",
+            icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10",
             action: () => navigate("/calendar"),
           },
         ].map((card, i) => (
@@ -148,13 +148,13 @@ export default function Dashboard() {
               <Button size="sm" variant="destructive" className="shrink-0">اشترك الآن</Button>
             </div>
           ) : orgInfo.daysRemaining !== null && orgInfo.daysRemaining <= 14 ? (
-            <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-xl p-4">
-              <Crown className="h-5 w-5 text-orange-500 shrink-0" />
+            <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-xl p-4">
+              <Crown className="h-5 w-5 text-warning shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-orange-500 text-sm">تجربة مجانية — {orgInfo.daysRemaining} يوم متبقٍ</p>
+                <p className="font-semibold text-warning text-sm">تجربة مجانية — {orgInfo.daysRemaining} يوم متبقٍ</p>
                 <p className="text-xs text-muted-foreground">اشترك قبل انتهاء التجربة للاستمرار بدون انقطاع</p>
               </div>
-              <Button size="sm" className="shrink-0 bg-orange-500 hover:bg-orange-600">ترقية</Button>
+              <Button size="sm" className="shrink-0 bg-warning hover:bg-warning/90">ترقية</Button>
             </div>
           ) : orgInfo.daysRemaining !== null ? (
             <div className="flex items-center gap-3 bg-primary/5 border border-primary/15 rounded-xl p-3">
@@ -178,13 +178,13 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">مداخيل الفواتير:</span>
-              <span className="font-bold text-sm text-green-400" dir="ltr">
+              <span className="font-bold text-sm text-success" dir="ltr">
                 {loadingSummary ? "..." : formatCurrency(Number(summary?.monthlyIncome ?? 0))}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">فواتير معلقة:</span>
-              <span className="font-bold text-sm text-orange-400">
+              <span className="font-bold text-sm text-warning">
                 {loadingSummary ? "..." : summary?.pendingInvoices ?? 0}
               </span>
             </div>
@@ -244,8 +244,8 @@ export default function Dashboard() {
                         title="تحديد كمنجز"
                       >
                         {t.done
-                          ? <CheckCircle2 className="h-6 w-6 text-green-400" />
-                          : <Circle className="h-6 w-6 text-orange-400" />
+                          ? <CheckCircle2 className="h-6 w-6 text-success" />
+                          : <Circle className="h-6 w-6 text-warning" />
                         }
                       </button>
                       <div
@@ -255,7 +255,7 @@ export default function Dashboard() {
                         <p className={`font-semibold text-sm truncate ${t.done ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
                         <p className="text-xs text-muted-foreground">{t.caseName ?? "—"}</p>
                       </div>
-                      <span className="text-xs bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md shrink-0">مهمة</span>
+                      <span className="text-xs bg-warning/10 text-warning px-2 py-1 rounded-md shrink-0">مهمة</span>
                     </div>
                   );
                 })}
@@ -281,7 +281,7 @@ export default function Dashboard() {
               <div className="divide-y divide-border">
                 {alerts?.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-400 opacity-60" />
+                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-success opacity-60" />
                     لا توجد تنبيهات
                   </div>
                 ) : alerts?.map(a => (

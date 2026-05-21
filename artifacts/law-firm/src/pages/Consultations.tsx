@@ -24,9 +24,9 @@ interface Consultation {
 const EMPTY = { clientId: "", subject: "", date: new Date().toISOString().slice(0,10), amount: "", status: "pending", notes: "" };
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending:   { label: "بانتظار", color: "text-orange-400 bg-orange-500/10", icon: Clock },
-  done:      { label: "مكتملة",  color: "text-green-400 bg-green-500/10",  icon: CheckCircle2 },
-  cancelled: { label: "ملغاة",   color: "text-red-400 bg-red-500/10",      icon: Trash2 },
+  pending:   { label: "بانتظار", color: "text-warning bg-warning/10",         icon: Clock },
+  done:      { label: "مكتملة",  color: "text-success bg-success/10",         icon: CheckCircle2 },
+  cancelled: { label: "ملغاة",   color: "text-destructive bg-destructive/10", icon: Trash2 },
 };
 
 export default function Consultations() {
@@ -77,7 +77,7 @@ export default function Consultations() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-500/10 rounded-xl"><MessageSquare className="h-6 w-6 text-blue-400" /></div>
+          <div className="p-2.5 bg-info/10 rounded-xl"><MessageSquare className="h-6 w-6 text-info" /></div>
           <div>
             <h1 className="text-2xl font-bold">الاستشارات</h1>
             <p className="text-muted-foreground text-sm">استشارات قانونية • مداخيل: <Money amount={totalRevenue} className="text-primary font-bold" /></p>

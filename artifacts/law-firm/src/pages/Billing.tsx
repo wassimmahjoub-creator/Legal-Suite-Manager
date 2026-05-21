@@ -79,14 +79,14 @@ export default function Billing() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={<CreditCard className="h-5 w-5 text-blue-500" />}
-          bg="bg-blue-500/10" label="إجمالي الفواتير" value={formatCurrency(totalNet)} />
-        <KpiCard icon={<CheckCircle className="h-5 w-5 text-green-500" />}
-          bg="bg-green-500/10" label="المدفوع" value={formatCurrency(totalPaid)} />
-        <KpiCard icon={<Clock className="h-5 w-5 text-orange-500" />}
-          bg="bg-orange-500/10" label="الرصيد المتبقي" value={formatCurrency(totalBalance)} />
-        <KpiCard icon={<AlertCircle className="h-5 w-5 text-red-500" />}
-          bg="bg-red-500/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
+        <KpiCard icon={<CreditCard className="h-5 w-5 text-info" />}
+          bg="bg-info/10" label="إجمالي الفواتير" value={formatCurrency(totalNet)} />
+        <KpiCard icon={<CheckCircle className="h-5 w-5 text-success" />}
+          bg="bg-success/10" label="المدفوع" value={formatCurrency(totalPaid)} />
+        <KpiCard icon={<Clock className="h-5 w-5 text-warning" />}
+          bg="bg-warning/10" label="الرصيد المتبقي" value={formatCurrency(totalBalance)} />
+        <KpiCard icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+          bg="bg-destructive/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
       </div>
 
       {/* Filters */}
