@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -86,7 +87,7 @@ function periodDates(period: string, customFrom: string, customTo: string) {
 }
 
 function exportCsv(rows: string[][], filename: string) {
-  const BOM = "\uFEFF";
+  const BOM = "﻿";
   const content = BOM + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -98,13 +99,13 @@ function exportCsv(rows: string[][], filename: string) {
 /* ── Small KPI card ─────────────────────────────────────────── */
 function KpiCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-[#1a2236] border border-white/10 rounded-xl p-4 flex items-center gap-4">
+    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
+        <Icon className="w-5 h-5 text-primary-foreground" />
       </div>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground truncate">{label}</p>
-        <p className="text-lg font-bold text-white truncate">{value}</p>
+        <p className="text-lg font-bold text-foreground truncate">{value}</p>
       </div>
     </div>
   );
@@ -133,12 +134,12 @@ function useSortable<T>(data: T[], defaultKey: keyof T, defaultDir: SortDir = "d
   function Th({ children, k }: { children: React.ReactNode; k: keyof T }) {
     const active = sortKey === k;
     return (
-      <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground cursor-pointer select-none whitespace-nowrap hover:text-white"
+      <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground cursor-pointer select-none whitespace-nowrap hover:text-foreground"
           onClick={() => onSort(k)}>
         <span className="inline-flex items-center gap-1">
           {children}
           {active
-            ? sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-[#D4AF37]" /> : <ChevronDown className="w-3 h-3 text-[#D4AF37]" />
+            ? sortDir === "asc" ? <ChevronUp className="w-3 h-3 text-primary" /> : <ChevronDown className="w-3 h-3 text-primary" />
             : <ChevronUp className="w-3 h-3 opacity-20" />}
         </span>
       </th>
@@ -243,10 +244,10 @@ function SummaryTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "إجمالي المداخيل (7 أشهر)", value: loading ? null : formatCurrency(totalIncome), icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10", action: () => navigate("/billing") },
-          { label: "فواتير مدفوعة",  value: loading ? null : data?.billing.paidCount ?? 0,    icon: CheckCircle2, color: "text-primary",      bg: "bg-primary/10",      action: () => navigate("/billing") },
-          { label: "فواتير معلقة",   value: loading ? null : data?.billing.pendingCount ?? 0,  icon: Clock,        color: "text-orange-400",   bg: "bg-orange-500/10",   action: () => navigate("/billing") },
-          { label: "متوسط شهري",     value: loading ? null : formatCurrency(avgMonthly),       icon: BarChart3,    color: "text-blue-400",     bg: "bg-blue-500/10",     action: undefined },
+          { label: "إجمالي المداخيل (7 أشهر)", value: loading ? null : formatCurrency(totalIncome), icon: TrendingUp, color: "text-success", bg: "bg-success/10", action: () => navigate("/billing") },
+          { label: "فواتير مدفوعة",  value: loading ? null : data?.billing.paidCount ?? 0,    icon: CheckCircle2, color: "text-primary",  bg: "bg-primary/10",  action: () => navigate("/billing") },
+          { label: "فواتير معلقة",   value: loading ? null : data?.billing.pendingCount ?? 0,  icon: Clock,        color: "text-warning",  bg: "bg-warning/10",  action: () => navigate("/billing") },
+          { label: "متوسط شهري",     value: loading ? null : formatCurrency(avgMonthly),       icon: BarChart3,    color: "text-info",     bg: "bg-info/10",     action: undefined },
         ].map((k, i) => (
           <Card key={i} className={`border-none shadow-sm ${k.action ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`} onClick={k.action}>
             <CardContent className="p-4">
@@ -297,12 +298,12 @@ function SummaryTab() {
               <p className="text-xs text-muted-foreground font-medium mb-3">المهام</p>
               {loading ? <Skeleton className="h-4 w-full" /> : (
                 <div className="space-y-3">
-                  <StatBar label="منجزة"      value={data?.tasks.done ?? 0}    total={totalTasks || 1} color="bg-green-500" />
-                  <StatBar label="قيد التنفيذ" value={data?.tasks.pending ?? 0} total={totalTasks || 1} color="bg-orange-500" />
+                  <StatBar label="منجزة"      value={data?.tasks.done ?? 0}    total={totalTasks || 1} color="bg-success" />
+                  <StatBar label="قيد التنفيذ" value={data?.tasks.pending ?? 0} total={totalTasks || 1} color="bg-warning" />
                 </div>
               )}
               {!loading && totalTasks > 0 && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">نسبة الإنجاز: <span className="font-bold text-green-400">{taskRate}%</span></p>
+                <p className="text-xs text-muted-foreground mt-2 text-center">نسبة الإنجاز: <span className="font-bold text-success">{taskRate}%</span></p>
               )}
             </div>
           </CardContent>
@@ -340,26 +341,26 @@ function SummaryTab() {
             {loading ? <div className="space-y-3"><Skeleton className="h-24 w-full rounded-xl" /><Skeleton className="h-6 w-full" /></div> : (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-xl bg-green-500/10 cursor-pointer hover:bg-green-500/15 transition-colors" onClick={() => navigate("/billing")}>
-                    <CheckCircle2 className="h-6 w-6 text-green-400 mb-2" />
+                  <div className="p-4 rounded-xl bg-success/10 cursor-pointer hover:bg-success/15 transition-colors" onClick={() => navigate("/billing")}>
+                    <CheckCircle2 className="h-6 w-6 text-success mb-2" />
                     <p className="text-2xl font-bold">{data?.billing.paidCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير مدفوعة</p>
-                    <p className="text-sm font-medium mt-1 text-green-400" dir="ltr"><Money amount={data?.billing.paidAmount ?? 0} /></p>
+                    <p className="text-sm font-medium mt-1 text-success" dir="ltr"><Money amount={data?.billing.paidAmount ?? 0} /></p>
                   </div>
-                  <div className="p-4 rounded-xl bg-orange-500/10 cursor-pointer hover:bg-orange-500/15 transition-colors" onClick={() => navigate("/billing")}>
-                    <AlertCircle className="h-6 w-6 text-orange-400 mb-2" />
+                  <div className="p-4 rounded-xl bg-warning/10 cursor-pointer hover:bg-warning/15 transition-colors" onClick={() => navigate("/billing")}>
+                    <AlertCircle className="h-6 w-6 text-warning mb-2" />
                     <p className="text-2xl font-bold">{data?.billing.pendingCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير معلقة</p>
-                    <p className="text-sm font-medium mt-1 text-orange-400" dir="ltr"><Money amount={data?.billing.pendingAmount ?? 0} /></p>
+                    <p className="text-sm font-medium mt-1 text-warning" dir="ltr"><Money amount={data?.billing.pendingAmount ?? 0} /></p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">نسبة التحصيل</span>
-                    <span className={`font-bold ${collectionRate >= 70 ? "text-green-400" : collectionRate >= 40 ? "text-orange-400" : "text-red-400"}`}>{collectionRate}%</span>
+                    <span className={`font-bold ${collectionRate >= 70 ? "text-success" : collectionRate >= 40 ? "text-warning" : "text-destructive"}`}>{collectionRate}%</span>
                   </div>
                   <div className="w-full bg-muted/30 rounded-full h-2.5">
-                    <div className={`h-2.5 rounded-full transition-all duration-700 ${collectionRate >= 70 ? "bg-green-500" : collectionRate >= 40 ? "bg-orange-500" : "bg-red-500"}`} style={{ width: `${collectionRate}%` }} />
+                    <div className={`h-2.5 rounded-full transition-all duration-700 ${collectionRate >= 70 ? "bg-success" : collectionRate >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${collectionRate}%` }} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -421,7 +422,7 @@ function CaseProfitability() {
   }), [data]);
 
   function marginColor(n: number) {
-    return n > 0 ? "text-emerald-400" : n < 0 ? "text-red-400" : "text-white";
+    return n > 0 ? "text-success" : n < 0 ? "text-destructive" : "text-foreground";
   }
 
   function doExport() {
@@ -437,7 +438,7 @@ function CaseProfitability() {
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40 bg-[#1a2236] border-white/10"><SelectValue placeholder="الفترة" /></SelectTrigger>
+          <SelectTrigger className="w-40 bg-muted/50 border-border"><SelectValue placeholder="الفترة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الفترات</SelectItem>
             <SelectItem value="month">هذا الشهر</SelectItem>
@@ -447,11 +448,11 @@ function CaseProfitability() {
           </SelectContent>
         </Select>
         {period === "custom" && <>
-          <Input type="date" value={customFrom} onChange={e => setCfrom(e.target.value)} className="w-36 bg-[#1a2236] border-white/10" />
-          <Input type="date" value={customTo}   onChange={e => setCto(e.target.value)}   className="w-36 bg-[#1a2236] border-white/10" />
+          <Input type="date" value={customFrom} onChange={e => setCfrom(e.target.value)} className="w-36 bg-muted/50 border-border" />
+          <Input type="date" value={customTo}   onChange={e => setCto(e.target.value)}   className="w-36 bg-muted/50 border-border" />
         </>}
         <Select value={statusFilter} onValueChange={setStatus}>
-          <SelectTrigger className="w-36 bg-[#1a2236] border-white/10"><SelectValue placeholder="الحالة" /></SelectTrigger>
+          <SelectTrigger className="w-36 bg-muted/50 border-border"><SelectValue placeholder="الحالة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
             <SelectItem value="active">نشطة</SelectItem>
@@ -461,23 +462,23 @@ function CaseProfitability() {
           </SelectContent>
         </Select>
         <Input placeholder="بحث عن ملف أو موكّل…" value={search} onChange={e => setSearch(e.target.value)}
-          className="w-52 bg-[#1a2236] border-white/10" />
-        <div className="mr-auto">
-          <Button onClick={doExport} size="sm"><Download className="w-4 h-4 ml-2" />تصدير CSV</Button>
+          className="w-52 bg-muted/50 border-border" />
+        <div className="ms-auto">
+          <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="إجمالي المفوتر"  value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-blue-600" />
-        <KpiCard label="إجمالي المقبوض"  value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-emerald-600" />
-        <KpiCard label="إجمالي المصاريف" value={`${fmtNum(totals.expenses)} د.ت`}  icon={BarChart3}  color="bg-orange-600" />
+        <KpiCard label="إجمالي المفوتر"  value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-info" />
+        <KpiCard label="إجمالي المقبوض"  value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
+        <KpiCard label="إجمالي المصاريف" value={`${fmtNum(totals.expenses)} د.ت`}  icon={BarChart3}  color="bg-warning" />
         <KpiCard label="الهامش الإجمالي" value={`${fmtNum(totals.margin)} د.ت`}    icon={Briefcase}
-          color={totals.margin >= 0 ? "bg-[#D4AF37]" : "bg-red-600"} />
+          color={totals.margin >= 0 ? "bg-primary" : "bg-destructive"} />
       </div>
 
       {/* Table */}
-      <div className="bg-[#1a2236] border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-muted-foreground">جارٍ التحميل…</div>
         ) : sorted.length === 0 ? (
@@ -485,7 +486,7 @@ function CaseProfitability() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
+              <thead className="border-b border-border">
                 <tr>
                   <Th k="caseNumber">رقم الملف</Th>
                   <Th k="title">العنوان</Th>
@@ -501,26 +502,26 @@ function CaseProfitability() {
                 {sorted.map((r, i) => (
                   <tr key={r.caseId}
                     onClick={() => navigate(`/cases/${r.caseId}?from=reports&fromTab=profitability`)}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
-                    <td className="px-3 py-2 font-mono text-[#D4AF37] whitespace-nowrap">{r.caseNumber}</td>
+                    className={`border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer ${i % 2 ? "bg-muted/10" : ""}`}>
+                    <td className="px-3 py-2 font-mono text-primary whitespace-nowrap">{r.caseNumber}</td>
                     <td className="px-3 py-2 max-w-[16rem] truncate" title={r.title}>{r.title}</td>
                     <td className="px-3 py-2 max-w-[12rem] truncate" title={r.clientName}>{r.clientName}</td>
                     <td className="px-3 py-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/10">{STATUS_AR[r.status] ?? r.status}</span>
+                      <Badge variant="neutral">{STATUS_AR[r.status] ?? r.status}</Badge>
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-orange-300">{fmtNum(r.totalExpenses)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-emerald-400">{fmtNum(r.totalCollected)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-warning">{fmtNum(r.totalExpenses)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-success">{fmtNum(r.totalCollected)}</td>
                     <td className={`px-3 py-2 text-right tabular-nums font-bold ${marginColor(r.grossMargin)}`}>{fmtNum(r.grossMargin)}</td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t border-white/20 bg-white/5">
+              <tfoot className="border-t border-border bg-muted/20">
                 <tr>
                   <td colSpan={4} className="px-3 py-2 text-xs font-bold text-muted-foreground">{sorted.length} ملف</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-white">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-orange-300">{fmtNum(totals.expenses)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-emerald-400">{fmtNum(totals.collected)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-foreground">{fmtNum(totals.invoiced)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-warning">{fmtNum(totals.expenses)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-success">{fmtNum(totals.collected)}</td>
                   <td className={`px-3 py-2 text-right tabular-nums font-bold ${marginColor(totals.margin)}`}>{fmtNum(totals.margin)}</td>
                 </tr>
               </tfoot>
@@ -571,13 +572,13 @@ function LawyerPerformance() {
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
-        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 ml-2" />تصدير CSV</Button>
+        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <KpiCard label="إجمالي الملفات" value={String(totals.cases)} icon={Briefcase} color="bg-blue-600" />
-        <KpiCard label="إجمالي المفوتر" value={`${fmtNum(totals.invoiced)} د.ت`} icon={Wallet} color="bg-[#D4AF37]" />
-        <KpiCard label="إجمالي المقبوض" value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-emerald-600" />
+        <KpiCard label="إجمالي الملفات" value={String(totals.cases)} icon={Briefcase} color="bg-info" />
+        <KpiCard label="إجمالي المفوتر" value={`${fmtNum(totals.invoiced)} د.ت`} icon={Wallet} color="bg-primary" />
+        <KpiCard label="إجمالي المقبوض" value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
       </div>
 
       {!loading && data.length > 0 && (
@@ -587,41 +588,41 @@ function LawyerPerformance() {
             return (
               <div key={r.userId}
                 onClick={() => navigate(`/cases?userId=${r.userId}&userName=${encodeURIComponent(r.name)}&from=reports&fromTab=lawyers`)}
-                className="bg-[#1a2236] border border-white/10 rounded-xl p-4 space-y-3 cursor-pointer hover:border-[#D4AF37]/40 hover:bg-[#1e2840] transition-colors">
+                className="bg-card border border-border rounded-xl p-4 space-y-3 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center shrink-0">
-                    <span className="text-[#D4AF37] font-bold text-sm">{r.name.charAt(0)}</span>
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                    <span className="text-primary font-bold text-sm">{r.name.charAt(0)}</span>
                   </div>
                   <div>
-                    <p className="font-bold text-white">{r.name}</p>
+                    <p className="font-bold text-foreground">{r.name}</p>
                     <p className="text-xs text-muted-foreground">{ROLE_AR[r.role] ?? r.role}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-white/5 rounded-lg p-2">
+                  <div className="bg-muted/20 rounded-lg p-2">
                     <p className="text-xs text-muted-foreground">ملفات نشطة</p>
-                    <p className="font-bold text-emerald-400">{r.activeCases}</p>
+                    <p className="font-bold text-success">{r.activeCases}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-2">
+                  <div className="bg-muted/20 rounded-lg p-2">
                     <p className="text-xs text-muted-foreground">مجموع الملفات</p>
                     <p className="font-bold">{r.totalCases}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-2">
+                  <div className="bg-muted/20 rounded-lg p-2">
                     <p className="text-xs text-muted-foreground">المفوتر</p>
-                    <p className="font-bold text-white text-xs">{fmtNum(r.totalInvoiced)}</p>
+                    <p className="font-bold text-foreground text-xs">{fmtNum(r.totalInvoiced)}</p>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-2">
+                  <div className="bg-muted/20 rounded-lg p-2">
                     <p className="text-xs text-muted-foreground">المقبوض</p>
-                    <p className="font-bold text-[#D4AF37] text-xs">{fmtNum(r.totalCollected)}</p>
+                    <p className="font-bold text-primary text-xs">{fmtNum(r.totalCollected)}</p>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs text-muted-foreground mb-1">
                     <span>معدل التحصيل</span>
-                    <span className="text-white font-bold">{rt}%</span>
+                    <span className="text-foreground font-bold">{rt}%</span>
                   </div>
-                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-[#D4AF37] transition-all" style={{ width: `${Math.min(rt, 100)}%` }} />
+                  <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(rt, 100)}%` }} />
                   </div>
                 </div>
               </div>
@@ -630,7 +631,7 @@ function LawyerPerformance() {
         </div>
       )}
 
-      <div className="bg-[#1a2236] border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-muted-foreground">جارٍ التحميل…</div>
         ) : sorted.length === 0 ? (
@@ -638,7 +639,7 @@ function LawyerPerformance() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
+              <thead className="border-b border-border">
                 <tr>
                   <Th k="name">المحامي</Th>
                   <Th k="role">الصفة</Th>
@@ -653,28 +654,28 @@ function LawyerPerformance() {
                 {sorted.map((r, i) => (
                   <tr key={r.userId}
                     onClick={() => navigate(`/cases?userId=${r.userId}&userName=${encodeURIComponent(r.name)}&from=reports&fromTab=lawyers`)}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                    className={`border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer ${i % 2 ? "bg-muted/10" : ""}`}>
                     <td className="px-3 py-2 font-medium">{r.name}</td>
                     <td className="px-3 py-2 text-muted-foreground">{ROLE_AR[r.role] ?? r.role}</td>
-                    <td className="px-3 py-2 text-center text-emerald-400">{r.activeCases}</td>
+                    <td className="px-3 py-2 text-center text-success">{r.activeCases}</td>
                     <td className="px-3 py-2 text-center">{r.totalCases}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-primary font-bold">{fmtNum(r.totalCollected)}</td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        rate(r) >= 80 ? "bg-emerald-500/20 text-emerald-400"
-                        : rate(r) >= 50 ? "bg-orange-500/20 text-orange-400"
-                        : "bg-red-500/20 text-red-400"
+                        rate(r) >= 80 ? "bg-success/20 text-success"
+                        : rate(r) >= 50 ? "bg-warning/20 text-warning"
+                        : "bg-destructive/20 text-destructive"
                       }`}>{rate(r)}%</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t border-white/20 bg-white/5">
+              <tfoot className="border-t border-border bg-muted/20">
                 <tr>
                   <td colSpan={4} className="px-3 py-2 text-xs font-bold text-muted-foreground">{sorted.length} أعضاء</td>
                   <td className="px-3 py-2 text-right tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-primary">{fmtNum(totals.collected)}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -722,17 +723,17 @@ function ClientSources() {
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
-        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 ml-2" />تصدير CSV</Button>
+        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="إجمالي الموكّلين" value={String(totals.clients)} icon={Users}    color="bg-purple-600" />
-        <KpiCard label="إجمالي الملفات"   value={String(totals.cases)}   icon={Briefcase} color="bg-blue-600" />
-        <KpiCard label="إجمالي المفوتر"   value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-[#D4AF37]" />
-        <KpiCard label="إجمالي المقبوض"   value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-emerald-600" />
+        <KpiCard label="إجمالي الموكّلين" value={String(totals.clients)} icon={Users}    color="bg-info" />
+        <KpiCard label="إجمالي الملفات"   value={String(totals.cases)}   icon={Briefcase} color="bg-primary" />
+        <KpiCard label="إجمالي المفوتر"   value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-warning" />
+        <KpiCard label="إجمالي المقبوض"   value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
       </div>
 
-      <div className="bg-[#1a2236] border border-white/10 rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-muted-foreground">جارٍ التحميل…</div>
         ) : sorted.length === 0 ? (
@@ -740,7 +741,7 @@ function ClientSources() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10">
+              <thead className="border-b border-border">
                 <tr>
                   <Th k="clientTypeLabel">نوع الموكّل</Th>
                   <Th k="clientCount">الموكّلون</Th>
@@ -755,30 +756,30 @@ function ClientSources() {
                 {sorted.map((r, i) => (
                   <tr key={r.clientType}
                     onClick={() => navigate(`/clients?type=${encodeURIComponent(r.clientType)}&typeName=${encodeURIComponent(r.clientTypeLabel)}&from=reports&fromTab=clients`)}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${i % 2 ? "bg-white/[0.02]" : ""}`}>
-                    <td className="px-3 py-2 font-bold text-white">{r.clientTypeLabel}</td>
+                    className={`border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer ${i % 2 ? "bg-muted/10" : ""}`}>
+                    <td className="px-3 py-2 font-bold text-foreground">{r.clientTypeLabel}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.clientCount}</td>
                     <td className="px-3 py-2 text-center tabular-nums">{r.caseCount}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.totalInvoiced)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#D4AF37] font-bold">{fmtNum(r.totalCollected)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-primary font-bold">{fmtNum(r.totalCollected)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.avgPerClient)}</td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        r.conversionRate >= 70 ? "bg-emerald-500/20 text-emerald-400"
-                        : r.conversionRate >= 40 ? "bg-orange-500/20 text-orange-400"
-                        : "bg-white/10 text-muted-foreground"
+                        r.conversionRate >= 70 ? "bg-success/20 text-success"
+                        : r.conversionRate >= 40 ? "bg-warning/20 text-warning"
+                        : "bg-muted/50 text-muted-foreground"
                       }`}>{r.conversionRate}%</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t border-white/20 bg-white/5">
+              <tfoot className="border-t border-border bg-muted/20">
                 <tr>
                   <td className="px-3 py-2 text-xs font-bold text-muted-foreground">المجموع</td>
                   <td className="px-3 py-2 text-center font-bold">{totals.clients}</td>
                   <td className="px-3 py-2 text-center font-bold">{totals.cases}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-bold">{fmtNum(totals.invoiced)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold text-[#D4AF37]">{fmtNum(totals.collected)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-bold text-primary">{fmtNum(totals.collected)}</td>
                   <td colSpan={2} />
                 </tr>
               </tfoot>
@@ -828,11 +829,11 @@ export default function Reports() {
         </button>
       </div>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <BarChart3 className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">تقارير الأداء والربحية</h1>
+          <h1 className="text-xl font-bold">تقارير الأداء والربحية</h1>
           <p className="text-xs text-muted-foreground">تحليل شامل للنشاط المالي والقانوني للمكتب</p>
         </div>
       </div>
