@@ -188,7 +188,7 @@ export default function Dashboard() {
                 {loadingSummary ? "..." : summary?.pendingInvoices ?? 0}
               </span>
             </div>
-            <span className="text-xs text-primary flex items-center gap-1 mr-auto">
+            <span className="text-xs text-primary flex items-center gap-1 me-auto">
               تفاصيل <ArrowLeft className="h-3 w-3" />
             </span>
           </div>
@@ -296,7 +296,7 @@ export default function Dashboard() {
                         <p className="text-sm font-medium leading-tight">{a.message}</p>
                         <div className="flex justify-between items-center mt-1">
                           <p className="text-xs text-muted-foreground truncate">{a.caseName}</p>
-                          <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded shrink-0 mr-1">
+                          <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded shrink-0 me-1">
                             {formatDateTN(a.dueDate)}
                           </span>
                         </div>

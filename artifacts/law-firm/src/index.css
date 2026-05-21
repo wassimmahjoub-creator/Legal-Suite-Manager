@@ -46,6 +46,12 @@
   --color-info: hsl(var(--info));
   --color-info-foreground: hsl(var(--info-foreground));
 
+  --color-role-partner:    hsl(var(--role-partner));
+  --color-role-lawyer:     hsl(var(--role-lawyer));
+  --color-role-secretary:  hsl(var(--role-secretary));
+  --color-role-trainee:    hsl(var(--role-trainee));
+  --color-role-accountant: hsl(var(--role-accountant));
+
   --font-arabic: var(--app-font-arabic);
 
   --color-chart-1: hsl(var(--chart-1));
@@ -131,6 +137,13 @@
   --primary-600: 211 66% 26%;
   --primary-700: 211 68% 20%;
 
+  /* Role badge tokens (light mode) */
+  --role-partner:    270 50% 40%;
+  --role-lawyer:     211 67% 33%;
+  --role-secretary:  160 94% 24%;
+  --role-trainee:    27 91% 36%;
+  --role-accountant: 190 60% 35%;
+
   --app-font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --app-font-serif: 'Fraunces', Cambria, Georgia, serif;
   --app-font-mono: 'SF Mono', Menlo, Consolas, monospace;
@@ -202,6 +215,14 @@
   --warning-foreground: 0 0% 100%;
   --info: 244 45% 65%;
   --info-foreground: 0 0% 100%;
+
+  /* Role badge tokens (dark mode) */
+  --role-partner:    270 45% 65%;
+  --role-lawyer:     211 43% 51%;
+  --role-secretary:  160 50% 45%;
+  --role-trainee:    35 70% 50%;
+  --role-accountant: 190 50% 55%;
+
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);

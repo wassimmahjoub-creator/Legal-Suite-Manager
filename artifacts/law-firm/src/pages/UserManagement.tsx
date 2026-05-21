@@ -36,18 +36,18 @@ const ROLES = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-primary/15 text-primary",
-  partner: "bg-purple-500/15 text-purple-500",
-  lawyer: "bg-blue-500/15 text-blue-500",
-  secretary: "bg-green-500/15 text-green-500",
-  trainee: "bg-orange-500/15 text-orange-500",
-  accountant: "bg-cyan-500/15 text-cyan-500",
+  admin:      "bg-primary/15 text-primary",
+  partner:    "bg-[hsl(var(--role-partner)/0.15)] text-[hsl(var(--role-partner))]",
+  lawyer:     "bg-[hsl(var(--role-lawyer)/0.15)] text-[hsl(var(--role-lawyer))]",
+  secretary:  "bg-[hsl(var(--role-secretary)/0.15)] text-[hsl(var(--role-secretary))]",
+  trainee:    "bg-[hsl(var(--role-trainee)/0.15)] text-[hsl(var(--role-trainee))]",
+  accountant: "bg-[hsl(var(--role-accountant)/0.15)] text-[hsl(var(--role-accountant))]",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-500/10 text-green-500",
-  suspended: "bg-orange-500/10 text-orange-500",
-  archived: "bg-muted text-muted-foreground",
+  active:    "bg-success/10 text-success",
+  suspended: "bg-warning/10 text-warning",
+  archived:  "bg-muted text-muted-foreground",
 };
 const STATUS_LABELS: Record<string, string> = { active: "نشط", suspended: "موقوف", archived: "محذوف" };
 
@@ -266,7 +266,7 @@ export default function UserManagement() {
                     <RefreshCw className="h-3 w-3" /> إعادة تعيين
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => toggleStatus(u)}
-                    className={cn("h-7 px-2 text-xs gap-1", u.status === "active" ? "text-orange-500 hover:text-orange-600" : "text-green-500 hover:text-green-600")}>
+                    className={cn("h-7 px-2 text-xs gap-1", u.status === "active" ? "text-warning hover:text-warning/80" : "text-success hover:text-success/80")}>
                     {u.status === "active" ? <ShieldOff className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
                     {u.status === "active" ? "إيقاف" : "تفعيل"}
                   </Button>
@@ -300,7 +300,7 @@ export default function UserManagement() {
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => copyInviteUrl(inv.token)} className="h-8 px-3 gap-1.5">
-                  {copiedToken === inv.token ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedToken === inv.token ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                   {copiedToken === inv.token ? "تم" : "نسخ الرابط"}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => cancelInvite(inv.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
@@ -370,7 +370,7 @@ export default function UserManagement() {
           ) : (
             <div className="space-y-4">
               <div className="text-center space-y-1">
-                <Check className="h-10 w-10 text-green-500 mx-auto" />
+                <Check className="h-10 w-10 text-success mx-auto" />
                 <p className="font-semibold">تم إنشاء رابط الدعوة</p>
                 <p className="text-xs text-muted-foreground">شارك هذا الرابط مع المستخدم — صالح 7 أيام</p>
               </div>
@@ -378,7 +378,7 @@ export default function UserManagement() {
                 {`${window.location.origin}${BASE}/invite/${lastInviteToken}`}
               </div>
               <Button onClick={() => copyInviteUrl(lastInviteToken)} variant="outline" className="w-full gap-2">
-                {copiedToken === lastInviteToken ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                {copiedToken === lastInviteToken ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
                 {copiedToken === lastInviteToken ? "تم النسخ!" : "نسخ الرابط"}
               </Button>
             </div>
