@@ -164,7 +164,7 @@ export default function Billing() {
                         <Money amount={inv.netToPay} />
                       </TableCell>
                       <TableCell className="py-3 font-mono text-sm hidden sm:table-cell" dir="ltr">
-                        <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-orange-600 dark:text-orange-400" : ""}>
+                        <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-warning" : ""}>
                           {inv.balanceDue.toFixed(3)}
                         </span>
                       </TableCell>
@@ -177,7 +177,7 @@ export default function Billing() {
                         {inv.dueDate ? (
                           <span
                             title={formatDateLongTN(inv.dueDate)}
-                            className={isOverdue ? "text-red-500 font-semibold" : "text-muted-foreground"}
+                            className={isOverdue ? "text-destructive font-semibold" : "text-muted-foreground"}
                           >
                             {formatDateTN(inv.dueDate)}
                           </span>
