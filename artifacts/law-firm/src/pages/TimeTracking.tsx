@@ -2,8 +2,7 @@ import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { formatDateTN } from "@/lib/date";
-import { Money } from "@/components/Money";
-import { formatCurrency } from "@/lib/currency";
+import { Money, TNDAmount } from "@/components/Money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,7 +132,7 @@ export default function TimeTracking() {
         {[
           { label: "إجمالي الساعات", value: `${totalHours.toFixed(1)} س`, icon: Clock, color: "text-info" },
           { label: "ساعات قابلة للفوترة", value: `${billableHours.toFixed(1)} س`, icon: Timer, color: "text-primary" },
-          { label: "المبلغ القابل للفوترة", value: formatCurrency(totalAmount, "ar"), icon: TrendingUp, color: "text-success" },
+          { label: "المبلغ القابل للفوترة", value: <TNDAmount amount={totalAmount} />, icon: TrendingUp, color: "text-success" },
           { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1)} س`, icon: Receipt, color: "text-muted-foreground" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
@@ -143,7 +142,7 @@ export default function TimeTracking() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="font-bold text-sm mt-0.5" dir="ltr">{stat.value}</p>
+                <p className="font-bold text-sm mt-0.5">{stat.value}</p>
               </div>
             </CardContent>
           </Card>

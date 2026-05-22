@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
-import { Money } from "@/components/Money";
-import { formatCurrency, formatAmount } from "@/lib/currency";
+import { Money, TNDAmount } from "@/components/Money";
+import { formatAmount } from "@/lib/currency";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -244,10 +244,10 @@ function SummaryTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "إجمالي المداخيل (7 أشهر)", value: loading ? null : formatCurrency(totalIncome), icon: TrendingUp, color: "text-success", bg: "bg-success/10", action: () => navigate("/billing") },
+          { label: "إجمالي المداخيل (7 أشهر)", value: loading ? null : <TNDAmount amount={totalIncome} />, icon: TrendingUp, color: "text-success", bg: "bg-success/10", action: () => navigate("/billing") },
           { label: "فواتير مدفوعة",  value: loading ? null : data?.billing.paidCount ?? 0,    icon: CheckCircle2, color: "text-primary",  bg: "bg-primary/10",  action: () => navigate("/billing") },
           { label: "فواتير معلقة",   value: loading ? null : data?.billing.pendingCount ?? 0,  icon: Clock,        color: "text-warning",  bg: "bg-warning/10",  action: () => navigate("/billing") },
-          { label: "متوسط شهري",     value: loading ? null : formatCurrency(avgMonthly),       icon: BarChart3,    color: "text-info",     bg: "bg-info/10",     action: undefined },
+          { label: "متوسط شهري",     value: loading ? null : <TNDAmount amount={avgMonthly} />, icon: BarChart3,    color: "text-info",     bg: "bg-info/10",     action: undefined },
         ].map((k, i) => (
           <Card key={i} className={`border-none shadow-sm ${k.action ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`} onClick={k.action}>
             <CardContent className="p-4">
@@ -255,7 +255,7 @@ function SummaryTab() {
                 <p className="text-xs text-muted-foreground leading-tight">{k.label}</p>
                 <div className={`p-2 rounded-lg ${k.bg}`}><k.icon className={`h-4 w-4 ${k.color}`} /></div>
               </div>
-              {k.value === null ? <Skeleton className="h-7 w-24" /> : <p className="font-bold text-xl" dir="ltr">{k.value}</p>}
+              {k.value === null ? <Skeleton className="h-7 w-24" /> : <p className="font-bold text-xl">{k.value}</p>}
             </CardContent>
           </Card>
         ))}

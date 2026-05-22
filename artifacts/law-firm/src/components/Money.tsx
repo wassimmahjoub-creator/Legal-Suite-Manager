@@ -1,4 +1,5 @@
-﻿import { formatTND } from "@/lib/currency";
+import React from "react";
+import { formatTND } from "@/lib/currency";
 
 interface MoneyProps {
   amount: number | string | null | undefined;
@@ -6,18 +7,30 @@ interface MoneyProps {
 }
 
 /**
- * Displays a Tunisian Dinar amount.
- * Always renders LTR so digits and symbol stay in the correct visual order
- * even inside an RTL (Arabic) page: "1.250,000 د.ت"
+ * Single component for displaying Tunisian Dinar amounts.
+ * Renders: "1.250,000 د.ت" — number left, symbol right.
+ *
+ * Two nested spans:
+ *  - outer: unicode-bidi:isolate  → shields the block from parent RTL context
+ *  - inner: dir=ltr + bidi-override → forces strict LTR for digits AND Arabic symbol
  */
 export function TNDAmount({ amount, className }: MoneyProps) {
   return (
     <span
-      dir="ltr"
-      style={{ unicodeBidi: "isolate", fontVariantNumeric: "tabular-nums" } as React.CSSProperties}
-      className={`font-mono whitespace-nowrap${className ? ` ${className}` : ""}`}
+      style={{ unicodeBidi: "isolate", whiteSpace: "nowrap" } as React.CSSProperties}
+      className={className}
     >
-      {formatTND(amount)} د.ت
+      <span
+        dir="ltr"
+        style={{
+          direction: "ltr",
+          unicodeBidi: "bidi-override",
+          fontVariantNumeric: "tabular-nums",
+          fontFamily: "inherit",
+        } as React.CSSProperties}
+      >
+        {formatTND(amount)}&nbsp;د.ت
+      </span>
     </span>
   );
 }

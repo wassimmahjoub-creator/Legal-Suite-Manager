@@ -1,6 +1,6 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { formatCurrency, formatAmount } from "@/lib/currency";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { TNDAmount } from "@/components/Money";
 import { formatDateTN } from "@/lib/date";
 import { useParams, useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
@@ -575,9 +575,9 @@ export default function ClientPage() {
               </Button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard label="الرقم الإجمالي" value={formatCurrency(totalInvoiced)} icon={<Receipt className="h-5 w-5 text-blue-400" />} />
-              <KpiCard label="المحصّل" value={formatCurrency(totalPaid)} icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />} />
-              <KpiCard label="الرصيد المتبقي" value={formatCurrency(balance)} icon={<AlertCircle className="h-5 w-5 text-amber-400" />} />
+              <KpiCard label="الرقم الإجمالي" value={<TNDAmount amount={totalInvoiced} className="text-xl font-bold" />} icon={<Receipt className="h-5 w-5 text-blue-400" />} />
+              <KpiCard label="المحصّل" value={<TNDAmount amount={totalPaid} className="text-xl font-bold" />} icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />} />
+              <KpiCard label="الرصيد المتبقي" value={<TNDAmount amount={balance} className="text-xl font-bold" />} icon={<AlertCircle className="h-5 w-5 text-amber-400" />} />
               <KpiCard label="عدد الفواتير" value={String(invoices.length)} icon={<FileText className="h-5 w-5 text-purple-400" />} />
             </div>
             {invoices.length === 0 ? (
@@ -602,10 +602,10 @@ export default function ClientPage() {
                         <td className="px-4 py-3 font-mono text-primary font-semibold group-hover:underline">
                           {inv.invoiceNumber ?? `#${String(inv.id).padStart(4, "0")}`}
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell font-mono">{formatAmount(inv.netToPay)}</td>
-                        <td className="px-4 py-3 hidden sm:table-cell font-mono">
+                        <td className="px-4 py-3 hidden md:table-cell"><TNDAmount amount={inv.netToPay} /></td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
                           <span className={Number(inv.balanceDue) > 0 ? "text-warning font-semibold" : "text-muted-foreground"}>
-                            {formatAmount(inv.balanceDue)}
+                            <TNDAmount amount={inv.balanceDue} />
                           </span>
                         </td>
                         <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
@@ -676,7 +676,7 @@ export default function ClientPage() {
               <div className="grid grid-cols-3 gap-4">
                 <KpiCard label="إجمالي الساعات" value={`${totalHours.toFixed(1)} س`} icon={<Clock className="h-5 w-5 text-blue-400" />} />
                 <KpiCard label="قابلة للفوترة" value={`${billableHours.toFixed(1)} س`} icon={<Timer className="h-5 w-5 text-primary" />} />
-                <KpiCard label="المبلغ القابل للفوترة" value={formatCurrency(totalAmount)} icon={<TrendingUp className="h-5 w-5 text-green-400" />} />
+                <KpiCard label="المبلغ القابل للفوترة" value={<TNDAmount amount={totalAmount} className="text-xl font-bold" />} icon={<TrendingUp className="h-5 w-5 text-green-400" />} />
               </div>
 
               {/* Entries */}
@@ -702,7 +702,7 @@ export default function ClientPage() {
                           <td className="px-4 py-3 hidden sm:table-cell max-w-[160px] truncate text-muted-foreground">{e.caseTitle}</td>
                           <td className="px-4 py-3">{e.description}</td>
                           <td className="px-4 py-3 font-mono font-semibold" dir="ltr">{e.hours.toFixed(2)}</td>
-                          <td className="px-4 py-3 font-mono hidden md:table-cell" dir="ltr">{e.billable ? formatAmount(e.hours * e.rate) : "—"}</td>
+                          <td className="px-4 py-3 hidden md:table-cell">{e.billable ? <TNDAmount amount={e.hours * e.rate} /> : "—"}</td>
                           <td className="px-4 py-3 text-center">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${e.billable ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
                               {e.billable ? "نعم" : "لا"}
@@ -1050,20 +1050,21 @@ export default function ClientPage() {
             return (
               <div className="p-3 bg-muted/40 rounded-xl text-sm space-y-1.5">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>المجموع قبل الضريبة</span><span dir="ltr">{formatAmount(ht)} د.ت</span>
+                  <span>المجموع قبل الضريبة</span><TNDAmount amount={ht} />
                 </div>
                 {vatAmt > 0 && (
                   <div className="flex justify-between text-muted-foreground">
-                    <span>TVA {vat}%</span><span dir="ltr">{formatAmount(vatAmt)} د.ت</span>
+                    <span>TVA {vat}%</span><TNDAmount amount={vatAmt} />
                   </div>
                 )}
                 {whAmt > 0 && (
                   <div className="flex justify-between text-muted-foreground">
-                    <span>خصم المورد {whRate}%</span><span dir="ltr">−{formatAmount(whAmt)} د.ت</span>
+                    <span>خصم المورد {whRate}%</span>
+                    <span style={{ unicodeBidi: "isolate" } as React.CSSProperties}>−<TNDAmount amount={whAmt} /></span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold border-t border-border pt-1.5">
-                  <span>الصافي للدفع</span><span dir="ltr">{formatAmount(net)} د.ت</span>
+                  <span>الصافي للدفع</span><TNDAmount amount={net} />
                 </div>
               </div>
             );
@@ -1155,9 +1156,7 @@ export default function ClientPage() {
           {timeForm.hours && timeForm.rate && (
             <div className="p-3 bg-primary/10 rounded-lg flex justify-between items-center">
               <span className="text-sm text-primary font-medium">المبلغ الإجمالي:</span>
-              <span className="font-bold text-primary font-mono" dir="ltr">
-                {formatAmount(parseFloat(timeForm.hours) * parseFloat(timeForm.rate))} د.ت
-              </span>
+              <TNDAmount amount={parseFloat(timeForm.hours) * parseFloat(timeForm.rate)} className="font-bold text-primary" />
             </div>
           )}
           <div className="flex gap-3 pt-2">
@@ -1580,14 +1579,14 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function KpiCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function KpiCard({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ReactNode }) {
   return (
     <Card className="border-none shadow-sm">
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground mb-1">{label}</p>
-            <p className="text-xl font-bold" dir="ltr">{value}</p>
+            <p className="text-xl font-bold">{value}</p>
           </div>
           <div className="p-2 bg-muted/50 rounded-xl">{icon}</div>
         </div>
