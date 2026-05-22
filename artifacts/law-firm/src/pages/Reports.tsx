@@ -97,7 +97,7 @@ function exportCsv(rows: string[][], filename: string) {
 }
 
 /* ── Small KPI card ─────────────────────────────────────────── */
-function KpiCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
+function KpiCard({ label, value, icon: Icon, color }: { label: string; value: React.ReactNode; icon: React.ElementType; color: string }) {
   return (
     <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
@@ -470,10 +470,10 @@ function CaseProfitability() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="إجمالي المفوتر"  value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-info" />
-        <KpiCard label="إجمالي المقبوض"  value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
-        <KpiCard label="إجمالي المصاريف" value={`${fmtNum(totals.expenses)} د.ت`}  icon={BarChart3}  color="bg-warning" />
-        <KpiCard label="الهامش الإجمالي" value={`${fmtNum(totals.margin)} د.ت`}    icon={Briefcase}
+        <KpiCard label="إجمالي المفوتر"  value={<TNDAmount amount={totals.invoiced} />}  icon={Wallet}    color="bg-info" />
+        <KpiCard label="إجمالي المقبوض"  value={<TNDAmount amount={totals.collected} />} icon={TrendingUp} color="bg-success" />
+        <KpiCard label="إجمالي المصاريف" value={<TNDAmount amount={totals.expenses} />}  icon={BarChart3}  color="bg-warning" />
+        <KpiCard label="الهامش الإجمالي" value={<TNDAmount amount={totals.margin} />}    icon={Briefcase}
           color={totals.margin >= 0 ? "bg-primary" : "bg-destructive"} />
       </div>
 
@@ -577,8 +577,8 @@ function LawyerPerformance() {
 
       <div className="grid grid-cols-3 gap-3">
         <KpiCard label="إجمالي الملفات" value={String(totals.cases)} icon={Briefcase} color="bg-info" />
-        <KpiCard label="إجمالي المفوتر" value={`${fmtNum(totals.invoiced)} د.ت`} icon={Wallet} color="bg-primary" />
-        <KpiCard label="إجمالي المقبوض" value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
+        <KpiCard label="إجمالي المفوتر" value={<TNDAmount amount={totals.invoiced} />} icon={Wallet} color="bg-primary" />
+        <KpiCard label="إجمالي المقبوض" value={<TNDAmount amount={totals.collected} />} icon={TrendingUp} color="bg-success" />
       </div>
 
       {!loading && data.length > 0 && (
@@ -729,8 +729,8 @@ function ClientSources() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard label="إجمالي الموكّلين" value={String(totals.clients)} icon={Users}    color="bg-info" />
         <KpiCard label="إجمالي الملفات"   value={String(totals.cases)}   icon={Briefcase} color="bg-primary" />
-        <KpiCard label="إجمالي المفوتر"   value={`${fmtNum(totals.invoiced)} د.ت`}  icon={Wallet}    color="bg-warning" />
-        <KpiCard label="إجمالي المقبوض"   value={`${fmtNum(totals.collected)} د.ت`} icon={TrendingUp} color="bg-success" />
+        <KpiCard label="إجمالي المفوتر"   value={<TNDAmount amount={totals.invoiced} />}  icon={Wallet}    color="bg-warning" />
+        <KpiCard label="إجمالي المقبوض"   value={<TNDAmount amount={totals.collected} />} icon={TrendingUp} color="bg-success" />
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">

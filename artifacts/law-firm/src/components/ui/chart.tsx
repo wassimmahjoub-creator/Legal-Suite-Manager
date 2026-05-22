@@ -240,8 +240,16 @@ const ChartTooltipContent = React.forwardRef<
                           </span>
                         </div>
                         {item.value && (
-                          <span className="font-mono font-medium tabular-nums text-foreground">
-                            {typeof item.value === "number" ? `${formatTND(item.value)} د.ت` : item.value}
+                          <span className="font-medium tabular-nums text-foreground" style={{ whiteSpace: "nowrap" }}>
+                            {typeof item.value === "number" ? (
+                              <span style={{ unicodeBidi: "isolate" } as React.CSSProperties}>
+                                <span style={{ direction: "ltr", unicodeBidi: "bidi-override" } as React.CSSProperties}>
+                                  {formatTND(item.value)}
+                                </span>
+                                {" "}
+                                <span style={{ direction: "rtl" } as React.CSSProperties}>{"د.ت"}</span>
+                              </span>
+                            ) : item.value}
                           </span>
                         )}
                       </div>
