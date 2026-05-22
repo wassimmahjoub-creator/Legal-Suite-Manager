@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
-import { X, Check, Plus, Trash2, UserCircle } from "lucide-react";
+import { X, Check, Plus, Trash2, UserCircle, Scale, MessageSquare, FileText, Building2, Banknote, Bell, Gavel, Home, Briefcase, Calculator, ClipboardList, Users2, FolderOpen } from "lucide-react";
 import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,12 +71,70 @@ const CONFIDENTIALITY_LEVELS = [
 
 const CAPACITY_SUGGESTIONS = ["مدعى عليه", "مدعي", "متدخل", "ضامن"];
 
-const STEPS = [
-  { id: 1, label: "معلومات الملف" },
-  { id: 2, label: "المحكمة والإجراء" },
-  { id: 3, label: "الأطراف" },
-  { id: 4, label: "المالية" },
+const CONTENTIEUX_TYPES = ["lawsuit", "real_estate_file", "labor_file", "tax_file", "judgment_execution"];
+const SIMPLE_TYPES = ["legal_notice", "administrative", "mediation", "other"];
+
+const SERVICE_TYPES_INFO = [
+  { value: "lawsuit",            label: "قضية",          icon: Scale,         desc: "دعوى قضائية أمام المحاكم",            color: "text-destructive",    bg: "bg-destructive/10 border-destructive/20" },
+  { value: "consultation",       label: "استشارة",       icon: MessageSquare, desc: "استشارة قانونية للموكّل",             color: "text-info",           bg: "bg-info/10 border-info/20" },
+  { value: "contract",           label: "عقد",           icon: FileText,      desc: "تحرير أو مراجعة عقد",                color: "text-success",        bg: "bg-success/10 border-success/20" },
+  { value: "company_creation",   label: "تأسيس شركة",   icon: Building2,     desc: "إجراءات تأسيس شركة",                 color: "text-primary",        bg: "bg-primary/10 border-primary/20" },
+  { value: "debt_recovery",      label: "تحصيل ديون",   icon: Banknote,      desc: "متابعة واسترجاع الديون",             color: "text-warning",        bg: "bg-warning/10 border-warning/20" },
+  { value: "legal_notice",       label: "إنذار",         icon: Bell,          desc: "تحرير وإرسال إنذار قانوني",          color: "text-warning",        bg: "bg-warning/10 border-warning/20" },
+  { value: "judgment_execution", label: "تنفيذ حكم",     icon: Gavel,         desc: "تنفيذ حكم قضائي صادر",              color: "text-info",           bg: "bg-info/10 border-info/20" },
+  { value: "real_estate_file",   label: "ملف عقاري",    icon: Home,          desc: "نزاعات أو معاملات عقارية",           color: "text-muted-foreground", bg: "bg-muted border-border" },
+  { value: "labor_file",         label: "ملف شغل",      icon: Briefcase,     desc: "نزاعات عمالية وقانون الشغل",         color: "text-muted-foreground", bg: "bg-muted border-border" },
+  { value: "tax_file",           label: "ملف جبائي",    icon: Calculator,    desc: "منازعات ومسائل جبائية",              color: "text-muted-foreground", bg: "bg-muted border-border" },
+  { value: "administrative",     label: "إداري",         icon: ClipboardList, desc: "طعون وإجراءات أمام الإدارة",         color: "text-muted-foreground", bg: "bg-muted border-border" },
+  { value: "mediation",          label: "وساطة",         icon: Users2,        desc: "وساطة وحل نزاعات بديل عن القضاء",   color: "text-muted-foreground", bg: "bg-muted border-border" },
+  { value: "other",              label: "أخرى",          icon: FolderOpen,    desc: "نوع آخر من الملفات القانونية",       color: "text-muted-foreground", bg: "bg-muted border-border" },
 ];
+
+function getSteps(serviceType: string) {
+  if (CONTENTIEUX_TYPES.includes(serviceType)) {
+    return [
+      { id: 1, label: "معلومات الملف" },
+      { id: 2, label: "المحكمة والإجراء" },
+      { id: 3, label: "الأطراف" },
+      { id: 4, label: "المالية" },
+    ];
+  }
+  if (serviceType === "consultation") {
+    return [
+      { id: 1, label: "معلومات الملف" },
+      { id: 2, label: "تفاصيل الاستشارة" },
+      { id: 3, label: "المالية" },
+    ];
+  }
+  if (serviceType === "contract") {
+    return [
+      { id: 1, label: "معلومات الملف" },
+      { id: 2, label: "تفاصيل العقد" },
+      { id: 3, label: "المالية" },
+    ];
+  }
+  if (serviceType === "company_creation") {
+    return [
+      { id: 1, label: "معلومات الملف" },
+      { id: 2, label: "تفاصيل الشركة" },
+      { id: 3, label: "المالية" },
+    ];
+  }
+  if (serviceType === "debt_recovery") {
+    return [
+      { id: 1, label: "معلومات الملف" },
+      { id: 2, label: "المدين والدين" },
+      { id: 3, label: "المالية" },
+    ];
+  }
+  return [
+    { id: 1, label: "معلومات الملف" },
+    { id: 2, label: "تفاصيل إضافية" },
+    { id: 3, label: "المالية" },
+  ];
+}
+
+// STEPS est maintenant dynamique via getSteps(serviceType) — voir plus bas
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -117,6 +175,27 @@ interface WizardForm {
   disputeValue: string;
   confidentialityLevel: string;
   internalNotes: string;
+  // Type de service
+  serviceType: string;
+  // Données spécifiques au type
+  typeSpecificData: Record<string, unknown>;
+  // Données contrat (Session 3b)
+  contractData: {
+    contractType: string; partyOneName: string; partyOneTaxId: string;
+    partyTwoName: string; partyTwoTaxId: string; contractValue: string;
+    startDate: string; endDate: string; signingDate: string; status: string; notes: string;
+  };
+  // Données dette (Session 3b)
+  debtData: {
+    debtorName: string; debtorTaxId: string; debtorPhone: string; debtorAddress: string;
+    debtAmount: string; debtReason: string; dueDate: string; currentStage: string; notes: string;
+  };
+  // Données société (Session 3c)
+  companyData: {
+    companyType: string; proposedName: string; capital: string;
+    activity: string; taxId: string; rneNumber: string; notes: string;
+    partners: Array<{ name: string; taxId: string; shares: string; position: string }>;
+  };
 }
 
 type Client = { id: number; name: string };
@@ -140,23 +219,37 @@ const defaultForm = (): WizardForm => ({
   feeMethod: "", agreedFees: "", hourlyRate: "",
   percentage: "", percentageBasis: "", disputeValue: "",
   confidentialityLevel: "normal", internalNotes: "",
+  serviceType: "",
+  typeSpecificData: {},
+  contractData: { contractType: "", partyOneName: "", partyOneTaxId: "", partyTwoName: "", partyTwoTaxId: "", contractValue: "", startDate: "", endDate: "", signingDate: "", status: "draft", notes: "" },
+  debtData: { debtorName: "", debtorTaxId: "", debtorPhone: "", debtorAddress: "", debtAmount: "", debtReason: "", dueDate: "", currentStage: "notice", notes: "" },
+  companyData: { companyType: "sarl", proposedName: "", capital: "", activity: "", taxId: "", rneNumber: "", notes: "", partners: [{ name: "", taxId: "", shares: "", position: "" }] },
 });
 
 // ── Validation ──────────────────────────────────────────────────────────
 
 function isStepValid(step: number, f: WizardForm, editMode = false) {
   if (step === 1) return f.title.trim() !== "" && f.clientId !== "";
-  if (editMode) return true; // steps 2-4 are optional when editing
-  if (step === 2) return f.litigationDegree !== "" && f.procedureType !== "";
-  if (step === 3) return f.opponents.some(o => o.name.trim() !== "") && f.responsibleUserId !== "";
-  if (step === 4) {
+  if (editMode) return true;
+  // Step final (financier) — même logique pour tous les types
+  const steps = getSteps(f.serviceType);
+  if (step === steps.length) {
     if (!f.feeMethod || !f.confidentialityLevel) return false;
     if (f.feeMethod === "fixed" || f.feeMethod === "per_hearing") return f.agreedFees !== "";
     if (f.feeMethod === "hourly") return f.hourlyRate !== "";
     if (f.feeMethod === "percentage") return f.percentage !== "";
     return true;
   }
-  return false;
+  // Step 2 contentieux
+  if (step === 2 && CONTENTIEUX_TYPES.includes(f.serviceType)) {
+    return f.litigationDegree !== "" && f.procedureType !== "";
+  }
+  // Step 3 contentieux (parties)
+  if (step === 3 && CONTENTIEUX_TYPES.includes(f.serviceType)) {
+    return f.opponents.some(o => o.name.trim() !== "") && f.responsibleUserId !== "";
+  }
+  // Step 2 autres types — optionnel, toujours valide
+  return true;
 }
 
 // ── Shared styles ───────────────────────────────────────────────────────
@@ -549,6 +642,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
   const [pendingConflicts, setPendingConflicts] = useState<ConflictData[]>([]);
   const [pendingCaseId, setPendingCaseId] = useState<number | null>(null);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [phase, setPhase] = useState<"type-select" | "form">("type-select");
 
   const upd = useCallback((u: Partial<WizardForm>) => setForm(f => ({ ...f, ...u })), []);
 
@@ -587,6 +681,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
     if (!open) return;
     setForm(editMode && initialData ? { ...defaultForm(), ...initialData } : defaultForm());
     setStep(1);
+    setPhase(editMode ? "form" : "type-select");
     setConfirmClose(false);
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
     authFetch(`${BASE}/api/auth/users`).then(r => r.ok ? r.json() : []).then(setUsers);
@@ -638,6 +733,8 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         openedAt: form.openedAt || null,
         confidentialityLevel: form.confidentialityLevel || "normal",
         internalNotes: form.internalNotes || null,
+        serviceType: form.serviceType || "lawsuit",
+        typeSpecificData: form.typeSpecificData || {},
       };
 
       if (editMode && caseId) {
@@ -789,97 +886,149 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
           </div>
         )}
 
-        {/* Header + stepper */}
+        {/* Header */}
         <div className="p-5 border-b border-border shrink-0">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold">{editMode ? "تعديل الملف القضائي" : "ملف قضائي جديد"}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">
+              {editMode ? "تعديل الملف القضائي" : phase === "type-select" ? "نوع الملف" : "ملف جديد"}
+            </h2>
             <button onClick={handleClose} className="p-2 rounded-full hover:bg-muted transition-colors">
               <X className="h-5 w-5 text-muted-foreground" />
             </button>
           </div>
 
-          {/* Stepper */}
-          <div className="flex items-center">
-            {STEPS.map((s, i) => (
-              <React.Fragment key={s.id}>
-                <button type="button"
-                  disabled={s.id >= step}
-                  onClick={() => s.id < step && setStep(s.id)}
-                  className="flex items-center gap-1.5 text-xs font-medium shrink-0 disabled:cursor-default">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    s.id < step ? "bg-primary text-primary-foreground" :
-                    s.id === step ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-1 ring-offset-card" :
-                    "bg-muted text-muted-foreground"
-                  }`}>
-                    {s.id < step ? <Check className="h-3 w-3" /> : s.id}
-                  </span>
-                  <span className={`hidden sm:inline ${s.id === step ? "text-foreground" : s.id < step ? "text-primary" : "text-muted-foreground"}`}>
-                    {s.label}
-                  </span>
-                </button>
-                {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-px mx-2 transition-colors ${i < step - 1 ? "bg-primary" : "bg-border"}`} />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+          {/* Stepper — visible seulement en phase form */}
+          {phase === "form" && (() => {
+            const steps = getSteps(form.serviceType);
+            return (
+              <div className="flex items-center mt-5">
+                {steps.map((s, i) => (
+                  <React.Fragment key={s.id}>
+                    <button type="button"
+                      disabled={s.id >= step}
+                      onClick={() => s.id < step && setStep(s.id)}
+                      className="flex items-center gap-1.5 text-xs font-medium shrink-0 disabled:cursor-default">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                        s.id < step ? "bg-primary text-primary-foreground" :
+                        s.id === step ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-1 ring-offset-card" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {s.id < step ? <Check className="h-3 w-3" /> : s.id}
+                      </span>
+                      <span className={`hidden sm:inline ${s.id === step ? "text-foreground" : s.id < step ? "text-primary" : "text-muted-foreground"}`}>
+                        {s.label}
+                      </span>
+                    </button>
+                    {i < steps.length - 1 && (
+                      <div className={`flex-1 h-px mx-2 transition-colors ${i < step - 1 ? "bg-primary" : "bg-border"}`} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Content */}
+        {/* Contenu */}
         <div className="flex-1 overflow-y-auto p-5">
-          {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} stepErrors={stepErrors} />}
-          {step === 2 && <Step2 form={form} upd={upd} stepErrors={stepErrors} />}
-          {step === 3 && <Step3 form={form} upd={upd} users={users} stepErrors={stepErrors} />}
-          {step === 4 && <Step4 form={form} upd={upd} />}
+          {/* ── Phase 0 : sélection du type ── */}
+          {phase === "type-select" && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">اختر نوع الملف القضائي الجديد</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {SERVICE_TYPES_INFO.map(t => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => { upd({ serviceType: t.value }); setPhase("form"); setStep(1); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all hover:scale-[1.02] hover:shadow-md ${t.bg}`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${t.bg}`}>
+                        <Icon className={`h-5 w-5 ${t.color}`} />
+                      </div>
+                      <span className={`text-sm font-semibold ${t.color}`}>{t.label}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">{t.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Phase form : étapes ── */}
+          {phase === "form" && (() => {
+            const steps = getSteps(form.serviceType);
+            const isLastStep = step === steps.length;
+            return (
+              <>
+                {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} stepErrors={stepErrors} />}
+                {step === 2 && !isLastStep && CONTENTIEUX_TYPES.includes(form.serviceType) && <Step2 form={form} upd={upd} stepErrors={stepErrors} />}
+                {step === 3 && !isLastStep && CONTENTIEUX_TYPES.includes(form.serviceType) && <Step3 form={form} upd={upd} users={users} stepErrors={stepErrors} />}
+                {/* Branches non-contentieux — step 2 spécifique (3b et 3c les ajouteront) */}
+                {step === 2 && !isLastStep && !CONTENTIEUX_TYPES.includes(form.serviceType) && (
+                  <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                    ⚙️ هذا النوع سيتم دعمه قريباً
+                  </div>
+                )}
+                {isLastStep && <Step4 form={form} upd={upd} />}
+              </>
+            );
+          })()}
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-border shrink-0">
-          {step === 4 && step4Err && !isStepValid(4, form, editMode) && (
-            <p className="text-xs text-destructive text-center mb-3">
-              يرجى اختيار طريقة احتساب الأتعاب ودرجة السرية قبل الإنشاء
-            </p>
-          )}
-          <div className="flex items-center gap-3">
-            {step > 1
-              ? <Button variant="outline" onClick={() => { setStepErrors({}); setStep(s => s - 1); }} className="px-5">السابق</Button>
-              : <Button variant="outline" onClick={handleClose} className="px-5">إلغاء</Button>
-            }
-            <div className="flex-1" />
-            <span className="text-xs text-muted-foreground">{step} / 4</span>
-            {step < 4
-              ? <Button onClick={() => {
-                  const schemas: Record<number, z.ZodTypeAny> = {
-                    1: Step1Schema,
-                    2: editMode ? z.object({}) : Step2Schema,
-                    3: editMode ? z.object({}) : Step3Schema,
-                  };
-                  const schema = schemas[step];
-                  if (schema) {
-                    const res = schema.safeParse(form);
-                    if (!res.success) {
-                      const errs: Record<string, string> = {};
-                      res.error.issues.forEach(i => { errs[String(i.path[0])] = i.message; });
-                      setStepErrors(errs);
-                      return;
-                    }
-                  }
-                  setStepErrors({});
-                  setStep(s => s + 1);
-                }} className="px-5">التالي</Button>
-              : <Button
+        {phase === "form" && (() => {
+          const steps = getSteps(form.serviceType);
+          const isLastStep = step === steps.length;
+          return (
+            <div className="p-5 border-t border-border shrink-0">
+              {isLastStep && step4Err && !isStepValid(step, form, editMode) && (
+                <p className="text-xs text-destructive text-center mb-3">
+                  يرجى إتمام جميع الحقول المطلوبة قبل الحفظ
+                </p>
+              )}
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" className="flex-1"
                   onClick={() => {
-                    if (!isStepValid(4, form, editMode)) { setStep4Err(true); return; }
-                    handleSubmit();
-                  }}
-                  disabled={saving}
-                  className="px-6"
-                >
-                  {saving ? "جارٍ الحفظ..." : editMode ? "حفظ التعديلات" : "إنشاء الملف"}
+                    if (step === 1) { setPhase("type-select"); }
+                    else { setStep(s => s - 1); }
+                  }}>
+                  رجوع
                 </Button>
-            }
-          </div>
-        </div>
+                {!isLastStep ? (
+                  <Button type="button" className="flex-1"
+                    disabled={!isStepValid(step, form, editMode)}
+                    onClick={() => {
+                      const res = step === 1 ? Step1Schema.safeParse(form) :
+                                  (step === 2 && CONTENTIEUX_TYPES.includes(form.serviceType)) ? Step2Schema.safeParse(form) :
+                                  (step === 3 && CONTENTIEUX_TYPES.includes(form.serviceType)) ? Step3Schema.safeParse(form) :
+                                  { success: true };
+                      if (!res.success && 'error' in res) {
+                        const errs: Record<string, string> = {};
+                        res.error.issues.forEach((i: { path: (string | number)[]; message: string }) => { errs[String(i.path[0])] = i.message; });
+                        setStepErrors(errs);
+                      } else {
+                        setStepErrors({});
+                        setStep(s => s + 1);
+                      }
+                    }}>
+                    التالي
+                  </Button>
+                ) : (
+                  <Button type="button" className="flex-1" disabled={saving}
+                    onClick={() => {
+                      if (!isStepValid(step, form, editMode)) { setStep4Err(true); return; }
+                      handleSubmit();
+                    }}>
+                    {saving ? "جارٍ الحفظ..." : editMode ? "حفظ التعديلات" : "إنشاء الملف"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
     </>

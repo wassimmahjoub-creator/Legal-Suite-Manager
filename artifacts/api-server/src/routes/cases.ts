@@ -168,6 +168,8 @@ router.post("/cases", async (req, res): Promise<void> => {
       const extras = extractExtras(req.body as Record<string, unknown>);
       const [created] = await tx.insert(casesTable).values({
         ...parsed.data, caseNumber, orgId, ...extras,
+        serviceType: (req.body.serviceType as string) || "lawsuit",
+        typeSpecificData: req.body.typeSpecificData || {},
       }).returning();
 
       // 3. Créer le stage initial — atomique avec le dossier
