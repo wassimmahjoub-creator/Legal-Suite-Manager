@@ -85,7 +85,11 @@ export default function BankAccounts() {
                 </div>
                 <div className="flex items-end justify-between">
                   {a.accountNumber && <p className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3" />{a.accountNumber}</p>}
-                  <p className="text-xl font-bold text-primary" dir="ltr">{formatAmount(a.balance)} <span className="text-sm text-muted-foreground">{a.currency}</span></p>
+                  <p className="text-xl font-bold text-primary">
+                    {a.currency === "TND"
+                      ? <Money amount={a.balance} />
+                      : <span style={{ direction: "ltr", unicodeBidi: "isolate", display: "inline-flex", gap: "0.25em" } as React.CSSProperties}><span className="text-sm text-muted-foreground">{a.currency}</span><span>{formatAmount(a.balance)}</span></span>}
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -156,15 +156,15 @@ export default function Billing() {
                       <TableCell className="py-3 text-muted-foreground text-sm hidden md:table-cell">
                         {inv.caseName ?? "—"}
                       </TableCell>
-                      <TableCell className="py-3 font-mono text-sm" dir="ltr">
-                        {inv.withholdingTax > 0 ? formatAmount(inv.withholdingTax) : "—"}
+                      <TableCell className="py-3 font-mono text-sm">
+                        {inv.withholdingTax > 0 ? <Money amount={inv.withholdingTax} /> : "—"}
                       </TableCell>
-                      <TableCell className="py-3 font-mono font-bold" dir="ltr">
+                      <TableCell className="py-3 font-mono font-bold">
                         <Money amount={inv.netToPay} />
                       </TableCell>
-                      <TableCell className="py-3 font-mono text-sm hidden sm:table-cell" dir="ltr">
+                      <TableCell className="py-3 font-mono text-sm hidden sm:table-cell">
                         <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-warning" : ""}>
-                          {formatAmount(inv.balanceDue)}
+                          <Money amount={inv.balanceDue} />
                         </span>
                       </TableCell>
                       <TableCell className="py-3">
