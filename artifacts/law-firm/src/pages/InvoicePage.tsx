@@ -14,6 +14,7 @@ import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { InvoicePdfButton } from "@/components/InvoicePdf";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
+import { formatAmount } from "@/lib/currency";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -251,10 +252,10 @@ export default function InvoicePage() {
                       <td className="border border-border px-3 py-2">{l.description}</td>
                       <td className="border border-border px-3 py-2 text-muted-foreground text-xs">{l.unit}</td>
                       <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.quantity.toFixed(3)}</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.unitPriceHt.toFixed(3)}</td>
+                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.unitPriceHt)}</td>
                       <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.vatRate}%</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono font-semibold" dir="ltr">{l.lineTotalHt.toFixed(3)}</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.lineVat.toFixed(3)}</td>
+                      <td className="border border-border px-3 py-2 text-left font-mono font-semibold" dir="ltr">{formatAmount(l.lineTotalHt)}</td>
+                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.lineVat)}</td>
                     </tr>
                   ))}
                   {inv.lines.length === 0 && (

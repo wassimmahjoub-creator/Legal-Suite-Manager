@@ -3,7 +3,7 @@ import {
   PDFDownloadLink,
 } from "@react-pdf/renderer";
 import { formatDateTN } from "@/lib/date";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, formatAmount } from "@/lib/currency";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -137,10 +137,10 @@ function InvoiceDocument({ inv, cab }: { inv: Invoice; cab: CabinetSettings }) {
               <Text style={s.tdDesc}>{l.description}</Text>
               <Text style={s.tdNum}>{l.unit ?? "forf."}</Text>
               <Text style={s.tdNum}>{l.quantity.toFixed(3)}</Text>
-              <Text style={s.tdNum}>{l.unitPriceHt.toFixed(3)}</Text>
+              <Text style={s.tdNum}>{formatAmount(l.unitPriceHt)}</Text>
               <Text style={s.tdNum}>{l.vatRate}%</Text>
-              <Text style={s.tdNum}>{l.lineTotalHt.toFixed(3)}</Text>
-              <Text style={s.tdNum}>{l.lineVat.toFixed(3)}</Text>
+              <Text style={s.tdNum}>{formatAmount(l.lineTotalHt)}</Text>
+              <Text style={s.tdNum}>{formatAmount(l.lineVat)}</Text>
             </View>
           ))}
         </View>

@@ -13,7 +13,7 @@ import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle }
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, formatAmount } from "@/lib/currency";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
 
@@ -158,14 +158,14 @@ export default function Billing() {
                         {inv.caseName ?? "—"}
                       </TableCell>
                       <TableCell className="py-3 font-mono text-sm" dir="ltr">
-                        {inv.withholdingTax > 0 ? inv.withholdingTax.toFixed(3) : "—"}
+                        {inv.withholdingTax > 0 ? formatAmount(inv.withholdingTax) : "—"}
                       </TableCell>
                       <TableCell className="py-3 font-mono font-bold" dir="ltr">
                         <Money amount={inv.netToPay} />
                       </TableCell>
                       <TableCell className="py-3 font-mono text-sm hidden sm:table-cell" dir="ltr">
                         <span className={inv.balanceDue > 0 && inv.lockedAt ? "text-warning" : ""}>
-                          {inv.balanceDue.toFixed(3)}
+                          {formatAmount(inv.balanceDue)}
                         </span>
                       </TableCell>
                       <TableCell className="py-3">

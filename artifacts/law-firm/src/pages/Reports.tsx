@@ -15,7 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
 import { Money } from "@/components/Money";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, formatAmount } from "@/lib/currency";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -62,7 +62,7 @@ const ROLE_AR: Record<string, string> = {
 };
 
 function fmtNum(n: number) {
-  return n.toLocaleString("fr-TN", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  return formatAmount(n);
 }
 
 function periodDates(period: string, customFrom: string, customTo: string) {
@@ -166,7 +166,7 @@ function IncomeBar({ monthly }: { monthly: { month: string; income: number }[] }
       <div className="flex items-end gap-2 mb-2" style={{ height: 120 }}>
         {monthly.map((m, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-0.5 h-full justify-end">
-            <span className="text-[10px] text-primary font-medium">{m.income > 0 ? m.income.toLocaleString() : ""}</span>
+            <span className="text-[10px] text-primary font-medium">{m.income > 0 ? formatAmount(m.income) : ""}</span>
             <div className="w-full bg-primary rounded-sm transition-all duration-700"
                  style={{ height: `${(m.income / maxVal) * 85}%`, minHeight: m.income > 0 ? 4 : 2 }} />
           </div>

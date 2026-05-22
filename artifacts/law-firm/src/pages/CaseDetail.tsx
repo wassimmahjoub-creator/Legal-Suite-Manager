@@ -20,6 +20,7 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { CourtSelect } from "@/components/CourtSelect";
 import { Money } from "@/components/Money";
+import { formatAmount } from "@/lib/currency";
 import {
   Plus, MapPin, User, Calendar, FileText, CheckCircle2,
   Clock, Briefcase, ArrowRight, Trash2,
@@ -383,7 +384,7 @@ export default function CaseDetail() {
       <div className="space-y-5">
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
+          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${formatAmount(totalDue)} د.ت` : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
           {kpiCard("ساعات العمل", "—", "قيد التطوير", () => changeTab("time"))}
           {kpiCard("الموعد القادم", nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال قادمة", nextDeadline ? () => changeTab("hearings") : undefined)}
           {kpiCard("عدد الوثائق", activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
@@ -399,7 +400,7 @@ export default function CaseDetail() {
                 ["درجة التقاضي",    tr(TR_LITIGATION_DEGREE, c.litigationDegree)],
                 ["نوع الإجراء",     tr(TR_PROCEDURE_TYPE,    c.procedureType)],
                 ["الأولوية",        tr(TR_PRIORITY,          c.casePriority)],
-                ["قيمة النزاع",     c.disputeValue ? `${Number(c.disputeValue).toLocaleString()} د.ت` : null],
+                ["قيمة النزاع",     c.disputeValue ? `${formatAmount(c.disputeValue)} د.ت` : null],
                 ["مصدر الموكّل",    tr(TR_CLIENT_SOURCE, c.clientSource)],
                 ["اسم القاضي",     c.judgeName],
                 ["تاريخ فتح الملف", c.openedAt ? formatDateTN(c.openedAt) : null],
@@ -664,19 +665,19 @@ export default function CaseDetail() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div><p className="text-[10px] text-muted-foreground mb-0.5">طريقة الاحتساب</p><p className="text-sm font-medium">{tr(TR_FEE_METHOD, c.feeMethod) ?? c.feeMethod}</p></div>
-              {(c.feeMethod === "fixed" || c.feeMethod === "per_hearing") && c.agreedFees && <div><p className="text-[10px] text-muted-foreground mb-0.5">الأتعاب المتفق عليها</p><p className="text-sm font-semibold text-primary">{Number(c.agreedFees).toLocaleString()} د.ت</p></div>}
-              {c.feeMethod === "hourly" && c.hourlyRate && <div><p className="text-[10px] text-muted-foreground mb-0.5">التعرفة بالساعة</p><p className="text-sm font-semibold text-primary">{Number(c.hourlyRate).toLocaleString()} د.ت/ساعة</p></div>}
+              {(c.feeMethod === "fixed" || c.feeMethod === "per_hearing") && c.agreedFees && <div><p className="text-[10px] text-muted-foreground mb-0.5">الأتعاب المتفق عليها</p><p className="text-sm font-semibold text-primary">{formatAmount(c.agreedFees)} د.ت</p></div>}
+              {c.feeMethod === "hourly" && c.hourlyRate && <div><p className="text-[10px] text-muted-foreground mb-0.5">التعرفة بالساعة</p><p className="text-sm font-semibold text-primary">{formatAmount(c.hourlyRate)} د.ت/ساعة</p></div>}
               {c.feeMethod === "percentage" && c.percentage && <div><p className="text-[10px] text-muted-foreground mb-0.5">النسبة</p><p className="text-sm font-semibold text-primary">{c.percentage}%{c.percentageBasis ? ` من ${c.percentageBasis}` : ""}</p></div>}
-              {c.disputeValue && <div><p className="text-[10px] text-muted-foreground mb-0.5">قيمة النزاع</p><p className="text-sm font-medium">{Number(c.disputeValue).toLocaleString()} د.ت</p></div>}
+              {c.disputeValue && <div><p className="text-[10px] text-muted-foreground mb-0.5">قيمة النزاع</p><p className="text-sm font-medium">{formatAmount(c.disputeValue)} د.ت</p></div>}
             </div>
           </CardContent></Card>
         )}
 
         {/* Invoice KPIs */}
         <div className="grid grid-cols-3 gap-3">
-          {kpiCard("المفوتر",  totalInvoiced > 0 ? `${totalInvoiced.toLocaleString()} د.ت` : "—")}
-          {kpiCard("المقبوض",  totalPaid     > 0 ? `${totalPaid.toLocaleString()} د.ت`     : "—", undefined, undefined, "text-green-400")}
-          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${totalDue.toLocaleString()} د.ت` : "—", undefined, undefined, totalDue > 0 ? "text-primary" : undefined)}
+          {kpiCard("المفوتر",  totalInvoiced > 0 ? `${formatAmount(totalInvoiced)} د.ت` : "—")}
+          {kpiCard("المقبوض",  totalPaid     > 0 ? `${formatAmount(totalPaid)} د.ت`     : "—", undefined, undefined, "text-success")}
+          {kpiCard("الرصيد المستحق", totalDue > 0 ? `${formatAmount(totalDue)} د.ت` : "—", undefined, undefined, totalDue > 0 ? "text-primary" : undefined)}
         </div>
 
         {/* Invoices list */}
@@ -710,8 +711,8 @@ export default function CaseDetail() {
                       <tr key={inv.id} onClick={() => navigate(`/billing/${inv.id}`)} className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer">
                         <td className="py-2.5 px-2 text-xs font-mono">{inv.invoiceNumber ?? `#${inv.id}`}</td>
                         <td className="py-2.5 px-2 text-xs text-muted-foreground">{inv.issueDate ? formatDateTN(inv.issueDate) : "—"}</td>
-                        <td className="py-2.5 px-2 text-xs font-mono font-semibold text-right">{Number(inv.netToPay).toFixed(3)} د.ت</td>
-                        <td className="py-2.5 px-2 text-xs font-mono text-green-400 text-right">{inv.amountPaid ? `${Number(inv.amountPaid).toFixed(3)} د.ت` : "—"}</td>
+                        <td className="py-2.5 px-2 text-xs font-mono font-semibold text-right">{formatAmount(inv.netToPay)} د.ت</td>
+                        <td className="py-2.5 px-2 text-xs font-mono text-success text-right">{inv.amountPaid ? `${formatAmount(inv.amountPaid)} د.ت` : "—"}</td>
                         <td className="py-2.5 px-2">
                           <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full", inv.status === "paid" ? "bg-green-500/10 text-green-400" : isOverdue ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground")}>
                             {inv.status === "paid" ? "مدفوعة" : isOverdue ? "متأخرة" : "قيد الانتظار"}
