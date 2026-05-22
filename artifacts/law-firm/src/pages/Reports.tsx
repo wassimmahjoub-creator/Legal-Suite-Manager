@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
 import {
   TrendingUp, Briefcase, Users, CreditCard, Download,
   BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw, ArrowRight,
-  ChevronUp, ChevronDown, Wallet,
+  ChevronUp, ChevronDown, Wallet, FileSpreadsheet, FileText,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
@@ -94,6 +94,46 @@ function exportCsv(rows: string[][], filename: string) {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+async function exportXlsx(rows: string[][], filename: string) {
+  const XLSX = await import("xlsx");
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "بيانات");
+  XLSX.writeFile(wb, filename);
+}
+
+function LocalExportDropdown({ onCsv, onXlsx }: { onCsv: () => void; onXlsx: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  return (
+    <div className="relative" ref={ref}>
+      <Button size="sm" className="gap-2 px-4" onClick={() => setOpen(o => !o)}>
+        <Download className="h-4 w-4" /> تصدير
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </Button>
+      {open && (
+        <div className="absolute start-0 top-full mt-1 z-50 min-w-[160px] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+          <button onClick={() => { onXlsx(); setOpen(false); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-start">
+            <FileSpreadsheet className="h-4 w-4 text-green-400 shrink-0" /><span>Excel (.xlsx)</span>
+          </button>
+          <button onClick={() => { onCsv(); setOpen(false); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-start">
+            <FileText className="h-4 w-4 text-blue-400 shrink-0" /><span>CSV (.csv)</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── Small KPI card ─────────────────────────────────────────── */
@@ -219,11 +259,12 @@ function SummaryTab() {
   const totalTasks = (data?.tasks.done ?? 0) + (data?.tasks.pending ?? 0);
   const taskRate   = totalTasks > 0 ? Math.round(((data?.tasks.done ?? 0) / totalTasks) * 100) : 0;
 
-  function handleExportCSV() {
-    if (!data) return;
-    const rows = [["الشهر", "المداخيل"], ...data.monthly.map(m => [m.month, String(m.income)])];
-    exportCsv(rows, `ملخص-محامي-بلوس-${new Date().toISOString().slice(0, 10)}.csv`);
+  function summaryRows() {
+    if (!data) return [] as string[][];
+    return [["الشهر", "المداخيل"], ...data.monthly.map(m => [m.month, String(m.income)])];
   }
+  function handleExportCSV() { exportCsv(summaryRows(), `ملخص-محامي-بلوس-${new Date().toISOString().slice(0, 10)}.csv`); }
+  function handleExportXlsx() { void exportXlsx(summaryRows(), `ملخص-محامي-بلوس-${new Date().toISOString().slice(0, 10)}.xlsx`); }
 
   return (
     <div className="space-y-6">
@@ -231,9 +272,7 @@ function SummaryTab() {
         <Button size="sm" className="gap-2" onClick={load} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> تحديث
         </Button>
-        <Button size="sm" className="gap-2" onClick={handleExportCSV} disabled={!data}>
-          <Download className="h-4 w-4" /> CSV
-        </Button>
+        <LocalExportDropdown onCsv={handleExportCSV} onXlsx={handleExportXlsx} />
       </div>
 
       {error && (
@@ -425,13 +464,15 @@ function CaseProfitability() {
     return n > 0 ? "text-success" : n < 0 ? "text-destructive" : "text-foreground";
   }
 
-  function doExport() {
-    exportCsv([
+  function profRows() {
+    return [
       ["رقم الملف","العنوان","الموكّل","الحالة","النوع","المفوتر (د.ت)","المصاريف (د.ت)","المقبوض (د.ت)","الهامش (د.ت)"],
       ...sorted.map(r => [r.caseNumber, r.title, r.clientName, STATUS_AR[r.status] ?? r.status, r.caseType,
         fmtNum(r.totalInvoiced), fmtNum(r.totalExpenses), fmtNum(r.totalCollected), fmtNum(r.grossMargin)]),
-    ], "ربحية-الملفات.csv");
+    ];
   }
+  function doExport() { exportCsv(profRows(), "ربحية-الملفات.csv"); }
+  function doExportXlsx() { void exportXlsx(profRows(), "ربحية-الملفات.xlsx"); }
 
   return (
     <div className="space-y-5">
@@ -464,7 +505,7 @@ function CaseProfitability() {
         <Input placeholder="بحث عن ملف أو موكّل…" value={search} onChange={e => setSearch(e.target.value)}
           className="w-52 bg-muted/50 border-border" />
         <div className="ms-auto">
-          <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
+          <LocalExportDropdown onCsv={doExport} onXlsx={doExportXlsx} />
         </div>
       </div>
 
@@ -561,18 +602,20 @@ function LawyerPerformance() {
     return r.totalInvoiced === 0 ? 0 : Math.round((r.totalCollected / r.totalInvoiced) * 100);
   }
 
-  function doExport() {
-    exportCsv([
+  function lawyerRows() {
+    return [
       ["المحامي","الصفة","الملفات النشطة","مجموع الملفات","المفوتر (د.ت)","المقبوض (د.ت)","معدل التحصيل"],
       ...sorted.map(r => [r.name, ROLE_AR[r.role] ?? r.role, String(r.activeCases), String(r.totalCases),
         fmtNum(r.totalInvoiced), fmtNum(r.totalCollected), `${rate(r)}%`]),
-    ], "أداء-المحامين.csv");
+    ];
   }
+  function doExport() { exportCsv(lawyerRows(), "أداء-المحامين.csv"); }
+  function doExportXlsx() { void exportXlsx(lawyerRows(), "أداء-المحامين.xlsx"); }
 
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
-        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
+        <LocalExportDropdown onCsv={doExport} onXlsx={doExportXlsx} />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -712,18 +755,20 @@ function ClientSources() {
     collected: data.reduce((s, r) => s + r.totalCollected, 0),
   }), [data]);
 
-  function doExport() {
-    exportCsv([
+  function clientRows() {
+    return [
       ["نوع الموكّل","الموكّلون","الملفات","المفوتر (د.ت)","المقبوض (د.ت)","المتوسط/موكّل (د.ت)","معدل الملفات %"],
       ...sorted.map(r => [r.clientTypeLabel, String(r.clientCount), String(r.caseCount),
         fmtNum(r.totalInvoiced), fmtNum(r.totalCollected), fmtNum(r.avgPerClient), `${r.conversionRate}%`]),
-    ], "تحليل-الموكّلين.csv");
+    ];
+  }
+  function doExport() { exportCsv(clientRows(), "تحليل-الموكّلين.csv");
   }
 
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
-        <Button onClick={doExport} size="sm"><Download className="w-4 h-4 me-2" />تصدير CSV</Button>
+        <LocalExportDropdown onCsv={doExport} onXlsx={() => void exportXlsx(clientRows(), "تحليل-الموكّلين.xlsx")} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
