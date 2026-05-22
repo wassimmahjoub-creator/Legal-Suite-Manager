@@ -4,6 +4,8 @@ import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import hpp from "hpp";
+import path from "path";
+import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { generalApiLimiter, sanitizeBody } from "./middleware/security.js";
@@ -56,5 +58,20 @@ app.use(sanitizeBody);
 app.use("/api", generalApiLimiter);
 
 app.use("/api", router);
+
+// ── Serve built React frontend in production ──────────────────────────────
+// The Vite build outputs to artifacts/law-firm/dist/public/
+// From this file (artifacts/api-server/src/), the compiled dist is one level up,
+// so relative to dist/index.mjs → ../../law-firm/dist/public
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+const frontendDist = path.resolve(__dirname, "../../law-firm/dist/public");
+
+app.use(express.static(frontendDist));
+
+// Fallback: serve index.html for all non-API routes (client-side routing)
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(frontendDist, "index.html"));
+});
 
 export default app;
