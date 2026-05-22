@@ -101,7 +101,7 @@ export default function Trash() {
           <Section title="الوثائق" icon={FileText} entity="documents"
             items={data.documents.map(d => ({ id: d.id, label: d.name, deletedAt: d.deletedAt }))} />
           <Section title="الفواتير" icon={CreditCard} entity="invoices"
-            items={data.invoices.map(i => ({ id: i.id, label: `${formatTND(Number(i.amount))} د.ت`, deletedAt: i.deletedAt }))} />
+            items={data.invoices.map(i => ({ id: i.id, label: `د.ت ${formatTND(Number(i.amount))}`, deletedAt: i.deletedAt }))} />
         </div>
       )}
       <ConfirmDestructive

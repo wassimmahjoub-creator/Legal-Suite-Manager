@@ -3,6 +3,7 @@ import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
 import { formatTND } from "@/lib/currency"
+import { TNDAmount } from "@/components/Money"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -240,16 +241,10 @@ const ChartTooltipContent = React.forwardRef<
                           </span>
                         </div>
                         {item.value && (
-                          <span className="font-medium tabular-nums text-foreground" style={{ whiteSpace: "nowrap" }}>
-                            {typeof item.value === "number" ? (
-                              <span style={{ unicodeBidi: "isolate" } as React.CSSProperties}>
-                                <span style={{ direction: "ltr", unicodeBidi: "bidi-override" } as React.CSSProperties}>
-                                  {formatTND(item.value)}
-                                </span>
-                                {" "}
-                                <span style={{ direction: "rtl" } as React.CSSProperties}>{"د.ت"}</span>
-                              </span>
-                            ) : item.value}
+                          <span className="font-medium text-foreground">
+                            {typeof item.value === "number"
+                              ? <TNDAmount amount={item.value} />
+                              : item.value}
                           </span>
                         )}
                       </div>
