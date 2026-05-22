@@ -374,10 +374,15 @@ export default function CalendarView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <button onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-            <ArrowRight className="h-3.5 w-3.5" /> رجوع
-          </button>
+          {(() => {
+            const from = new URLSearchParams(window.location.search).get("from");
+            return (
+              <button onClick={() => window.history.back()}
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium mb-1">
+                <ArrowRight className="h-4 w-4" /> {from === "dashboard" ? "لوحة القيادة" : "رجوع"}
+              </button>
+            );
+          })()}
           <h1 className="text-2xl font-bold">الرزنامة</h1>
           <p className="text-muted-foreground text-sm mt-0.5">مواعيد الجلسات، الاجتماعات والآجال القانونية</p>
         </div>

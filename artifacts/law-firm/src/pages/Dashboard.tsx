@@ -93,25 +93,25 @@ export default function Dashboard() {
             title: "القضايا الجارية",
             value: loadingSummary ? null : summary?.activeCases ?? 0,
             icon: Briefcase, color: "text-primary", bg: "bg-primary/10",
-            action: () => navigate("/cases"),
+            action: () => navigate("/cases?from=dashboard"),
           },
           {
             title: "المداخيل هذا الشهر",
             value: loadingSummary ? null : <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />,
             icon: TrendingUp, color: "text-success", bg: "bg-success/10",
-            action: () => navigate("/billing"),
+            action: () => navigate("/billing?from=dashboard"),
           },
           {
             title: "فواتير معلقة",
             value: loadingSummary ? null : summary?.pendingInvoices ?? 0,
             icon: Clock, color: "text-warning", bg: "bg-warning/10",
-            action: () => navigate("/billing"),
+            action: () => navigate("/billing?from=dashboard"),
           },
           {
             title: "آجال قريبة",
             value: loadingSummary ? null : summary?.upcomingDeadlines ?? 0,
             icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10",
-            action: () => navigate("/calendar"),
+            action: () => navigate("/calendar?from=dashboard"),
           },
         ].map((card, i) => (
           <Card

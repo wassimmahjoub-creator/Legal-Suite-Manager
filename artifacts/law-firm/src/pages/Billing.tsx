@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money, TNDAmount } from "@/components/Money";
@@ -40,6 +40,7 @@ interface Invoice {
 }
 
 export default function Billing() {
+  const fromParam = new URLSearchParams(window.location.search).get("from");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [, navigate] = useLocation();
@@ -62,6 +63,16 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
+      {/* Back-to-dashboard banner */}
+      {fromParam === "dashboard" && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border border-border rounded-xl">
+          <button onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium">
+            <ArrowRight className="h-4 w-4" /> لوحة القيادة
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
