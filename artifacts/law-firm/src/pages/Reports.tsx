@@ -228,10 +228,10 @@ function SummaryTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" className="gap-2" onClick={load} disabled={loading}>
+        <Button size="sm" className="gap-2" onClick={load} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> تحديث
         </Button>
-        <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV} disabled={!data}>
+        <Button size="sm" className="gap-2" onClick={handleExportCSV} disabled={!data}>
           <Download className="h-4 w-4" /> CSV
         </Button>
       </div>
