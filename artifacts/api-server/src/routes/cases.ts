@@ -307,4 +307,48 @@ router.delete("/cases/:id", async (req, res) => {
   res.status(204).send();
 });
 
+// ── POST /contracts ──────────────────────────────────────────────────────
+router.post("/contracts", async (req, res) => {
+  try {
+    const { contractsTable } = await import("@workspace/db");
+    const [row] = await db.insert(contractsTable).values({
+      caseId:          req.body.caseId,
+      contractType:    req.body.contractType   ?? "other",
+      partyOneName:    req.body.partyOneName   ?? null,
+      partyOneTaxId:   req.body.partyOneTaxId  ?? null,
+      partyTwoName:    req.body.partyTwoName   ?? null,
+      partyTwoTaxId:   req.body.partyTwoTaxId  ?? null,
+      contractValue:   req.body.contractValue  ?? null,
+      startDate:       req.body.startDate      ?? null,
+      endDate:         req.body.endDate        ?? null,
+      signingDate:     req.body.signingDate    ?? null,
+      status:          req.body.status         ?? "draft",
+    }).returning();
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── POST /debt-recovery-files ─────────────────────────────────────────────
+router.post("/debt-recovery-files", async (req, res) => {
+  try {
+    const { debtRecoveryFilesTable } = await import("@workspace/db");
+    const [row] = await db.insert(debtRecoveryFilesTable).values({
+      caseId:        req.body.caseId,
+      debtorName:    req.body.debtorName,
+      debtorTaxId:   req.body.debtorTaxId   ?? null,
+      debtorPhone:   req.body.debtorPhone   ?? null,
+      debtorAddress: req.body.debtorAddress ?? null,
+      debtAmount:    req.body.debtAmount    ?? 0,
+      debtReason:    req.body.debtReason    ?? null,
+      dueDate:       req.body.dueDate       ?? null,
+      currentStage:  req.body.currentStage  ?? "notice",
+    }).returning();
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 export default router;

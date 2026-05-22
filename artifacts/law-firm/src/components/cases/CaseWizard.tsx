@@ -602,6 +602,158 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
   );
 }
 
+// ── Step Consultation ───────────────────────────────────────────────────
+function StepConsultation({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+  const tsd = form.typeSpecificData as Record<string, string>;
+  const set = (k: string, v: string) => upd({ typeSpecificData: { ...tsd, [k]: v } });
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>موضوع الاستشارة</Label>
+        <Input placeholder="موضوع الاستشارة القانونية..." className={cls}
+          value={(tsd.subject as string) ?? ""}
+          onChange={e => set("subject", e.target.value)} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>طريقة الاستشارة</Label>
+          <SelectNative value={(tsd.method as string) ?? ""} onChange={e => set("method", e.target.value)} className={cls + " px-3"}>
+            <option value="">—</option>
+            {[{v:"in_person",l:"حضورية"},{v:"remote",l:"عن بعد"},{v:"written",l:"مكتوبة"},{v:"phone",l:"هاتفية"}].map(o =>
+              <option key={o.v} value={o.v}>{o.l}</option>
+            )}
+          </SelectNative>
+        </div>
+        <div>
+          <Label>تاريخ الاستشارة</Label>
+          <Input type="date" className={cls} dir="ltr"
+            value={(tsd.consultationDate as string) ?? form.openedAt}
+            onChange={e => set("consultationDate", e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <Label>ملخص الاستشارة والنتائج</Label>
+        <textarea rows={4} className={txcls} placeholder="ملخص ما تمت مناقشته والتوصيات..."
+          value={(tsd.result as string) ?? ""}
+          onChange={e => set("result", e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+// ── Step Contract ────────────────────────────────────────────────────────
+const CONTRACT_TYPES = [
+  { value: "sale", label: "بيع" }, { value: "rental", label: "كراء" },
+  { value: "service", label: "خدمات" }, { value: "employment", label: "عمل" },
+  { value: "partnership", label: "شراكة" }, { value: "loan", label: "قرض" },
+  { value: "guarantee", label: "ضمان" }, { value: "other", label: "أخرى" },
+];
+const CONTRACT_STATUSES = [
+  { value: "draft", label: "مسودة" }, { value: "under_review", label: "قيد المراجعة" },
+  { value: "ready_to_sign", label: "جاهز للإمضاء" }, { value: "signed", label: "ممضى" },
+];
+
+function StepContract({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+  const cd = form.contractData;
+  const set = (k: keyof typeof cd, v: string) => upd({ contractData: { ...cd, [k]: v } });
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>نوع العقد <Req /></Label>
+          <SelectNative value={cd.contractType} onChange={e => set("contractType", e.target.value)} className={cls + " px-3"}>
+            <option value="">اختر...</option>
+            {CONTRACT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </SelectNative>
+        </div>
+        <div>
+          <Label>حالة العقد</Label>
+          <SelectNative value={cd.status} onChange={e => set("status", e.target.value)} className={cls + " px-3"}>
+            {CONTRACT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </SelectNative>
+        </div>
+      </div>
+      <div className="p-3 border border-border rounded-xl bg-muted/20 space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground">الطرف الأول</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>الاسم <Req /></Label>
+            <Input className={cls} value={cd.partyOneName} onChange={e => set("partyOneName", e.target.value)} /></div>
+          <div><Label>المعرف الجبائي</Label>
+            <Input className={cls} dir="ltr" value={cd.partyOneTaxId} onChange={e => set("partyOneTaxId", e.target.value)} /></div>
+        </div>
+      </div>
+      <div className="p-3 border border-border rounded-xl bg-muted/20 space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground">الطرف الثاني</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>الاسم <Req /></Label>
+            <Input className={cls} value={cd.partyTwoName} onChange={e => set("partyTwoName", e.target.value)} /></div>
+          <div><Label>المعرف الجبائي</Label>
+            <Input className={cls} dir="ltr" value={cd.partyTwoTaxId} onChange={e => set("partyTwoTaxId", e.target.value)} /></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>قيمة العقد (د.ت)</Label>
+          <Input type="number" min="0" step="0.001" className={cls} dir="ltr"
+            value={cd.contractValue} onChange={e => set("contractValue", e.target.value)} /></div>
+        <div><Label>تاريخ الإمضاء</Label>
+          <Input type="date" className={cls} dir="ltr"
+            value={cd.signingDate} onChange={e => set("signingDate", e.target.value)} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>تاريخ البداية</Label>
+          <Input type="date" className={cls} dir="ltr"
+            value={cd.startDate} onChange={e => set("startDate", e.target.value)} /></div>
+        <div><Label>تاريخ النهاية</Label>
+          <Input type="date" className={cls} dir="ltr"
+            value={cd.endDate} onChange={e => set("endDate", e.target.value)} /></div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step Debt Recovery ───────────────────────────────────────────────────
+const DEBT_STAGES = [
+  { value: "notice", label: "إنذار" }, { value: "negotiation", label: "تفاوض" },
+  { value: "lawsuit", label: "قضية" }, { value: "execution", label: "تنفيذ" },
+  { value: "completed", label: "منتهي" },
+];
+
+function StepDebt({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+  const dd = form.debtData;
+  const set = (k: keyof typeof dd, v: string) => upd({ debtData: { ...dd, [k]: v } });
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>اسم المدين <Req /></Label>
+          <Input className={cls} value={dd.debtorName} onChange={e => set("debtorName", e.target.value)} /></div>
+        <div><Label>المعرف الجبائي للمدين</Label>
+          <Input className={cls} dir="ltr" value={dd.debtorTaxId} onChange={e => set("debtorTaxId", e.target.value)} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>هاتف المدين</Label>
+          <Input className={cls} dir="ltr" placeholder="+216..." value={dd.debtorPhone} onChange={e => set("debtorPhone", e.target.value)} /></div>
+        <div><Label>عنوان المدين</Label>
+          <Input className={cls} value={dd.debtorAddress} onChange={e => set("debtorAddress", e.target.value)} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>مبلغ الدين (د.ت) <Req /></Label>
+          <Input type="number" min="0" step="0.001" className={cls} dir="ltr"
+            value={dd.debtAmount} onChange={e => set("debtAmount", e.target.value)} /></div>
+        <div><Label>تاريخ الاستحقاق</Label>
+          <Input type="date" className={cls} dir="ltr"
+            value={dd.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
+      </div>
+      <div><Label>سبب الدين</Label>
+        <Input className={cls} value={dd.debtReason} onChange={e => set("debtReason", e.target.value)} /></div>
+      <div><Label>المرحلة الحالية</Label>
+        <SelectNative value={dd.currentStage} onChange={e => set("currentStage", e.target.value)} className={cls + " px-3"}>
+          {DEBT_STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </SelectNative>
+      </div>
+    </div>
+  );
+}
+
 // ── Main CaseWizard ─────────────────────────────────────────────────────
 
 interface CaseWizardProps {
@@ -775,6 +927,42 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
       for (const t of teamRows) {
         await authFetch(`${BASE}/api/cases/${createdId}/team`, { method: "POST", body: JSON.stringify(t) });
+      }
+
+      // Créer les données spécifiques au type après la création du case
+      if (form.serviceType === "contract" && form.contractData.partyOneName) {
+        await authFetch(`${BASE}/api/contracts`, {
+          method: "POST",
+          body: JSON.stringify({
+            caseId: createdId,
+            contractType: form.contractData.contractType || "other",
+            partyOneName: form.contractData.partyOneName,
+            partyOneTaxId: form.contractData.partyOneTaxId || null,
+            partyTwoName: form.contractData.partyTwoName,
+            partyTwoTaxId: form.contractData.partyTwoTaxId || null,
+            contractValue: form.contractData.contractValue ? parseFloat(form.contractData.contractValue) : null,
+            startDate: form.contractData.startDate || null,
+            endDate: form.contractData.endDate || null,
+            signingDate: form.contractData.signingDate || null,
+            status: form.contractData.status || "draft",
+          }),
+        });
+      }
+      if (form.serviceType === "debt_recovery" && form.debtData.debtorName) {
+        await authFetch(`${BASE}/api/debt-recovery-files`, {
+          method: "POST",
+          body: JSON.stringify({
+            caseId: createdId,
+            debtorName: form.debtData.debtorName,
+            debtorTaxId: form.debtData.debtorTaxId || null,
+            debtorPhone: form.debtData.debtorPhone || null,
+            debtorAddress: form.debtData.debtorAddress || null,
+            debtAmount: parseFloat(form.debtData.debtAmount) || 0,
+            debtReason: form.debtData.debtReason || null,
+            dueDate: form.debtData.dueDate || null,
+            currentStage: form.debtData.currentStage || "notice",
+          }),
+        });
       }
 
       // Conflict detection
@@ -966,11 +1154,11 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
                 {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} stepErrors={stepErrors} />}
                 {step === 2 && !isLastStep && CONTENTIEUX_TYPES.includes(form.serviceType) && <Step2 form={form} upd={upd} stepErrors={stepErrors} />}
                 {step === 3 && !isLastStep && CONTENTIEUX_TYPES.includes(form.serviceType) && <Step3 form={form} upd={upd} users={users} stepErrors={stepErrors} />}
-                {/* Branches non-contentieux — step 2 spécifique (3b et 3c les ajouteront) */}
                 {step === 2 && !isLastStep && !CONTENTIEUX_TYPES.includes(form.serviceType) && (
-                  <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                    ⚙️ هذا النوع سيتم دعمه قريباً
-                  </div>
+                  form.serviceType === "consultation" ? <StepConsultation form={form} upd={upd} /> :
+                  form.serviceType === "contract"     ? <StepContract form={form} upd={upd} /> :
+                  form.serviceType === "debt_recovery"? <StepDebt form={form} upd={upd} /> :
+                  <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">⚙️ قريباً</div>
                 )}
                 {isLastStep && <Step4 form={form} upd={upd} />}
               </>
