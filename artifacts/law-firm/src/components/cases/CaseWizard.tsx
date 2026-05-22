@@ -195,7 +195,7 @@ function RadioGroup({ options, value, onChange }: {
   );
 }
 
-function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[]; onAddClient: () => void }) {
+function Step1({ form, upd, clients, onAddClient, stepErrors }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[]; onAddClient: () => void; stepErrors: Record<string, string> }) {
   return (
     <div className="space-y-4">
       <div>
@@ -267,7 +267,7 @@ function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u:
   );
 }
 
-function Step2({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+function Step2({ form, upd, stepErrors }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; stepErrors: Record<string, string> }) {
   return (
     <div className="space-y-4">
       <div>
@@ -320,7 +320,7 @@ function Step2({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
   );
 }
 
-function Step3({ form, upd, users }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; users: User[] }) {
+function Step3({ form, upd, users, stepErrors }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; users: User[]; stepErrors: Record<string, string> }) {
   function updateOpp(i: number, patch: Partial<OpponentBlock>) {
     upd({ opponents: form.opponents.map((o, idx) => idx === i ? { ...o, ...patch } : o) });
   }
@@ -827,9 +827,9 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">
-          {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} />}
-          {step === 2 && <Step2 form={form} upd={upd} />}
-          {step === 3 && <Step3 form={form} upd={upd} users={users} />}
+          {step === 1 && <Step1 form={form} upd={upd} clients={clients} onAddClient={() => setQuickClientOpen(true)} stepErrors={stepErrors} />}
+          {step === 2 && <Step2 form={form} upd={upd} stepErrors={stepErrors} />}
+          {step === 3 && <Step3 form={form} upd={upd} users={users} stepErrors={stepErrors} />}
           {step === 4 && <Step4 form={form} upd={upd} />}
         </div>
 
