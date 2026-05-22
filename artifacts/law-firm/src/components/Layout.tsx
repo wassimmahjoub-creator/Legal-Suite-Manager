@@ -33,6 +33,7 @@ const NAV_PRIMARY = [
   { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
   { href: "/cases",      label: "القضايا",       icon: Briefcase       },
   { href: "/clients",    label: "الموكّلون",     icon: Users           },
+  { href: "/calendar",   label: "الرزنامة",      icon: CalendarIcon    },
   { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
   { href: "/documents",  label: "الوثائق",       icon: FileText        },
 ];
