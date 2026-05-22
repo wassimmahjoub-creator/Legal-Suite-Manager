@@ -322,70 +322,51 @@ export default function ClientPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* Back button */}
-      <button onClick={() => window.history.back()}
-        className="text-muted-foreground hover:text-foreground transition-colors mb-1">
-        <ArrowRight className="h-4 w-4" />
-      </button>
-
       {/* Header */}
-      <div className="rounded-2xl bg-card border border-border p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 justify-between">
-          <div className="flex items-center gap-4">
-            <div className={cn(
-              "h-16 w-16 rounded-2xl flex items-center justify-center font-bold text-2xl shrink-0",
-              isCompany ? "bg-blue-500/10 text-blue-400" : "bg-primary/10 text-primary"
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <button onClick={() => window.history.back()}
+            className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold">{client.name}</h1>
+            <span className={cn(
+              "text-xs px-2.5 py-1 rounded-full border font-medium",
+              isCompany
+                ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
             )}>
-              {isCompany ? <Building2 className="h-8 w-8" /> : client.name.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold">{client.name}</h1>
-                <span className={cn(
-                  "text-xs px-2.5 py-1 rounded-full border font-medium",
-                  isCompany
-                    ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                )}>
-                  {isCompany ? "شخص معنوي" : "شخص طبيعي"}
-                </span>
-                {unresolvedConflicts > 0 && (
-                  <button
-                    onClick={() => navigate(`/conflicts`)}
-                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-semibold bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
-                  >
-                    <ShieldAlert className="h-3.5 w-3.5" />
-                    ⚠ تعارض محتمل ({unresolvedConflicts})
-                  </button>
-                )}
-                {client.legalForm && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                    {client.legalForm}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-                {client.officeSeq && (
-                  <span className="flex items-center gap-1">
-                    <Hash className="h-3.5 w-3.5" />{client.officeSeq}
-                  </span>
-                )}
-                {client.phone && (
-                  <span className="flex items-center gap-1.5" dir="ltr"><Phone className="h-3.5 w-3.5" />{client.phone}</span>
-                )}
-                {client.email && (
-                  <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{client.email}</span>
-                )}
-              </div>
-            </div>
+              {isCompany ? "شخص معنوي" : "شخص طبيعي"}
+            </span>
+            {unresolvedConflicts > 0 && (
+              <button
+                onClick={() => navigate(`/conflicts`)}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-semibold bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 transition-colors"
+              >
+                <ShieldAlert className="h-3.5 w-3.5" />
+                ⚠ تعارض محتمل ({unresolvedConflicts})
+              </button>
+            )}
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" className="gap-1.5 text-xs"
-              onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
-              <Plus className="h-3.5 w-3.5" /> ملف جديد
-            </Button>
+          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
+            {client.officeSeq && (
+              <span className="flex items-center gap-1"><Hash className="h-3.5 w-3.5" />{client.officeSeq}</span>
+            )}
+            {client.legalForm && <span>{client.legalForm}</span>}
+            {client.phone && (
+              <span className="flex items-center gap-1" dir="ltr"><Phone className="h-3.5 w-3.5" />{client.phone}</span>
+            )}
+            {client.email && (
+              <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>
+            )}
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-1.5 text-xs"
+            onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
+            <Plus className="h-3.5 w-3.5" /> ملف جديد
+          </Button>
         </div>
       </div>
 
