@@ -40,6 +40,7 @@ import conflictChecksRouter from "./conflict-checks";
 import dataExportsRouter from "./data-exports.js";
 import exportsRouter from "./exports.js";
 import uploadsRouter from "./uploads.js";
+import migrateRouter from "./migrate.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -48,6 +49,7 @@ const PUBLIC_PATHS = [
   "/auth/status", "/auth/login", "/auth/setup", "/auth/register",
   "/auth/forgot-password", "/auth/reset-password",
   "/invitations/accept/", "/healthz", "/organization/plans",
+  "/admin/migrate-0001",
 ];
 
 function softAuth(req: Request, res: Response, next: NextFunction) {
@@ -100,5 +102,6 @@ router.use(conflictChecksRouter);
 router.use(dataExportsRouter);
 router.use(exportsRouter);
 router.use(uploadsRouter);
+router.use(migrateRouter);
 
 export default router;
