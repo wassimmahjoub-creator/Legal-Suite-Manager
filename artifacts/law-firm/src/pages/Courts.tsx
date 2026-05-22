@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 import {
   Building2, Plus, Pencil, Trash2, MapPin, Search,
-  Filter, DatabaseZap, Phone,
+  Filter, Phone,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -79,7 +79,6 @@ export default function Courts() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [govFilter, setGovFilter] = useState("all");
-  const [seeding, setSeeding] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -137,17 +136,6 @@ export default function Courts() {
     await load();
   }
 
-  async function runSeed() {
-    if (!confirm("إضافة كل المحاكم التونسية الافتراضية (31 محكمة)؟ العملية غير قابلة للتراجع.")) return;
-    setSeeding(true);
-    const r = await authFetch(`${BASE}/api/courts/seed`, { method: "POST" });
-    const body = await r.json();
-    alert(body.message ?? "تم السيد");
-    await load();
-    setSeeding(false);
-  }
-
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -163,10 +151,6 @@ export default function Courts() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={runSeed} disabled={seeding} className="gap-2 text-xs">
-            <DatabaseZap className="h-3.5 w-3.5" />
-            {seeding ? "جارٍ التهيئة..." : "تهيئة المحاكم الافتراضية"}
-          </Button>
           <Button onClick={openNew} size="sm" className="gap-2">
             <Plus className="h-4 w-4" /> محكمة جديدة
           </Button>
@@ -227,7 +211,7 @@ export default function Courts() {
             illustration={<EmptyDocumentsIllustration />}
             title="قائمة المحاكم فارغة"
             description={data.length === 0
-              ? "استعمل زر «تهيئة المحاكم الافتراضية» لإضافة جميع المحاكم التونسية دفعة واحدة"
+              ? "استعمل زر «محكمة جديدة» لإضافة محكمة"
               : "لا توجد محاكم مطابقة للبحث"}
           />
         </div>
