@@ -45,18 +45,20 @@ describe("formatCurrency", () => {
     expect(result.indexOf("د.ت")).toBeLessThan(result.indexOf("536"));
   });
 
-  it("symbole DT à GAUCHE du montant (fr)", () => {
+  it("symbole د.ت à GAUCHE du montant (fr)", () => {
     const result = formatCurrency(1250.5, "fr");
-    expect(result).toContain("DT");
-    expect(result.indexOf("DT")).toBeLessThan(result.indexOf("1"));
+    expect(result).toContain("د.ت");
+    expect(result.indexOf("د.ت")).toBeLessThan(result.indexOf("1"));
   });
 
   it("formate zéro en ar", () => {
     expect(formatCurrency(0, "ar")).toBe("د.ت 0,000");
   });
 
-  it("locale ar par défaut", () => {
+  it("locale ar par défaut et fr — toujours د.ت", () => {
     expect(formatCurrency(100)).toContain("د.ت");
-    expect(formatCurrency(100)).not.toContain("DT");
+    expect(formatCurrency(100, "fr")).toContain("د.ت");
+    expect(formatCurrency(100, "fr")).not.toContain("DT");
   });
 });
+

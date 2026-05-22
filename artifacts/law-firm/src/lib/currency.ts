@@ -27,6 +27,8 @@ export function formatAmount(amount: number | string | null | undefined): string
  * l'affiche visuellement à gauche sans manipulation manuelle.
  */
 export function formatCurrency(amount: number | string | null | undefined, locale: CurrencyLocale = "ar"): string {
-  const suffix = locale === "ar" ? "د.ت" : "DT";
+  const suffix = "د.ت"; // always Arabic symbol
   return `${suffix} ${formatAmount(amount)}`;
 }
+
+
