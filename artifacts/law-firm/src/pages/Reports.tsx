@@ -249,7 +249,13 @@ function SummaryTab() {
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(load, 60_000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(interval); };
+  }, []);
 
   const totalIncome    = data?.monthly.reduce((s, m) => s + m.income, 0) ?? 0;
   const avgMonthly     = data ? Math.round(totalIncome / (data.monthly.filter(m => m.income > 0).length || 1)) : 0;
@@ -268,10 +274,7 @@ function SummaryTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end gap-2">
-        <Button size="sm" className="gap-2" onClick={load} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> تحديث
-        </Button>
+      <div className="flex justify-end">
         <LocalExportDropdown onCsv={handleExportCSV} onXlsx={handleExportXlsx} />
       </div>
 
@@ -445,7 +448,13 @@ function CaseProfitability() {
     if (r.ok) setData(await r.json());
     setLoading(false);
   }
-  useEffect(() => { load(); }, [period, customFrom, customTo, statusFilter]);
+  useEffect(() => {
+    load();
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(load, 60_000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(interval); };
+  }, [period, customFrom, customTo, statusFilter]);
 
   const filtered = useMemo(() => data.filter(r =>
     !search || r.title.includes(search) || r.caseNumber.includes(search) || r.clientName.includes(search)
@@ -584,10 +593,17 @@ function LawyerPerformance() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    authFetch(`${BASE_URL}/api/reports/lawyer-performance`).then(async r => {
-      if (r.ok) setData(await r.json());
-      setLoading(false);
-    });
+    function load() {
+      authFetch(`${BASE_URL}/api/reports/lawyer-performance`).then(async r => {
+        if (r.ok) setData(await r.json());
+        setLoading(false);
+      });
+    }
+    load();
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(load, 60_000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(interval); };
   }, []);
 
   const { sorted, Th } = useSortable(data, "totalCollected");
@@ -740,10 +756,17 @@ function ClientSources() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    authFetch(`${BASE_URL}/api/reports/client-sources`).then(async r => {
-      if (r.ok) setData(await r.json());
-      setLoading(false);
-    });
+    function load() {
+      authFetch(`${BASE_URL}/api/reports/client-sources`).then(async r => {
+        if (r.ok) setData(await r.json());
+        setLoading(false);
+      });
+    }
+    load();
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = setInterval(load, 60_000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(interval); };
   }, []);
 
   const { sorted, Th } = useSortable(data, "totalCollected");
