@@ -205,7 +205,7 @@ export default function UserManagement() {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setModal("invite")} className="gap-1.5">
+            <Button size="sm" onClick={() => setModal("invite")} className="gap-1.5">
               <Link2 className="h-4 w-4" /> دعوة
             </Button>
             <Button size="sm" onClick={() => setModal("add-user")} className="gap-1.5">
