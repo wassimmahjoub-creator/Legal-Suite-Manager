@@ -175,7 +175,9 @@ export default function CaseDetail() {
     if (p in TAB_ALIASES) return TAB_ALIASES[p];
     return "overview";
   };
-  const fromReports     = new URLSearchParams(window.location.search).get("from") === "reports";
+  const fromParam_      = new URLSearchParams(window.location.search).get("from");
+  const fromReports     = fromParam_ === "reports";
+  const fromDashboard   = fromParam_ === "dashboard";
   const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL);
   const changeTab = useCallback((t: TabId) => {
     setActiveTab(t);
@@ -1081,7 +1083,7 @@ export default function CaseDetail() {
                 ) : (
                   <button onClick={() => window.history.back()}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-                    <ArrowRight className="h-3.5 w-3.5" /> رجوع
+                    <ArrowRight className="h-3.5 w-3.5" /> {fromDashboard ? "لوحة القيادة" : "رجوع"}
                   </button>
                 )}
               </div>

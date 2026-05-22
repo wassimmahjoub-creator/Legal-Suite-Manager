@@ -169,7 +169,7 @@ export default function Dashboard() {
       )}
 
       {/* Financial Strip */}
-      <Card onClick={() => navigate("/billing")} className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card cursor-pointer hover:shadow-md transition-shadow">
+      <Card onClick={() => navigate("/billing?from=dashboard")} className="border-none shadow-sm bg-gradient-to-l from-primary/5 to-card cursor-pointer hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-6 items-center">
             <div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ export default function Dashboard() {
                   <div
                     key={`s-${s.id}`}
                     className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
-                    onClick={() => s.caseId ? navigate(`/cases/${s.caseId}`) : navigate("/calendar")}
+                    onClick={() => s.caseId ? navigate(`/cases/${s.caseId}?from=dashboard`) : navigate("/calendar?from=dashboard")}
                   >
                     <div className="bg-primary/10 text-primary p-2.5 rounded-lg shrink-0">
                       <CalendarClock className="h-4 w-4" />
@@ -250,7 +250,7 @@ export default function Dashboard() {
                       </button>
                       <div
                         className="flex-1 min-w-0 cursor-pointer"
-                        onClick={() => t.caseId ? navigate(`/cases/${t.caseId}`) : undefined}
+                        onClick={() => t.caseId ? navigate(`/cases/${t.caseId}?from=dashboard`) : undefined}
                       >
                         <p className={`font-semibold text-sm truncate ${t.done ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
                         <p className="text-xs text-muted-foreground">{t.caseName ?? "—"}</p>
@@ -288,7 +288,7 @@ export default function Dashboard() {
                   <div
                     key={a.id}
                     className="px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
-                    onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
+                    onClick={() => a.caseId ? navigate(`/cases/${a.caseId}?from=dashboard`) : navigate("/billing?from=dashboard")}
                   >
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -316,7 +316,7 @@ export default function Dashboard() {
           <CardTitle className="text-base flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" /> آخر الملفات
           </CardTitle>
-          <button onClick={() => navigate("/cases")} className="text-xs text-primary hover:underline flex items-center gap-1">
+          <button onClick={() => navigate("/cases?from=dashboard")} className="text-xs text-primary hover:underline flex items-center gap-1">
             عرض الكل <ArrowLeft className="h-3 w-3" />
           </button>
         </CardHeader>
@@ -333,7 +333,7 @@ export default function Dashboard() {
                 <div
                   key={c.id}
                   className="flex items-center gap-4 px-5 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/cases/${c.id}`)}
+                  onClick={() => navigate(`/cases/${c.id}?from=dashboard`)}
                 >
                   <div className="p-2.5 bg-muted/50 rounded-lg shrink-0">
                     <Scale className="h-4 w-4 text-muted-foreground" />
