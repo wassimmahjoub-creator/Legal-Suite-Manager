@@ -1,21 +1,28 @@
-import { formatCurrency, type CurrencyLocale } from "@/lib/currency";
-import { useLocale } from "@/context/LocaleContext";
+﻿import { formatTND } from "@/lib/currency";
 
 interface MoneyProps {
-  amount: number;
-  locale?: CurrencyLocale;
+  amount: number | string | null | undefined;
   className?: string;
 }
 
 /**
- * Affiche un montant en dinars tunisiens.
- * Lit la locale depuis LocaleContext (défaut "ar") sauf si locale est passé en prop.
+ * Displays a Tunisian Dinar amount.
+ * Always renders LTR so digits and symbol stay in the correct visual order
+ * even inside an RTL (Arabic) page: "1.250,000 د.ت"
  */
-export function Money({ amount, locale, className }: MoneyProps) {
-  const ctxLocale = useLocale();
+export function TNDAmount({ amount, className }: MoneyProps) {
   return (
-    <span dir="ltr" className={`font-mono whitespace-nowrap${className ? ` ${className}` : ""}`}>
-      {formatCurrency(amount, locale ?? ctxLocale)}
+    <span
+      dir="ltr"
+      style={{ unicodeBidi: "isolate", fontVariantNumeric: "tabular-nums" } as React.CSSProperties}
+      className={`font-mono whitespace-nowrap${className ? ` ${className}` : ""}`}
+    >
+      {formatTND(amount)} د.ت
     </span>
   );
+}
+
+/** Backward-compatible alias */
+export function Money({ amount, className }: MoneyProps) {
+  return <TNDAmount amount={amount} className={className} />;
 }

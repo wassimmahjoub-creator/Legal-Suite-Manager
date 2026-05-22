@@ -1,64 +1,74 @@
 ﻿import { describe, it, expect } from "vitest";
-import { formatAmount, formatCurrency } from "@/lib/currency";
+import { formatTND, formatAmount, formatCurrency } from "@/lib/currency";
 
-const NNBSP = " "; // narrow no-break space — séparateur de milliers
-
-describe("formatAmount", () => {
-  it("formate 536500 correctement", () => {
-    expect(formatAmount(536500)).toBe(`536${NNBSP}500,000`);
+describe("formatTND", () => {
+  it("formats 536500 correctly", () => {
+    expect(formatTND(536500)).toBe("536.500,000");
   });
 
-  it("formate 1234.5 correctement", () => {
-    expect(formatAmount(1234.5)).toBe(`1${NNBSP}234,500`);
+  it("formats 1250 correctly", () => {
+    expect(formatTND(1250)).toBe("1.250,000");
   });
 
-  it("formate zéro", () => {
-    expect(formatAmount(0)).toBe("0,000");
+  it("formats 24500.75 correctly", () => {
+    expect(formatTND(24500.75)).toBe("24.500,750");
   });
 
-  it("formate un négatif", () => {
-    expect(formatAmount(-99.9)).toBe("-99,900");
+  it("formats 850 correctly", () => {
+    expect(formatTND(850)).toBe("850,000");
   });
 
-  it("accepte une string", () => {
-    expect(formatAmount("536500")).toBe(`536${NNBSP}500,000`);
+  it("formats zero", () => {
+    expect(formatTND(0)).toBe("0,000");
   });
 
-  it("accepte null/undefined → zéro", () => {
-    expect(formatAmount(null)).toBe("0,000");
-    expect(formatAmount(undefined)).toBe("0,000");
+  it("formats negative", () => {
+    expect(formatTND(-99.9)).toBe("-99,900");
   });
 
-  it("gère NaN → zéro", () => {
-    expect(formatAmount("pas-un-nombre")).toBe("0,000");
+  it("accepts a string", () => {
+    expect(formatTND("536500")).toBe("536.500,000");
   });
 
-  it("respecte 3 décimales (millimes)", () => {
-    expect(formatAmount(5.1)).toBe("5,100");
+  it("accepts null/undefined → zero", () => {
+    expect(formatTND(null)).toBe("0,000");
+    expect(formatTND(undefined)).toBe("0,000");
+  });
+
+  it("handles NaN → zero", () => {
+    expect(formatTND("not-a-number")).toBe("0,000");
+  });
+
+  it("respects 3 decimals (millimes)", () => {
+    expect(formatTND(5.1)).toBe("5,100");
+  });
+});
+
+describe("formatAmount (alias)", () => {
+  it("is the same as formatTND", () => {
+    expect(formatAmount(1250)).toBe("1.250,000");
   });
 });
 
 describe("formatCurrency", () => {
-  it("symbole د.ت à GAUCHE du montant (ar par défaut)", () => {
+  it("symbol د.ت always on the RIGHT", () => {
     const result = formatCurrency(536500);
-    expect(result).toContain("د.ت");
-    expect(result.indexOf("د.ت")).toBeLessThan(result.indexOf("536"));
+    expect(result).toBe("536.500,000 د.ت");
   });
 
-  it("symbole د.ت à GAUCHE du montant (fr)", () => {
+  it("symbol د.ت on the right even for locale fr", () => {
     const result = formatCurrency(1250.5, "fr");
-    expect(result).toContain("د.ت");
-    expect(result.indexOf("د.ت")).toBeLessThan(result.indexOf("1"));
+    expect(result).toBe("1.250,500 د.ت");
+    expect(result.indexOf("د.ت")).toBeGreaterThan(result.indexOf("1"));
   });
 
-  it("formate zéro en ar", () => {
-    expect(formatCurrency(0, "ar")).toBe("د.ت 0,000");
+  it("formats zero", () => {
+    expect(formatCurrency(0)).toBe("0,000 د.ت");
   });
 
-  it("locale ar par défaut et fr — toujours د.ت", () => {
-    expect(formatCurrency(100)).toContain("د.ت");
+  it("always returns د.ت (never DT)", () => {
     expect(formatCurrency(100, "fr")).toContain("د.ت");
     expect(formatCurrency(100, "fr")).not.toContain("DT");
+    expect(formatCurrency(100)).toContain("د.ت");
   });
 });
-

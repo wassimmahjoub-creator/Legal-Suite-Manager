@@ -50,7 +50,7 @@ export default function Trash() {
           {items.map(item => (
             <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-xl border border-border">
               <div>
-                <p className="font-medium text-sm">{item.label}</p>
+                <p className="font-medium text-sm" dir="ltr">{item.label}</p>
                 <p className="text-xs text-muted-foreground"><DateDisplay date={item.deletedAt} format="datetime" /></p>
               </div>
               <div className="flex gap-2">

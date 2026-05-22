@@ -143,7 +143,7 @@ export default function TimeTracking() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="font-bold text-sm mt-0.5" dir={stat.value.includes("د.ت") || stat.value.includes("س") ? "rtl" : "ltr"}>{stat.value}</p>
+                <p className="font-bold text-sm mt-0.5" dir="ltr">{stat.value}</p>
               </div>
             </CardContent>
           </Card>

@@ -128,7 +128,7 @@ export default function Dashboard() {
               </div>
               {card.value === null
                 ? <Skeleton className="h-8 w-16" />
-                : <p className="text-3xl font-bold tabular-nums leading-none mt-1">{card.value}</p>
+                : <p className="text-3xl font-bold tabular-nums leading-none mt-1" dir="ltr">{card.value}</p>
               }
             </CardContent>
           </Card>
