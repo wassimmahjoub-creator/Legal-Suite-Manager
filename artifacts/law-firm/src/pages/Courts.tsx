@@ -200,11 +200,11 @@ export default function Courts() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={runSeed} disabled={seeding} className="gap-2 text-xs">
+          <Button size="sm" onClick={runSeed} disabled={seeding} className="gap-2 text-xs">
             <DatabaseZap className="h-3.5 w-3.5" />
             {seeding ? "جارٍ التهيئة..." : "تهيئة المحاكم الافتراضية"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-2 text-xs">
+          <Button size="sm" onClick={() => fileRef.current?.click()} className="gap-2 text-xs">
             <Upload className="h-3.5 w-3.5" /> استيراد CSV
           </Button>
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCsvFile} />
