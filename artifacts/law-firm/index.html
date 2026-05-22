@@ -23,6 +23,21 @@
         });
       })();
     </script>
+    <!-- Catch fatal JS errors that prevent React from mounting -->
+    <script>
+      window.addEventListener('error', function(e) {
+        var root = document.getElementById('root');
+        if (root && !root.hasChildNodes()) {
+          root.innerHTML = '<div dir="rtl" style="padding:32px;font-family:monospace;background:#1a1a2e;color:#e2c97e;min-height:100vh"><h1 style="font-size:20px;margin-bottom:12px">خطأ في التطبيق</h1><p style="color:#ff6b6b;margin-bottom:8px">' + (e.message || 'Unknown error') + '</p><pre style="font-size:11px;color:#aaa;white-space:pre-wrap;word-break:break-all">' + (e.filename || '') + ':' + (e.lineno || '') + '</pre></div>';
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var root = document.getElementById('root');
+        if (root && !root.hasChildNodes()) {
+          root.innerHTML = '<div dir="rtl" style="padding:32px;font-family:monospace;background:#1a1a2e;color:#e2c97e;min-height:100vh"><h1 style="font-size:20px;margin-bottom:12px">خطأ في التطبيق</h1><p style="color:#ff6b6b;margin-bottom:8px">' + ((e.reason && e.reason.message) || String(e.reason) || 'Unhandled rejection') + '</p></div>';
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
