@@ -1,0 +1,186 @@
+PROMPT REPLIT — SESSION 2 (état du code vérifié le 22/05/2026)
+4 fichiers à modifier dans cet ordre exact.
+
+FICHIER 1 — CRÉER
+artifacts/law-firm/src/components/ServiceTypeBadge.tsx (fichier inexistant à créer)
+
+import { Badge } from "@/components/ui/badge";
+
+const TYPE_MAP: Record<string, { label: string; color: string }> = {
+  lawsuit:            { label: "قضية",    color: "bg-destructive/10 text-destructive border-destructive/20" },
+  consultation:       { label: "استشارة", color: "bg-info/10 text-info border-info/20" },
+  contract:           { label: "عقد",     color: "bg-success/10 text-success border-success/20" },
+  company_creation:   { label: "شركة",    color: "bg-primary/10 text-primary border-primary/20" },
+  debt_recovery:      { label: "تحصيل",  color: "bg-warning/10 text-warning border-warning/20" },
+  legal_notice:       { label: "تنبيه",  color: "bg-warning/10 text-warning border-warning/20" },
+  judgment_execution: { label: "تنفيذ",  color: "bg-info/10 text-info border-info/20" },
+  real_estate_file:   { label: "عقاري",  color: "bg-muted text-muted-foreground border-border" },
+  labor_file:         { label: "شغل",    color: "bg-muted text-muted-foreground border-border" },
+  tax_file:           { label: "جبائي",  color: "bg-muted text-muted-foreground border-border" },
+  administrative:     { label: "إداري",  color: "bg-muted text-muted-foreground border-border" },
+  mediation:          { label: "وساطة",  color: "bg-muted text-muted-foreground border-border" },
+  other:              { label: "أخرى",   color: "bg-muted text-muted-foreground border-border" },
+};
+
+export function ServiceTypeBadge({ type }: { type: string | null | undefined }) {
+  const s = (type && TYPE_MAP[type]) ?? { label: type ?? "—", color: "bg-muted text-muted-foreground border-border" };
+  return (
+    <Badge variant="outline" className={`${s.color} rounded-full px-2.5 py-0.5 text-xs font-medium border`}>
+      {s.label}
+    </Badge>
+  );
+}
+FICHIER 2 — MODIFIER
+artifacts/law-firm/src/components/Layout.tsx
+
+Changement 2a — dans les imports lucide-react (ligne ~1-5), ajouter FolderOpen :
+
+// Trouver la ligne qui importe depuis "lucide-react" et ajouter FolderOpen dans la liste
+import { ..., FolderOpen } from "lucide-react";
+Changement 2b — dans NAV_PRIMARY, remplacer la ligne /cases :
+
+// AVANT :
+{ href: "/cases", label: "القضايا", icon: Briefcase },
+// APRÈS :
+{ href: "/cases", label: "الملفات", icon: FolderOpen },
+Changement 2c — dans NAV_SECONDARY, remplacer la ligne /consultations :
+
+// AVANT :
+{ href: "/consultations", label: "الاستشارات", icon: MessageSquare },
+// APRÈS :
+{ href: "/cases?serviceType=consultation", label: "الاستشارات", icon: MessageSquare },
+Changement 2d — dans NAV_MOBILE_BOTTOM, remplacer la ligne /cases :
+
+// AVANT :
+{ href: "/cases", label: "القضايا", icon: Briefcase },
+// APRÈS :
+{ href: "/cases", label: "الملفات", icon: FolderOpen },
+⚠️ Ne toucher à rien d'autre dans ce fichier.
+
+FICHIER 3 — MODIFIER
+artifacts/law-firm/src/pages/Cases.tsx
+
+Changement 3a — ajouter cet import après les imports existants :
+
+import { ServiceTypeBadge } from "@/components/ServiceTypeBadge";
+Changement 3b — ajouter un état et des constantes. Insérer juste après const [showWizard, setShowWizard] = useState(false); :
+
+const [serviceTypeFilter, setServiceTypeFilter] = useState<string>(() =>
+  new URLSearchParams(window.location.search).get("serviceType") ?? "all"
+);
+
+const OTHER_TYPES = ["real_estate_file","labor_file","tax_file","administrative","mediation","other"];
+
+const TABS = [
+  { key: "all",                label: "الكل" },
+  { key: "lawsuit",            label: "القضايا" },
+  { key: "consultation",       label: "الاستشارات" },
+  { key: "contract",           label: "العقود" },
+  { key: "debt_recovery",      label: "التحصيل" },
+  { key: "company_creation",   label: "الشركات" },
+  { key: "legal_notice",       label: "التنبيهات" },
+  { key: "judgment_execution", label: "التنفيذ" },
+  { key: "other_group",        label: "أخرى" },
+];
+Changement 3c — remplacer ENTIÈREMENT le bloc const filteredCases = ... existant par :
+
+const baseFiltered = (casesSource ?? []).filter((c: any) => {
+  if (viewArchived) { if (!c.archivedAt) return false; }
+  else              { if (c.archivedAt)  return false; }
+  return true;
+});
+
+const tabCounts: Record<string, number> = { all: baseFiltered.length };
+for (const c of baseFiltered) {
+  const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
+  tabCounts[t] = (tabCounts[t] ?? 0) + 1;
+  if (OTHER_TYPES.includes(t)) tabCounts["other_group"] = (tabCounts["other_group"] ?? 0) + 1;
+}
+
+const filteredCases = baseFiltered.filter((c: any) => {
+  const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
+  if (serviceTypeFilter !== "all") {
+    if (serviceTypeFilter === "other_group") { if (!OTHER_TYPES.includes(t)) return false; }
+    else                                     { if (t !== serviceTypeFilter)   return false; }
+  }
+  if (statusFilter !== "all" && c.status !== statusFilter) return false;
+  if (search) {
+    const q = search.toLowerCase();
+    if (!c.title?.toLowerCase().includes(q) &&
+        !c.clientName?.includes(search) &&
+        !(c.caseNumber ?? "").includes(search) &&
+        !(c.courtCaseNumber ?? "").includes(search)) return false;
+  }
+  return true;
+});
+Changement 3d — dans le JSX, insérer la barre d'onglets. La placer ENTRE la div des filtres (celle qui contient Input de recherche + Select de statut + boutons) ET le <Card> du tableau :
+
+{/* ── Onglets type de dossier ── */}
+<div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+  {TABS.map(tab => {
+    const count = tabCounts[tab.key] ?? 0;
+    const active = serviceTypeFilter === tab.key;
+    return (
+      <button
+        key={tab.key}
+        onClick={() => setServiceTypeFilter(tab.key)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors
+          ${active
+            ? "bg-primary text-primary-foreground border-primary font-semibold"
+            : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}
+      >
+        {tab.label}
+        {count > 0 && (
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
+            ${active ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            {count}
+          </span>
+        )}
+      </button>
+    );
+  })}
+</div>
+Changement 3e — dans <TableHeader>, ajouter une colonne après الحالة :
+
+<TableHead className="text-start py-3 font-semibold hidden md:table-cell">النوع</TableHead>
+Changement 3f — dans le .map((c: any) => ...), ajouter une cellule après <StatusBadge status={c.status} /> :
+
+<TableCell className="py-3 hidden md:table-cell">
+  <ServiceTypeBadge type={c.serviceType ?? c.service_type} />
+</TableCell>
+Changement 3g — mettre à jour les deux endroits où 7 représente le nombre de colonnes :
+
+colSpan={7} → colSpan={8} (cellule de l'état vide)
+Array.from({ length: 7 }) → Array.from({ length: 8 }) (skeleton de chargement)
+FICHIER 4 — MODIFIER
+artifacts/api-server/src/routes/cases.ts
+
+Changement 4a — dans caseFields (lignes 10-51), ajouter serviceType avant la ligne archivedAt :
+
+// Ajouter cette ligne dans l'objet caseFields, après la ligne "draftLastStep":
+serviceType: casesTable.serviceType,
+typeSpecificData: casesTable.typeSpecificData,
+⚠️ Si casesTable.serviceType génère une erreur TypeScript (champ non reconnu), c'est que le schéma Drizzle n'a pas été mis à jour. Dans ce cas, ouvre lib/db/src/schema/cases.ts et vérifie que serviceType et typeSpecificData sont déclarés. S'ils ne le sont pas, demande une aide séparée.
+
+Changement 4b — dans le handler router.get("/cases", ...), modifier la ligne de destructuring :
+
+// AVANT :
+const { status, court, clientId, search, archived, userId } = req.query as Record<string, string>;
+// APRÈS :
+const { status, court, clientId, search, archived, userId, serviceType } = req.query as Record<string, string>;
+Changement 4c — ajouter le filtre serviceType dans le bloc des conditions, juste après le bloc if (userId) { ... } et avant le bloc if (search) { ... } :
+
+if (serviceType && serviceType !== "all") {
+  const OTHER = ["real_estate_file","labor_file","tax_file","administrative","mediation","other"];
+  if (serviceType === "other_group") {
+    conditions.push(inArray(casesTable.serviceType as any, OTHER) as any);
+  } else {
+    conditions.push(eq(casesTable.serviceType as any, serviceType) as any);
+  }
+}
+RÉSUMÉ DES NON-RÉGRESSIONS
+/correspondances → ne pas toucher, route et label inchangés
+Le filtre statusFilter existant → conservé, cumulatif avec serviceTypeFilter
+La recherche texte → conservée
+<TNDAmount> → ne pas réécrire, déjà correct dans Money.tsx
+La page /consultations (ancienne) → ne pas supprimer, juste la nav pointe ailleurs

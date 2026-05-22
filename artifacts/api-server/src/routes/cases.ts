@@ -45,6 +45,8 @@ const caseFields = {
   confidentialityLevel: casesTable.confidentialityLevel,
   internalNotes: casesTable.internalNotes,
   draftLastStep: casesTable.draftLastStep,
+  serviceType: casesTable.serviceType,
+  typeSpecificData: casesTable.typeSpecificData,
   archivedAt: casesTable.archivedAt,
   deletedAt: casesTable.deletedAt,
   createdAt: casesTable.createdAt,
@@ -82,7 +84,7 @@ function extractExtras(body: Record<string, unknown>) {
 }
 
 router.get("/cases", async (req, res) => {
-  const { status, court, clientId, search, archived, userId } = req.query as Record<string, string>;
+  const { status, court, clientId, search, archived, userId, serviceType } = req.query as Record<string, string>;
   const page  = Math.max(0, parseInt((req.query.page  as string) ?? "0") || 0);
   const limit = Math.min(200, Math.max(1, parseInt((req.query.limit as string) ?? "50") || 50));
 
@@ -106,6 +108,15 @@ router.get("/cases", async (req, res) => {
       .where(eq(caseTeamsTable.userId, Number(userId)));
     if (teamRows.length === 0) return res.json([]);
     conditions.push(inArray(casesTable.id, teamRows.map((r) => r.caseId)) as any);
+  }
+
+  if (serviceType && serviceType !== "all") {
+    const OTHER = ["real_estate_file","labor_file","tax_file","administrative","mediation","other"];
+    if (serviceType === "other_group") {
+      conditions.push(inArray(casesTable.serviceType as any, OTHER) as any);
+    } else {
+      conditions.push(eq(casesTable.serviceType as any, serviceType) as any);
+    }
   }
 
   if (search) {

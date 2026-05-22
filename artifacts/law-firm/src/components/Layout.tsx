@@ -7,7 +7,7 @@ import {
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X, Crown, AlertTriangle, Download,
+  MoreHorizontal, X, Crown, AlertTriangle, Download, FolderOpen,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -31,7 +31,7 @@ interface OrgTrial {
 const NAV_PRIMARY = [
   { href: "/today",      label: "لوحة اليوم",    icon: CalendarIcon    },
   { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
-  { href: "/cases",      label: "القضايا",       icon: Briefcase       },
+  { href: "/cases",      label: "الملفات",       icon: FolderOpen      },
   { href: "/clients",    label: "الموكّلون",     icon: Users           },
   { href: "/calendar",   label: "الرزنامة",      icon: CalendarIcon    },
   { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
@@ -40,7 +40,7 @@ const NAV_PRIMARY = [
 
 const NAV_SECONDARY = [
   { href: "/opponents",           label: "الخصوم",        icon: Shield       },
-  { href: "/consultations",       label: "الاستشارات",    icon: MessageSquare},
+  { href: "/cases?serviceType=consultation", label: "الاستشارات", icon: MessageSquare },
   { href: "/communications",      label: "الاتصالات",     icon: PhoneCall    },
   { href: "/correspondances",     label: "المراسلات",     icon: MailOpen     },
   { href: "/time-tracking",       label: "تتبع الوقت",    icon: Timer        },
@@ -72,7 +72,7 @@ const ADMIN_ONLY_HREFS = new Set(["/users", "/legal-config", "/audit-logs", "/da
 
 const NAV_MOBILE_BOTTOM = [
   { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
-  { href: "/cases",    label: "القضايا",  icon: Briefcase       },
+  { href: "/cases",    label: "الملفات",  icon: FolderOpen      },
   { href: "/calendar", label: "الرزنامة", icon: CalendarIcon    },
   { href: "/clients",  label: "الموكّلون",  icon: Users           },
 ];
