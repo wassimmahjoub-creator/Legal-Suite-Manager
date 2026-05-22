@@ -39,16 +39,20 @@ describe("formatAmount", () => {
 });
 
 describe("formatCurrency", () => {
-  it("formate avec د.ت par défaut (ar)", () => {
-    expect(formatCurrency(536500)).toBe(`536${NNBSP}500,000 د.ت`);
+  it("symbole د.ت à GAUCHE du montant (ar par défaut)", () => {
+    const result = formatCurrency(536500);
+    expect(result).toContain("د.ت");
+    expect(result.indexOf("د.ت")).toBeLessThan(result.indexOf("536"));
   });
 
-  it("formate avec DT en fr", () => {
-    expect(formatCurrency(1250.5, "fr")).toBe(`1${NNBSP}250,500 DT`);
+  it("symbole DT à GAUCHE du montant (fr)", () => {
+    const result = formatCurrency(1250.5, "fr");
+    expect(result).toContain("DT");
+    expect(result.indexOf("DT")).toBeLessThan(result.indexOf("1"));
   });
 
   it("formate zéro en ar", () => {
-    expect(formatCurrency(0, "ar")).toBe("0,000 د.ت");
+    expect(formatCurrency(0, "ar")).toBe("د.ت 0,000");
   });
 
   it("locale ar par défaut", () => {
