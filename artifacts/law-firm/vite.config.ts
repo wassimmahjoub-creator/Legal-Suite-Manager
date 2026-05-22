@@ -72,24 +72,7 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     chunkSizeWarningLimit: 600,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // PDF renderer est très lourd (~1.5MB) — chunk isolé
-          if (id.includes("@tanstack"))                                       return "vendor-query";
-          if (id.includes("react-hook-form") || id.includes("@hookform") || id.includes("/zod/")) return "vendor-forms";
-          if (id.includes("@react-pdf")) return "vendor-pdf";
-          // Recharts + D3 — uniquement sur la page Reports
-          if (id.includes("recharts") || id.includes("/d3-")) return "vendor-charts";
-          // React Big Calendar — uniquement sur la page Calendrier
-          if (id.includes("react-big-calendar")) return "vendor-calendar";
-          // Tous les composants Radix UI
-          if (id.includes("@radix-ui")) return "vendor-radix";
-          // Tout le reste de node_modules
-          if (id.includes("node_modules")) return "vendor";
-        },
-      },
-    },
+    rollupOptions: {},
   },
   server: {
     port,
