@@ -63,19 +63,15 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      {/* Back-to-dashboard banner */}
-      {fromParam === "dashboard" && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border border-border rounded-xl">
-          <button onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium">
-            <ArrowRight className="h-4 w-4" /> لوحة القيادة
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          {fromParam === "dashboard" && (
+            <button onClick={() => navigate("/")}
+              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium mb-1">
+              <ArrowRight className="h-3.5 w-3.5" /> لوحة القيادة
+            </button>
+          )}
           <h1 className="text-2xl font-bold">الفوترة</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة الفواتير والمدفوعات</p>
         </div>
