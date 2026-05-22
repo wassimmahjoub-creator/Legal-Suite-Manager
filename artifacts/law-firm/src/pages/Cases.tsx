@@ -120,7 +120,7 @@ export default function Cases() {
             )}
             <h1 className="text-2xl font-bold">القضايا</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              {viewArchived ? "القضايا المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+              {viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
             </p>
           </div>
         </div>
@@ -132,12 +132,12 @@ export default function Cases() {
           {!viewArchived && (
             <Button onClick={() => setViewArchived(true)} className="rounded-lg gap-2 px-5">
               <Archive className="h-4 w-4" />
-              القضايا المؤرشفة
+              الملفات المؤرشفة
             </Button>
           )}
           <Button onClick={() => setShowWizard(true)} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />
-            قضية جديدة
+            ملف جديد
           </Button>
         </div>
       </div>
