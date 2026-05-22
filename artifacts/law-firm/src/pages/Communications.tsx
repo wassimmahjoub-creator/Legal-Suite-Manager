@@ -1,5 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
+import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 interface Comm { id: number; caseId: number | null; clientId: number | null; caseName: string | null; clientName: string | null; type: string; date: string; summary: string; createdBy: string | null; }
@@ -28,6 +29,81 @@ const TYPE_MAP: Record<string, { label: string; icon: React.ElementType; color: 
 };
 
 interface CaseOption { id: number; caseNumber: string | null; title: string; clientId: number | null; }
+
+function CaseCombobox({ cases, value, onChange }: {
+  cases: CaseOption[];
+  value: string;
+  onChange: (caseId: string, clientId: string) => void;
+}) {
+  const selected = cases.find(c => String(c.id) === value) ?? null;
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const filtered = cases.filter(c => {
+    const q = query.toLowerCase();
+    return !q || (c.caseNumber ?? "").toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
+  });
+
+  function select(c: CaseOption) {
+    onChange(String(c.id), c.clientId ? String(c.clientId) : "");
+    setQuery("");
+    setOpen(false);
+  }
+
+  function clear() { onChange("", ""); setQuery(""); }
+
+  const inputCls2 = "h-10 bg-muted/50 border border-border focus:outline-none focus:ring-1 focus:ring-primary rounded-lg w-full px-3 text-sm";
+
+  return (
+    <div ref={ref} className="relative">
+      {selected && !open ? (
+        <div className="flex items-center gap-2 h-10 bg-muted/50 border border-border rounded-lg px-3">
+          <span className="flex-1 text-sm truncate">
+            {selected.caseNumber ? <span className="font-mono text-primary text-xs ml-1">{selected.caseNumber}</span> : null}
+            {" "}{selected.title}
+          </span>
+          <button type="button" onClick={clear} className="text-muted-foreground hover:text-foreground shrink-0">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <input
+          className={inputCls2}
+          placeholder="ابحث برقم الملف أو الاسم..."
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          dir="rtl"
+        />
+      )}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-muted-foreground">لا توجد نتائج</p>
+          ) : (
+            filtered.map(c => (
+              <button key={c.id} type="button"
+                className={cn("w-full text-right px-3 py-2 text-sm hover:bg-muted/60 transition-colors flex items-center gap-2", String(c.id) === value && "bg-primary/10 text-primary")}
+                onMouseDown={e => { e.preventDefault(); select(c); }}>
+                {c.caseNumber && <span className="font-mono text-xs text-primary shrink-0">{c.caseNumber}</span>}
+                <span className="truncate">{c.title}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Communications() {
   const [data, setData] = useState<Comm[]>([]);
@@ -142,18 +218,13 @@ export default function Communications() {
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="رقم القضية" htmlFor="cm-case">
-              <SelectNative id="cm-case" value={form.caseId} className={inputCls + " px-3 cursor-pointer"}
-                onChange={e => {
-                  const selected = cases.find(c => String(c.id) === e.target.value);
-                  setForm(f => ({ ...f, caseId: e.target.value, clientId: selected?.clientId ? String(selected.clientId) : f.clientId }));
-                }}>
-                <option value="">— اختر ملفاً —</option>
-                {cases.map(c => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.caseNumber ? `${c.caseNumber} — ` : ""}{c.title}
-                  </option>
-                ))}
-              </SelectNative>
+              <CaseCombobox
+                cases={cases}
+                value={form.caseId}
+                onChange={(caseId, clientId) =>
+                  setForm(f => ({ ...f, caseId, clientId: clientId || f.clientId }))
+                }
+              />
             </FormField>
             <FormField label="رقم الموكّل" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
           </div>
