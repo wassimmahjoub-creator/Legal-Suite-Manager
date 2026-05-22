@@ -27,8 +27,11 @@ const TYPE_MAP: Record<string, { label: string; icon: React.ElementType; color: 
   video: { label: "مكالمة مرئية", icon: Video, color: "bg-indigo-500/10 text-indigo-400" },
 };
 
+interface CaseOption { id: number; caseNumber: string | null; title: string; clientId: number | null; }
+
 export default function Communications() {
   const [data, setData] = useState<Comm[]>([]);
+  const [cases, setCases] = useState<CaseOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Comm | null>(null);
@@ -39,7 +42,10 @@ export default function Communications() {
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
   async function load() { setLoading(true); const r = await authFetch(`${BASE}/api/communications`); if (r.ok) setData(await r.json()); setLoading(false); }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []).then(setCases);
+  }, []);
 
   function openNew() { setEditing(null); setForm(EMPTY); setModal(true); }
   function openEdit(c: Comm) { setEditing(c); setForm({ caseId: c.caseId?.toString() ?? "", clientId: c.clientId?.toString() ?? "", type: c.type, date: c.date, summary: c.summary, createdBy: c.createdBy ?? "" }); setModal(true); }
@@ -135,7 +141,20 @@ export default function Communications() {
               value={form.summary} onChange={v => setForm(f => ({ ...f, summary: v }))} />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="رقم القضية" htmlFor="cm-case"><Input id="cm-case" type="number" value={form.caseId} onChange={e => setForm({...form, caseId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
+            <FormField label="رقم القضية" htmlFor="cm-case">
+              <SelectNative id="cm-case" value={form.caseId} className={inputCls + " px-3 cursor-pointer"}
+                onChange={e => {
+                  const selected = cases.find(c => String(c.id) === e.target.value);
+                  setForm(f => ({ ...f, caseId: e.target.value, clientId: selected?.clientId ? String(selected.clientId) : f.clientId }));
+                }}>
+                <option value="">— اختر ملفاً —</option>
+                {cases.map(c => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.caseNumber ? `${c.caseNumber} — ` : ""}{c.title}
+                  </option>
+                ))}
+              </SelectNative>
+            </FormField>
             <FormField label="رقم الموكّل" htmlFor="cm-client"><Input id="cm-client" type="number" value={form.clientId} onChange={e => setForm({...form, clientId: e.target.value})} className={inputCls} dir="ltr" placeholder="ID" /></FormField>
           </div>
           <div className="flex gap-3 pt-1">
