@@ -90,7 +90,7 @@ export default function Cases() {
             params={{ search, status: statusFilter !== "all" ? statusFilter : undefined, archived: viewArchived ? "true" : undefined }}
           />
           {!viewArchived && (
-            <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
+            <Button onClick={() => setViewArchived(true)} className="rounded-lg gap-2 px-5">
               <Archive className="h-4 w-4" />
               القضايا المؤرشفة
             </Button>
