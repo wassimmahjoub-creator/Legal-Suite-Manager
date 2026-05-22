@@ -116,7 +116,7 @@ function LocalExportDropdown({ onCsv, onXlsx }: { onCsv: () => void; onXlsx: () 
   }, [open]);
   return (
     <div className="relative" ref={ref}>
-      <Button size="sm" className="gap-2 px-4" onClick={() => setOpen(o => !o)}>
+      <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpen(o => !o)}>
         <Download className="h-4 w-4" /> تصدير
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </Button>
