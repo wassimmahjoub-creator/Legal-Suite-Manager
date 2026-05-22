@@ -1069,19 +1069,22 @@ export default function CaseDetail() {
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              {fromReports ? (
-                <button onClick={() => {
-                  const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
-                  navigate(`/reports?tab=${fromTab}`);
-                }}
-                  className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted transition-colors shrink-0 text-xs text-muted-foreground hover:text-foreground">
-                  <ArrowRight className="h-4 w-4" /> التقارير
-                </button>
-              ) : (
-                <button onClick={() => window.history.back()} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                </button>
-              )}
+              <div className="mt-1 shrink-0">
+                {fromReports ? (
+                  <button onClick={() => {
+                    const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
+                    navigate(`/reports?tab=${fromTab}`);
+                  }}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+                    <ArrowRight className="h-3.5 w-3.5" /> التقارير
+                  </button>
+                ) : (
+                  <button onClick={() => window.history.back()}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+                    <ArrowRight className="h-3.5 w-3.5" /> رجوع
+                  </button>
+                )}
+              </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}

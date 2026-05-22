@@ -68,7 +68,7 @@ export default function Billing() {
         <div>
           {fromParam === "dashboard" && (
             <button onClick={() => navigate("/")}
-              className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium mb-1">
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
               <ArrowRight className="h-3.5 w-3.5" /> لوحة القيادة
             </button>
           )}

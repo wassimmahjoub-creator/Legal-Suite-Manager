@@ -824,7 +824,7 @@ export default function Reports() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => window.history.back()}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors">
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
           <ArrowRight className="h-3.5 w-3.5" /> رجوع
         </button>
       </div>

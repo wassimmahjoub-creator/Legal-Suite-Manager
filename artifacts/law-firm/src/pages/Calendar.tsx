@@ -378,8 +378,8 @@ export default function CalendarView() {
             const from = new URLSearchParams(window.location.search).get("from");
             return (
               <button onClick={() => window.history.back()}
-                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium mb-1">
-                <ArrowRight className="h-4 w-4" /> {from === "dashboard" ? "لوحة القيادة" : "رجوع"}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+                <ArrowRight className="h-3.5 w-3.5" /> {from === "dashboard" ? "لوحة القيادة" : "رجوع"}
               </button>
             );
           })()}

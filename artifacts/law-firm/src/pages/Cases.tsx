@@ -72,16 +72,17 @@ export default function Cases() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-start gap-3">
-          {viewArchived && (
-            <button onClick={() => setViewArchived(false)} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0" title="رجوع">
-              <ArrowRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          )}
           <div>
             {fromParam === "dashboard" && (
               <button onClick={() => navigate("/")}
-                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium mb-1">
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> لوحة القيادة
+              </button>
+            )}
+            {viewArchived && (
+              <button onClick={() => setViewArchived(false)}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+                <ArrowRight className="h-3.5 w-3.5" /> القضايا الجارية
               </button>
             )}
             <h1 className="text-2xl font-bold">القضايا</h1>
