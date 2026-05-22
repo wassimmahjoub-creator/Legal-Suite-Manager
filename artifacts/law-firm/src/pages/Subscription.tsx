@@ -364,7 +364,7 @@ export default function Subscription() {
                 <Trash2 className="h-3.5 w-3.5 ml-1" /> حذف
               </Button>
             )}
-            <Button size="sm" variant="outline" className="text-xs h-8"
+            <Button size="sm" className="text-xs h-8"
               onClick={() => { setPaymentForm({ holder: "", number: "", expiry: "", cvv: "" }); setShowPaymentModal(true); }}>
               {savedCard ? <><RefreshCw className="h-3.5 w-3.5 ml-1" /> تغيير البطاقة</> : <><Plus className="h-3.5 w-3.5 ml-1" /> إضافة طريقة دفع</>}
             </Button>
