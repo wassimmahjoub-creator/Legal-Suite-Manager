@@ -40,7 +40,7 @@ export function TNDAmount({ amount, className }: MoneyProps) {
       >
         {formatTND(amount)}
       </span>
-      {" "}
+      {" "}
       {/* 2e en HTML → positionné à GAUCHE dans le flux RTL */}
       <span
         style={{ direction: "ltr", unicodeBidi: "bidi-override" } as React.CSSProperties}

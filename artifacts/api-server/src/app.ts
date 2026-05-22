@@ -70,7 +70,7 @@ const frontendDist = path.resolve(__dirname, "../../law-firm/dist/public");
 app.use(express.static(frontendDist));
 
 // Fallback: serve index.html for all non-API routes (client-side routing)
-app.get("*", (_req, res) => {
+app.get("/{*splat}", (_req, res) => {
   res.sendFile(path.join(frontendDist, "index.html"));
 });
 
