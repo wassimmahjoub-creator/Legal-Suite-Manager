@@ -1,5 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 import {
   Building2, Plus, Pencil, Trash2, MapPin, Search,
-  Filter, Upload, Download, ChevronDown, DatabaseZap,
-  Phone, Globe, Layers,
+  Filter, DatabaseZap, Phone,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -81,10 +80,6 @@ export default function Courts() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [govFilter, setGovFilter] = useState("all");
   const [seeding, setSeeding] = useState(false);
-  const [csvModal, setCsvModal] = useState(false);
-  const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
-  const [importing, setImporting] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true);
@@ -152,38 +147,6 @@ export default function Courts() {
     setSeeding(false);
   }
 
-  function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const text = ev.target?.result as string;
-      const lines = text.split("\n").filter(Boolean);
-      if (lines.length < 2) return;
-      const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
-      const rows = lines.slice(1).map(line => {
-        const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
-        const obj: Record<string, string> = {};
-        headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
-        return obj;
-      }).filter(r => Object.values(r).some(Boolean));
-      setCsvRows(rows);
-      setCsvModal(true);
-    };
-    reader.readAsText(file, "utf-8");
-    e.target.value = "";
-  }
-
-  async function importCsv() {
-    setImporting(true);
-    const r = await authFetch(`${BASE}/api/courts/import-csv`, {
-      method: "POST",
-      body: JSON.stringify(csvRows),
-    });
-    const body = await r.json();
-    alert(`تم الاستيراد: ${body.imported} من أصل ${body.total}`);
-    await load(); setImporting(false); setCsvModal(false); setCsvRows([]);
-  }
 
   return (
     <div className="space-y-6">
@@ -204,10 +167,6 @@ export default function Courts() {
             <DatabaseZap className="h-3.5 w-3.5" />
             {seeding ? "جارٍ التهيئة..." : "تهيئة المحاكم الافتراضية"}
           </Button>
-          <Button size="sm" onClick={() => fileRef.current?.click()} className="gap-2 text-xs">
-            <Upload className="h-3.5 w-3.5" /> استيراد CSV
-          </Button>
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCsvFile} />
           <Button onClick={openNew} size="sm" className="gap-2">
             <Plus className="h-4 w-4" /> محكمة جديدة
           </Button>
@@ -447,43 +406,6 @@ export default function Courts() {
         </div>
       </Modal>
 
-      <Modal open={csvModal} onClose={() => setCsvModal(false)} title="معاينة CSV">
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {csvRows.length} صف جاهز للاستيراد. تأكد من أن الأعمدة تحتوي على:
-            <code className="mx-1 text-xs bg-muted px-1 py-0.5 rounded">name_ar, name_fr, type, governorate, city, address, phone</code>
-          </p>
-          <div className="max-h-60 overflow-y-auto rounded-lg border border-border text-xs">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted/50">
-                  {csvRows[0] && Object.keys(csvRows[0]).map(h => (
-                    <th key={h} className="px-3 py-2 text-right font-medium">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {csvRows.slice(0, 10).map((row, i) => (
-                  <tr key={i} className="border-t border-border">
-                    {Object.values(row).map((v, j) => (
-                      <td key={j} className="px-3 py-1.5 text-muted-foreground max-w-32 truncate">{v}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {csvRows.length > 10 && (
-              <p className="px-3 py-2 text-muted-foreground text-center">... و {csvRows.length - 10} صف آخر</p>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <Button className="flex-1" onClick={importCsv} disabled={importing}>
-              {importing ? "جارٍ الاستيراد..." : `استيراد ${csvRows.length} محكمة`}
-            </Button>
-            <Button variant="outline" onClick={() => setCsvModal(false)} className="px-5">إلغاء</Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
