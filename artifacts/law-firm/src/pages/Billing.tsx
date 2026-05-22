@@ -66,8 +66,9 @@ export default function Billing() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          {fromParam === "dashboard" && (
-            <button onClick={() => navigate("/")}
+          {(fromParam === "dashboard" || fromParam === "today") && (
+            <button
+              onClick={() => fromParam === "today" ? navigate("/today") : navigate("/")}
               className="text-muted-foreground hover:text-foreground transition-colors mb-1">
               <ArrowRight className="h-4 w-4" />
             </button>

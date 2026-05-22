@@ -248,7 +248,7 @@ export default function Today() {
         {/* ── Aperçu financier ── */}
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate("/billing")}
+          onClick={() => navigate("/billing?from=today")}
         >
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
