@@ -12,8 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
-import { Money } from "@/components/Money";
-import { formatCurrency, formatAmount } from "@/lib/currency";
+import { Money, TNDAmount } from "@/components/Money";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
 
@@ -80,11 +79,11 @@ export default function Billing() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<CreditCard className="h-5 w-5 text-info" />}
-          bg="bg-info/10" label="إجمالي الفواتير" value={formatCurrency(totalNet)} />
+          bg="bg-info/10" label="إجمالي الفواتير" value={<TNDAmount amount={totalNet} />} />
         <KpiCard icon={<CheckCircle className="h-5 w-5 text-success" />}
-          bg="bg-success/10" label="المدفوع" value={formatCurrency(totalPaid)} />
+          bg="bg-success/10" label="المدفوع" value={<TNDAmount amount={totalPaid} />} />
         <KpiCard icon={<Clock className="h-5 w-5 text-warning" />}
-          bg="bg-warning/10" label="الرصيد المتبقي" value={formatCurrency(totalBalance)} />
+          bg="bg-warning/10" label="الرصيد المتبقي" value={<TNDAmount amount={totalBalance} />} />
         <KpiCard icon={<AlertCircle className="h-5 w-5 text-destructive" />}
           bg="bg-destructive/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
       </div>
@@ -195,7 +194,7 @@ export default function Billing() {
 }
 
 function KpiCard({ icon, bg, label, value, unit = "" }: {
-  icon: React.ReactNode; bg: string; label: string; value: string; unit?: string;
+  icon: React.ReactNode; bg: string; label: string; value: React.ReactNode; unit?: string;
 }) {
   return (
     <Card className="border-none shadow-sm bg-card">

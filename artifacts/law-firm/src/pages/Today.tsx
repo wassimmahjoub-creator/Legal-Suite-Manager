@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { formatDateTN } from "@/lib/date";
-import { formatCurrency } from "@/lib/currency";
+import { TNDAmount } from "@/components/Money";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetDashboardToday,
@@ -267,8 +267,8 @@ export default function Today() {
               <div className="space-y-4">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">مداخيل الفواتير</p>
-                  <p className="text-2xl font-bold tabular-nums text-success" dir="ltr">
-                    {formatCurrency(Number(summary?.monthlyIncome ?? 0))}
+                  <p className="text-2xl font-bold tabular-nums text-success">
+                    <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

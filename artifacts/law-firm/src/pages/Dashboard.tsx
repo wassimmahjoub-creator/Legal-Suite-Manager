@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { formatCurrency } from "@/lib/currency";
+import { TNDAmount } from "@/components/Money";
 import { formatDateTN } from "@/lib/date";
 import { DateDisplay } from "@/components/DateDisplay";
 import { useQueryClient } from "@tanstack/react-query";
@@ -97,7 +97,7 @@ export default function Dashboard() {
           },
           {
             title: "المداخيل هذا الشهر",
-            value: loadingSummary ? null : formatCurrency(Number(summary?.monthlyIncome ?? 0)),
+            value: loadingSummary ? null : <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />,
             icon: TrendingUp, color: "text-success", bg: "bg-success/10",
             action: () => navigate("/billing"),
           },
@@ -128,7 +128,7 @@ export default function Dashboard() {
               </div>
               {card.value === null
                 ? <Skeleton className="h-8 w-16" />
-                : <p className="text-3xl font-bold tabular-nums leading-none mt-1" dir="ltr">{card.value}</p>
+                : <p className="text-3xl font-bold tabular-nums leading-none mt-1">{card.value}</p>
               }
             </CardContent>
           </Card>
@@ -178,8 +178,8 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">مداخيل الفواتير:</span>
-              <span className="font-bold text-sm text-success" dir="ltr">
-                {loadingSummary ? "..." : formatCurrency(Number(summary?.monthlyIncome ?? 0))}
+              <span className="font-bold text-sm text-success">
+                {loadingSummary ? "..." : <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
