@@ -351,4 +351,38 @@ router.post("/debt-recovery-files", async (req, res) => {
   }
 });
 
+// ── POST /company-files ───────────────────────────────────────────────────
+router.post("/company-files", async (req, res) => {
+  try {
+    const { companyFilesTable } = await import("@workspace/db");
+    const [row] = await db.insert(companyFilesTable).values({
+      caseId:       req.body.caseId,
+      companyType:  req.body.companyType  ?? "sarl",
+      proposedName: req.body.proposedName ?? null,
+      capital:      req.body.capital      ?? null,
+      activity:     req.body.activity     ?? null,
+    }).returning();
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── POST /company-files/:id/partners ─────────────────────────────────────
+router.post("/company-files/:id/partners", async (req, res) => {
+  try {
+    const { companyPartnersTable } = await import("@workspace/db");
+    const [row] = await db.insert(companyPartnersTable).values({
+      companyFileId:    Number(req.params.id),
+      partnerName:      req.body.partnerName,
+      partnerTaxId:     req.body.partnerTaxId     ?? null,
+      sharesPercentage: req.body.sharesPercentage ?? null,
+      position:         req.body.position         ?? null,
+    }).returning();
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 export default router;

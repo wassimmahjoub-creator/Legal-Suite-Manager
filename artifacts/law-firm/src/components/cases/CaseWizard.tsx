@@ -754,6 +754,152 @@ function StepDebt({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm
   );
 }
 
+// ── Step Company Creation ────────────────────────────────────────────────
+const COMPANY_TYPES = [
+  { value: "sarl", label: "ش.ذ.م.م" }, { value: "suarl", label: "ش.أ.م.م وحيدة الشريك" },
+  { value: "sa", label: "شركة مساهمة" }, { value: "single_person_company", label: "مؤسسة فردية" },
+  { value: "other", label: "أخرى" },
+];
+
+function StepCompany({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+  const cd = form.companyData;
+  const set = (k: keyof Omit<typeof cd, "partners">, v: string) => upd({ companyData: { ...cd, [k]: v } });
+
+  function updatePartner(i: number, k: string, v: string) {
+    const partners = cd.partners.map((p, idx) => idx === i ? { ...p, [k]: v } : p);
+    upd({ companyData: { ...cd, partners } });
+  }
+  function addPartner() {
+    upd({ companyData: { ...cd, partners: [...cd.partners, { name: "", taxId: "", shares: "", position: "" }] } });
+  }
+  function removePartner(i: number) {
+    upd({ companyData: { ...cd, partners: cd.partners.filter((_, j) => j !== i) } });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>نوع الشركة <Req /></Label>
+          <SelectNative value={cd.companyType} onChange={e => set("companyType", e.target.value)} className={cls + " px-3"}>
+            {COMPANY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </SelectNative>
+        </div>
+        <div><Label>الاسم المقترح <Req /></Label>
+          <Input className={cls} value={cd.proposedName} onChange={e => set("proposedName", e.target.value)} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><Label>رأس المال (د.ت)</Label>
+          <Input type="number" min="0" step="0.001" className={cls} dir="ltr"
+            value={cd.capital} onChange={e => set("capital", e.target.value)} /></div>
+        <div><Label>النشاط</Label>
+          <Input className={cls} value={cd.activity} onChange={e => set("activity", e.target.value)} /></div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">الشركاء</h3>
+          <button type="button" onClick={addPartner} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <Plus className="h-3.5 w-3.5" /> إضافة شريك
+          </button>
+        </div>
+        <div className="space-y-3">
+          {cd.partners.map((p, i) => (
+            <div key={i} className="p-3 border border-border rounded-xl bg-muted/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">شريك {i + 1}</span>
+                {i > 0 && (
+                  <button type="button" onClick={() => removePartner(i)}
+                    className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="block text-xs text-muted-foreground mb-1">الاسم <span className="text-destructive">*</span></label>
+                  <Input className={cls + " h-9 text-sm"} value={p.name} onChange={e => updatePartner(i, "name", e.target.value)} /></div>
+                <div><label className="block text-xs text-muted-foreground mb-1">النسبة %</label>
+                  <Input type="number" min="0" max="100" className={cls + " h-9 text-sm"} dir="ltr"
+                    value={p.shares} onChange={e => updatePartner(i, "shares", e.target.value)} /></div>
+                <div><label className="block text-xs text-muted-foreground mb-1">الصفة</label>
+                  <Input className={cls + " h-9 text-sm"} placeholder="مدير، شريك..." value={p.position} onChange={e => updatePartner(i, "position", e.target.value)} /></div>
+                <div><label className="block text-xs text-muted-foreground mb-1">المعرف الجبائي</label>
+                  <Input className={cls + " h-9 text-sm"} dir="ltr" value={p.taxId} onChange={e => updatePartner(i, "taxId", e.target.value)} /></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step Simple (legal_notice, administrative, mediation, other) ──────────
+const SIMPLE_TYPE_LABELS: Record<string, { title: string; fields: Array<{ key: string; label: string; type?: string }> }> = {
+  legal_notice: {
+    title: "تفاصيل الإنذار",
+    fields: [
+      { key: "recipient", label: "المُنذَر إليه" },
+      { key: "noticeDate", label: "تاريخ الإنذار", type: "date" },
+      { key: "noticeReason", label: "موضوع الإنذار" },
+      { key: "deadline", label: "أجل التنفيذ" },
+    ],
+  },
+  administrative: {
+    title: "تفاصيل الملف الإداري",
+    fields: [
+      { key: "adminBody", label: "الجهة الإدارية" },
+      { key: "referenceNumber", label: "المرجع" },
+      { key: "subject", label: "موضوع المطلب" },
+      { key: "filingDate", label: "تاريخ الإيداع", type: "date" },
+    ],
+  },
+  mediation: {
+    title: "تفاصيل الوساطة",
+    fields: [
+      { key: "mediatorName", label: "اسم الوسيط" },
+      { key: "sessionDate", label: "تاريخ الجلسة", type: "date" },
+      { key: "subject", label: "موضوع النزاع" },
+      { key: "outcome", label: "نتيجة الوساطة" },
+    ],
+  },
+  other: {
+    title: "تفاصيل إضافية",
+    fields: [
+      { key: "subject", label: "الموضوع" },
+      { key: "details", label: "التفاصيل" },
+    ],
+  },
+};
+
+function StepSimple({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void }) {
+  const tsd = form.typeSpecificData as Record<string, string>;
+  const set = (k: string, v: string) => upd({ typeSpecificData: { ...tsd, [k]: v } });
+  const config = SIMPLE_TYPE_LABELS[form.serviceType] ?? SIMPLE_TYPE_LABELS.other;
+  return (
+    <div className="space-y-4">
+      <p className="text-sm font-semibold text-muted-foreground">{config.title}</p>
+      {config.fields.map(f => (
+        <div key={f.key}>
+          <Label>{f.label}</Label>
+          {f.type === "date" ? (
+            <Input type="date" className={cls} dir="ltr"
+              value={tsd[f.key] ?? ""} onChange={e => set(f.key, e.target.value)} />
+          ) : (
+            <Input className={cls}
+              value={tsd[f.key] ?? ""} onChange={e => set(f.key, e.target.value)} />
+          )}
+        </div>
+      ))}
+      <div>
+        <Label>ملاحظات</Label>
+        <textarea rows={3} className={txcls}
+          value={(tsd.notes as string) ?? ""}
+          onChange={e => set("notes", e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
 // ── Main CaseWizard ─────────────────────────────────────────────────────
 
 interface CaseWizardProps {
@@ -965,6 +1111,33 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         });
       }
 
+      if (form.serviceType === "company_creation" && form.companyData.proposedName) {
+        const cfRes = await authFetch(`${BASE}/api/company-files`, {
+          method: "POST",
+          body: JSON.stringify({
+            caseId:       createdId,
+            companyType:  form.companyData.companyType,
+            proposedName: form.companyData.proposedName,
+            capital:      form.companyData.capital ? parseFloat(form.companyData.capital) : null,
+            activity:     form.companyData.activity || null,
+          }),
+        });
+        if (cfRes.ok) {
+          const cf = await cfRes.json() as { id: number };
+          for (const p of form.companyData.partners.filter(p => p.name.trim())) {
+            await authFetch(`${BASE}/api/company-files/${cf.id}/partners`, {
+              method: "POST",
+              body: JSON.stringify({
+                partnerName:      p.name,
+                partnerTaxId:     p.taxId || null,
+                sharesPercentage: p.shares ? parseFloat(p.shares) : null,
+                position:         p.position || null,
+              }),
+            });
+          }
+        }
+      }
+
       // Conflict detection
       try {
         const detectRes = await authFetch(`${BASE}/api/conflict-checks/detect/${createdId}`, { method: "POST" });
@@ -1157,7 +1330,9 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
                 {step === 2 && !isLastStep && !CONTENTIEUX_TYPES.includes(form.serviceType) && (
                   form.serviceType === "consultation" ? <StepConsultation form={form} upd={upd} /> :
                   form.serviceType === "contract"     ? <StepContract form={form} upd={upd} /> :
-                  form.serviceType === "debt_recovery"? <StepDebt form={form} upd={upd} /> :
+                  form.serviceType === "debt_recovery"    ? <StepDebt form={form} upd={upd} /> :
+                  form.serviceType === "company_creation" ? <StepCompany form={form} upd={upd} /> :
+                  SIMPLE_TYPES.includes(form.serviceType) ? <StepSimple form={form} upd={upd} /> :
                   <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">⚙️ قريباً</div>
                 )}
                 {isLastStep && <Step4 form={form} upd={upd} />}
