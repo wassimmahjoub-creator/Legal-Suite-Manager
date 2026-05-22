@@ -3,6 +3,8 @@ modules = ["nodejs-24", "postgresql-16"]
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
+build = ["sh", "-c", "pnpm install --frozen-lockfile && cd artifacts/law-firm && PORT=8080 BASE_PATH=/ pnpm run build && cd ../api-server && node ./build.mjs"]
+run = ["sh", "-c", "NODE_ENV=production node artifacts/api-server/dist/index.mjs"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
