@@ -36,18 +36,23 @@ export default function Cases() {
     new URLSearchParams(window.location.search).get("serviceType") ?? "all"
   );
 
-  const OTHER_TYPES = ["real_estate_file","labor_file","tax_file","administrative","mediation","other"];
+  const OTHER_TYPES: string[] = [];
 
   const TABS = [
     { key: "all",                label: "الكل" },
-    { key: "lawsuit",            label: "القضايا" },
-    { key: "consultation",       label: "الاستشارات" },
-    { key: "contract",           label: "العقود" },
-    { key: "debt_recovery",      label: "التحصيل" },
-    { key: "company_creation",   label: "الشركات" },
-    { key: "legal_notice",       label: "التنبيهات" },
-    { key: "judgment_execution", label: "التنفيذ" },
-    { key: "other_group",        label: "أخرى" },
+    { key: "lawsuit",            label: "قضايا" },
+    { key: "consultation",       label: "استشارات" },
+    { key: "contract",           label: "عقود" },
+    { key: "debt_recovery",      label: "تحصيل" },
+    { key: "company_creation",   label: "شركات" },
+    { key: "legal_notice",       label: "إنذارات" },
+    { key: "judgment_execution", label: "تنفيذ" },
+    { key: "real_estate_file",   label: "عقاري" },
+    { key: "labor_file",         label: "شغل" },
+    { key: "tax_file",           label: "جبائي" },
+    { key: "administrative",     label: "إداري" },
+    { key: "mediation",          label: "وساطة" },
+    { key: "other",              label: "أخرى" },
   ];
 
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
@@ -74,14 +79,12 @@ export default function Cases() {
   for (const c of baseFiltered) {
     const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
     tabCounts[t] = (tabCounts[t] ?? 0) + 1;
-    if (OTHER_TYPES.includes(t)) tabCounts["other_group"] = (tabCounts["other_group"] ?? 0) + 1;
   }
 
   const filteredCases = baseFiltered.filter((c: any) => {
     const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
     if (serviceTypeFilter !== "all") {
-      if (serviceTypeFilter === "other_group") { if (!OTHER_TYPES.includes(t)) return false; }
-      else                                     { if (t !== serviceTypeFilter)   return false; }
+      if (t !== serviceTypeFilter) return false;
     }
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
     if (search) {
