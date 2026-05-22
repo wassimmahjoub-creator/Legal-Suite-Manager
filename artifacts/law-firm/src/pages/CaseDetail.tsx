@@ -1067,28 +1067,26 @@ export default function CaseDetail() {
   return (
     <div className="space-y-6">
       {/* Case Header */}
-      <Card className="border-none shadow-sm">
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="mt-1 shrink-0">
-                {fromReports ? (
-                  <button onClick={() => {
-                    const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
-                    navigate(`/reports?tab=${fromTab}`);
-                  }}
-                    className="text-muted-foreground hover:text-foreground transition-colors mb-1">
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button onClick={() => window.history.back()}
-                    className="text-muted-foreground hover:text-foreground transition-colors mb-1">
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-1">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 shrink-0">
+            {fromReports ? (
+              <button onClick={() => {
+                const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
+                navigate(`/reports?tab=${fromTab}`);
+              }}
+                className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button onClick={() => window.history.back()}
+                className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
                   {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
                   {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
                   {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الموكّل">📁 {c.clientFileRef}</span>}
@@ -1117,8 +1115,6 @@ export default function CaseDetail() {
               <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
       {/* Stage Stepper — always visible above tabs */}
       <CaseStageStepper
