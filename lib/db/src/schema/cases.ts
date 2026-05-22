@@ -1,8 +1,9 @@
-import { pgTable, text, serial, integer, timestamp, date, index, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, index, numeric, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clientsTable } from "./clients";
 import { organizationsTable } from "./organizations";
+import { serviceTypeEnum } from "./service_type";
 
 export const casesTable = pgTable("cases", {
   id: serial("id").primaryKey(),
@@ -43,6 +44,9 @@ export const casesTable = pgTable("cases", {
   internalNotes: text("internal_notes"),
   draftData: text("draft_data"),
   draftLastStep: integer("draft_last_step").default(1),
+  // ── Multi-type file fields ──────────────────────────────────────────
+  serviceType: serviceTypeEnum("service_type").notNull().default("lawsuit"),
+  typeSpecificData: jsonb("type_specific_data").default({}),
   // ── Timestamps ─────────────────────────────────────────────────────
   archivedAt: timestamp("archived_at"),
   deletedAt: timestamp("deleted_at"),
