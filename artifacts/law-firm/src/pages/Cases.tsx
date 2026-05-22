@@ -73,16 +73,10 @@ export default function Cases() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-start gap-3">
           <div>
-            {fromParam === "dashboard" && (
-              <button onClick={() => navigate("/")}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-                <ArrowRight className="h-3.5 w-3.5" /> لوحة القيادة
-              </button>
-            )}
-            {viewArchived && (
-              <button onClick={() => setViewArchived(false)}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-                <ArrowRight className="h-3.5 w-3.5" /> القضايا الجارية
+            {(fromParam === "dashboard" || viewArchived) && (
+              <button onClick={() => fromParam === "dashboard" ? navigate("/") : setViewArchived(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+                <ArrowRight className="h-4 w-4" />
               </button>
             )}
             <h1 className="text-2xl font-bold">القضايا</h1>

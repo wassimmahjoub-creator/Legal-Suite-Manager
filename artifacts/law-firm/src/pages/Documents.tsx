@@ -47,8 +47,8 @@ export default function Documents() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <button onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+            className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+            <ArrowRight className="h-4 w-4" />
           </button>
           <h1 className="text-2xl font-bold">الوثائق</h1>
           <p className="text-muted-foreground text-sm mt-0.5">إدارة الملفات والوثائق الخاصة بالقضايا</p>
