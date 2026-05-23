@@ -1,5 +1,5 @@
 import { SelectNative } from "@/components/SelectNative";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN, formatDateLongTN } from "@/lib/date";
@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Filter, Archive, Hash, ArrowRight } from "lucide-react";
+import { Plus, Search, Filter, Archive, Hash, ArrowRight, Mic, MicOff } from "lucide-react";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ServiceTypeBadge } from "@/components/ServiceTypeBadge";
@@ -18,6 +18,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyCasesIllustration } from "@/components/illustrations/EmptyCases";
 import { CaseWizard } from "@/components/cases/CaseWizard";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSpeechInput } from "@/hooks/useSpeechInput";
+import { FEATURE_DICTATION } from "@/config/features";
+import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -29,6 +32,15 @@ export default function Cases() {
   const fromTabParam  = params.get("fromTab");
 
   const [search, setSearch] = useState("");
+  const appendSearch = useCallback(
+    (text: string) => setSearch(s => s ? s + " " + text : text),
+    []
+  );
+  const {
+    listening: micListening,
+    supported: micSupported,
+    toggle: micToggle,
+  } = useSpeechInput({ onResult: appendSearch, lang: "ar-SA" });
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewArchived, setViewArchived] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -151,10 +163,32 @@ export default function Cases() {
           <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="بحث بالعنوان، الموكّل، أو رقم الملف..."
-            className="pe-9 h-10 bg-card border-border"
+            className={cn(
+              "pe-9 h-10 bg-card border-border",
+              FEATURE_DICTATION && micSupported ? "ps-10" : ""
+            )}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {FEATURE_DICTATION && micSupported && (
+            <button
+              type="button"
+              onClick={micToggle}
+              title={micListening ? "إيقاف البحث الصوتي" : "بحث صوتي"}
+              className={cn(
+                "absolute start-2.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md",
+                "flex items-center justify-center transition-all",
+                micListening
+                  ? "bg-red-500/20 text-red-400 animate-pulse"
+                  : "text-muted-foreground/50 hover:bg-primary/10 hover:text-primary"
+              )}
+            >
+              {micListening
+                ? <MicOff className="h-3.5 w-3.5" />
+                : <Mic className="h-3.5 w-3.5" />
+              }
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 w-full sm:w-44">
           <Filter className="h-4 w-4 text-muted-foreground shrink-0" />

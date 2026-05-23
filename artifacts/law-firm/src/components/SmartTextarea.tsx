@@ -24,13 +24,17 @@ export function SmartTextarea({
   const [enhancing, setEnhancing] = useState(false);
   const [original, setOriginal] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState(false);
+  const [interimText, setInterimText] = useState("");
 
   const appendResult = useCallback(
     (text: string) => onChange(value ? value + " " + text : text),
     [value, onChange]
   );
 
-  const { listening, supported, toggle } = useSpeechInput({ onResult: appendResult });
+  const { listening, supported, toggle } = useSpeechInput({
+    onResult: appendResult,
+    onInterim: setInterimText,
+  });
 
   async function enhance() {
     if (!value.trim() || enhancing) return;
@@ -69,6 +73,7 @@ export function SmartTextarea({
           className={cn(
             "w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm",
             "focus:outline-none focus:ring-1 focus:ring-primary resize-none",
+            listening ? "ring-1 ring-red-400/60" : "",
             FEATURE_DICTATION && supported ? "pl-10" : "",
             className
           )}
@@ -92,6 +97,14 @@ export function SmartTextarea({
           </button>
         )}
       </div>
+
+      {/* Interim text — real-time transcription preview */}
+      {listening && interimText && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-500/5 border border-red-400/20 text-sm text-muted-foreground">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0" />
+          <span className="italic opacity-75">{interimText}</span>
+        </div>
+      )}
 
       {(showAI || enhanced) && (
         <div className="flex items-center gap-2">

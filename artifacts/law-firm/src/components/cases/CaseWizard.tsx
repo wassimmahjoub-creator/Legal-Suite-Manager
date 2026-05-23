@@ -9,6 +9,7 @@ import { CourtSelect } from "@/components/CourtSelect";
 import { useToast } from "@/hooks/use-toast";
 import { ConflictWarningModal } from "@/components/ConflictWarningModal";
 import type { ConflictData } from "@/components/ConflictWarningModal";
+import { SmartTextarea } from "@/components/SmartTextarea";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -353,8 +354,13 @@ function Step1({ form, upd, clients, onAddClient, stepErrors }: { form: WizardFo
 
       <div>
         <Label>وصف الملف</Label>
-        <textarea rows={3} className={txcls} placeholder="ملخص وقائع القضية..."
-          value={form.description} onChange={e => upd({ description: e.target.value })} />
+        <SmartTextarea
+          rows={3}
+          placeholder="ملخص وقائع القضية..."
+          value={form.description}
+          onChange={v => upd({ description: v })}
+          aiContext="وصف ملف قانوني"
+        />
       </div>
     </div>
   );
@@ -592,8 +598,12 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
           </div>
           <div>
             <Label>ملاحظات داخلية</Label>
-            <textarea rows={3} className={txcls} placeholder="ملاحظات للاستخدام الداخلي فقط..."
-              value={form.internalNotes} onChange={e => upd({ internalNotes: e.target.value })} />
+            <SmartTextarea
+              rows={3}
+              placeholder="ملاحظات للاستخدام الداخلي فقط..."
+              value={form.internalNotes}
+              onChange={v => upd({ internalNotes: v })}
+            />
             <p className="text-xs text-muted-foreground mt-1">⚠️ هذه الملاحظات لا تظهر للموكّل في بوابة العميل</p>
           </div>
         </div>
