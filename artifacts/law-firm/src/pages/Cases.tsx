@@ -121,9 +121,9 @@ export default function Cases() {
                 <ArrowRight className="h-4 w-4" />
               </button>
             )}
-            <h1 className="text-2xl font-bold">القضايا</h1>
+            <h1 className="text-2xl font-bold">{viewArchived ? "الملفات المؤرشفة" : "الملفات"}</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              {viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+              {viewArchived ? "جميع الملفات المؤرشفة في المكتب" : "إدارة وتتبع جميع ملفات المكتب"}
             </p>
           </div>
         </div>
