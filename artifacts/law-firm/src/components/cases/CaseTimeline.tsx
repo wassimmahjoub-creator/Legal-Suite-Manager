@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText, UserPlus, UserMinus, Users, Gavel, Calendar,
   FileUp, FileX, Receipt, DollarSign, Archive, RefreshCw,
-  XCircle, Clock, AlertTriangle, Lock, StickyNote, Plus,
+  XCircle, Clock, AlertTriangle, Lock, StickyNote, Plus, CheckCircle2,
   ChevronDown, Loader2, Bot, User, Link2, Pencil,
   Filter, History, ChevronUp, X,
 } from "lucide-react";
@@ -72,12 +72,35 @@ const EVENT_META: Record<string, { icon: React.ReactNode; color: string }> = {
   case_closed:                { icon: <XCircle className="h-4 w-4" />,       color: "bg-red-500/20 text-red-400" },
   case_reopened:              { icon: <RefreshCw className="h-4 w-4" />,     color: "bg-green-500/20 text-green-400" },
   manual_entry:               { icon: <FileText className="h-4 w-4" />,      color: "bg-muted text-muted-foreground" },
+  // ── Nouveaux types multi-types ──────────────────────────────────────────
+  file_opened:                { icon: <FileText className="h-4 w-4" />,      color: "bg-primary/20 text-primary" },
+  consultation_held:          { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  contract_drafted:           { icon: <FileText className="h-4 w-4" />,      color: "bg-violet-500/20 text-violet-400" },
+  contract_signed:            { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  company_step_completed:     { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  debt_payment_received:      { icon: <DollarSign className="h-4 w-4" />,    color: "bg-green-500/20 text-green-400" },
+  debt_stage_changed:         { icon: <RefreshCw className="h-4 w-4" />,     color: "bg-orange-500/20 text-orange-400" },
+  notice_sent:                { icon: <FileText className="h-4 w-4" />,      color: "bg-yellow-500/20 text-yellow-400" },
 };
 
 const FILTER_GROUPS: Record<FilterGroup, string[]> = {
-  "إجرائي": ["case_filed", "case_updated", "hearing_scheduled", "hearing_held", "hearing_postponed", "judgment_recorded", "stage_transitioned", "legal_deadline_added", "legal_deadline_approaching", "legal_deadline_missed"],
-  "مالي":   ["invoice_issued", "invoice_paid", "invoice_partially_paid", "payment_received", "expense_recorded"],
-  "إداري":  ["opponent_added", "opponent_removed", "team_member_added", "team_member_removed", "responsible_changed", "case_archived", "case_closed", "case_reopened", "confidentiality_changed"],
+  "إجرائي": [
+    "case_filed", "case_updated", "file_opened",
+    "hearing_scheduled", "hearing_held", "hearing_postponed",
+    "judgment_recorded", "stage_transitioned",
+    "legal_deadline_added", "legal_deadline_approaching", "legal_deadline_missed",
+    "consultation_held", "contract_drafted", "contract_signed",
+    "company_step_completed", "debt_stage_changed", "notice_sent",
+  ],
+  "مالي":   [
+    "invoice_issued", "invoice_paid", "invoice_partially_paid",
+    "payment_received", "expense_recorded", "debt_payment_received",
+  ],
+  "إداري":  [
+    "opponent_added", "opponent_removed", "team_member_added",
+    "team_member_removed", "responsible_changed",
+    "case_archived", "case_closed", "case_reopened", "confidentiality_changed",
+  ],
   "وثائق":  ["document_added", "document_removed"],
 };
 

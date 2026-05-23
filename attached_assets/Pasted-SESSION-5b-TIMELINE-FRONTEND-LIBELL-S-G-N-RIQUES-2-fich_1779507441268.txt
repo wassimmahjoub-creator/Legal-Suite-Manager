@@ -1,0 +1,169 @@
+SESSION 5b — TIMELINE FRONTEND + LIBELLÉS GÉNÉRIQUES
+2 fichiers. Appliquer après 5a.
+
+══════════════════════════════════════════════
+FICHIER 1 (MODIFIER) :
+artifacts/law-firm/src/components/cases/CaseTimeline.tsx
+══════════════════════════════════════════════
+
+MODIFICATION A — Ajouter les nouveaux types dans EVENT_META.
+
+Cherche EXACTEMENT :
+  manual_entry:               { icon: <FileText className="h-4 w-4" />,      color: "bg-muted text-muted-foreground" },
+};
+
+Remplace par :
+  manual_entry:               { icon: <FileText className="h-4 w-4" />,      color: "bg-muted text-muted-foreground" },
+  // ── Nouveaux types multi-types ──────────────────────────────────────────
+  file_opened:                { icon: <FileText className="h-4 w-4" />,      color: "bg-primary/20 text-primary" },
+  consultation_held:          { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  contract_drafted:           { icon: <FileText className="h-4 w-4" />,      color: "bg-violet-500/20 text-violet-400" },
+  contract_signed:            { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  company_step_completed:     { icon: <CheckCircle2 className="h-4 w-4" />,  color: "bg-green-500/20 text-green-400" },
+  debt_payment_received:      { icon: <DollarSign className="h-4 w-4" />,    color: "bg-green-500/20 text-green-400" },
+  debt_stage_changed:         { icon: <RefreshCw className="h-4 w-4" />,     color: "bg-orange-500/20 text-orange-400" },
+  notice_sent:                { icon: <FileText className="h-4 w-4" />,      color: "bg-yellow-500/20 text-yellow-400" },
+};
+
+POINT DE VIGILANCE : CheckCircle2 est déjà importé depuis lucide-react dans ce fichier ? Si non,
+ajoute-le à la liste d'imports existante en haut du fichier.
+
+──────────────────────────────────────────────
+MODIFICATION B — Ajouter les nouveaux types dans FILTER_GROUPS.
+
+Cherche EXACTEMENT :
+const FILTER_GROUPS: Record<FilterGroup, string[]> = {
+  "إجرائي": ["case_filed", "case_updated", "hearing_scheduled", "hearing_held", "hearing_postponed", "judgment_recorded", "stage_transitioned", "legal_deadline_added", "legal_deadline_approaching", "legal_deadline_missed"],
+  "مالي":   ["invoice_issued", "invoice_paid", "invoice_partially_paid", "payment_received", "expense_recorded"],
+  "إداري":  ["opponent_added", "opponent_removed", "team_member_added", "team_member_removed", "responsible_changed", "case_archived", "case_closed", "case_reopened", "confidentiality_changed"],
+  "وثائق":  ["document_added", "document_removed"],
+};
+
+Remplace par :
+const FILTER_GROUPS: Record<FilterGroup, string[]> = {
+  "إجرائي": [
+    "case_filed", "case_updated", "file_opened",
+    "hearing_scheduled", "hearing_held", "hearing_postponed",
+    "judgment_recorded", "stage_transitioned",
+    "legal_deadline_added", "legal_deadline_approaching", "legal_deadline_missed",
+    "consultation_held", "contract_drafted", "contract_signed",
+    "company_step_completed", "debt_stage_changed", "notice_sent",
+  ],
+  "مالي":   [
+    "invoice_issued", "invoice_paid", "invoice_partially_paid",
+    "payment_received", "expense_recorded", "debt_payment_received",
+  ],
+  "إداري":  [
+    "opponent_added", "opponent_removed", "team_member_added",
+    "team_member_removed", "responsible_changed",
+    "case_archived", "case_closed", "case_reopened", "confidentiality_changed",
+  ],
+  "وثائق":  ["document_added", "document_removed"],
+};
+
+══════════════════════════════════════════════
+FICHIER 2 (MODIFIER) :
+artifacts/law-firm/src/pages/Expenses.tsx
+══════════════════════════════════════════════
+
+MODIFICATION A — Titre de la page (générique).
+
+Cherche EXACTEMENT :
+            <h1 className="text-2xl font-bold">المصاريف القضائية</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">تتبع مصاريف التقاضي والتكاليف القابلة للاسترجاع</p>
+
+Remplace par :
+            <h1 className="text-2xl font-bold">المصاريف</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">تتبع مصاريف الملفات والتكاليف القابلة للاسترجاع</p>
+
+──────────────────────────────────────────────
+MODIFICATION B — Filtre "كل القضايا" → "كل الملفات".
+
+Cherche EXACTEMENT :
+            <option value="all">كل القضايا</option>
+
+Remplace par :
+            <option value="all">كل الملفات</option>
+
+══════════════════════════════════════════════
+VÉRIFICATION FINALE 5b — LISTE DE TESTS MANUELS
+══════════════════════════════════════════════
+
+Après 5a + 5b appliqués et pushés, exécute ces tests dans l'ordre :
+
+[ ] 1. PROCÈS LEGACY
+        Ouvre un dossier lawsuit existant.
+        ✓ Stepper procédural visible (ابتدائي→استئناف→تعقيب)
+        ✓ Onglets "الجلسات والآجال" et "الحكم والتنفيذ" présents
+        ✓ Timeline affiche "تم رفع الدعوى" comme premier événement
+        ✓ Facturation, documents, timeline fonctionnent normalement
+
+[ ] 2. CONSULTATION
+        Crée un nouveau dossier de type "استشارة".
+        ✓ Wizard s'affiche en mode consultation (sans stepper procédural)
+        ✓ Page détail : PAS de stepper judiciaire
+        ✓ Onglets "الجلسات والآجال" et "الحكم والتنفيذ" ABSENTS
+        ✓ Timeline affiche "تم فتح الملف" (pas "تم رفع الدعوى")
+        ✓ Badge "استشارة" visible dans le header
+        ✓ Crée une facture depuis l'onglet "الأتعاب والفواتير" → OK
+
+[ ] 3. CONTRAT
+        Crée un dossier de type "عقد".
+        ✓ ContractStatusStepper visible (draft→under_review→ready_to_sign→signed)
+        ✓ Onglet "الإصدارات" présent
+        ✓ Appelle PATCH /api/cases/:id/contract/status avec body {"status":"signed"}
+          → event "contract_signed" apparaît dans la timeline ✓
+
+[ ] 4. RECOUVREMENT DE CRÉANCES
+        Crée un dossier de type "استخلاص ديون".
+        ✓ DebtStageStepper visible (notice→negotiation→lawsuit→execution→completed)
+        ✓ Onglet "خطة الدفع" présent
+        ✓ KPIs : dette totale / récupéré / restant en <TNDAmount>
+        ✓ Ajoute une dفعة → liste se met à jour + event "debt_payment_received" dans timeline ✓
+
+[ ] 5. CRÉATION DE SOCIÉTÉ
+        Crée un dossier de type "تأسيس شركة".
+        ✓ CompanyProgressBar visible (X/N étapes)
+        ✓ Onglet "الإجراءات" présent avec checklist
+        ✓ Coche une étape → progress se met à jour + event "company_step_completed" dans timeline ✓
+
+[ ] 6. إعذار LÉGAL
+        Crée un dossier de type "إعذار قانوني".
+        ✓ PAS de stepper
+        ✓ Onglets de base uniquement (نظرة عامة, الوثائق, الأتعاب, المصاريف, الوقت, الملاحظات)
+        ✓ Badge "إعذار قانوني" dans le header
+        ✓ Timeline affiche "تم فتح الملف"
+
+[ ] 7. CONSULTATIONS MIGRÉES (Sessions 1-2)
+        Va dans la liste des dossiers, filtre par "استشارة".
+        ✓ Les consultations migrées apparaissent avec badge "استشارة"
+        ✓ Le détail s'ouvre sans stepper procédural
+        ✓ Type "consultation" affiché correctement
+
+[ ] 8. LISTE ET FILTRES
+        ✓ Onglet "الكل" : affiche tous les dossiers avec leurs badges types
+        ✓ Filtrer par "استشارة" → uniquement consultations
+        ✓ Filtrer par "عقد" → uniquement contrats
+        ✓ Counts corrects dans chaque onglet
+
+[ ] 9. TIMELINE MULTI-TYPES
+        Sur n'importe quel dossier, onglet "التسلسل الزمني".
+        ✓ Filtre "إجرائي" inclut les nouveaux types (file_opened, etc.)
+        ✓ Filtre "مالي" inclut debt_payment_received
+        ✓ Icônes correctes pour les nouveaux événements
+        ✓ Ajout d'un événement manuel "consultation_held" via modal → OK
+
+[ ] 10. EXPENSES GÉNÉRIQUES
+        ✓ Page Expenses : titre "المصاريف" (sans "القضائية")
+        ✓ Filtre dossier : "كل الملفات" (sans "القضايا")
+        ✓ Ajouter une dépense sur un dossier contrat → FK caseId acceptée
+
+[ ] 11. RTL ET MONTANTS
+        Sur chaque type de dossier :
+        ✓ Tous les montants affichés via <TNDAmount> (د.ت à gauche, nombre à droite)
+        ✓ Aucun alignement brisé en arabe RTL
+        ✓ Aucune couleur hex (#...) dans le markup
+
+[ ] 12. NON-RÉGRESSION CORRESPONDANCES
+        ✓ Page /correspondances fonctionne indépendamment
+        ✓ Liaison à un dossier (optionnelle) fonctionne toujours

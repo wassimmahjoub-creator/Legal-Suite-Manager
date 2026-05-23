@@ -166,8 +166,8 @@ export default function Expenses() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">المصاريف القضائية</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">تتبع مصاريف التقاضي والتكاليف القابلة للاسترجاع</p>
+            <h1 className="text-2xl font-bold">المصاريف</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">تتبع مصاريف الملفات والتكاليف القابلة للاسترجاع</p>
           </div>
           <Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" /> إضافة مصروف
@@ -209,7 +209,7 @@ export default function Expenses() {
         <div className="flex items-center gap-3">
           <SelectNative className="h-10 bg-card border border-border rounded-lg px-3 text-sm cursor-pointer w-72"
             value={filterCase} onChange={e => setFilterCase(e.target.value)}>
-            <option value="all">كل القضايا</option>
+            <option value="all">كل الملفات</option>
             {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}
           </SelectNative>
         </div>
