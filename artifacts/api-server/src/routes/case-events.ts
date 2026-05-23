@@ -87,7 +87,11 @@ router.post("/cases/:caseId/events", async (req, res): Promise<void> => {
   const { eventType, occurredAt, titleAr, titleFr, description, metadata } =
     req.body as Record<string, unknown>;
 
-  const allowedManual = ["manual_entry", "judgment_recorded", "hearing_held"];
+  const allowedManual = [
+    "manual_entry", "judgment_recorded", "hearing_held",
+    "consultation_held", "notice_sent", "contract_drafted", "contract_signed",
+    "debt_stage_changed",
+  ];
   if (!allowedManual.includes(eventType as string)) {
     res.status(400).json({ error: "نوع الحدث غير مسموح به للإدخال اليدوي" });
     return;
@@ -95,7 +99,7 @@ router.post("/cases/:caseId/events", async (req, res): Promise<void> => {
 
   await CaseEventLogger.log({
     caseId,
-    eventType: eventType as "manual_entry" | "judgment_recorded" | "hearing_held",
+    eventType: eventType as "manual_entry"|"judgment_recorded"|"hearing_held"|"consultation_held"|"notice_sent"|"contract_drafted"|"contract_signed"|"debt_stage_changed",
     occurredAt: occurredAt ? new Date(occurredAt as string) : new Date(),
     titleAr: titleAr as string,
     titleFr: titleFr as string | undefined,

@@ -13,14 +13,31 @@ export type CaseEventType =
   | "confidentiality_changed" | "internal_note_added"
   | "case_archived" | "case_closed" | "case_reopened"
   | "conflict_detected" | "conflict_resolved"
-  | "manual_entry";
+  | "manual_entry"
+  // ── Nouveaux types multi-types (Session 5) ─────────────────
+  | "file_opened"           // ouverture générique (non-contentieux)
+  | "consultation_held"     // consultation réalisée
+  | "contract_drafted"      // contrat mis en brouillon/révision
+  | "contract_signed"       // contrat signé
+  | "company_step_completed"// étape de création de société complétée
+  | "debt_payment_received" // paiement reçu sur un recouvrement
+  | "debt_stage_changed"    // changement de stade du recouvrement
+  | "notice_sent";          // mise en demeure envoyée
 
 export type RelatedEntityType =
   | "invoice" | "document" | "hearing" | "payment" | "opponent"
   | "team_member" | "expense" | "time_entry" | "legal_deadline";
 
 const DEFAULT_TITLES: Record<string, (m: Record<string, unknown>) => string> = {
-  case_filed:                () => "تم رفع الدعوى",
+  case_filed:                () => "تم رفع الدعوى",   // conservé pour les procès legacy
+  file_opened:               () => "تم فتح الملف",
+  consultation_held:         () => "تمت الاستشارة",
+  contract_drafted:          () => "تحرير مسودة العقد",
+  contract_signed:           () => "توقيع العقد",
+  company_step_completed:    (m) => `اكتمال إجراء: ${m.step_name ?? ""}`,
+  debt_payment_received:     (m) => `استلام دفعة ${m.amount ?? ""} د.ت`,
+  debt_stage_changed:        (m) => `الانتقال إلى مرحلة ${m.new_stage ?? ""}`,
+  notice_sent:               () => "إرسال الإعذار",
   case_updated:              () => "تم تعديل بيانات الملف",
   opponent_added:            (m) => `إضافة الخصم ${m.opponent_name ?? ""}`,
   opponent_removed:          (m) => `إزالة الخصم ${m.opponent_name ?? ""}`,

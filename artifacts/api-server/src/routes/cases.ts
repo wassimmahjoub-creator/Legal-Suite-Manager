@@ -198,10 +198,12 @@ router.post("/cases", async (req, res): Promise<void> => {
     return;
   }
 
-  // Logging en dehors de la transaction : non-critique, ne doit pas bloquer
+  // Logging — file_opened pour les types non-contentieux, case_filed pour les procès
+  const CONTENTIOUS = ["lawsuit","real_estate_file","labor_file","tax_file","judgment_execution"];
+  const loggedSt = (newCase.serviceType as string | null) ?? "lawsuit";
   void CaseEventLogger.log({
     caseId: newCase.id,
-    eventType: "case_filed",
+    eventType: CONTENTIOUS.includes(loggedSt) ? "case_filed" : "file_opened",
     occurredAt: newCase.openedAt ? new Date(newCase.openedAt) : newCase.createdAt,
     actorUserId: actor.id ?? null,
   });
@@ -440,6 +442,12 @@ router.post("/cases/:id/debt-recovery/payments", async (req, res): Promise<void>
   await db.update(debtRecoveryFilesTable)
     .set({ recoveredAmount: sql`${debtRecoveryFilesTable.recoveredAmount} + ${amount}::numeric` })
     .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  void CaseEventLogger.log({
+    caseId,
+    eventType: "debt_payment_received",
+    actorUserId: actor?.id ?? null,
+    metadata: { amount },
+  });
   res.status(201).json(payment);
 });
 
@@ -476,6 +484,50 @@ router.patch("/company-creation-steps/:stepId/toggle", async (req, res): Promise
   const [updated] = await db.update(companyCreationStepsTable)
     .set({ isCompleted: newCompleted, completedAt: newCompleted === 1 ? new Date() : null })
     .where(eq(companyCreationStepsTable.id, stepId)).returning();
+  if (newCompleted === 1) {
+    const { companyFilesTable } = await import("@workspace/db");
+    const [cf] = await db.select({ caseId: companyFilesTable.caseId })
+      .from(companyFilesTable)
+      .where(eq(companyFilesTable.id, step.companyFileId));
+    if (cf?.caseId) {
+      void CaseEventLogger.log({
+        caseId: cf.caseId,
+        eventType: "company_step_completed",
+        metadata: { step_name: step.stepNameAr, step_order: step.stepOrder },
+      });
+    }
+  }
+  res.json(updated);
+});
+
+// ─── PATCH /cases/:id/contract/status ────────────────────────────────────
+router.patch("/cases/:id/contract/status", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { id?: number; orgId?: number } }).user;
+  const { contractsTable } = await import("@workspace/db");
+  const { status } = req.body as { status: string };
+  const validStatuses = ["draft","under_review","ready_to_sign","signed","expired","terminated"];
+  if (!status || !validStatuses.includes(status)) {
+    res.status(400).json({ error: "حالة غير صالحة" }); return;
+  }
+  const [updated] = await db.update(contractsTable)
+    .set({
+      status: status as "draft"|"under_review"|"ready_to_sign"|"signed"|"expired"|"terminated",
+      updatedAt: new Date(),
+    })
+    .where(eq(contractsTable.caseId, caseId))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "العقد غير موجود" }); return; }
+  if (status === "signed") {
+    void CaseEventLogger.log({
+      caseId, eventType: "contract_signed", actorUserId: actor?.id ?? null,
+      metadata: { signed_at: new Date().toISOString() },
+    });
+  } else if (status === "contract_drafted" || status === "draft") {
+    void CaseEventLogger.log({
+      caseId, eventType: "contract_drafted", actorUserId: actor?.id ?? null,
+    });
+  }
   res.json(updated);
 });
 

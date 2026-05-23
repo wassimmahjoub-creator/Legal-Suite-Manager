@@ -35,7 +35,7 @@ router.get("/expenses", async (req, res) => {
 });
 
 const CreateExpenseBody = z.object({
-  caseId:      z.number({ invalid_type_error: "معرّف القضية مطلوب" }).int().positive(),
+  caseId:      z.number({ invalid_type_error: "معرّف الملف مطلوب" }).int().positive(),
   date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ غير صحيحة (YYYY-MM-DD)"),
   typeValue:   z.string().min(1, "نوع المصروف مطلوب"),
   description: z.string().min(1, "الوصف مطلوب"),

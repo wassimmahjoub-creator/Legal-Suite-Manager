@@ -1,0 +1,236 @@
+SESSION 5a — TIMELINE GÉNÉRIQUE + HOOKS AUTO-LOG
+4 fichiers API. Aucun changement frontend.
+
+══════════════════════════════════════════════
+FICHIER 1 (MODIFIER) :
+artifacts/api-server/src/services/caseEventLogger.ts
+══════════════════════════════════════════════
+
+MODIFICATION A — Étendre CaseEventType avec les nouveaux types.
+
+Cherche EXACTEMENT :
+export type CaseEventType =
+  | "case_filed" | "case_updated" | "client_added" | "opponent_added" | "opponent_removed"
+  | "team_member_added" | "team_member_removed" | "responsible_changed"
+  | "hearing_scheduled" | "hearing_held" | "hearing_postponed"
+  | "judgment_recorded" | "stage_transitioned"
+  | "document_added" | "document_removed"
+  | "invoice_issued" | "invoice_paid" | "invoice_partially_paid" | "payment_received"
+  | "expense_recorded" | "time_entry_logged"
+  | "legal_deadline_added" | "legal_deadline_approaching" | "legal_deadline_missed"
+  | "confidentiality_changed" | "internal_note_added"
+  | "case_archived" | "case_closed" | "case_reopened"
+  | "conflict_detected" | "conflict_resolved"
+  | "manual_entry";
+
+Remplace par :
+export type CaseEventType =
+  | "case_filed" | "case_updated" | "client_added" | "opponent_added" | "opponent_removed"
+  | "team_member_added" | "team_member_removed" | "responsible_changed"
+  | "hearing_scheduled" | "hearing_held" | "hearing_postponed"
+  | "judgment_recorded" | "stage_transitioned"
+  | "document_added" | "document_removed"
+  | "invoice_issued" | "invoice_paid" | "invoice_partially_paid" | "payment_received"
+  | "expense_recorded" | "time_entry_logged"
+  | "legal_deadline_added" | "legal_deadline_approaching" | "legal_deadline_missed"
+  | "confidentiality_changed" | "internal_note_added"
+  | "case_archived" | "case_closed" | "case_reopened"
+  | "conflict_detected" | "conflict_resolved"
+  | "manual_entry"
+  // ── Nouveaux types multi-types (Session 5) ─────────────────
+  | "file_opened"           // ouverture générique (non-contentieux)
+  | "consultation_held"     // consultation réalisée
+  | "contract_drafted"      // contrat mis en brouillon/révision
+  | "contract_signed"       // contrat signé
+  | "company_step_completed"// étape de création de société complétée
+  | "debt_payment_received" // paiement reçu sur un recouvrement
+  | "debt_stage_changed"    // changement de stade du recouvrement
+  | "notice_sent";          // mise en demeure envoyée
+
+──────────────────────────────────────────────
+MODIFICATION B — Corriger le titre de case_filed + ajouter les nouveaux titres.
+
+Cherche EXACTEMENT :
+const DEFAULT_TITLES: Record<string, (m: Record<string, unknown>) => string> = {
+  case_filed:                () => "تم رفع الدعوى",
+
+Remplace par :
+const DEFAULT_TITLES: Record<string, (m: Record<string, unknown>) => string> = {
+  case_filed:                () => "تم رفع الدعوى",   // conservé pour les procès legacy
+  file_opened:               () => "تم فتح الملف",
+  consultation_held:         () => "تمت الاستشارة",
+  contract_drafted:          () => "تحرير مسودة العقد",
+  contract_signed:           () => "توقيع العقد",
+  company_step_completed:    (m) => `اكتمال إجراء: ${m.step_name ?? ""}`,
+  debt_payment_received:     (m) => `استلام دفعة ${m.amount ?? ""} د.ت`,
+  debt_stage_changed:        (m) => `الانتقال إلى مرحلة ${m.new_stage ?? ""}`,
+  notice_sent:               () => "إرسال الإعذار",
+
+══════════════════════════════════════════════
+FICHIER 2 (MODIFIER) :
+artifacts/api-server/src/routes/cases.ts
+══════════════════════════════════════════════
+
+MODIFICATION A — Branche file_opened/case_filed selon le type de dossier.
+
+Cherche EXACTEMENT :
+  // Logging en dehors de la transaction : non-critique, ne doit pas bloquer
+  void CaseEventLogger.log({
+    caseId: newCase.id,
+    eventType: "case_filed",
+    occurredAt: newCase.openedAt ? new Date(newCase.openedAt) : newCase.createdAt,
+    actorUserId: actor.id ?? null,
+  });
+
+Remplace par :
+  // Logging — file_opened pour les types non-contentieux, case_filed pour les procès
+  const CONTENTIOUS = ["lawsuit","real_estate_file","labor_file","tax_file","judgment_execution"];
+  const loggedSt = (newCase.serviceType as string | null) ?? "lawsuit";
+  void CaseEventLogger.log({
+    caseId: newCase.id,
+    eventType: CONTENTIOUS.includes(loggedSt) ? "case_filed" : "file_opened",
+    occurredAt: newCase.openedAt ? new Date(newCase.openedAt) : newCase.createdAt,
+    actorUserId: actor.id ?? null,
+  });
+
+──────────────────────────────────────────────
+MODIFICATION B — Auto-log debt_payment_received.
+
+Dans le fichier cases.ts, cherche EXACTEMENT (dans la route POST /cases/:id/debt-recovery/payments) :
+  await db.update(debtRecoveryFilesTable)
+    .set({ recoveredAmount: sql`${debtRecoveryFilesTable.recoveredAmount} + ${amount}::numeric` })
+    .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  res.status(201).json(payment);
+
+Remplace par :
+  await db.update(debtRecoveryFilesTable)
+    .set({ recoveredAmount: sql`${debtRecoveryFilesTable.recoveredAmount} + ${amount}::numeric` })
+    .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  void CaseEventLogger.log({
+    caseId,
+    eventType: "debt_payment_received",
+    actorUserId: actor?.id ?? null,
+    metadata: { amount },
+  });
+  res.status(201).json(payment);
+
+──────────────────────────────────────────────
+MODIFICATION C — Auto-log company_step_completed.
+
+Dans le fichier cases.ts, cherche EXACTEMENT (dans la route PATCH /company-creation-steps/:stepId/toggle) :
+  const newCompleted = step.isCompleted === 1 ? 0 : 1;
+  const [updated] = await db.update(companyCreationStepsTable)
+    .set({ isCompleted: newCompleted, completedAt: newCompleted === 1 ? new Date() : null })
+    .where(eq(companyCreationStepsTable.id, stepId)).returning();
+  res.json(updated);
+
+Remplace par :
+  const newCompleted = step.isCompleted === 1 ? 0 : 1;
+  const [updated] = await db.update(companyCreationStepsTable)
+    .set({ isCompleted: newCompleted, completedAt: newCompleted === 1 ? new Date() : null })
+    .where(eq(companyCreationStepsTable.id, stepId)).returning();
+  if (newCompleted === 1) {
+    const { companyFilesTable } = await import("@workspace/db");
+    const [cf] = await db.select({ caseId: companyFilesTable.caseId })
+      .from(companyFilesTable)
+      .where(eq(companyFilesTable.id, step.companyFileId));
+    if (cf?.caseId) {
+      void CaseEventLogger.log({
+        caseId: cf.caseId,
+        eventType: "company_step_completed",
+        metadata: { step_name: step.stepNameAr, step_order: step.stepOrder },
+      });
+    }
+  }
+  res.json(updated);
+
+──────────────────────────────────────────────
+MODIFICATION D — Ajouter la route PATCH /cases/:id/contract/status.
+
+Cherche EXACTEMENT (fin du fichier, juste avant export default router) :
+export default router;
+
+Remplace par :
+// ─── PATCH /cases/:id/contract/status ────────────────────────────────────
+router.patch("/cases/:id/contract/status", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { id?: number; orgId?: number } }).user;
+  const { contractsTable } = await import("@workspace/db");
+  const { status } = req.body as { status: string };
+  const validStatuses = ["draft","under_review","ready_to_sign","signed","expired","terminated"];
+  if (!status || !validStatuses.includes(status)) {
+    res.status(400).json({ error: "حالة غير صالحة" }); return;
+  }
+  const [updated] = await db.update(contractsTable)
+    .set({
+      status: status as "draft"|"under_review"|"ready_to_sign"|"signed"|"expired"|"terminated",
+      updatedAt: new Date(),
+    })
+    .where(eq(contractsTable.caseId, caseId))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "العقد غير موجود" }); return; }
+  if (status === "signed") {
+    void CaseEventLogger.log({
+      caseId, eventType: "contract_signed", actorUserId: actor?.id ?? null,
+      metadata: { signed_at: new Date().toISOString() },
+    });
+  } else if (status === "contract_drafted" || status === "draft") {
+    void CaseEventLogger.log({
+      caseId, eventType: "contract_drafted", actorUserId: actor?.id ?? null,
+    });
+  }
+  res.json(updated);
+});
+
+export default router;
+
+══════════════════════════════════════════════
+FICHIER 3 (MODIFIER) :
+artifacts/api-server/src/routes/case-events.ts
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT :
+  const allowedManual = ["manual_entry", "judgment_recorded", "hearing_held"];
+  if (!allowedManual.includes(eventType as string)) {
+    res.status(400).json({ error: "نوع الحدث غير مسموح به للإدخال اليدوي" });
+    return;
+  }
+
+  await CaseEventLogger.log({
+    caseId,
+    eventType: eventType as "manual_entry" | "judgment_recorded" | "hearing_held",
+
+Remplace par :
+  const allowedManual = [
+    "manual_entry", "judgment_recorded", "hearing_held",
+    "consultation_held", "notice_sent", "contract_drafted", "contract_signed",
+    "debt_stage_changed",
+  ];
+  if (!allowedManual.includes(eventType as string)) {
+    res.status(400).json({ error: "نوع الحدث غير مسموح به للإدخال اليدوي" });
+    return;
+  }
+
+  await CaseEventLogger.log({
+    caseId,
+    eventType: eventType as "manual_entry"|"judgment_recorded"|"hearing_held"|"consultation_held"|"notice_sent"|"contract_drafted"|"contract_signed"|"debt_stage_changed",
+
+══════════════════════════════════════════════
+FICHIER 4 (MODIFIER) :
+artifacts/api-server/src/routes/expenses.ts
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT :
+  caseId:      z.number({ invalid_type_error: "معرّف القضية مطلوب" }).int().positive(),
+
+Remplace par :
+  caseId:      z.number({ invalid_type_error: "معرّف الملف مطلوب" }).int().positive(),
+
+══════════════════════════════════════════════
+VÉRIFICATION 5a
+══════════════════════════════════════════════
+- Crée un dossier "consultation" → la timeline affiche "تم فتح الملف" (pas "تم رفع الدعوى")
+- Crée un dossier "lawsuit" → la timeline affiche "تم رفع الدعوى" (inchangé)
+- Ajoute un paiement sur un recouvrement → event "debt_payment_received" apparaît dans la timeline
+- Coche une étape de société → event "company_step_completed" apparaît dans la timeline
+- Zéro erreur TypeScript
