@@ -34,9 +34,107 @@ import { SkeletonClientPage } from "@/components/ui/skeletons";
 import { CasePdfButton } from "@/components/CasePdfButton";
 import { CaseTimeline } from "@/components/cases/CaseTimeline";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
+import { ServiceTypeBadge } from "@/components/ServiceTypeBadge";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 const inputCls = "h-10 bg-muted/50 border-border focus-visible:ring-1 focus-visible:ring-primary rounded-lg w-full";
+
+// Types contentieux : affichent le stepper procédural + onglets judiciaires
+const CONTENTIOUS_TYPES = ["lawsuit","real_estate_file","labor_file","tax_file","judgment_execution"] as const;
+
+// Steppers mini pour les types non-contentieux (définis avant CaseDetail)
+const CONTRACT_STATUS_LABELS: Record<string, string> = {
+  draft: "مسودة", under_review: "قيد المراجعة",
+  ready_to_sign: "جاهز للتوقيع", signed: "موقّع",
+  expired: "منتهي", terminated: "ملغى",
+};
+const CONTRACT_STATUS_STEPS = ["draft","under_review","ready_to_sign","signed"] as const;
+
+function ContractStatusStepper({ status }: { status: string }) {
+  const steps = CONTRACT_STATUS_STEPS;
+  const currentIdx = steps.indexOf(status as typeof steps[number]);
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-3 px-5 bg-card border border-border rounded-xl">
+      {steps.map((s, i) => {
+        const done = i < currentIdx || status === "signed";
+        const active = status === s;
+        return (
+          <React.Fragment key={s}>
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors",
+                done   ? "bg-primary border-primary text-primary-foreground" :
+                active ? "border-primary text-primary bg-primary/10" :
+                         "border-border text-muted-foreground bg-muted/20"
+              )}>
+                {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {CONTRACT_STATUS_LABELS[s] ?? s}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={cn("h-0.5 flex-1 min-w-[2rem] rounded transition-colors", i < currentIdx ? "bg-primary" : "bg-border")} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+const DEBT_STAGE_LABELS: Record<string, string> = {
+  notice: "إعذار", negotiation: "تفاوض",
+  lawsuit: "دعوى", execution: "تنفيذ", completed: "مكتمل",
+};
+const DEBT_STAGES = ["notice","negotiation","lawsuit","execution","completed"] as const;
+
+function DebtStageStepper({ stage }: { stage: string }) {
+  const steps = DEBT_STAGES;
+  const currentIdx = steps.indexOf(stage as typeof steps[number]);
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-3 px-5 bg-card border border-border rounded-xl">
+      {steps.map((s, i) => {
+        const done = i < currentIdx || stage === "completed";
+        const active = stage === s;
+        return (
+          <React.Fragment key={s}>
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors",
+                done   ? "bg-primary border-primary text-primary-foreground" :
+                active ? "border-primary text-primary bg-primary/10" :
+                         "border-border text-muted-foreground bg-muted/20"
+              )}>
+                {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {DEBT_STAGE_LABELS[s] ?? s}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={cn("h-0.5 flex-1 min-w-[2rem] rounded transition-colors", i < currentIdx ? "bg-primary" : "bg-border")} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function CompanyProgressBar({ total, completed }: { total: number; completed: number }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <div className="px-5 py-3 bg-card border border-border rounded-xl">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium">تقدم إجراءات التأسيس</span>
+        <span className="text-sm font-bold text-primary">{completed} / {total}</span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">{pct}% مكتمل</p>
+    </div>
+  );
+}
 
 // ── Translation maps (English DB values → Arabic display) ──────────────
 const TR_CASE_TYPE: Record<string, string> = {
@@ -107,7 +205,7 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 // ─── Tab config ───────────────────────────────────────────────
-const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
+const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes","versions","payment-plan","company-steps"] as const;
 type TabId = typeof TAB_IDS[number];
 
 // ─── Types ────────────────────────────────────────────────────
@@ -246,6 +344,32 @@ export default function CaseDetail() {
   const [dlFilter,  setDlFilter]  = useState<"all" | "upcoming" | "past">("all");
   const [docSearch, setDocSearch] = useState("");
 
+  // ── Données spécialisées par type ─────────────────────────────
+  type ContractData = {
+    id: number; contractType: string; partyOneName: string | null; partyOneTaxId: string | null;
+    partyTwoName: string | null; partyTwoTaxId: string | null; contractValue: string | null;
+    contractCurrency: string; status: string; startDate: string | null; endDate: string | null;
+    signingDate: string | null; notes: string | null;
+    versions: Array<{ id: number; versionNumber: number; notes: string | null; createdAt: string }>;
+  };
+  type DebtData = {
+    id: number; debtorName: string; debtorPhone: string | null; debtAmount: string;
+    recoveredAmount: string; debtReason: string | null; dueDate: string | null;
+    currentStage: string; notes: string | null;
+    payments: Array<{ id: number; amount: string; receivedAt: string; paymentMethod: string | null; reference: string | null; notes: string | null }>;
+  };
+  type CompanyData = {
+    id: number; companyType: string; proposedName: string | null; capital: string | null;
+    activity: string | null; taxId: string | null; rneNumber: string | null; notes: string | null;
+    partners: Array<{ id: number; partnerName: string; sharesPercentage: string | null; position: string | null }>;
+    steps: Array<{ id: number; stepNameAr: string; stepOrder: number; isCompleted: number; completedAt: string | null }>;
+  };
+  const [contractData, setContractData] = useState<ContractData | null>(null);
+  const [debtData,     setDebtData]     = useState<DebtData | null>(null);
+  const [companyData,  setCompanyData]  = useState<CompanyData | null>(null);
+  const [payForm, setPayForm] = useState({ amount: "", paymentMethod: "", reference: "", notes: "", receivedAt: new Date().toISOString().slice(0, 10) });
+  const [showPayModal, setShowPayModal] = useState(false);
+
   // Confirm dialogs
   const [confirmOppId,      setConfirmOppId]      = useState<number | null>(null);
   const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
@@ -278,6 +402,19 @@ export default function CaseDetail() {
     authFetch(`${BASE}/api/cases`).then(r => { if (r.ok) r.json().then(setAllCases); });
     authFetch(`${BASE}/api/auth/users`).then(r => { if (r.ok) r.json().then(setAllUsers); });
   }, [id]);
+
+  // Chargement des données spécialisées selon le type (déclenché quand caseData est disponible)
+  useEffect(() => {
+    if (!id || !caseData) return;
+    const st = (caseData as unknown as Record<string, unknown>).serviceType as string | undefined;
+    if (st === "contract")
+      authFetch(`${BASE}/api/cases/${id}/contract`).then(r => { if (r.ok) r.json().then(setContractData); });
+    else if (st === "debt_recovery")
+      authFetch(`${BASE}/api/cases/${id}/debt-recovery`).then(r => { if (r.ok) r.json().then(setDebtData); });
+    else if (st === "company_creation")
+      authFetch(`${BASE}/api/cases/${id}/company`).then(r => { if (r.ok) r.json().then(setCompanyData); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, (caseData as unknown as Record<string, unknown> | undefined)?.serviceType]);
 
   useEffect(() => {
     if (timeRunning) {
@@ -337,7 +474,13 @@ export default function CaseDetail() {
     disputeValue?: number | null; clientSource?: string | null; judgeName?: string | null;
     firstHearingDate?: string | null; openedAt?: string | null;
     confidentialityLevel?: string | null; internalNotes?: string | null;
+    serviceType?: string | null; typeSpecificData?: Record<string, unknown> | null;
   };
+
+  const isContentious  = CONTENTIOUS_TYPES.includes((c.serviceType ?? "lawsuit") as typeof CONTENTIOUS_TYPES[number]);
+  const isContract     = c.serviceType === "contract";
+  const isDebtRecovery = c.serviceType === "debt_recovery";
+  const isCompany      = c.serviceType === "company_creation";
 
   const today = new Date().toISOString().slice(0, 10);
   const in30   = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -359,21 +502,23 @@ export default function CaseDetail() {
     return true;
   }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Tab definitions
+  // Tab definitions — conditionnels selon le type de dossier
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = [
-    { id: "overview",   label: "نظرة عامة",          icon: <BarChart2 className="h-4 w-4" /> },
-    { id: "timeline",   label: "التسلسل الإجرائي",   icon: <GitBranch className="h-4 w-4" /> },
-    { id: "hearings",   label: "الجلسات والآجال",     icon: <Clock className="h-4 w-4" />,
-      badge: upcomingCount > 0 ? upcomingCount : 0 },
-    { id: "judgment",   label: "الحكم والتنفيذ",      icon: <Scale className="h-4 w-4" /> },
-    { id: "documents",  label: "المؤيدات والوثائق",   icon: <FolderOpen className="h-4 w-4" />,
-      badge: activeDocs.length > 0 ? activeDocs.length : 0 },
-    { id: "invoicing",  label: "الأتعاب والفواتير",   icon: <Receipt className="h-4 w-4" />,
-      badge: hasOverdueInv ? 1 : 0 },
-    { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
-    { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
-    { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
+    { id: "overview",  label: "نظرة عامة",        icon: <BarChart2 className="h-4 w-4" /> },
+    { id: "timeline",  label: "التسلسل الزمني",   icon: <GitBranch className="h-4 w-4" /> },
+    ...(isContentious ? [
+      { id: "hearings" as TabId, label: "الجلسات والآجال", icon: <Clock className="h-4 w-4" />, badge: upcomingCount > 0 ? upcomingCount : 0 },
+      { id: "judgment" as TabId, label: "الحكم والتنفيذ",  icon: <Scale className="h-4 w-4" /> },
+    ] : []),
+    { id: "documents", label: "المؤيدات والوثائق", icon: <FolderOpen className="h-4 w-4" />, badge: activeDocs.length > 0 ? activeDocs.length : 0 },
+    { id: "invoicing", label: "الأتعاب والفواتير", icon: <Receipt className="h-4 w-4" />,    badge: hasOverdueInv ? 1 : 0 },
+    { id: "expenses",  label: "المصاريف",           icon: <DollarSign className="h-4 w-4" /> },
+    { id: "time",      label: "الوقت",              icon: <Timer className="h-4 w-4" /> },
+    { id: "notes",     label: "الملاحظات والسجل",  icon: <StickyNote className="h-4 w-4" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
+    ...(isContract     ? [{ id: "versions"      as TabId, label: "الإصدارات", icon: <Layers className="h-4 w-4" /> }] : []),
+    ...(isDebtRecovery ? [{ id: "payment-plan"  as TabId, label: "خطة الدفع", icon: <Banknote className="h-4 w-4" /> }] : []),
+    ...(isCompany      ? [{ id: "company-steps" as TabId, label: "الإجراءات", icon: <CheckCircle2 className="h-4 w-4" /> }] : []),
   ];
 
   // ─────────────────────────────────────────────────────────────
@@ -953,6 +1098,18 @@ export default function CaseDetail() {
     );
   }
 
+  function renderContractVersions() {
+    return renderPlaceholder(<Layers className="h-8 w-8" />, "الإصدارات", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
+  function renderPaymentPlan() {
+    return renderPlaceholder(<Banknote className="h-8 w-8" />, "خطة الدفع", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
+  function renderCompanySteps() {
+    return renderPlaceholder(<CheckCircle2 className="h-8 w-8" />, "الإجراءات", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
   function renderNotes() {
     return (
       <div className="space-y-4">
@@ -1091,6 +1248,7 @@ export default function CaseDetail() {
                   {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
                   {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الموكّل">📁 {c.clientFileRef}</span>}
                   <StatusBadge status={caseData.status} />
+                  <ServiceTypeBadge type={c.serviceType} />
                   {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
                   {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
                   {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{tr(TR_CASE_TYPE, c.caseType)}</span>}
@@ -1116,14 +1274,26 @@ export default function CaseDetail() {
             </div>
           </div>
 
-      {/* Stage Stepper — always visible above tabs */}
-      <CaseStageStepper
-        caseId={Number(id)}
-        refreshKey={stageRefreshKey}
-        onStageClick={(stage, mode) => {
-          changeTab("judgment");
-        }}
-      />
+      {/* Stepper conditionnel selon le type de dossier */}
+      {isContentious && (
+        <CaseStageStepper
+          caseId={Number(id)}
+          refreshKey={stageRefreshKey}
+          onStageClick={() => { changeTab("judgment"); }}
+        />
+      )}
+      {isContract && contractData && (
+        <ContractStatusStepper status={contractData.status} />
+      )}
+      {isDebtRecovery && debtData && (
+        <DebtStageStepper stage={debtData.currentStage} />
+      )}
+      {isCompany && companyData && (
+        <CompanyProgressBar
+          total={companyData.steps.length}
+          completed={companyData.steps.filter(s => s.isCompleted === 1).length}
+        />
+      )}
 
       {/* Tabs */}
       <div>
@@ -1159,7 +1329,10 @@ export default function CaseDetail() {
           {activeTab === "invoicing"  && renderInvoicing()}
           {activeTab === "expenses"   && renderExpenses()}
           {activeTab === "time"       && renderTime()}
-          {activeTab === "notes"      && renderNotes()}
+          {activeTab === "notes"         && renderNotes()}
+          {activeTab === "versions"      && renderContractVersions()}
+          {activeTab === "payment-plan"  && renderPaymentPlan()}
+          {activeTab === "company-steps" && renderCompanySteps()}
         </div>
       </div>
 
