@@ -78,10 +78,10 @@ const NAV_MOBILE_BOTTOM = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "قضية جديدة",   href: "/cases",    icon: Briefcase    },
-  { label: "موكّل جديد",    href: "/clients",  icon: Users        },
-  { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
-  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
+  { label: "ملف جديد",      href: "/cases",    icon: Briefcase,    kbd: "Alt+1" },
+  { label: "موكّل جديد",    href: "/clients",  icon: Users,        kbd: "Alt+2" },
+  { label: "فاتورة جديدة",  href: "/billing",  icon: CreditCard,   kbd: "Alt+3" },
+  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon, kbd: "Alt+4" },
 ];
 
 const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_SECONDARY, ...NAV_ADMIN, ...NAV_SYSTEM];
@@ -230,7 +230,7 @@ function ExpandableSection({
 /* ─────────────────────── Layout ─────────────────────── */
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { isAdmin } = useRole();
 
@@ -305,6 +305,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if (quickOpen) document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, [quickOpen]);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (!e.altKey) return;
+      const idx = ["1","2","3","4"].indexOf(e.key);
+      if (idx === -1) return;
+      e.preventDefault();
+      setLocation(QUICK_ACTIONS[idx].href);
+      setQuickOpen(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [setLocation]);
 
   function toggleFavorite(href: string) {
     setFavorites(prev =>
@@ -783,7 +796,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Quick Actions FAB — desktop */}
       <div ref={quickRef} className="fixed bottom-5 end-5 z-40 hidden lg:block">
         {quickOpen && (
-          <div className="absolute bottom-11 start-0 mb-1 bg-card/95 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl overflow-hidden w-40">
+          <div className="absolute bottom-12 end-0 mb-1 bg-card/97 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl w-56">
+            <div className="px-3.5 py-2 border-b border-border/40">
+              <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide">إجراءات سريعة</p>
+            </div>
             {QUICK_ACTIONS.map(a => {
               const Icon = a.icon;
               return (
@@ -792,24 +808,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] hover:bg-muted/50 transition-colors"
                   dir="rtl"
                 >
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                  <span>{a.label}</span>
+                  <Icon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                  <span className="flex-1 whitespace-nowrap">{a.label}</span>
+                  <kbd className="text-[10px] font-mono bg-muted/80 border border-border/60 px-1.5 py-0.5 rounded text-muted-foreground/60 shrink-0">
+                    {a.kbd}
+                  </kbd>
                 </Link>
               );
             })}
+            <div className="px-3.5 py-1.5 border-t border-border/40">
+              <p className="text-[10px] text-muted-foreground/40 text-center">Alt+1 → Alt+4 للوصول السريع</p>
+            </div>
           </div>
         )}
         <button
           onClick={() => setQuickOpen(o => !o)}
-          title="إجراءات سريعة"
+          title="إجراءات سريعة (Alt+1..4)"
           className={cn(
-            "h-9 w-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-200",
+            "h-10 w-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200",
             quickOpen
               ? "bg-primary/80 text-primary-foreground rotate-45 scale-95"
               : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-xl hover:scale-105"
           )}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </button>
       </div>
 
