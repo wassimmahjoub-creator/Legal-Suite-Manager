@@ -1,0 +1,538 @@
+SESSION 4c — CaseDetail.tsx : renderers complets des nouveaux onglets
+Un seul fichier : artifacts/law-firm/src/pages/CaseDetail.tsx
+Remplace les 3 stubs placeholders par les vraies fonctions.
+
+══════════════════════════════════════════════
+CHANGEMENT 1 — renderOverview() adapté au type
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT (début de la fonction) :
+  function renderOverview() {
+    return (
+      <div className="space-y-5">
+        {/* KPI row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
+          {kpiCard("ساعات العمل", "—", "قيد التطوير", () => changeTab("time"))}
+          {kpiCard("الموعد القادم", nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال قادمة", nextDeadline ? () => changeTab("hearings") : undefined)}
+          {kpiCard("عدد الوثائق", activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          {/* ملخص الملف */}
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2">ملخص الملف</h3>
+              {[
+                ["نوع الملف",       tr(TR_CASE_TYPE,         c.caseType)],
+                ["درجة التقاضي",    tr(TR_LITIGATION_DEGREE, c.litigationDegree)],
+                ["نوع الإجراء",     tr(TR_PROCEDURE_TYPE,    c.procedureType)],
+                ["الأولوية",        tr(TR_PRIORITY,          c.casePriority)],
+                ["قيمة النزاع",     c.disputeValue ? <TNDAmount amount={c.disputeValue} /> : null],
+                ["مصدر الموكّل",    tr(TR_CLIENT_SOURCE, c.clientSource)],
+                ["اسم القاضي",     c.judgeName],
+                ["تاريخ فتح الملف", c.openedAt ? formatDateTN(c.openedAt) : null],
+                ["أول جلسة",       c.firstHearingDate ? formatDateTN(c.firstHearingDate) : null],
+                ["الجلسة القادمة",  caseData.nextHearing ? formatDateTN(caseData.nextHearing) : null],
+              ].filter(([, v]) => v).map(([label, value]) => (
+                <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground shrink-0">{label as string}</span>
+                  <span className="font-medium text-left">{value as React.ReactNode}</span>
+                </div>
+              ))}
+              {!c.caseType && !c.litigationDegree && !c.procedureType && (
+                <p className="text-xs text-muted-foreground py-2">لم تُحدَّد تفاصيل الملف بعد</p>
+              )}
+            </CardContent>
+          </Card>
+
+Remplace PAR (nouvelle renderOverview complète — remplace jusqu'à la fermeture de la fonction) :
+
+  function renderOverview() {
+    // ── ملخص الملف — contenu variable selon le type ───────────────────────
+    function renderSummaryCard() {
+      // Contentieux
+      if (isContentious) {
+        const rows = [
+          ["نوع الملف",       tr(TR_CASE_TYPE,         c.caseType)],
+          ["درجة التقاضي",    tr(TR_LITIGATION_DEGREE, c.litigationDegree)],
+          ["نوع الإجراء",     tr(TR_PROCEDURE_TYPE,    c.procedureType)],
+          ["الأولوية",        tr(TR_PRIORITY,          c.casePriority)],
+          ["قيمة النزاع",     c.disputeValue ? <TNDAmount amount={c.disputeValue} /> : null],
+          ["مصدر الحريف",    tr(TR_CLIENT_SOURCE,     c.clientSource)],
+          ["اسم القاضي",      c.judgeName],
+          ["تاريخ فتح الملف", c.openedAt           ? formatDateTN(c.openedAt)           : null],
+          ["أول جلسة",        c.firstHearingDate   ? formatDateTN(c.firstHearingDate)   : null],
+          ["الجلسة القادمة",  caseData.nextHearing ? formatDateTN(caseData.nextHearing) : null],
+        ].filter(([, v]) => v);
+        return rows.map(([label, value]) => (
+          <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">{label as string}</span>
+            <span className="font-medium text-start">{value as React.ReactNode}</span>
+          </div>
+        ));
+      }
+      // Contrat
+      if (isContract && contractData) {
+        const CT: Record<string, string> = { sale: "بيع", rental: "إيجار", service: "خدمات", employment: "عمل", partnership: "شراكة", loan: "قرض", guarantee: "ضمان", agency: "وكالة", franchise: "امتياز", other: "أخرى" };
+        const rows = [
+          ["نوع العقد",        CT[contractData.contractType] ?? contractData.contractType],
+          ["الطرف الأول",      contractData.partyOneName],
+          ["م.ج الطرف الأول", contractData.partyOneTaxId],
+          ["الطرف الثاني",     contractData.partyTwoName],
+          ["م.ج الطرف الثاني",contractData.partyTwoTaxId],
+          ["قيمة العقد",       contractData.contractValue ? <TNDAmount amount={contractData.contractValue} /> : null],
+          ["تاريخ البداية",    contractData.startDate   ? formatDateTN(contractData.startDate)   : null],
+          ["تاريخ الانتهاء",   contractData.endDate     ? formatDateTN(contractData.endDate)     : null],
+          ["تاريخ الإمضاء",   contractData.signingDate  ? formatDateTN(contractData.signingDate) : null],
+        ].filter(([, v]) => v);
+        return rows.map(([label, value]) => (
+          <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">{label as string}</span>
+            <span className="font-medium text-start">{value as React.ReactNode}</span>
+          </div>
+        ));
+      }
+      // Recouvrement
+      if (isDebtRecovery && debtData) {
+        const DS: Record<string, string> = { notice: "إعذار", negotiation: "تفاوض", lawsuit: "دعوى", execution: "تنفيذ", completed: "مكتمل" };
+        const rows = [
+          ["المدين",           debtData.debtorName],
+          ["هاتف المدين",      debtData.debtorPhone],
+          ["سبب الدين",        debtData.debtReason],
+          ["تاريخ الاستحقاق", debtData.dueDate ? formatDateTN(debtData.dueDate) : null],
+          ["المرحلة",          DS[debtData.currentStage] ?? debtData.currentStage],
+        ].filter(([, v]) => v);
+        return rows.map(([label, value]) => (
+          <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">{label as string}</span>
+            <span className="font-medium text-start">{value as React.ReactNode}</span>
+          </div>
+        ));
+      }
+      // Société
+      if (isCompany && companyData) {
+        const CP: Record<string, string> = { sarl: "ش.ذ.م.م", suarl: "ش.ذ.م.م ب.ش.و", sa: "ش.خ.م", single_person_company: "مؤسسة فردية", other: "أخرى" };
+        const rows = [
+          ["نوع الشركة",       CP[companyData.companyType] ?? companyData.companyType],
+          ["الاسم المقترح",    companyData.proposedName],
+          ["رأس المال",        companyData.capital ? <TNDAmount amount={companyData.capital} /> : null],
+          ["النشاط",           companyData.activity],
+          ["المعرف الجبائي",   companyData.taxId],
+          ["السجل التجاري",    companyData.rneNumber],
+        ].filter(([, v]) => v);
+        return rows.map(([label, value]) => (
+          <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">{label as string}</span>
+            <span className="font-medium text-start">{value as React.ReactNode}</span>
+          </div>
+        ));
+      }
+      // Types simples — typeSpecificData
+      const tsd = c.typeSpecificData;
+      if (tsd && Object.keys(tsd).length > 0) {
+        return Object.entries(tsd).map(([k, v]) => (
+          <div key={k} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">{k}</span>
+            <span className="font-medium text-start">{String(v)}</span>
+          </div>
+        ));
+      }
+      return <p className="text-xs text-muted-foreground py-2">لم تُحدَّد تفاصيل الملف بعد</p>;
+    }
+
+    return (
+      <div className="space-y-5">
+        {/* KPI row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {isDebtRecovery && debtData ? (
+            <>
+              {kpiCard("إجمالي الدين",  <TNDAmount amount={debtData.debtAmount} />,    "المبلغ الأصلي")}
+              {kpiCard("المُستخلَص",    <TNDAmount amount={debtData.recoveredAmount} />, "تم استخلاصه", undefined, "text-green-400")}
+              {kpiCard("المتبقي",       <TNDAmount amount={Number(debtData.debtAmount) - Number(debtData.recoveredAmount)} />, "غير محصّل", () => changeTab("payment-plan"), "text-destructive")}
+              {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
+            </>
+          ) : (
+            <>
+              {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
+              {kpiCard("ساعات العمل",    "—", "قيد التطوير", () => changeTab("time"))}
+              {kpiCard("الموعد القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("hearings") : undefined)}
+              {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
+            </>
+          )}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          {/* ملخص الملف */}
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2">ملخص الملف</h3>
+              {renderSummaryCard()}
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            {/* شركاء — uniquement société */}
+            {isCompany && companyData && companyData.partners.length > 0 && (
+              <Card className="border-none shadow-sm">
+                <CardContent className="p-5 space-y-3">
+                  <h3 className="font-semibold text-sm border-b border-border pb-2">الشركاء</h3>
+                  {companyData.partners.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
+                      <div>
+                        <p className="font-medium text-sm">{p.partnerName}</p>
+                        {p.position && <p className="text-xs text-muted-foreground">{p.position}</p>}
+                      </div>
+                      {p.sharesPercentage && <span className="text-sm font-bold text-primary">{p.sharesPercentage}%</span>}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* الأطراف (خصوم) — tous sauf société (qui a ses propres parties) */}
+            {!isCompany && (
+              <Card className="border-none shadow-sm">
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <h3 className="font-semibold text-sm">الأطراف</h3>
+                    <Button size="sm" onClick={() => { setOppForm({ name: "", lawyerName: "", phone: "", address: "", notes: "", capacity: "", opponentLawyerPhone: "" }); setModal("opponent"); }} className="gap-1 text-xs h-7"><Plus className="h-3 w-3" />خصم</Button>
+                  </div>
+                  {caseData.clientName && (
+                    <div onClick={() => (caseData as { clientId?: number }).clientId && navigate(`/clients/${(caseData as { clientId?: number }).clientId}`)} className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-colors">
+                      <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{caseData.clientName.charAt(0)}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{caseData.clientName}</p>
+                        <p className="text-[10px] text-muted-foreground">الحريف</p>
+                      </div>
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  )}
+                  {opponents.map(o => (
+                    <div key={o.id} onClick={() => { setOppEditId(o.id); setOppForm({ name: o.name ?? "", lawyerName: o.lawyerName ?? "", phone: o.phone ?? "", address: o.address ?? "", notes: o.notes ?? "", capacity: o.capacity ?? "", opponentLawyerPhone: o.opponentLawyerPhone ?? "" }); setModal("opponent"); }} className="flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-xl cursor-pointer hover:border-destructive/40 transition-colors">
+                      <div className="h-8 w-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center font-bold text-sm shrink-0">{o.name.charAt(0)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-sm">{o.name}</p>
+                          {o.capacity && <span className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full">{o.capacity}</span>}
+                        </div>
+                        {o.lawyerName && <p className="text-[10px] text-muted-foreground">ذ. {o.lawyerName}</p>}
+                      </div>
+                      <button onClick={e => { e.stopPropagation(); setConfirmOppId(o.id); }} className="p-1 hover:bg-destructive/10 rounded-lg shrink-0"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                    </div>
+                  ))}
+                  {opponents.length === 0 && !caseData.clientName && <p className="text-xs text-muted-foreground py-1">لا خصوم مسجلين</p>}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* الفريق الداخلي — tous les types */}
+            <Card className="border-none shadow-sm">
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <h3 className="font-semibold text-sm">الفريق الداخلي</h3>
+                  <Button size="sm" onClick={() => { setTeamForm({ userId: "", role: "مساعد" }); setModal("team"); }} className="gap-1 text-xs h-7"><Plus className="h-3 w-3" />عضو</Button>
+                </div>
+                {caseData.lawyer && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm shrink-0">{caseData.lawyer.charAt(0)}</div>
+                    <div>
+                      <p className="font-semibold text-sm">{caseData.lawyer}</p>
+                      <p className="text-[10px] text-muted-foreground">المحامي المسؤول</p>
+                    </div>
+                  </div>
+                )}
+                {team.map(m => (
+                  <div key={m.id} onClick={() => { setTeamEditId(m.id); setTeamForm({ userId: String(m.userId), role: m.role ?? "مساعد" }); setModal("team"); }} className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/20 cursor-pointer hover:border-primary/40 hover:bg-muted/40 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{(m.userName ?? "م").charAt(0)}</div>
+                      <div>
+                        <p className="font-semibold text-sm">{m.userName ?? "مستخدم"}</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{m.role}</span>
+                      </div>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); setConfirmTeamId(m.id); }} className="p-1.5 hover:bg-destructive/10 rounded-lg"><Trash2 className="h-3.5 w-3.5 text-destructive" /></button>
+                  </div>
+                ))}
+                {team.length === 0 && !caseData.lawyer && <p className="text-xs text-muted-foreground py-1">لا يوجد فريق مسجل</p>}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+══════════════════════════════════════════════
+CHANGEMENT 2 — Remplacer renderContractVersions() (stub → réel)
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT :
+  function renderContractVersions() {
+    return renderPlaceholder(<Layers className="h-8 w-8" />, "الإصدارات", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
+Remplace par :
+  function renderContractVersions() {
+    if (!contractData) return renderPlaceholder(<Layers className="h-8 w-8" />, "لا توجد بيانات", "ملف العقد غير موجود أو لم يُحمَّل بعد");
+    return (
+      <div className="space-y-4">
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
+              <h3 className="font-semibold">إصدارات العقد</h3>
+              <ContractStatusStepper status={contractData.status} />
+            </div>
+            {contractData.versions.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
+                <Layers className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد إصدارات مسجلة</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {contractData.versions.map(v => (
+                  <div key={v.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-violet-500/10 text-violet-400 flex items-center justify-center text-xs font-bold border border-violet-500/20 shrink-0">
+                        {v.versionNumber}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">الإصدار رقم {v.versionNumber}</p>
+                        {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{formatDateTN(v.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+══════════════════════════════════════════════
+CHANGEMENT 3 — Remplacer renderPaymentPlan() (stub → réel)
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT :
+  function renderPaymentPlan() {
+    return renderPlaceholder(<Banknote className="h-8 w-8" />, "خطة الدفع", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
+Remplace par :
+  function renderPaymentPlan() {
+    if (!debtData) return renderPlaceholder(<Banknote className="h-8 w-8" />, "لا توجد بيانات", "ملف الاستخلاص غير موجود");
+    const debt      = Number(debtData.debtAmount);
+    const recovered = Number(debtData.recoveredAmount);
+    const remaining = debt - recovered;
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-3 gap-3">
+          {kpiCard("إجمالي الدين", <TNDAmount amount={debt} />,      "المبلغ الأصلي")}
+          {kpiCard("المُستخلَص",   <TNDAmount amount={recovered} />, "تم تحصيله",  undefined, "text-green-400")}
+          {kpiCard("المتبقي",      <TNDAmount amount={remaining} />, remaining > 0 ? "غير محصّل" : "مكتمل ✓", undefined, remaining > 0 ? "text-destructive" : "text-green-400")}
+        </div>
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">سجل التحصيلات</h3>
+              {remaining > 0 && (
+                <Button size="sm" onClick={() => { setPayForm({ amount: "", paymentMethod: "", reference: "", notes: "", receivedAt: new Date().toISOString().slice(0, 10) }); setShowPayModal(true); }} className="gap-1.5 text-xs">
+                  <Plus className="h-3.5 w-3.5" />تسجيل دفعة
+                </Button>
+              )}
+            </div>
+            {debtData.payments.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
+                <Banknote className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد دفعات مسجلة</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {debtData.payments.map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
+                    <div>
+                      <p className="font-semibold text-sm"><TNDAmount amount={p.amount} /></p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                        <span>{formatDateTN(p.receivedAt)}</span>
+                        {p.paymentMethod && <span>· {p.paymentMethod}</span>}
+                        {p.reference     && <span>· مرجع: {p.reference}</span>}
+                      </div>
+                      {p.notes && <p className="text-xs text-muted-foreground mt-0.5">{p.notes}</p>}
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+══════════════════════════════════════════════
+CHANGEMENT 4 — Remplacer renderCompanySteps() (stub → réel)
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT :
+  function renderCompanySteps() {
+    return renderPlaceholder(<CheckCircle2 className="h-8 w-8" />, "الإجراءات", "سيتم تطوير هذا القسم في المرحلة القادمة");
+  }
+
+Remplace par :
+  function renderCompanySteps() {
+    if (!companyData) return renderPlaceholder(<CheckCircle2 className="h-8 w-8" />, "لا توجد بيانات", "ملف التأسيس غير موجود");
+    const total     = companyData.steps.length;
+    const completed = companyData.steps.filter(s => s.isCompleted === 1).length;
+    const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return (
+      <div className="space-y-4">
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="font-semibold">إجراءات التأسيس</h3>
+              <span className="text-sm font-bold text-primary">{completed} / {total}</span>
+            </div>
+            <div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{pct}% مكتمل</p>
+            </div>
+            {companyData.steps.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد إجراءات محددة</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {companyData.steps.map(step => (
+                  <div
+                    key={step.id}
+                    onClick={async () => {
+                      const r = await authFetch(`${BASE}/api/company-creation-steps/${step.id}/toggle`, { method: "PATCH" });
+                      if (r.ok) {
+                        const updated = await r.json();
+                        setCompanyData(prev => prev ? {
+                          ...prev,
+                          steps: prev.steps.map(s => s.id === step.id ? { ...s, isCompleted: updated.isCompleted, completedAt: updated.completedAt } : s),
+                        } : null);
+                      }
+                    }}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-muted/40 transition-colors cursor-pointer"
+                  >
+                    <div className={cn(
+                      "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                      step.isCompleted === 1 ? "border-primary bg-primary" : "border-muted-foreground"
+                    )}>
+                      {step.isCompleted === 1 && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className={cn("text-sm font-medium", step.isCompleted === 1 && "line-through text-muted-foreground")}>
+                        {step.stepNameAr}
+                      </p>
+                      {step.completedAt && (
+                        <p className="text-xs text-muted-foreground">اكتمل في {formatDateTN(step.completedAt)}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0 font-mono">{step.stepOrder}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+══════════════════════════════════════════════
+CHANGEMENT 5 — Modal "تسجيل دفعة" (dans la section MODALS)
+══════════════════════════════════════════════
+
+Cherche EXACTEMENT (fin de la section modals, juste avant </div> final) :
+      <ConfirmDestructive
+        open={confirmPerm !== null}
+
+Si ce pattern n'existe pas, cherche :
+      <ConfirmDestructive
+        open={confirmCaseDelete}
+
+Et insère AVANT cette ligne :
+
+      {/* ─── Modal ajout de paiement (debt_recovery) ─── */}
+      <Modal open={showPayModal} onClose={() => setShowPayModal(false)} title="تسجيل دفعة جديدة">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="المبلغ (د.ت) *" htmlFor="pay-amount">
+              <Input id="pay-amount" type="number" step="0.001" min="0" value={payForm.amount}
+                onChange={e => setPayForm({...payForm, amount: e.target.value})}
+                placeholder="0,000" className={inputCls} dir="ltr" />
+            </FormField>
+            <FormField label="تاريخ الدفعة *" htmlFor="pay-date">
+              <Input id="pay-date" type="date" value={payForm.receivedAt}
+                onChange={e => setPayForm({...payForm, receivedAt: e.target.value})}
+                className={inputCls} dir="ltr" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="طريقة الدفع" htmlFor="pay-method">
+              <SelectNative id="pay-method" value={payForm.paymentMethod}
+                onChange={e => setPayForm({...payForm, paymentMethod: e.target.value})}
+                className={inputCls + " px-3 cursor-pointer"}>
+                <option value="">— اختر —</option>
+                {["تحويل بنكي","شيك","نقداً","أخرى"].map(m => <option key={m} value={m}>{m}</option>)}
+              </SelectNative>
+            </FormField>
+            <FormField label="مرجع الدفعة" htmlFor="pay-ref">
+              <Input id="pay-ref" value={payForm.reference}
+                onChange={e => setPayForm({...payForm, reference: e.target.value})}
+                placeholder="رقم الشيك أو التحويل" className={inputCls} />
+            </FormField>
+          </div>
+          <FormField label="ملاحظات" htmlFor="pay-notes">
+            <Input id="pay-notes" value={payForm.notes}
+              onChange={e => setPayForm({...payForm, notes: e.target.value})}
+              placeholder="ملاحظات حول الدفعة" className={inputCls} />
+          </FormField>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setShowPayModal(false)}>إلغاء</Button>
+            <Button
+              disabled={saving || !payForm.amount || !payForm.receivedAt}
+              onClick={async () => {
+                if (!payForm.amount || !payForm.receivedAt) return;
+                setSaving(true);
+                const r = await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments`, {
+                  method: "POST",
+                  body: JSON.stringify({ ...payForm }),
+                });
+                if (r.ok) {
+                  setShowPayModal(false);
+                  const refresh = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`);
+                  if (refresh.ok) setDebtData(await refresh.json());
+                }
+                setSaving(false);
+              }}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin me-1" />}
+              تسجيل الدفعة
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+══════════════════════════════════════════════
+VÉRIFICATION 4c (test complet)
+══════════════════════════════════════════════
+- lawsuit → stepper procédural + onglets judiciaires + ملخص contentieux ✓
+- consultation → aucun stepper, onglets de base uniquement, typeSpecificData si présent ✓
+- contract → ContractStatusStepper + onglet "الإصدارات" avec liste versions ✓
+- debt_recovery → DebtStageStepper + KPIs dette/récupéré/restant + onglet "خطة الدفع" + modal dفعة ✓
+- company_creation → CompanyProgressBar + onglet "الإجراءات" + checklist interactive ✓
+- La timeline, les factures, les documents fonctionnent pour TOUS les types ✓
+- <TNDAmount> utilisé pour tous les montants ✓
+- Zéro hex, zéro composant non-ui/ hardcodé ✓
