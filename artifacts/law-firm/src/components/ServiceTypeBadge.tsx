@@ -1,28 +1,35 @@
 import { Badge } from "@/components/ui/badge";
 
-const TYPE_MAP: Record<string, { label: string; color: string }> = {
-  lawsuit:            { label: "قضية",    color: "bg-destructive/10 text-destructive border-destructive/20" },
-  consultation:       { label: "استشارة", color: "bg-info/10 text-info border-info/20" },
-  contract:           { label: "عقد",     color: "bg-success/10 text-success border-success/20" },
-  company_creation:   { label: "شركة",    color: "bg-primary/10 text-primary border-primary/20" },
-  debt_recovery:      { label: "تحصيل",  color: "bg-warning/10 text-warning border-warning/20" },
-  legal_notice:       { label: "تنبيه",  color: "bg-warning/10 text-warning border-warning/20" },
-  judgment_execution: { label: "تنفيذ",  color: "bg-info/10 text-info border-info/20" },
-  real_estate_file:   { label: "عقاري",  color: "bg-muted text-muted-foreground border-border" },
-  labor_file:         { label: "شغل",    color: "bg-muted text-muted-foreground border-border" },
-  tax_file:           { label: "جبائي",  color: "bg-muted text-muted-foreground border-border" },
-  administrative:     { label: "إداري",  color: "bg-muted text-muted-foreground border-border" },
-  mediation:          { label: "وساطة",  color: "bg-muted text-muted-foreground border-border" },
-  other:              { label: "أخرى",   color: "bg-muted text-muted-foreground border-border" },
+const TYPE_MAP: Record<string, { label: string; className: string }> = {
+  lawsuit:           { label: "قضية",           className: "bg-destructive/10 text-destructive border-destructive/20" },
+  consultation:      { label: "استشارة",         className: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+  contract:          { label: "عقد",             className: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
+  company_creation:  { label: "تأسيس شركة",      className: "bg-green-500/10 text-green-400 border-green-500/20" },
+  debt_recovery:     { label: "استخلاص ديون",    className: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+  legal_notice:      { label: "إعذار قانوني",    className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
+  judgment_execution:{ label: "تنفيذ حكم",       className: "bg-destructive/10 text-destructive border-destructive/20" },
+  real_estate_file:  { label: "ملف عقاري",       className: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
+  labor_file:        { label: "ملف شغل",         className: "bg-teal-500/10 text-teal-400 border-teal-500/20" },
+  tax_file:          { label: "ملف جبائي",       className: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  administrative:    { label: "إداري",           className: "bg-slate-500/10 text-slate-400 border-slate-500/20" },
+  mediation:         { label: "وساطة",           className: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+  other:             { label: "أخرى",            className: "bg-muted text-muted-foreground border-border" },
 };
 
-export function ServiceTypeBadge({ type }: { type: string | null | undefined }) {
-  const mapped = type ? TYPE_MAP[type] : undefined;
-  const label = mapped?.label ?? type ?? "—";
-  const color = mapped?.color ?? "bg-muted text-muted-foreground border-border";
+interface ServiceTypeBadgeProps {
+  type: string | null | undefined;
+  className?: string;
+}
+
+export function ServiceTypeBadge({ type, className }: ServiceTypeBadgeProps) {
+  if (!type) return null;
+  const cfg = TYPE_MAP[type] ?? { label: type, className: "bg-muted text-muted-foreground border-border" };
   return (
-    <Badge variant="outline" className={`${color} rounded-full px-2.5 py-0.5 text-xs font-medium border`}>
-      {label}
+    <Badge
+      variant="outline"
+      className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${cfg.className} ${className ?? ""}`}
+    >
+      {cfg.label}
     </Badge>
   );
 }

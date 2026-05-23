@@ -385,4 +385,98 @@ router.post("/company-files/:id/partners", async (req, res) => {
   }
 });
 
+// ─── GET /cases/:id/contract ──────────────────────────────────────────────
+router.get("/cases/:id/contract", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { contractsTable, contractVersionsTable } = await import("@workspace/db");
+  const [contract] = await db.select().from(contractsTable)
+    .where(eq(contractsTable.caseId, caseId));
+  if (!contract) { res.json(null); return; }
+  const versions = await db.select().from(contractVersionsTable)
+    .where(eq(contractVersionsTable.contractId, contract.id))
+    .orderBy(contractVersionsTable.versionNumber);
+  res.json({ ...contract, versions });
+});
+
+// ─── GET /cases/:id/debt-recovery ────────────────────────────────────────
+router.get("/cases/:id/debt-recovery", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { debtRecoveryFilesTable, debtRecoveryPaymentsTable } = await import("@workspace/db");
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable)
+    .where(eq(debtRecoveryFilesTable.caseId, caseId));
+  if (!debtFile) { res.json(null); return; }
+  const payments = await db.select().from(debtRecoveryPaymentsTable)
+    .where(eq(debtRecoveryPaymentsTable.debtRecoveryFileId, debtFile.id))
+    .orderBy(debtRecoveryPaymentsTable.receivedAt);
+  res.json({ ...debtFile, payments });
+});
+
+// ─── POST /cases/:id/debt-recovery/payments ──────────────────────────────
+router.post("/cases/:id/debt-recovery/payments", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { id?: number } }).user;
+  const { debtRecoveryFilesTable, debtRecoveryPaymentsTable } = await import("@workspace/db");
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable)
+    .where(eq(debtRecoveryFilesTable.caseId, caseId));
+  if (!debtFile) { res.status(404).json({ error: "Debt file not found" }); return; }
+  const { amount, paymentMethod, reference, notes, receivedAt } = req.body as Record<string, string>;
+  const [payment] = await db.insert(debtRecoveryPaymentsTable).values({
+    debtRecoveryFileId: debtFile.id,
+    amount,
+    paymentMethod: paymentMethod || null,
+    reference: reference || null,
+    notes: notes || null,
+    receivedAt: new Date(receivedAt || Date.now()),
+    recordedBy: actor?.id ?? null,
+  }).returning();
+  await db.update(debtRecoveryFilesTable)
+    .set({ recoveredAmount: sql`${debtRecoveryFilesTable.recoveredAmount} + ${amount}::numeric` })
+    .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  res.status(201).json(payment);
+});
+
+// ─── GET /cases/:id/company ───────────────────────────────────────────────
+router.get("/cases/:id/company", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { companyFilesTable, companyPartnersTable, companyCreationStepsTable } = await import("@workspace/db");
+  const [companyFile] = await db.select().from(companyFilesTable)
+    .where(eq(companyFilesTable.caseId, caseId));
+  if (!companyFile) { res.json(null); return; }
+  const [partners, steps] = await Promise.all([
+    db.select().from(companyPartnersTable)
+      .where(eq(companyPartnersTable.companyFileId, companyFile.id))
+      .orderBy(companyPartnersTable.positionOrder),
+    db.select().from(companyCreationStepsTable)
+      .where(eq(companyCreationStepsTable.companyFileId, companyFile.id))
+      .orderBy(companyCreationStepsTable.stepOrder),
+  ]);
+  res.json({ ...companyFile, partners, steps });
+});
+
+// ─── PATCH /company-creation-steps/:stepId/toggle ────────────────────────
+router.patch("/company-creation-steps/:stepId/toggle", async (req, res): Promise<void> => {
+  const stepId = Number(req.params.stepId);
+  const { companyCreationStepsTable } = await import("@workspace/db");
+  const [step] = await db.select().from(companyCreationStepsTable)
+    .where(eq(companyCreationStepsTable.id, stepId));
+  if (!step) { res.status(404).json({ error: "Step not found" }); return; }
+  const newCompleted = step.isCompleted === 1 ? 0 : 1;
+  const [updated] = await db.update(companyCreationStepsTable)
+    .set({ isCompleted: newCompleted, completedAt: newCompleted === 1 ? new Date() : null })
+    .where(eq(companyCreationStepsTable.id, stepId)).returning();
+  res.json(updated);
+});
+
 export default router;

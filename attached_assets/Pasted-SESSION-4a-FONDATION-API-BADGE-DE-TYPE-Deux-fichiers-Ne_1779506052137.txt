@@ -1,0 +1,178 @@
+SESSION 4a — FONDATION API + BADGE DE TYPE
+Deux fichiers. Ne touche à rien d'autre.
+
+══════════════════════════════════════════════
+FICHIER 1 (MODIFIER) :
+artifacts/api-server/src/routes/cases.ts
+══════════════════════════════════════════════
+
+MODIFICATION A — Ajouter serviceType et typeSpecificData dans caseFields.
+
+Cherche EXACTEMENT :
+  archivedAt: casesTable.archivedAt,
+  deletedAt: casesTable.deletedAt,
+  createdAt: casesTable.createdAt,
+};
+
+Remplace par :
+  archivedAt: casesTable.archivedAt,
+  deletedAt: casesTable.deletedAt,
+  createdAt: casesTable.createdAt,
+  serviceType: casesTable.serviceType,
+  typeSpecificData: casesTable.typeSpecificData,
+};
+
+──────────────────────────────────────────────
+MODIFICATION B — Ajouter 5 nouvelles routes.
+
+Cherche EXACTEMENT (fin du fichier) :
+export default router;
+
+Remplace par (les routes + l'export) :
+
+// ─── GET /cases/:id/contract ──────────────────────────────────────────────
+router.get("/cases/:id/contract", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { contractsTable, contractVersionsTable } = await import("@workspace/db");
+  const [contract] = await db.select().from(contractsTable)
+    .where(eq(contractsTable.caseId, caseId));
+  if (!contract) { res.json(null); return; }
+  const versions = await db.select().from(contractVersionsTable)
+    .where(eq(contractVersionsTable.contractId, contract.id))
+    .orderBy(contractVersionsTable.versionNumber);
+  res.json({ ...contract, versions });
+});
+
+// ─── GET /cases/:id/debt-recovery ────────────────────────────────────────
+router.get("/cases/:id/debt-recovery", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { debtRecoveryFilesTable, debtRecoveryPaymentsTable } = await import("@workspace/db");
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable)
+    .where(eq(debtRecoveryFilesTable.caseId, caseId));
+  if (!debtFile) { res.json(null); return; }
+  const payments = await db.select().from(debtRecoveryPaymentsTable)
+    .where(eq(debtRecoveryPaymentsTable.debtRecoveryFileId, debtFile.id))
+    .orderBy(debtRecoveryPaymentsTable.receivedAt);
+  res.json({ ...debtFile, payments });
+});
+
+// ─── POST /cases/:id/debt-recovery/payments ──────────────────────────────
+router.post("/cases/:id/debt-recovery/payments", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { id?: number } }).user;
+  const { debtRecoveryFilesTable, debtRecoveryPaymentsTable } = await import("@workspace/db");
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable)
+    .where(eq(debtRecoveryFilesTable.caseId, caseId));
+  if (!debtFile) { res.status(404).json({ error: "Debt file not found" }); return; }
+  const { amount, paymentMethod, reference, notes, receivedAt } = req.body as Record<string, string>;
+  const [payment] = await db.insert(debtRecoveryPaymentsTable).values({
+    debtRecoveryFileId: debtFile.id,
+    amount,
+    paymentMethod: paymentMethod || null,
+    reference: reference || null,
+    notes: notes || null,
+    receivedAt: new Date(receivedAt || Date.now()),
+    recordedBy: actor?.id ?? null,
+  }).returning();
+  await db.update(debtRecoveryFilesTable)
+    .set({ recoveredAmount: sql`${debtRecoveryFilesTable.recoveredAmount} + ${amount}::numeric` })
+    .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  res.status(201).json(payment);
+});
+
+// ─── GET /cases/:id/company ───────────────────────────────────────────────
+router.get("/cases/:id/company", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [c] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, caseId), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!c) { res.status(404).json({ error: "Not found" }); return; }
+  const { companyFilesTable, companyPartnersTable, companyCreationStepsTable } = await import("@workspace/db");
+  const [companyFile] = await db.select().from(companyFilesTable)
+    .where(eq(companyFilesTable.caseId, caseId));
+  if (!companyFile) { res.json(null); return; }
+  const [partners, steps] = await Promise.all([
+    db.select().from(companyPartnersTable)
+      .where(eq(companyPartnersTable.companyFileId, companyFile.id))
+      .orderBy(companyPartnersTable.positionOrder),
+    db.select().from(companyCreationStepsTable)
+      .where(eq(companyCreationStepsTable.companyFileId, companyFile.id))
+      .orderBy(companyCreationStepsTable.stepOrder),
+  ]);
+  res.json({ ...companyFile, partners, steps });
+});
+
+// ─── PATCH /company-creation-steps/:stepId/toggle ────────────────────────
+router.patch("/company-creation-steps/:stepId/toggle", async (req, res): Promise<void> => {
+  const stepId = Number(req.params.stepId);
+  const { companyCreationStepsTable } = await import("@workspace/db");
+  const [step] = await db.select().from(companyCreationStepsTable)
+    .where(eq(companyCreationStepsTable.id, stepId));
+  if (!step) { res.status(404).json({ error: "Step not found" }); return; }
+  const newCompleted = step.isCompleted === 1 ? 0 : 1;
+  const [updated] = await db.update(companyCreationStepsTable)
+    .set({ isCompleted: newCompleted, completedAt: newCompleted === 1 ? new Date() : null })
+    .where(eq(companyCreationStepsTable.id, stepId)).returning();
+  res.json(updated);
+});
+
+export default router;
+
+══════════════════════════════════════════════
+FICHIER 2 (CRÉER) :
+artifacts/law-firm/src/components/ServiceTypeBadge.tsx
+══════════════════════════════════════════════
+
+Crée ce fichier avec ce contenu EXACT :
+
+import { Badge } from "@/components/ui/badge";
+
+const TYPE_MAP: Record<string, { label: string; className: string }> = {
+  lawsuit:           { label: "قضية",           className: "bg-destructive/10 text-destructive border-destructive/20" },
+  consultation:      { label: "استشارة",         className: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+  contract:          { label: "عقد",             className: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
+  company_creation:  { label: "تأسيس شركة",      className: "bg-green-500/10 text-green-400 border-green-500/20" },
+  debt_recovery:     { label: "استخلاص ديون",    className: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+  legal_notice:      { label: "إعذار قانوني",    className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
+  judgment_execution:{ label: "تنفيذ حكم",       className: "bg-destructive/10 text-destructive border-destructive/20" },
+  real_estate_file:  { label: "ملف عقاري",       className: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
+  labor_file:        { label: "ملف شغل",         className: "bg-teal-500/10 text-teal-400 border-teal-500/20" },
+  tax_file:          { label: "ملف جبائي",       className: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  administrative:    { label: "إداري",           className: "bg-slate-500/10 text-slate-400 border-slate-500/20" },
+  mediation:         { label: "وساطة",           className: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+  other:             { label: "أخرى",            className: "bg-muted text-muted-foreground border-border" },
+};
+
+interface ServiceTypeBadgeProps {
+  type: string | null | undefined;
+  className?: string;
+}
+
+export function ServiceTypeBadge({ type, className }: ServiceTypeBadgeProps) {
+  if (!type) return null;
+  const cfg = TYPE_MAP[type] ?? { label: type, className: "bg-muted text-muted-foreground border-border" };
+  return (
+    <Badge
+      variant="outline"
+      className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${cfg.className} ${className ?? ""}`}
+    >
+      {cfg.label}
+    </Badge>
+  );
+}
+
+══════════════════════════════════════════════
+VÉRIFICATION 4a
+══════════════════════════════════════════════
+Test : appelle GET /api/cases/1 → la réponse doit contenir "serviceType" et "typeSpecificData".
+Test : appelle GET /api/cases/1/contract → doit retourner null ou un objet avec "versions".
+Si TypeScript échoue à compiler, vérifie que les imports dynamiques utilisent
+exactement les noms de tables exportés par @workspace/db.
