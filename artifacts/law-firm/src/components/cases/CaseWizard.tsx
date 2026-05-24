@@ -12,6 +12,23 @@ import type { ConflictData } from "@/components/ConflictWarningModal";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
+// ── Service type labels ────────────────────────────────────────────────
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  lawsuit:            "دعوى قضائية",
+  real_estate_file:   "ملف عقاري",
+  labor_file:         "ملف شغل",
+  tax_file:           "ملف جبائي",
+  judgment_execution: "تنفيذ حكم",
+  legal_notice:       "إنذار",
+  administrative:     "ملف إداري",
+  mediation:          "وساطة",
+  other:              "ملف متنوع",
+  consultation:       "استشارة قانونية",
+  contract:           "تحرير عقد",
+  company_creation:   "تأسيس شركة",
+  debt_recovery:      "استخلاص ديون",
+};
+
 // ── Constants ──────────────────────────────────────────────────────────
 
 const CASE_TYPES = [
@@ -800,7 +817,16 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         {/* Header + stepper */}
         <div className="p-5 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold">{editMode ? "تعديل الملف القضائي" : "ملف قضائي جديد"}</h2>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-xl font-bold">
+                {editMode ? "تعديل الملف القضائي" : (SERVICE_TYPE_LABELS[form.serviceType] ?? "ملف قضائي") + " — جديد"}
+              </h2>
+              {!editMode && (
+                <span className="text-xs text-muted-foreground bg-primary/10 text-primary px-2 py-0.5 rounded-full w-fit">
+                  {SERVICE_TYPE_LABELS[form.serviceType] ?? form.serviceType}
+                </span>
+              )}
+            </div>
             <button onClick={handleClose} className="p-2 rounded-full hover:bg-muted transition-colors">
               <X className="h-5 w-5 text-muted-foreground" />
             </button>
