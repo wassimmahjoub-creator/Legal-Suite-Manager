@@ -61,5 +61,5 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
 }
 
 export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, SECRET, { expiresIn: "30d" });
 }
