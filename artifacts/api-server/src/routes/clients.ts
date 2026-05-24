@@ -42,31 +42,45 @@ router.get("/clients", async (req, res) => {
   res.json(clients);
 });
 
-router.post("/clients", async (req, res) => {
+router.post("/clients", async (req, res): Promise<void> => {
   const parsed = CreateClientBody.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  try {
+    const year = new Date().getFullYear();
+    const yearPrefix = `${year}/`;
+    const actor = (req as typeof req & { user: { orgId?: number } }).user;
+    const [count] = await db
+      .select({ cnt: sql<number>`count(*)::int` })
+      .from(clientsTable)
+      .where(and(
+        eq(clientsTable.orgId, actor.orgId ?? 0),
+        like(clientsTable.officeSeq, `${yearPrefix}%`)
+      ));
+    const next = (count?.cnt ?? 0) + 1;
+    const officeSeq = `${year}/${String(next).padStart(3, "0")}`;
 
-  const year = new Date().getFullYear();
-  const yearPrefix = `${year}/`;
-  const actor = (req as typeof req & { user: { orgId?: number } }).user;
-  const [count] = await db
-    .select({ cnt: sql<number>`count(*)::int` })
-    .from(clientsTable)
-    .where(and(
-      eq(clientsTable.orgId, actor.orgId ?? 0),
-      like(clientsTable.officeSeq, `${yearPrefix}%`)
-    ));
-  const next = (count?.cnt ?? 0) + 1;
-  const officeSeq = `${year}/${String(next).padStart(3, "0")}`;
-
-  const extras = extractExtras(req.body as Record<string, unknown>);
-  const [client] = await db.insert(clientsTable).values({
-    ...parsed.data,
-    ...extras,
-    orgId: actor.orgId ?? 0,
-    officeSeq: extras.officeSeq ?? officeSeq,
-  }).returning();
-  res.status(201).json(client);
+    const extras = extractExtras(req.body as Record<string, unknown>);
+    const [client] = await db.insert(clientsTable).values({
+      ...parsed.data,
+      ...extras,
+      orgId: actor.orgId ?? 0,
+      officeSeq: extras.officeSeq ?? officeSeq,
+    }).returning();
+    res.status(201).json(client);
+  } catch (err) {
+    req.log.error({ err }, "[POST /clients] erreur");
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("column") && msg.includes("does not exist")) {
+      res.status(500).json({
+        error: "خطأ في قاعدة البيانات: عمود مفقود. تأكد من تشغيل المايغريشن /api/admin/migrate-0001",
+      });
+    } else {
+      res.status(500).json({ error: "فشل إضافة الموكّل. يرجى المحاولة مجدداً." });
+    }
+  }
 });
 
 router.get("/clients/:id", async (req, res) => {

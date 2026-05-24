@@ -1051,7 +1051,14 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
           body: JSON.stringify(payload),
         });
         setSaving(false);
-        if (r.ok) { toast({ title: "تم حفظ التعديلات" }); onCreated(caseId); }
+        if (r.ok) {
+          toast({ title: "تم حفظ التعديلات" });
+          onCreated(caseId);
+        } else {
+          let errMsg = "فشل حفظ التعديلات. يرجى المحاولة مجدداً.";
+          try { const d = await r.json(); if (d?.error) errMsg = d.error; } catch {}
+          toast({ title: errMsg, variant: "destructive" });
+        }
         return;
       }
 
@@ -1059,7 +1066,13 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         method: "POST",
         body: JSON.stringify(payload),
       });
-      if (!r.ok) { setSaving(false); return; }
+      if (!r.ok) {
+        setSaving(false);
+        let errMsg = "فشل إنشاء الملف. يرجى المحاولة مجدداً.";
+        try { const d = await r.json(); if (d?.error) errMsg = d.error; } catch {}
+        toast({ title: errMsg, variant: "destructive" });
+        return;
+      }
       const created = await r.json();
       const createdId = created.id as number;
 
@@ -1165,8 +1178,10 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
       setSaving(false);
       toast({ title: "تم إنشاء الملف بنجاح" });
       onCreated(createdId);
-    } catch {
+    } catch (err) {
       setSaving(false);
+      console.error("[CaseWizard] erreur inattendue:", err);
+      toast({ title: "حدث خطأ غير متوقع. يرجى إعادة المحاولة.", variant: "destructive" });
     }
   }
 
