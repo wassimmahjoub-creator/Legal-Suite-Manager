@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Money } from "@/components/Money";
-import { formatAmount } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
@@ -85,7 +84,7 @@ export default function BankAccounts() {
                 </div>
                 <div className="flex items-end justify-between">
                   {a.accountNumber && <p className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3" />{a.accountNumber}</p>}
-                  <p className="text-xl font-bold text-primary" dir="ltr">{formatAmount(a.balance)} <span className="text-sm text-muted-foreground">{a.currency}</span></p>
+                  <p className="text-xl font-bold text-primary" dir="ltr"><Money amount={Number(a.balance)} /></p>
                 </div>
               </CardContent>
             </Card>

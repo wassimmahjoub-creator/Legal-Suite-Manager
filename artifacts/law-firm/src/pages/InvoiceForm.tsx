@@ -10,7 +10,6 @@ import { ArrowRight, Plus, Trash2, Send, Save, Loader2 } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/skeletons";
 import { calcLine, calcTotals, UNITS, UNIT_LABELS, VAT_RATES } from "@/services/invoiceCalculator";
 import { Money } from "@/components/Money";
-import { formatAmount } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -342,7 +341,7 @@ export default function InvoiceForm() {
                           </SelectNative>
                         </td>
                         <td className={`${cellCls} text-left font-mono text-xs text-muted-foreground`} dir="ltr">
-                          {formatAmount(computed.lineTotalHt)}
+                          <Money amount={computed.lineTotalHt} />
                         </td>
                         <td className={cellCls}>
                           <button onClick={() => removeLine(idx)}

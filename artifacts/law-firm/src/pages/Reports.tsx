@@ -62,7 +62,7 @@ const ROLE_AR: Record<string, string> = {
 };
 
 function fmtNum(n: number) {
-  return formatAmount(n);
+  return `${formatAmount(n)} د.ت`;
 }
 
 function periodDates(period: string, customFrom: string, customTo: string) {
@@ -166,7 +166,7 @@ function IncomeBar({ monthly }: { monthly: { month: string; income: number }[] }
       <div className="flex items-end gap-2 mb-2" style={{ height: 120 }}>
         {monthly.map((m, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-0.5 h-full justify-end">
-            <span className="text-[10px] text-primary font-medium">{m.income > 0 ? formatAmount(m.income) : ""}</span>
+            <span className="text-[10px] text-primary font-medium">{m.income > 0 ? <TNDAmount amount={m.income} /> : ""}</span>
             <div className="w-full bg-primary rounded-sm transition-all duration-700"
                  style={{ height: `${(m.income / maxVal) * 85}%`, minHeight: m.income > 0 ? 4 : 2 }} />
           </div>

@@ -124,7 +124,7 @@ router.get("/dashboard/alerts", async (req, res) => {
       .filter((i) => i.dueDate)
       .map((i) => ({
         id: i.id + 10000,
-        message: `فاتورة معلقة: ${Number(i.netToPay).toFixed(2)} دينار`,
+        message: `فاتورة معلقة: ${new Intl.NumberFormat('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(Number(i.netToPay))} د.ت`,
         type: "payment" as const,
         dueDate: i.dueDate!,
         caseId: i.caseId,
