@@ -85,8 +85,13 @@ export default defineConfig({
           if (id.includes("react-big-calendar")) return "vendor-calendar";
           // Tous les composants Radix UI
           if (id.includes("@radix-ui")) return "vendor-radix";
-          // React core — très stable, cache long
-          if (id.includes("react-dom") || id.includes("react/")) return "vendor-react";
+          // React core + scheduler (dépendance interne de React) — dans le même chunk
+          // pour éviter la dépendance circulaire vendor-react ↔ vendor
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
+          ) return "vendor-react";
           // Tout le reste de node_modules
           if (id.includes("node_modules")) return "vendor";
         },
