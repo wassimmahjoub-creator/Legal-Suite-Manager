@@ -49,7 +49,7 @@ router.get("/events", async (req, res) => {
 });
 
 router.post("/events", async (req, res) => {
-  const parsed = insertEventSchema.safeParse(req.body);
+  const parsed = insertEventSchema.omit({ orgId: true }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const actor = (req as typeof req & { user: { orgId?: number } }).user;
   const [row] = await db.insert(eventsTable).values({
@@ -71,7 +71,7 @@ router.post("/events", async (req, res) => {
 router.put("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
-  const parsed = insertEventSchema.safeParse(req.body);
+  const parsed = insertEventSchema.omit({ orgId: true }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const [row] = await db.update(eventsTable).set(parsed.data)
     .where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0))).returning();
