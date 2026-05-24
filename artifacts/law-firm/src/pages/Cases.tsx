@@ -57,7 +57,7 @@ export default function Cases() {
 
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
   const [, navigate] = useLocation();
-  const { data: cases, isLoading } = useListCases({ query: { staleTime: 0 } });
+  const { data: cases, isLoading } = useListCases(undefined, { query: { staleTime: 0 } });
   const queryClient = useQueryClient();
 
   useEffect(() => {
