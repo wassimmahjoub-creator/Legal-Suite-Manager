@@ -432,6 +432,20 @@ router.get("/admin/migrate-0002", async (req, res) => {
     return (r.rows?.length ?? 0) > 0;
   };
 
+  // ── Compléter l'enum service_type (idempotent via IF NOT EXISTS) ──
+  const serviceTypeValues = [
+    "lawsuit", "consultation", "contract", "company_creation", "debt_recovery",
+    "legal_notice", "judgment_execution", "real_estate_file", "labor_file",
+    "tax_file", "administrative", "mediation", "other",
+  ];
+  for (const val of serviceTypeValues) {
+    await run(
+      `ADD VALUE service_type '${val}'`,
+      `ALTER TYPE service_type ADD VALUE IF NOT EXISTS '${val}'`,
+      async () => false, // IF NOT EXISTS rend déjà l'opération idempotente
+    );
+  }
+
   // ── case_stages ──
   await run(
     "CREATE TABLE case_stages",
