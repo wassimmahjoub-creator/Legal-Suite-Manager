@@ -57,6 +57,12 @@ app.use(requestId);
 app.use(sanitizeBody);
 app.use("/api", generalApiLimiter);
 
+// Disable HTTP caching for all API responses so clients always get fresh data
+app.use("/api", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
 app.use("/api", router);
 
 // ── Serve built React frontend in production ──────────────────────────────
