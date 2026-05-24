@@ -533,7 +533,7 @@ export default function CalendarView() {
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-bold">{event.title}</h3>
+                                <h3 className="font-bold">{event.title || "جلسة بدون عنوان"}</h3>
                                 <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
                                   {typeLabel(event.type)}
                                 </span>

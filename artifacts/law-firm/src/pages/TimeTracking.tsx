@@ -130,10 +130,10 @@ export default function TimeTracking() {
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "إجمالي الساعات", value: `${totalHours.toFixed(1)} س`, icon: Clock, color: "text-info" },
-          { label: "ساعات قابلة للفوترة", value: `${billableHours.toFixed(1)} س`, icon: Timer, color: "text-primary" },
+          { label: "إجمالي الساعات", value: `${totalHours.toFixed(1).replace('.', ',')} س`, icon: Clock, color: "text-info" },
+          { label: "ساعات قابلة للفوترة", value: `${billableHours.toFixed(1).replace('.', ',')} س`, icon: Timer, color: "text-primary" },
           { label: "المبلغ القابل للفوترة", value: <TNDAmount amount={totalAmount} />, icon: TrendingUp, color: "text-success" },
-          { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1)} س`, icon: Receipt, color: "text-muted-foreground" },
+          { label: "المعدل اليومي", value: `${(totalHours / Math.max(1, [...new Set(filtered.map(e => e.date))].length)).toFixed(1).replace('.', ',')} س`, icon: Receipt, color: "text-muted-foreground" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
             <CardContent className="p-4 flex items-center gap-3">

@@ -681,7 +681,7 @@ export default function CaseDetail() {
             <>
               {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("finance"), totalDue > 0 ? "text-primary" : undefined)}
               {kpiCard("ساعات العمل",    "—", undefined, () => changeTab("finance"))}
-              {kpiCard("الموعد القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("sessions") : undefined)}
+              {kpiCard("الأجل القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("sessions") : undefined)}
               {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
             </>
           )}
@@ -1154,11 +1154,11 @@ export default function CaseDetail() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2.5 bg-blue-500/10 rounded-xl"><Clock className="h-4 w-4 text-blue-400" /></div>
-            <div><p className="text-[11px] text-muted-foreground">إجمالي الساعات</p><p className="font-bold">{totalHours.toFixed(1)} س</p></div>
+            <div><p className="text-[11px] text-muted-foreground">إجمالي الساعات</p><p className="font-bold">{totalHours.toFixed(1).replace('.', ',')} س</p></div>
           </CardContent></Card>
           <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2.5 bg-primary/10 rounded-xl"><Timer className="h-4 w-4 text-primary" /></div>
-            <div><p className="text-[11px] text-muted-foreground">ساعات قابلة للفوترة</p><p className="font-bold">{billableHrs.toFixed(1)} س</p></div>
+            <div><p className="text-[11px] text-muted-foreground">ساعات قابلة للفوترة</p><p className="font-bold">{billableHrs.toFixed(1).replace('.', ',')} س</p></div>
           </CardContent></Card>
           <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2.5 bg-green-500/10 rounded-xl"><TrendingUp className="h-4 w-4 text-green-400" /></div>

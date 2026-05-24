@@ -25,7 +25,7 @@ interface SearchResult {
 }
 
 const TYPE_CONFIG: Record<ResultType, { label: string; Icon: React.ElementType; color: string }> = {
-  case:     { label: "القضايا",    Icon: Briefcase,  color: "text-primary" },
+  case:     { label: "الملفات",    Icon: Briefcase,  color: "text-primary" },
   client:   { label: "الموكّلون",   Icon: Users,      color: "text-green-400" },
   invoice:  { label: "الفواتير",  Icon: CreditCard, color: "text-yellow-400" },
   document: { label: "الوثائق",   Icon: FileText,   color: "text-blue-400" },
@@ -203,7 +203,7 @@ export function GlobalSearch() {
 
               {!loading && !q && !showRecent && (
                 <div className="py-10 text-center text-sm text-muted-foreground">
-                  اكتب للبحث عبر القضايا، الموكّلون، الفواتير، الوثائق...
+                  اكتب للبحث عبر الملفات، الموكّلون، الفواتير، الوثائق...
                 </div>
               )}
 

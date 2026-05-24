@@ -123,7 +123,11 @@ router.get("/search", requireAuth, async (req, res): Promise<void> => {
       type: "event" as const,
       id: String(e.id),
       title: e.title,
-      subtitle: e.date ? String(e.date).slice(0, 10) : undefined,
+      subtitle: e.date ? (() => {
+        const d = new Date(String(e.date));
+        const M = ["جانفي","فيفري","مارس","أفريل","ماي","جوان","جويلية","أوت","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+        return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`;
+      })() : undefined,
       href: `/calendar`,
     })),
   ];

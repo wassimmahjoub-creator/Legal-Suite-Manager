@@ -68,6 +68,7 @@ export default function Cases() {
   ];
 
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
+  const [archivedCount, setArchivedCount] = useState(0);
   const [, navigate] = useLocation();
   const { data: cases, isLoading } = useListCases();
   const queryClient = useQueryClient();
@@ -78,6 +79,12 @@ export default function Cases() {
       .then(r => r.ok ? r.json() : [])
       .then(setLawyerCases);
   }, [userIdParam]);
+
+  useEffect(() => {
+    authFetch(`${BASE}/api/cases?archived=true`)
+      .then(r => r.ok ? r.json() : [])
+      .then((list: any[]) => setArchivedCount(list.length));
+  }, []);
 
   const casesSource = lawyerCases ?? cases;
 
@@ -238,7 +245,7 @@ export default function Cases() {
       {!isLoading && cases && (
         <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
           <span className="px-2.5 py-1 bg-muted/40 rounded-full">{cases.filter((c: any) => !c.archivedAt && !c.deletedAt).length} ملف نشط</span>
-          <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full">{cases.filter((c: any) => c.archivedAt).length} مؤرشفة</span>
+          <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full">{archivedCount} مؤرشفة</span>
         </div>
       )}
 

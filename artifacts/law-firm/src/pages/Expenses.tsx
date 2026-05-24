@@ -266,7 +266,7 @@ export default function Expenses() {
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                              <p className="font-medium">{alt}</p>
+                              <p className="font-medium">{label}</p>
                             </TooltipContent>
                           </Tooltip>
                         </td>

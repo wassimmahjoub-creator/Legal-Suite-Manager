@@ -198,7 +198,7 @@ export default function InvoicePage() {
                   <ExternalLink className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
                 </button>
                 {inv.clientTaxId && <p className="text-muted-foreground text-xs mt-0.5">م.ج: {inv.clientTaxId}</p>}
-                {inv.clientWithholdingRate && !inv.clientWithholdingExempt && (
+                {(inv.clientWithholdingRate ?? 0) > 0 && !inv.clientWithholdingExempt && (
                   <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5">
                     خصم في المنبع: {inv.clientWithholdingRate}%
                   </p>
@@ -285,11 +285,11 @@ export default function InvoicePage() {
           <Card className="border-none shadow-md">
             <CardHeader className="pb-3"><CardTitle className="text-base">الملخص المالي</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <Row label="المجموع خ.ض" amount={inv.subtotalHt} />
+              <Row label="الإجمالي خارج الضريبة" amount={inv.subtotalHt} />
               <Row label="ض.ق.م" amount={inv.vatTotal} />
               <Row label="الطابع الجبائي" amount={inv.stampDuty} />
               <div className="border-t border-border pt-2">
-                <Row label="المجموع ش.ض" amount={inv.totalTtc} bold />
+                <Row label="الإجمالي شامل الضريبة" amount={inv.totalTtc} bold />
               </div>
               {inv.withholdingTax > 0 && (
                 <div className="text-orange-600 dark:text-orange-400">

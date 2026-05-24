@@ -397,11 +397,11 @@ export default function InvoiceForm() {
             <CardHeader className="pb-3"><CardTitle className="text-base">الملخص</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">المجموع خ.ض</span>
+                <span className="text-muted-foreground">الإجمالي خارج الضريبة</span>
                 <Money amount={totals.subtotalHt} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
-                <span className="text-muted-foreground">ض.م</span>
+                <span className="text-muted-foreground">ض.ق.م</span>
                 <Money amount={totals.vatTotal} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50">
@@ -409,7 +409,7 @@ export default function InvoiceForm() {
                 <Money amount={totals.stampDuty} />
               </div>
               <div className="flex justify-between py-1 border-b border-border/50 font-semibold">
-                <span>المجموع ش.ض</span>
+                <span>الإجمالي شامل الضريبة</span>
                 <Money amount={totals.totalTtc} />
               </div>
               {!selectedClient?.withholdingExempt && (

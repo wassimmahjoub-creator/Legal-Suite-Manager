@@ -1,0 +1,177 @@
+Excellent, j'ai le rapport complet. Je lis maintenant les fichiers concernés par les bugs mineurs restants.
+
+J'ai toutes les informations. Voici le prompt :
+
+---
+
+## Prompt Replit — `fix/audit-cosmetic`
+
+```
+Branche : fix/audit-cosmetic
+Base : main
+
+Corrections cosmétiques — 10 fichiers, 0 nouvelle dépendance.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ABRÉVIATIONS خ.ض / ش.ض → libellés lisibles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/InvoiceForm.tsx ──  (récapitulatif à droite)
+  `"المجموع خ.ض"` → `"الإجمالي خارج الضريبة"`
+  `"المجموع ش.ض"` → `"الإجمالي شامل الضريبة"`
+  `"ض.م"` → `"ض.ق.م"`
+
+── law-firm/src/pages/InvoicePage.tsx ── (résumé financier ~ligne 289-293)
+  `"المجموع خ.ض"` → `"الإجمالي خارج الضريبة"`
+  `"المجموع ش.ض"` → `"الإجمالي شامل الضريبة"`
+  (les en-têtes de colonnes خ.ض dans le tableau des lignes sont OK — espace limité)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. DATE ISO DANS LA RECHERCHE GLOBALE → format arabe
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── api-server/src/routes/search.ts ── (ligne ~126)
+  AVANT :
+    subtitle: e.date ? String(e.date).slice(0, 10) : undefined,
+  APRÈS :
+    subtitle: e.date ? (() => {
+      const d = new Date(String(e.date));
+      const M = ["جانفي","فيفري","مارس","أفريل","ماي","جوان","جويلية","أوت","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+      return `${d.getDate()} ${M[d.getMonth()]} ${d.getFullYear()}`;
+    })() : undefined,
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. « 0 » SEUL SOUS LE NOM DU CLIENT DANS LA FACTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/InvoicePage.tsx ── (ligne ~202)
+  AVANT :
+    {inv.clientWithholdingRate && !inv.clientWithholdingExempt && (
+  APRÈS :
+    {(inv.clientWithholdingRate ?? 0) > 0 && !inv.clientWithholdingExempt && (
+
+  Explication : en JSX, `{0 && <JSX>}` rend le chiffre « 0 » en texte brut.
+  `> 0` l'élimine proprement.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. FORMAT DES HEURES : 1.9 س → 1,9 س
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/TimeTracking.tsx ── (lignes ~133-136)
+  Remplace TOUTES les occurrences de `.toFixed(1) + " س"` par :
+  `.toFixed(1).replace('.', ',') + " س"`
+
+── law-firm/src/pages/CaseDetail.tsx ── (onglet time, lignes ~860, ~864)
+  Même remplacement : `.toFixed(1)` → `.toFixed(1).replace('.', ',')`
+  sur les valeurs affichées avec "س" (heures)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. M6 — COMPTEUR D'ARCHIVÉS TOUJOURS 0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cause : `useListCases()` retourne uniquement les dossiers non archivés ;
+`cases.filter(c => c.archivedAt).length` est donc toujours 0.
+
+── law-firm/src/pages/Cases.tsx ──
+
+1) Ajoute un state + effet après les états existants :
+   ```ts
+   const [archivedCount, setArchivedCount] = useState(0);
+   useEffect(() => {
+     authFetch(`${BASE}/api/cases?archived=true`)
+       .then(r => r.ok ? r.json() : [])
+       .then((list: any[]) => setArchivedCount(list.length));
+   }, []);
+   ```
+
+2) Remplace la ligne du compteur (~ligne 138) :
+   AVANT :
+     <span ...>{cases.filter((c: any) => c.archivedAt).length} مؤرشفة</span>
+   APRÈS :
+     <span ...>{archivedCount} مؤرشفة</span>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. M10 — KPI CONTRADICTOIRE « الموعد القادم » vs « الجلسة القادمة »
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cause : le KPI lit les آجال (deadlines), le bloc récapitulatif lit
+caseData.nextHearing (prochaine audience). Ce sont deux choses différentes.
+→ Solution : renommer le KPI pour lever l'ambiguïté.
+
+── law-firm/src/pages/CaseDetail.tsx ── (ligne ~388)
+  AVANT :
+    kpiCard("الموعد القادم", nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—",
+            nextDeadline ? nextDeadline.title : "لا توجد آجال قادمة", ...)
+  APRÈS :
+    kpiCard("الأجل القادم", nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—",
+            nextDeadline ? nextDeadline.title : "لا توجد آجال", ...)
+
+  (Ainsi « الأجل القادم » = délai légal, « الجلسة القادمة » = audience — deux métriques distinctes)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. E-MAIL DUPLIQUÉ DANS LA FICHE CLIENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/ClientPage.tsx ── (header info strip, lignes ~376-378)
+  Supprime le bloc email du résumé compact en haut
+  (il est déjà affiché dans la section « التواصل » plus bas) :
+  SUPPRIMER :
+    {client.email && (
+      <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{client.email}</span>
+    )}
+  Garde uniquement le phone et le officeSeq dans cette ligne compacte.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. ÉVÉNEMENT CALENDRIER SANS TITRE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/Calendar.tsx ── (rendu d'un événement, ligne ~536)
+  AVANT :
+    <h3 className="font-bold">{event.title}</h3>
+  APRÈS :
+    <h3 className="font-bold">{event.title || "جلسة بدون عنوان"}</h3>
+
+  Même fallback si event.title est utilisé dans d'autres endroits du calendrier
+  pour afficher le titre dans les mini-cases du calendrier mensuel.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. TOOLTIP TYPE DÉPENSE (libellé arabe, pas français)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/Expenses.tsx ── (TooltipContent, ligne ~269)
+  AVANT :
+    <TooltipContent side="top">
+      <p className="font-medium">{alt}</p>
+    </TooltipContent>
+  APRÈS :
+    <TooltipContent side="top">
+      <p className="font-medium">{label}</p>
+    </TooltipContent>
+
+  (alt = libellé français ; label = libellé arabe — c'est le label arabe qu'on veut dans le tooltip)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. VOCABULAIRE GLOBALSSEARCH — رesting M4/M5
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/components/GlobalSearch.tsx ──
+  Ligne ~28 :  `case: { label: "القضايا", ...}` → `case: { label: "الملفات", ...}`
+  Ligne ~206 : `"اكتب للبحث عبر القضايا، الموكّلون، الفواتير، الوثائق..."`
+              → `"اكتب للبحث عبر الملفات، الموكّلون، الفواتير، الوثائق..."`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LIVRAISON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+git add -A
+git commit -m "fix(cosmetic): abréviations خ.ض, dates ISO, compteur archivés, KPI M10, heures format, 0 client"
+git push origin fix/audit-cosmetic
+```
+
+---
+
+**À noter — problèmes de données (pas de code):**
+| Problème | Raison | Action |
+|---|---|---|
+| Événement « جلسة 21 ماي » (date dans le titre) | Donnée saisie par l'utilisateur | Supprimer via le calendrier |
+| Tribunaux : Phone/Address tous « — » | 31 entrées en DB sans ces données | Saisir manuellement ou laisser |
+| Subscription `49,000 د.ت` ambigu | Contenu produit, pas un bug | Décision produit : clarifier si c'est 49 DT ou 49 000 DT |

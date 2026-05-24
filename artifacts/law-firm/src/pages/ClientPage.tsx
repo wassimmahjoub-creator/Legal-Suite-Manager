@@ -357,9 +357,6 @@ export default function ClientPage() {
             {client.phone && (
               <span className="flex items-center gap-1" dir="ltr"><Phone className="h-3.5 w-3.5" />{client.phone}</span>
             )}
-            {client.email && (
-              <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
