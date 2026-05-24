@@ -110,6 +110,39 @@ const URGENCY_COLORS: Record<string, string> = {
 const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","tasks","notes"] as const;
 type TabId = typeof TAB_IDS[number];
 
+// ─── Non-litigation service types (hide stage stepper) ────────
+const NON_LITIGATION_TYPES = ["consultation","contract","company_creation","legal_notice","mediation"];
+
+// ─── Per-service-type: proc tab label + sub-tab members ───────
+function getProcTabConfig(serviceType: string | null | undefined): { label: string; members: TabId[] } {
+  switch (serviceType) {
+    case "judgment_execution": return { label: "التنفيذ",             members: ["judgment","timeline","hearings"] };
+    case "legal_notice":       return { label: "الإنذار",              members: ["timeline","hearings"] };
+    case "mediation":          return { label: "الوساطة",             members: ["timeline","hearings"] };
+    case "consultation":       return { label: "الاستشارة",           members: ["timeline"] };
+    case "contract":           return { label: "العقد",               members: ["timeline","hearings"] };
+    case "company_creation":   return { label: "التأسيس",             members: ["timeline","hearings"] };
+    case "debt_recovery":      return { label: "التحصيل",             members: ["timeline","hearings","judgment"] };
+    case "administrative":     return { label: "الإجراءات الإدارية", members: ["timeline","hearings"] };
+    default:                   return { label: "الإجراءات",           members: ["timeline","hearings","judgment"] };
+  }
+}
+
+// ─── Context-aware sub-tab label overrides ────────────────────
+function getSubTabLabels(serviceType: string | null | undefined): Partial<Record<TabId, string>> {
+  switch (serviceType) {
+    case "judgment_execution": return { timeline: "مراحل التنفيذ",         hearings: "جلسات التنفيذ",          judgment: "الحكم المراد تنفيذه" };
+    case "mediation":          return { timeline: "مراحل الوساطة",         hearings: "جلسات التفاوض" };
+    case "legal_notice":       return { timeline: "مراحل الإنذار",         hearings: "متابعة الإنذار" };
+    case "consultation":       return { timeline: "مراحل الاستشارة" };
+    case "debt_recovery":      return { timeline: "مراحل التحصيل",         hearings: "الإجراءات القضائية" };
+    case "administrative":     return { timeline: "المراحل الإدارية",      hearings: "المواعيد والمراسلات" };
+    case "contract":           return { timeline: "مراحل العقد",           hearings: "الاجتماعات" };
+    case "company_creation":   return { timeline: "مراحل التأسيس",         hearings: "الإجراءات الإدارية" };
+    default:                   return {};
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────
 type Procedure  = { id: number; stage: string; status: string; notes: string | null; startedAt: string | null; endedAt: string | null; };
 type Deadline   = { id: number; title: string; type: string; dueDate: string; urgency: string; notes: string | null; completedAt: string | null; };
@@ -186,6 +219,16 @@ export default function CaseDetail() {
   }, []);
 
   const locale = useLocale();
+
+  // Reset activeTab when case loads if the tab isn't available for this service type
+  useEffect(() => {
+    if (!caseData) return;
+    const st = (caseData as { serviceType?: string }).serviceType;
+    const { members } = getProcTabConfig(st);
+    const available: TabId[] = ["overview", ...members, "documents", "invoicing", "expenses", "time", "tasks", "notes"];
+    if (!available.includes(activeTab)) changeTab("overview");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, (caseData as { serviceType?: string } | undefined)?.serviceType]);
 
   // Data state
   const [procedures,  setProcedures]  = useState<Procedure[]>([]);
@@ -344,6 +387,7 @@ export default function CaseDetail() {
     disputeValue?: number | null; clientSource?: string | null; judgeName?: string | null;
     firstHearingDate?: string | null; openedAt?: string | null;
     confidentialityLevel?: string | null; internalNotes?: string | null;
+    serviceType?: string | null;
   };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -368,27 +412,29 @@ export default function CaseDetail() {
 
   // ── Sub-tab metadata (labels / icons / badges) ─────────────
   const pendingTasksCount = caseTasks.filter(t => !t.done).length;
+  const stLabelOverrides  = getSubTabLabels(c.serviceType);
   const subTabMeta: Record<TabId, { label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = {
-    overview:  { label: "نظرة عامة",          icon: <BarChart2    className="h-3.5 w-3.5" /> },
-    timeline:  { label: "التسلسل الإجرائي",   icon: <GitBranch   className="h-3.5 w-3.5" /> },
-    hearings:  { label: "الجلسات والآجال",     icon: <Clock       className="h-3.5 w-3.5" />, badge: upcomingCount },
-    judgment:  { label: "الحكم والتنفيذ",      icon: <Scale       className="h-3.5 w-3.5" /> },
-    documents: { label: "الوثائق",             icon: <FolderOpen  className="h-3.5 w-3.5" />, badge: activeDocs.length },
-    invoicing: { label: "الأتعاب والفواتير",   icon: <Receipt     className="h-3.5 w-3.5" />, badge: hasOverdueInv ? 1 : 0 },
-    expenses:  { label: "المصاريف",             icon: <DollarSign  className="h-3.5 w-3.5" /> },
-    time:      { label: "الوقت",                icon: <Timer       className="h-3.5 w-3.5" /> },
-    tasks:     { label: "المهام",               icon: <CheckCircle2 className="h-3.5 w-3.5" />, badge: pendingTasksCount },
-    notes:     { label: "الملاحظات والسجل",    icon: <StickyNote  className="h-3.5 w-3.5" />,
+    overview:  { label: "نظرة عامة",                                                             icon: <BarChart2    className="h-3.5 w-3.5" /> },
+    timeline:  { label: stLabelOverrides.timeline  ?? "التسلسل الإجرائي",                       icon: <GitBranch   className="h-3.5 w-3.5" /> },
+    hearings:  { label: stLabelOverrides.hearings  ?? "الجلسات والآجال",                         icon: <Clock       className="h-3.5 w-3.5" />, badge: upcomingCount },
+    judgment:  { label: stLabelOverrides.judgment  ?? "الحكم والتنفيذ",                          icon: <Scale       className="h-3.5 w-3.5" /> },
+    documents: { label: "الوثائق",                                                               icon: <FolderOpen  className="h-3.5 w-3.5" />, badge: activeDocs.length },
+    invoicing: { label: "الأتعاب والفواتير",                                                     icon: <Receipt     className="h-3.5 w-3.5" />, badge: hasOverdueInv ? 1 : 0 },
+    expenses:  { label: "المصاريف",                                                               icon: <DollarSign  className="h-3.5 w-3.5" /> },
+    time:      { label: "الوقت",                                                                  icon: <Timer       className="h-3.5 w-3.5" /> },
+    tasks:     { label: "المهام",                                                                 icon: <CheckCircle2 className="h-3.5 w-3.5" />, badge: pendingTasksCount },
+    notes:     { label: "الملاحظات والسجل",                                                     icon: <StickyNote  className="h-3.5 w-3.5" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
   };
 
-  // ── Main-tab groups (5 tabs) ─────────────────────────────────
+  // ── Main-tab groups (5 tabs) — dynamic per service type ──────
+  const procTabConfig = getProcTabConfig(c.serviceType);
   const mainTabsDef = [
-    { id: "overview",   label: "نظرة عامة",  icon: <BarChart2   className="h-4 w-4" />, members: ["overview"]                             as TabId[], badge: undefined as number | undefined },
-    { id: "procedures", label: "الإجراءات",  icon: <GitBranch   className="h-4 w-4" />, members: ["timeline","hearings","judgment"]        as TabId[], badge: upcomingCount > 0 ? upcomingCount : undefined },
-    { id: "documents",  label: "الوثائق",    icon: <FolderOpen  className="h-4 w-4" />, members: ["documents"]                            as TabId[], badge: activeDocs.length > 0 ? activeDocs.length : undefined },
-    { id: "finances",   label: "المالية",    icon: <Receipt     className="h-4 w-4" />, members: ["invoicing","expenses","time"]           as TabId[], badge: hasOverdueInv ? 1 : undefined },
-    { id: "notes",      label: "الملاحظات", icon: <StickyNote  className="h-4 w-4" />, members: ["tasks","notes"]                        as TabId[], badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
+    { id: "overview",   label: "نظرة عامة",       icon: <BarChart2   className="h-4 w-4" />, members: ["overview"]                        as TabId[], badge: undefined as number | undefined },
+    { id: "procedures", label: procTabConfig.label, icon: <GitBranch   className="h-4 w-4" />, members: procTabConfig.members,                          badge: upcomingCount > 0 ? upcomingCount : undefined },
+    { id: "documents",  label: "الوثائق",          icon: <FolderOpen  className="h-4 w-4" />, members: ["documents"]                       as TabId[], badge: activeDocs.length > 0 ? activeDocs.length : undefined },
+    { id: "finances",   label: "المالية",          icon: <Receipt     className="h-4 w-4" />, members: ["invoicing","expenses","time"]      as TabId[], badge: hasOverdueInv ? 1 : undefined },
+    { id: "notes",      label: "الملاحظات",       icon: <StickyNote  className="h-4 w-4" />, members: ["tasks","notes"]                   as TabId[], badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
   ];
 
   // ─────────────────────────────────────────────────────────────
@@ -1283,14 +1329,16 @@ export default function CaseDetail() {
         </CardContent>
       </Card>
 
-      {/* Stage Stepper — always visible above tabs */}
-      <CaseStageStepper
-        caseId={Number(id)}
-        refreshKey={stageRefreshKey}
-        onStageClick={(stage, mode) => {
-          changeTab("judgment");
-        }}
-      />
+      {/* Stage Stepper — visible only for litigation/execution types */}
+      {!NON_LITIGATION_TYPES.includes(c.serviceType ?? "lawsuit") && (
+        <CaseStageStepper
+          caseId={Number(id)}
+          refreshKey={stageRefreshKey}
+          onStageClick={(stage, mode) => {
+            changeTab("judgment");
+          }}
+        />
+      )}
 
       {/* ── Tabs (5 principaux + sous-onglets dynamiques) ── */}
       <div>
