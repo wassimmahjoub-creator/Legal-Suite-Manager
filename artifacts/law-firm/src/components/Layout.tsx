@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Briefcase, Calendar as CalendarIcon, Users, FileText,
-  Settings as SettingsIcon, CreditCard, LayoutDashboard,
-  Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
+  Settings as SettingsIcon, CreditCard, Home,
+  Timer, BarChart3, TrendingDown, Mic, Shield,
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X, Crown, AlertTriangle, Download, FolderOpen,
+  MoreHorizontal, X, Crown, AlertTriangle, Download,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -29,25 +29,29 @@ interface OrgTrial {
 /* ─────────────────────── nav data ─────────────────────── */
 
 const NAV_PRIMARY = [
-  { href: "/today",      label: "لوحة اليوم",    icon: CalendarIcon    },
-  { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
-  { href: "/cases",      label: "الملفات",       icon: FolderOpen      },
-  { href: "/clients",    label: "الموكّلون",     icon: Users           },
-  { href: "/calendar",   label: "الرزنامة",      icon: CalendarIcon    },
-  { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
-  { href: "/documents",  label: "الوثائق",       icon: FileText        },
+  { href: "/",                label: "الرئيسية",   icon: Home         },
+  { href: "/cases",           label: "الملفات",    icon: Briefcase    },
+  { href: "/clients",         label: "الموكّلون",  icon: Users        },
+  { href: "/calendar",        label: "الرزنامة",   icon: CalendarIcon },
+  { href: "/correspondances", label: "المراسلات",  icon: MailOpen     },
 ];
 
-const NAV_SECONDARY = [
-  { href: "/opponents",           label: "الخصوم",        icon: Shield       },
-  { href: "/cases?serviceType=consultation", label: "الاستشارات", icon: MessageSquare },
-  { href: "/communications",      label: "الاتصالات",     icon: PhoneCall    },
-  { href: "/correspondances",     label: "المراسلات",     icon: MailOpen     },
-  { href: "/time-tracking",       label: "تتبع الوقت",    icon: Timer        },
-  { href: "/reports",             label: "المحاسبة",      icon: BarChart3    },
-  { href: "/courts",              label: "المحاكم",       icon: Building2    },
-  { href: "/templates",           label: "النماذج",       icon: FilePen      },
-  { href: "/expenses",            label: "المصاريف",      icon: TrendingDown },
+const NAV_FINANCE = [
+  { href: "/billing",  label: "الفواتير",  icon: CreditCard  },
+  { href: "/reports",  label: "المحاسبة",  icon: BarChart3   },
+  { href: "/expenses", label: "المصاريف",  icon: TrendingDown},
+];
+
+const NAV_DOCS = [
+  { href: "/documents",  label: "الوثائق",  icon: FileText },
+  { href: "/templates",  label: "النماذج",  icon: FilePen  },
+];
+
+const NAV_MORE = [
+  { href: "/opponents",      label: "الخصوم",     icon: Shield      },
+  { href: "/communications", label: "الاتصالات",  icon: PhoneCall   },
+  { href: "/courts",         label: "المحاكم",    icon: Building2   },
+  { href: "/time-tracking",  label: "تتبع الوقت", icon: Timer       },
 ];
 
 /* Visible admin items — high frequency */
@@ -71,10 +75,10 @@ const NAV_SYSTEM = [
 const ADMIN_ONLY_HREFS = new Set(["/users", "/legal-config", "/audit-logs", "/data-privacy"]);
 
 const NAV_MOBILE_BOTTOM = [
-  { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
-  { href: "/cases",    label: "الملفات",  icon: FolderOpen      },
-  { href: "/calendar", label: "الرزنامة", icon: CalendarIcon    },
-  { href: "/clients",  label: "الموكّلون",  icon: Users           },
+  { href: "/",         label: "الرئيسية",  icon: Home         },
+  { href: "/cases",    label: "الملفات",   icon: Briefcase    },
+  { href: "/calendar", label: "الرزنامة",  icon: CalendarIcon },
+  { href: "/clients",  label: "الموكّلون", icon: Users        },
 ];
 
 const QUICK_ACTIONS = [
@@ -84,7 +88,7 @@ const QUICK_ACTIONS = [
   { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon, kbd: "Alt+4" },
 ];
 
-const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_SECONDARY, ...NAV_ADMIN, ...NAV_SYSTEM];
+const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE, ...NAV_ADMIN, ...NAV_SYSTEM];
 
 const ROLE_LABELS: Record<string, string> = {
   admin:      "مدير",
@@ -240,6 +244,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [orgTrial, setOrgTrial] = useState<OrgTrial | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [systemOpen, setSystemOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -257,13 +264,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
 
-  const inSecondary = NAV_SECONDARY.some(i => isActive(i.href));
+  const inSecondary = [...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].some(i => isActive(i.href));
+  const inFinance = NAV_FINANCE.some(i => isActive(i.href));
+  const inDocs    = NAV_DOCS.some(i => isActive(i.href));
+  const inMore    = NAV_MORE.some(i => isActive(i.href));
   const inAdmin = NAV_ADMIN.some(i => isActive(i.href));
   const inSystem = NAV_SYSTEM.some(i => isActive(i.href));
 
   useEffect(() => {
-    if (inAdmin) setAdminOpen(true);
-    if (inSystem) { setAdminOpen(true); setSystemOpen(true); }
+    if (inFinance) setFinanceOpen(true);
+    if (inDocs)    setDocsOpen(true);
+    if (inMore)    setMoreOpen(true);
+    if (inAdmin)   setAdminOpen(true);
+    if (inSystem)  { setAdminOpen(true); setSystemOpen(true); }
   }, [location]);
 
   useEffect(() => {
@@ -332,7 +345,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.setItem("theme", next ? "dark" : "light");
   }
 
-  const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "لوحة القيادة";
+  const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "الرئيسية";
   const favItems = ALL_ITEMS.filter(i => favorites.includes(i.href));
 
   /* ── Sidebar content ── */
@@ -376,8 +389,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        {/* Daily work */}
-        <SectionHeader label="العمل اليومي" collapsed={collapsed} />
+        {/* Primary 5 */}
         <div className="space-y-px">
           {NAV_PRIMARY.map(item => (
             <NavItem key={item.href} {...item}
@@ -388,17 +400,62 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* Services */}
-        <SectionHeader label="الخدمات" collapsed={collapsed} />
-        <div className="space-y-px">
-          {NAV_SECONDARY.map(item => (
+        {/* Finances */}
+        <ExpandableSection
+          label="الفواتير والمحاسبة"
+          icon={CreditCard}
+          open={financeOpen}
+          onToggle={() => setFinanceOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inFinance}
+        >
+          {NAV_FINANCE.map(item => (
             <NavItem key={item.href} {...item}
               active={isActive(item.href)} collapsed={collapsed}
               favorited={favorites.includes(item.href)}
-              onToggleFav={toggleFavorite} onNavigate={onNavigate}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
             />
           ))}
-        </div>
+        </ExpandableSection>
+
+        {/* Docs */}
+        <ExpandableSection
+          label="الوثائق والنماذج"
+          icon={FileText}
+          open={docsOpen}
+          onToggle={() => setDocsOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inDocs}
+        >
+          {NAV_DOCS.map(item => (
+            <NavItem key={item.href} {...item}
+              active={isActive(item.href)} collapsed={collapsed}
+              favorited={favorites.includes(item.href)}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
+            />
+          ))}
+        </ExpandableSection>
+
+        {/* المزيد */}
+        <ExpandableSection
+          label="المزيد"
+          icon={MoreHorizontal}
+          open={moreOpen}
+          onToggle={() => setMoreOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inMore}
+        >
+          {NAV_MORE.map(item => (
+            <NavItem key={item.href} {...item}
+              active={isActive(item.href)} collapsed={collapsed}
+              favorited={favorites.includes(item.href)}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
+            />
+          ))}
+        </ExpandableSection>
 
         {/* Admin */}
         <SectionHeader label="الإدارة" collapsed={collapsed} />
@@ -420,7 +477,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </ExpandableSection>
 
-        {/* Deep system */}
         <ExpandableSection
           label="النظام"
           icon={Settings2}
@@ -624,11 +680,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5" dir="rtl">
-                {/* Services */}
+                {/* Services regroupés */}
                 <div>
-                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>الخدمات</p>
+                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>
+                    الخدمات
+                  </p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {NAV_SECONDARY.map(item => {
+                    {[...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].map(item => {
                       const Icon = item.icon;
                       const active = isActive(item.href);
                       return (
@@ -636,9 +694,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           onClick={() => setMobileSheetOpen(false)}
                           className={cn(
                             "flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl text-[11px] transition-all",
-                            active
-                              ? "text-primary font-medium"
-                              : "bg-muted/40 text-muted-foreground/70 hover:bg-muted/60"
+                            active ? "text-primary font-medium" : "bg-muted/40 text-muted-foreground/70 hover:bg-muted/60"
                           )}
                           style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
                         >

@@ -1,0 +1,288 @@
+SOUS-PROMPT 1 / 3 — SIDEBAR : 16 → 8 ENTRÉES
+Fichiers modifiés : artifacts/law-firm/src/components/Layout.tsx
+
+ÉTAPE 1 — Import Lucide : ajouter Home
+Ligne 3, modifier le bloc d'import :
+
+// AVANT
+import {
+  Briefcase, Calendar as CalendarIcon, Users, FileText,
+  Settings as SettingsIcon, CreditCard, LayoutDashboard,
+  Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
+  FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
+  Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
+  Plus, Star, ChevronDown, ChevronLeft,
+  MoreHorizontal, X, Crown, AlertTriangle, Download,
+} from "lucide-react";
+
+// APRÈS
+import {
+  Briefcase, Calendar as CalendarIcon, Users, FileText,
+  Settings as SettingsIcon, CreditCard, Home,
+  Timer, BarChart3, TrendingDown, Mic, Shield,
+  FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
+  Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
+  Plus, Star, ChevronDown, ChevronLeft,
+  MoreHorizontal, X, Crown, AlertTriangle, Download,
+} from "lucide-react";
+(supprime LayoutDashboard et MessageSquare, ajoute Home)
+
+ÉTAPE 2 — Remplacer les 4 tableaux de navigation (lignes 31-50)
+// AVANT (NAV_PRIMARY + NAV_SECONDARY, 15 lignes)
+const NAV_PRIMARY = [
+  { href: "/today",      label: "لوحة اليوم",    icon: CalendarIcon    },
+  { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
+  { href: "/cases",      label: "القضايا",       icon: Briefcase       },
+  { href: "/clients",    label: "الموكّلون",     icon: Users           },
+  { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
+  { href: "/documents",  label: "الوثائق",       icon: FileText        },
+];
+
+const NAV_SECONDARY = [
+  { href: "/opponents",           label: "الخصوم",        icon: Shield       },
+  { href: "/consultations",       label: "الاستشارات",    icon: MessageSquare},
+  { href: "/communications",      label: "الاتصالات",     icon: PhoneCall    },
+  { href: "/correspondances",     label: "المراسلات",     icon: MailOpen     },
+  { href: "/time-tracking",       label: "تتبع الوقت",    icon: Timer        },
+  { href: "/reports",             label: "المحاسبة",      icon: BarChart3    },
+  { href: "/courts",              label: "المحاكم",       icon: Building2    },
+  { href: "/templates",           label: "النماذج",       icon: FilePen      },
+  { href: "/expenses",            label: "المصاريف",      icon: TrendingDown },
+];
+
+// APRÈS (5 tableaux)
+const NAV_PRIMARY = [
+  { href: "/",                label: "الرئيسية",   icon: Home         },
+  { href: "/cases",           label: "الملفات",    icon: Briefcase    },
+  { href: "/clients",         label: "الموكّلون",  icon: Users        },
+  { href: "/calendar",        label: "الرزنامة",   icon: CalendarIcon },
+  { href: "/correspondances", label: "المراسلات",  icon: MailOpen     },
+];
+
+const NAV_FINANCE = [
+  { href: "/billing",  label: "الفواتير",  icon: CreditCard  },
+  { href: "/reports",  label: "المحاسبة",  icon: BarChart3   },
+  { href: "/expenses", label: "المصاريف",  icon: TrendingDown},
+];
+
+const NAV_DOCS = [
+  { href: "/documents",  label: "الوثائق",  icon: FileText },
+  { href: "/templates",  label: "النماذج",  icon: FilePen  },
+];
+
+const NAV_MORE = [
+  { href: "/opponents",      label: "الخصوم",     icon: Shield      },
+  { href: "/communications", label: "الاتصالات",  icon: PhoneCall   },
+  { href: "/courts",         label: "المحاكم",    icon: Building2   },
+  { href: "/time-tracking",  label: "تتبع الوقت", icon: Timer       },
+];
+ÉTAPE 3 — Mettre à jour QUICK_ACTIONS et NAV_MOBILE_BOTTOM (lignes 72-84)
+// AVANT
+const NAV_MOBILE_BOTTOM = [
+  { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
+  { href: "/cases",    label: "القضايا",  icon: Briefcase       },
+  { href: "/calendar", label: "الرزنامة", icon: CalendarIcon    },
+  { href: "/clients",  label: "الموكّلون",  icon: Users           },
+];
+
+const QUICK_ACTIONS = [
+  { label: "قضية جديدة",   href: "/cases",    icon: Briefcase    },
+  { label: "موكّل جديد",    href: "/clients",  icon: Users        },
+  { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
+  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
+];
+
+// APRÈS
+const NAV_MOBILE_BOTTOM = [
+  { href: "/",         label: "الرئيسية",  icon: Home         },
+  { href: "/cases",    label: "الملفات",   icon: Briefcase    },
+  { href: "/calendar", label: "الرزنامة",  icon: CalendarIcon },
+  { href: "/clients",  label: "الموكّلون", icon: Users        },
+];
+
+const QUICK_ACTIONS = [
+  { label: "ملف جديد",     href: "/cases",    icon: Briefcase    },
+  { label: "موكّل جديد",   href: "/clients",  icon: Users        },
+  { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
+  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
+];
+ÉTAPE 4 — Mettre à jour ALL_ITEMS (ligne 86)
+// AVANT
+const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_SECONDARY, ...NAV_ADMIN, ...NAV_SYSTEM];
+
+// APRÈS
+const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE, ...NAV_ADMIN, ...NAV_SYSTEM];
+ÉTAPE 5 — Mettre à jour le breadcrumb par défaut (ligne 321)
+// AVANT
+const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "لوحة القيادة";
+
+// APRÈS
+const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "الرئيسية";
+ÉTAPE 6 — Ajouter les états et constantes dans Layout() (après ligne 241)
+Après la ligne const [systemOpen, setSystemOpen] = useState(false);, ajouter :
+
+const [financeOpen, setFinanceOpen] = useState(false);
+const [docsOpen, setDocsOpen] = useState(false);
+const [moreOpen, setMoreOpen] = useState(false);
+Après la ligne const inSystem = NAV_SYSTEM.some(i => isActive(i.href)); (ligne 261), ajouter :
+
+const inFinance = NAV_FINANCE.some(i => isActive(i.href));
+const inDocs    = NAV_DOCS.some(i => isActive(i.href));
+const inMore    = NAV_MORE.some(i => isActive(i.href));
+ÉTAPE 7 — Mettre à jour le useEffect d'auto-ouverture (lignes 263-266)
+// AVANT
+useEffect(() => {
+  if (inAdmin) setAdminOpen(true);
+  if (inSystem) { setAdminOpen(true); setSystemOpen(true); }
+}, [location]);
+
+// APRÈS
+useEffect(() => {
+  if (inFinance) setFinanceOpen(true);
+  if (inDocs)    setDocsOpen(true);
+  if (inMore)    setMoreOpen(true);
+  if (inAdmin)   setAdminOpen(true);
+  if (inSystem)  { setAdminOpen(true); setSystemOpen(true); }
+}, [location]);
+ÉTAPE 8 — Mettre à jour inSecondary pour la barre mobile (ligne 259)
+// AVANT
+const inSecondary = NAV_SECONDARY.some(i => isActive(i.href));
+
+// APRÈS
+const inSecondary = [...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].some(i => isActive(i.href));
+ÉTAPE 9 — Réécrire la section nav dans SidebarContent (lignes 365-426)
+Remplacer entièrement les deux blocs "Daily work" et "Services" et "Admin" (de {/* Daily work */} jusqu'à la fin de </ExpandableSection> du "Deep system") par :
+
+{/* Primary 5 — pas d'en-tête de section */}
+<div className="space-y-px">
+  {NAV_PRIMARY.map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={toggleFavorite} onNavigate={onNavigate}
+    />
+  ))}
+</div>
+
+{/* Finances */}
+<ExpandableSection
+  label="الفواتير والمحاسبة"
+  icon={CreditCard}
+  open={financeOpen}
+  onToggle={() => setFinanceOpen(o => !o)}
+  collapsed={collapsed}
+  hasActive={inFinance}
+>
+  {NAV_FINANCE.map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={!collapsed ? toggleFavorite : undefined}
+      onNavigate={onNavigate} indent
+    />
+  ))}
+</ExpandableSection>
+
+{/* Docs */}
+<ExpandableSection
+  label="الوثائق والنماذج"
+  icon={FileText}
+  open={docsOpen}
+  onToggle={() => setDocsOpen(o => !o)}
+  collapsed={collapsed}
+  hasActive={inDocs}
+>
+  {NAV_DOCS.map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={!collapsed ? toggleFavorite : undefined}
+      onNavigate={onNavigate} indent
+    />
+  ))}
+</ExpandableSection>
+
+{/* المزيد */}
+<ExpandableSection
+  label="المزيد"
+  icon={MoreHorizontal}
+  open={moreOpen}
+  onToggle={() => setMoreOpen(o => !o)}
+  collapsed={collapsed}
+  hasActive={inMore}
+>
+  {NAV_MORE.map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={!collapsed ? toggleFavorite : undefined}
+      onNavigate={onNavigate} indent
+    />
+  ))}
+</ExpandableSection>
+
+{/* Admin */}
+<SectionHeader label="الإدارة" collapsed={collapsed} />
+<ExpandableSection
+  label="إدارة الفريق"
+  icon={Users}
+  open={adminOpen}
+  onToggle={() => setAdminOpen(o => !o)}
+  collapsed={collapsed}
+  hasActive={inAdmin}
+>
+  {NAV_ADMIN.filter(item => !ADMIN_ONLY_HREFS.has(item.href) || isAdmin).map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={!collapsed ? toggleFavorite : undefined}
+      onNavigate={onNavigate} indent
+    />
+  ))}
+</ExpandableSection>
+
+<ExpandableSection
+  label="النظام"
+  icon={Settings2}
+  open={systemOpen}
+  onToggle={() => setSystemOpen(o => !o)}
+  collapsed={collapsed}
+  hasActive={inSystem}
+>
+  {NAV_SYSTEM.filter(item => !ADMIN_ONLY_HREFS.has(item.href) || isAdmin).map(item => (
+    <NavItem key={item.href} {...item}
+      active={isActive(item.href)} collapsed={collapsed}
+      favorited={favorites.includes(item.href)}
+      onToggleFav={!collapsed ? toggleFavorite : undefined}
+      onNavigate={onNavigate} indent
+    />
+  ))}
+</ExpandableSection>
+ÉTAPE 10 — Mobile sheet : remplacer le grid "خدمات" (lignes 613-636)
+Dans le mobile sheet, remplacer le bloc {/* Services */} (div qui contient NAV_SECONDARY.map(...)) par :
+
+{/* Services regroupés */}
+<div>
+  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>
+    الخدمات
+  </p>
+  <div className="grid grid-cols-3 gap-1.5">
+    {[...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].map(item => {
+      const Icon = item.icon;
+      const active = isActive(item.href);
+      return (
+        <Link key={item.href} href={item.href}
+          onClick={() => setMobileSheetOpen(false)}
+          className={cn(
+            "flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl text-[11px] transition-all",
+            active ? "text-primary font-medium" : "bg-muted/40 text-muted-foreground/70 hover:bg-muted/60"
+          )}
+          style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
+        >
+          <Icon className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground/50")} />
+          <span className="text-center leading-tight">{item.label}</span>
+        </Link>
+      );
+    })}
+  </div>
+</div>
