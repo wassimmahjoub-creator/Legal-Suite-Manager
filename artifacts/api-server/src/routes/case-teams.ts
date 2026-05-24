@@ -47,7 +47,7 @@ router.put("/case-teams/:id", requireAuth, async (req, res) => {
   if (userId) updateData.userId = userId;
   const [row] = await db.update(caseTeamsTable).set(updateData).where(eq(caseTeamsTable.id, teamId)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
-  res.json(row);
+  return res.json(row);
 });
 
 router.delete("/case-teams/:id", requireAuth, async (req, res) => {

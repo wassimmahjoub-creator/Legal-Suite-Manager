@@ -11,7 +11,7 @@ router.get("/cabinet-settings", async (_req, res) => {
     const [created] = await db.insert(cabinetSettingsTable).values({}).returning();
     return res.json(created);
   }
-  res.json(row);
+  return res.json(row);
 });
 
 router.put("/cabinet-settings", requireAdmin, async (req, res) => {
@@ -38,7 +38,7 @@ router.put("/cabinet-settings", requireAdmin, async (req, res) => {
     return res.json(row);
   }
   const [row] = await db.update(cabinetSettingsTable).set(fields).where(eq(cabinetSettingsTable.id, existing.id)).returning();
-  res.json(row);
+  return res.json(row);
 });
 
 export default router;

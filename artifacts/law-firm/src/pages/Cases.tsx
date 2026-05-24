@@ -1,4 +1,3 @@
-import { SelectNative } from "@/components/SelectNative";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { authFetch } from "@/lib/authFetch";

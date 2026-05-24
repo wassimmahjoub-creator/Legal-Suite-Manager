@@ -59,7 +59,7 @@ router.get("/cases/:id/pdf-data", async (req, res) => {
     db.select().from(cabinetSettingsTable).limit(1),
   ]);
 
-  res.json({
+  return res.json({
     case: caseRow,
     procedures,
     deadlines,

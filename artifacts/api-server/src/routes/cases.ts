@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, casesTable, clientsTable } from "@workspace/db";
+import { db, casesTable, clientsTable, type ServiceType } from "@workspace/db";
 import { eq, isNull, isNotNull, like, sql, inArray, and, or } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
@@ -63,7 +63,7 @@ function extractExtras(body: Record<string, unknown>) {
     opponentLawyer: str("opponentLawyer"),
     judgmentText: str("judgmentText"),
     // Wizard fields
-    serviceType: str("serviceType") as any,
+    serviceType: str("serviceType") as ServiceType | null,
     caseType: str("caseType"),
     litigationDegree: str("litigationDegree"),
     procedureType: str("procedureType"),

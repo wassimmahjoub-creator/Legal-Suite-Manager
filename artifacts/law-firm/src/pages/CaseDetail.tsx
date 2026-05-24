@@ -2,7 +2,7 @@ import { SelectNative } from "@/components/SelectNative";
 import { CaseWizard } from "@/components/cases/CaseWizard";
 import { CaseStageStepper } from "@/components/cases/CaseStageStepper";
 import { CaseJudgmentTab } from "@/components/cases/CaseJudgmentTab";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetCase } from "@workspace/api-client-react";
 import { formatDateTN } from "@/lib/date";
