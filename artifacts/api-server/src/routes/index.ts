@@ -50,6 +50,8 @@ const PUBLIC_PATHS = [
   "/auth/forgot-password", "/auth/reset-password",
   "/invitations/accept/", "/healthz", "/organization/plans",
   "/admin/migrate-0001",
+  "/admin/migrate-0002",
+  "/admin/fix-invoice-numbers",
 ];
 
 function softAuth(req: Request, res: Response, next: NextFunction) {

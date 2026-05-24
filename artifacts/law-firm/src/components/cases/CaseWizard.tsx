@@ -654,7 +654,13 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         method: "POST",
         body: JSON.stringify(payload),
       });
-      if (!r.ok) { setSaving(false); return; }
+      if (!r.ok) {
+        let errMsg = "فشل إنشاء الملف. يرجى المحاولة مجدداً.";
+        try { const e = await r.json(); if (e?.error) errMsg = e.error; } catch { /* ignore */ }
+        toast({ title: "خطأ", description: errMsg, variant: "destructive" });
+        setSaving(false);
+        return;
+      }
       const created = await r.json();
       const createdId = created.id as number;
 

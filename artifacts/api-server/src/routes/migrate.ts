@@ -403,4 +403,173 @@ $$`,
 </body></html>`);
 });
 
+// ── Migration 0002 — Tables manquantes (case_stages, case_events, legal_deadlines, conflict_checks, data_exports) ──
+// URL : GET /api/admin/migrate-0002?secret=MIGRATION_SECRET
+router.get("/admin/migrate-0002", async (req, res) => {
+  const secret = process.env["MIGRATION_SECRET"] ?? "migrate-legal-2026";
+  if (req.query["secret"] !== secret) {
+    return res.status(403).json({ error: "Token invalide. Ajoute ?secret=<MIGRATION_SECRET> à l'URL." });
+  }
+
+  const steps: { name: string; status: "ok" | "skipped" | "error"; detail?: string }[] = [];
+
+  async function run(name: string, query: string, skipCheck?: () => Promise<boolean>) {
+    try {
+      if (skipCheck && await skipCheck()) {
+        steps.push({ name, status: "skipped", detail: "déjà appliqué" });
+        return;
+      }
+      await db.execute(sql.raw(query));
+      steps.push({ name, status: "ok" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      steps.push({ name, status: "error", detail: msg });
+    }
+  }
+
+  const tableExists = async (t: string) => {
+    const r = await db.execute(sql`SELECT 1 FROM information_schema.tables WHERE table_name=${t}`);
+    return (r.rows?.length ?? 0) > 0;
+  };
+
+  // ── case_stages ──
+  await run(
+    "CREATE TABLE case_stages",
+    `CREATE TABLE case_stages (
+      id            serial PRIMARY KEY,
+      case_id       integer NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      stage         text NOT NULL,
+      entered_at    timestamptz NOT NULL DEFAULT now(),
+      exited_at     timestamptz,
+      court_id      integer REFERENCES courts(id),
+      court_case_number text,
+      decision_date date,
+      decision_summary  text,
+      decision_outcome  text,
+      execution_status  text DEFAULT 'not_started',
+      execution_notes   text,
+      notes         text,
+      created_by    integer REFERENCES users(id),
+      created_at    timestamptz DEFAULT now()
+    )`,
+    () => tableExists("case_stages"),
+  );
+
+  // ── legal_deadlines ──
+  await run(
+    "CREATE TABLE legal_deadlines",
+    `CREATE TABLE legal_deadlines (
+      id                   serial PRIMARY KEY,
+      case_id              integer NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      case_stage_id        integer REFERENCES case_stages(id) ON DELETE CASCADE,
+      deadline_type        text NOT NULL DEFAULT 'custom',
+      name_ar              text NOT NULL,
+      start_date           date NOT NULL,
+      duration_days        integer NOT NULL,
+      end_date             date,
+      reminder_days_before integer DEFAULT 7,
+      is_completed         boolean DEFAULT false,
+      completed_at         timestamptz,
+      completed_notes      text,
+      created_at           timestamptz DEFAULT now(),
+      created_by           integer REFERENCES users(id)
+    )`,
+    () => tableExists("legal_deadlines"),
+  );
+
+  // ── case_events ──
+  await run(
+    "CREATE TABLE case_events",
+    `CREATE TABLE case_events (
+      id                   serial PRIMARY KEY,
+      case_id              integer NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      event_type           text NOT NULL,
+      occurred_at          timestamptz NOT NULL,
+      logged_at            timestamptz DEFAULT now(),
+      title_ar             text NOT NULL,
+      title_fr             text,
+      description          text,
+      metadata             jsonb DEFAULT '{}',
+      actor_user_id        integer REFERENCES users(id),
+      related_entity_type  text,
+      related_entity_id    integer,
+      is_system_generated  boolean DEFAULT true,
+      case_stage_id        integer,
+      created_at           timestamptz DEFAULT now()
+    )`,
+    () => tableExists("case_events"),
+  );
+
+  // ── conflict_checks ──
+  await run(
+    "CREATE TABLE conflict_checks",
+    `CREATE TABLE conflict_checks (
+      id                       serial PRIMARY KEY,
+      case_id                  integer NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      conflict_type            text NOT NULL,
+      conflicting_entity_type  text NOT NULL,
+      conflicting_entity_id    integer NOT NULL,
+      conflicting_entity_name  text,
+      matched_on               text NOT NULL,
+      match_score              numeric,
+      other_case_id            integer REFERENCES cases(id),
+      other_case_name          text,
+      detected_at              timestamp DEFAULT now() NOT NULL,
+      resolved                 boolean DEFAULT false NOT NULL,
+      resolved_at              timestamp,
+      resolved_by              integer REFERENCES users(id),
+      resolution_justification text,
+      created_at               timestamp DEFAULT now() NOT NULL
+    )`,
+    () => tableExists("conflict_checks"),
+  );
+
+  // ── data_exports ──
+  await run(
+    "CREATE TABLE data_exports",
+    `CREATE TABLE data_exports (
+      id                  serial PRIMARY KEY,
+      requested_by        integer NOT NULL REFERENCES users(id),
+      export_type         text NOT NULL,
+      scope_id            integer,
+      status              text NOT NULL DEFAULT 'pending',
+      started_at          timestamp,
+      completed_at        timestamp,
+      file_path           text,
+      file_size_bytes     bigint,
+      download_token      text,
+      download_expires_at timestamp,
+      download_count      integer DEFAULT 0,
+      error_message       text,
+      created_at          timestamp NOT NULL DEFAULT now()
+    )`,
+    () => tableExists("data_exports"),
+  );
+
+  // ── Correction numérotation factures ──
+  await run(
+    "Corriger numéros de factures (F-YYYY-NNNN)",
+    `UPDATE invoices
+     SET invoice_number = 'F-' || to_char(created_at, 'YYYY') || '-' || lpad(CAST(id AS text), 4, '0')
+     WHERE invoice_number IS NULL OR invoice_number NOT LIKE 'F-%'`,
+    async () => false, // toujours vérifier
+  );
+
+  const stepsHtml = steps.map(s => {
+    const color = s.status === "ok" ? "#22c55e" : s.status === "skipped" ? "#94a3b8" : "#ef4444";
+    const icon  = s.status === "ok" ? "✅" : s.status === "skipped" ? "⏭️" : "❌";
+    return `<tr><td style="padding:6px 12px;color:${color}">${icon} ${s.name}</td><td style="padding:6px 12px;font-size:12px;color:#64748b">${s.detail ?? ""}</td></tr>`;
+  }).join("");
+
+  res.send(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><title>Migration 0002</title>
+<style>body{font-family:sans-serif;padding:32px;background:#0f172a;color:#e2e8f0}h1{color:#38bdf8}h2{color:#94a3b8;margin-top:32px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #334155;padding:6px 12px;text-align:right}th{background:#1e293b}</style>
+</head><body>
+<h1>Migration 0002 — Tables manquantes</h1>
+<h2>Étapes</h2>
+<table>${stepsHtml}</table>
+</body></html>`);
+});
+
 export default router;
