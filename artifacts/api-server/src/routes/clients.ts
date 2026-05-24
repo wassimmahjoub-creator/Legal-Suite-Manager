@@ -60,13 +60,19 @@ router.post("/clients", async (req, res) => {
   const officeSeq = `${year}/${String(next).padStart(3, "0")}`;
 
   const extras = extractExtras(req.body as Record<string, unknown>);
-  const [client] = await db.insert(clientsTable).values({
-    ...parsed.data,
-    ...extras,
-    orgId: actor.orgId ?? 0,
-    officeSeq: extras.officeSeq ?? officeSeq,
-  }).returning();
-  res.status(201).json(client);
+  try {
+    const [client] = await db.insert(clientsTable).values({
+      ...parsed.data,
+      ...extras,
+      orgId: actor.orgId ?? 0,
+      officeSeq: extras.officeSeq ?? officeSeq,
+    }).returning();
+    res.status(201).json(client);
+  } catch (err) {
+    console.error("[POST /clients] insert failed:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: "فشل إضافة الموكّل. يرجى المحاولة مجدداً.", detail: msg });
+  }
 });
 
 router.get("/clients/:id", async (req, res) => {
