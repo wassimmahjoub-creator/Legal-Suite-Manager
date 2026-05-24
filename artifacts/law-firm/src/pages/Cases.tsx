@@ -32,19 +32,14 @@ export default function Cases() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewArchived, setViewArchived] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>(() =>
-    new URLSearchParams(window.location.search).get("serviceType") ?? "all"
-  );
+  const [activeGroup,       setActiveGroup]       = useState<string>("all");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
 
-  const TAB_GROUPS = [
+  const GROUPS = [
     {
-      tabs: [
-        { key: "all", label: "الكل" },
-      ],
-    },
-    {
+      key: "litigation",
       label: "الملفات القضائية",
-      tabs: [
+      types: [
         { key: "lawsuit",            label: "دعوى قضائية" },
         { key: "real_estate_file",   label: "ملف عقاري" },
         { key: "labor_file",         label: "ملف شغل" },
@@ -53,21 +48,23 @@ export default function Cases() {
       ],
     },
     {
+      key: "consultations",
       label: "الاستشارات والعقود",
-      tabs: [
-        { key: "consultation",     label: "استشارة" },
+      types: [
+        { key: "consultation",     label: "استشارة قانونية" },
         { key: "contract",         label: "تحرير عقد" },
         { key: "company_creation", label: "تأسيس شركة" },
         { key: "debt_recovery",    label: "استخلاص ديون" },
       ],
     },
     {
+      key: "other",
       label: "الإجراءات الأخرى",
-      tabs: [
-        { key: "legal_notice",  label: "إنذار" },
-        { key: "administrative",label: "ملف إداري" },
-        { key: "mediation",     label: "وساطة" },
-        { key: "other",         label: "أخرى" },
+      types: [
+        { key: "legal_notice",   label: "إنذار" },
+        { key: "administrative", label: "ملف إداري" },
+        { key: "mediation",      label: "وساطة" },
+        { key: "other",          label: "أخرى" },
       ],
     },
   ];
@@ -92,16 +89,27 @@ export default function Cases() {
     return true;
   });
 
-  const tabCounts: Record<string, number> = { all: baseFiltered.length };
+  const typeCounts: Record<string, number> = {};
   for (const c of baseFiltered) {
     const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
-    tabCounts[t] = (tabCounts[t] ?? 0) + 1;
+    typeCounts[t] = (typeCounts[t] ?? 0) + 1;
   }
+  const groupCount = (gkey: string) => {
+    const g = GROUPS.find(g => g.key === gkey);
+    return g ? g.types.reduce((s, t) => s + (typeCounts[t.key] ?? 0), 0) : 0;
+  };
+
+  const activeGroupDef = GROUPS.find(g => g.key === activeGroup) ?? null;
 
   const filteredCases = baseFiltered.filter((c: any) => {
     const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
-    if (serviceTypeFilter !== "all") {
-      if (t !== serviceTypeFilter) return false;
+    if (activeGroup !== "all") {
+      if (serviceTypeFilter !== "all") {
+        if (t !== serviceTypeFilter) return false;
+      } else {
+        const gTypes = activeGroupDef?.types.map(x => x.key) ?? [];
+        if (!gTypes.includes(t)) return false;
+      }
     }
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
     if (search) {
@@ -191,40 +199,76 @@ export default function Cases() {
         </div>
       </div>
 
-      {/* ── Onglets type de dossier — sections groupées ── */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {TAB_GROUPS.map((group, gi) => (
-          <div key={gi} className="flex items-center gap-1.5 flex-wrap">
-            {group.label && (
-              <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wide pe-1 border-e border-border">
-                {group.label}
-              </span>
-            )}
-            {group.tabs.map(tab => {
-              const count = tabCounts[tab.key] ?? 0;
-              const active = serviceTypeFilter === tab.key;
+      {/* ── Onglets type de dossier — style CaseDetail ── */}
+      <div className="border-b border-border -mx-0">
+        <div className="flex gap-0 overflow-x-auto no-scrollbar">
+          {/* الكل */}
+          <button
+            onClick={() => { setActiveGroup("all"); setServiceTypeFilter("all"); }}
+            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0
+              ${activeGroup === "all"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
+          >
+            الكل
+            <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center
+              ${activeGroup === "all" ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+              {baseFiltered.length}
+            </span>
+          </button>
+          {/* Groups */}
+          {GROUPS.map(g => {
+            const isActive = activeGroup === g.key;
+            const cnt = groupCount(g.key);
+            return (
+              <button key={g.key}
+                onClick={() => { setActiveGroup(g.key); setServiceTypeFilter("all"); }}
+                className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0
+                  ${isActive
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
+              >
+                {g.label}
+                {cnt > 0 && (
+                  <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center
+                    ${isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                    {cnt}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Sous-onglets (visibles uniquement quand un groupe est actif) ── */}
+      {activeGroupDef && (
+        <div className="border-b border-border/40 bg-muted/20 -mx-0 rounded-b-none">
+          <div className="flex gap-0 overflow-x-auto no-scrollbar px-2">
+            {activeGroupDef.types.map(t => {
+              const isActive = serviceTypeFilter === t.key;
+              const cnt = typeCounts[t.key] ?? 0;
               return (
-                <button
-                  key={tab.key}
-                  onClick={() => setServiceTypeFilter(tab.key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors
-                    ${active
-                      ? "bg-primary text-primary-foreground border-primary font-semibold"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}
+                <button key={t.key}
+                  onClick={() => setServiceTypeFilter(isActive ? "all" : t.key)}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium border-b-2 transition-colors whitespace-nowrap shrink-0
+                    ${isActive
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"}`}
                 >
-                  {tab.label}
-                  {count > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
-                      ${active ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                      {count}
+                  {t.label}
+                  {cnt > 0 && (
+                    <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center
+                      ${isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                      {cnt}
                     </span>
                   )}
                 </button>
               );
             })}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Stats */}
       {!isLoading && cases && (
