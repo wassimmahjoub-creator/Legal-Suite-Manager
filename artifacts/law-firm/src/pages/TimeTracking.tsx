@@ -171,7 +171,7 @@ export default function TimeTracking() {
               <thead className="bg-muted/40">
                 <tr>
                   <th className="text-start py-3 px-4 font-semibold">التاريخ</th>
-                  <th className="text-start py-3 px-4 font-semibold">القضية</th>
+                  <th className="text-start py-3 px-4 font-semibold">الملف</th>
                   <th className="text-start py-3 px-4 font-semibold">الوصف</th>
                   <th className="text-start py-3 px-4 font-semibold">الساعات</th>
                   <th className="text-start py-3 px-4 font-semibold">المعدل</th>
@@ -209,7 +209,7 @@ export default function TimeTracking() {
               <Input id="te-date" type="date" className={inputCls} dir="ltr"
                 value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </FormField>
-            <FormField label="القضية *" htmlFor="te-case">
+            <FormField label="الملف *" htmlFor="te-case">
               <SelectNative id="te-case" className={inputCls + " px-3 cursor-pointer"}
                 value={form.case} onChange={e => setForm(f => ({ ...f, case: e.target.value }))}>
                 {CASES.map(c => <option key={c} value={c}>{c}</option>)}

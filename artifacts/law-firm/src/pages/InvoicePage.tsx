@@ -133,7 +133,7 @@ export default function InvoicePage() {
           </button>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold font-mono">
-              {inv.invoiceNumber ?? `#INV-${String(inv.id).padStart(4, "0")}`}
+              {inv.invoiceNumber ?? `F-${new Date(inv.createdAt ?? Date.now()).getFullYear()}-${String(inv.id).padStart(4, "0")}`}
             </h1>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCls}`}>{statusLabel}</span>
             {isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
@@ -207,7 +207,7 @@ export default function InvoicePage() {
               <div>
                 {inv.caseName && inv.caseId && (
                   <>
-                    <p className="text-xs text-muted-foreground mb-1">القضية</p>
+                    <p className="text-xs text-muted-foreground mb-1">الملف</p>
                     <button
                       onClick={() => navigate(`/cases/${inv.caseId}`)}
                       className="flex items-center gap-1.5 font-medium hover:text-primary transition-colors group text-right"

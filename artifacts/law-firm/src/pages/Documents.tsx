@@ -132,8 +132,8 @@ export default function Documents() {
               {docTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </SelectNative>
           </FormField>
-          <FormField label="القضية المرتبطة" htmlFor="doc-case">
-            <Input id="doc-case" placeholder="اسم القضية (اختياري)" className={inputCls}
+          <FormField label="الملف المرتبط" htmlFor="doc-case">
+            <Input id="doc-case" placeholder="اسم الملف (اختياري)" className={inputCls}
               value={form.case} onChange={e => setForm(f => ({ ...f, case: e.target.value }))} />
           </FormField>
           <FormField label="ملاحظات" htmlFor="doc-notes">
@@ -158,7 +158,7 @@ export default function Documents() {
             <div className="space-y-2 text-sm">
               {viewDoc.caseName && (
                 <div className="flex justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-muted-foreground">القضية</span>
+                  <span className="text-muted-foreground">الملف</span>
                   <span className="font-semibold">{viewDoc.caseName}</span>
                 </div>
               )}

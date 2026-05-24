@@ -216,7 +216,7 @@ export default function Correspondances() {
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                           {c.clientName && <span>الموكّل: <span className="text-foreground font-medium">{c.clientName}</span></span>}
-                          {c.caseName  && <span>القضية: <span className="text-foreground">{c.caseName}</span></span>}
+                          {c.caseName  && <span>الملف: <span className="text-foreground">{c.caseName}</span></span>}
                           {c.reference && <span>المرجع: <span className="font-mono text-primary">{c.reference}</span></span>}
                           <span>{formatDateTN(c.date)}</span>
                         </div>
@@ -261,7 +261,7 @@ export default function Correspondances() {
             </SelectNative>
           </FormField>
 
-          <FormField label="القضية المرتبطة" htmlFor="corr-case">
+          <FormField label="الملف المرتبط" htmlFor="corr-case">
             <SelectNative id="corr-case" className={inputCls + " px-3 cursor-pointer"}
               value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}>
               <option value="">بدون قضية (اختياري)</option>

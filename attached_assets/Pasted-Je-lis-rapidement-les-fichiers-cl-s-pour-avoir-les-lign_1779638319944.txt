@@ -1,0 +1,314 @@
+Je lis rapidement les fichiers clés pour avoir les lignes exactes avant d'écrire le prompt.
+
+J'ai toutes les informations. Je rédige le prompt complet.
+
+---
+
+## Prompt Replit — `fix/audit-m1-m4-m5-m7-m8`
+
+```
+Branche : fix/audit-m1-m4-m5-m7-m8
+Base : main
+
+4 corrections d'audit. Applique EXACTEMENT les chaînes indiquées. Ne touche à aucun autre fichier.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+M4/M5 — VOCABULAIRE : "قضية" → "ملف" + "بوابة العميل" → "بوابة الموكّل"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLE : remplace "قضية" par "ملف" partout SAUF :
+  - "عدد القضية بالمحكمة"  ← numéro de rôle tribunal, NE PAS toucher
+  - "رقم القضية لدى المحكمة"  ← idem
+  - "عدد القضية في الطور القادم"  ← idem
+
+── law-firm/src/components/GlobalSearch.tsx ──
+  Ligne ~38 : `"+ قضية جديدة"` → `"+ ملف جديد"`
+  Ligne ~166 : `placeholder="ابحث عن قضية، موكّل، فاتورة، وثيقة..."`
+              → `placeholder="ابحث عن ملف، موكّل، فاتورة، وثيقة..."`
+
+── law-firm/src/components/Layout.tsx ──
+  Ligne ~80 : `label: "قضية جديدة"` → `label: "ملف جديد"`
+
+── law-firm/src/pages/AuditLogs.tsx ──
+  Ligne ~25 : `cases: "قضية"` → `cases: "ملف"`
+
+── law-firm/src/pages/Billing.tsx ──
+  TableHead `"القضية"` → `"الملف"`
+
+── law-firm/src/pages/Calendar.tsx ──
+  `label="القضية المرتبطة"` → `label="الملف المرتبط"`
+
+── law-firm/src/pages/Cases.tsx ──
+  TableHead `"القضية"` (colonne titre) → `"الملف"`
+  Compteur `"قضية نشطة"` → `"ملف نشط"`
+  NE PAS toucher `"عدد القضية بالمحكمة"`
+
+── law-firm/src/pages/ClientPage.tsx ──
+  `"القضية: "` → `"الملف: "`
+  `label="عنوان القضية *"` → `label="عنوان الملف *"`
+  `placeholder="وصف القضية..."` → `placeholder="وصف الملف..."`
+  `label="القضية المرتبطة"` → `label="الملف المرتبط"`
+  NE PAS toucher `"عدد القضية بالمحكمة"`
+
+── law-firm/src/pages/Communications.tsx ──
+  `label="رقم القضية"` → `label="رقم الملف"`
+
+── law-firm/src/pages/Correspondances.tsx ──
+  `"القضية: "` → `"الملف: "`
+  `label="القضية المرتبطة"` → `label="الملف المرتبط"`
+
+── law-firm/src/pages/Documents.tsx ──
+  `label="القضية المرتبطة"` → `label="الملف المرتبط"`
+  `placeholder="اسم القضية (اختياري)"` → `placeholder="اسم الملف (اختياري)"`
+  `"القضية"` (dans la liste, colonne) → `"الملف"`
+
+── law-firm/src/pages/Expenses.tsx ──
+  TableHead `"القضية"` → `"الملف"`
+  `label="القضية *"` → `label="الملف *"`
+
+── law-firm/src/pages/InvoiceForm.tsx ──
+  `label="القضية (اختياري)"` → `label="الملف (اختياري)"`
+
+── law-firm/src/pages/InvoicePage.tsx ──
+  `"القضية"` (label dans la fiche facture) → `"الملف"`
+
+── law-firm/src/pages/Opponents.tsx ──
+  `label="القضية المرتبطة"` → `label="الملف المرتبط"`
+
+── law-firm/src/pages/TimeTracking.tsx ──
+  TableHead `"القضية"` → `"الملف"`
+  `label="القضية *"` → `label="الملف *"`
+
+── law-firm/src/pages/CaseDetail.tsx ──
+  `"القضية غير موجودة"` → `"الملف غير موجود"`
+  `"بوابة العميل"` → `"بوابة الموكّل"`  (ligne ~981)
+  `title="تعديل بيانات القضية"` → `title="تعديل بيانات الملف"`
+  `placeholder="عنوان القضية"` → `placeholder="عنوان الملف"`
+  `placeholder="وصف القضية..."` → `placeholder="وصف الملف..."`
+  `"من القضية."` (dans descriptions de modales de suppression) → `"من الملف."`
+  `"الدور في القضية"` → `"الدور في الملف"`
+  NE PAS toucher `"عدد القضية بالمحكمة"`, `"رقم القضية لدى المحكمة"`
+
+── law-firm/src/components/cases/CaseWizard.tsx ──
+  `"بوابة العميل"` → `"بوابة الموكّل"`  (ligne ~504)
+  `"عنوان القضية مطلوب"` → `"عنوان الملف مطلوب"`  (dans le schéma zod, ligne ~524)
+  `placeholder="ملخص وقائع القضية..."` → `placeholder="ملخص وقائع الملف..."`
+  NE PAS toucher `"عدد القضية بالمحكمة"` (ligne ~309)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+M8 — RETENUE À LA SOURCE : sélecteur par facture
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fichier : law-firm/src/pages/InvoiceForm.tsx
+
+1) Ajoute un state après les déclarations existantes (ligne ~56) :
+   ```ts
+   const [overrideWithholdingRate, setOverrideWithholdingRate] = useState<number | null>(null);
+   ```
+
+2) Ajoute un useEffect qui réinitialise le taux quand le client change (après le useEffect existant ~ligne 65) :
+   ```ts
+   useEffect(() => {
+     setOverrideWithholdingRate(null);
+   }, [clientId]);
+   ```
+
+3) Quand on charge une facture existante (useEffect ~ligne 107), après `setNotes(inv.notes ?? "")`, ajoute :
+   ```ts
+   if (inv.withholdingRate != null) setOverrideWithholdingRate(inv.withholdingRate);
+   ```
+
+4) Remplace la constante `totals` (lignes ~141-145) :
+   AVANT :
+   ```ts
+   const totals = useMemo(() => calcTotals(
+     computedLines,
+     selectedClient?.withholdingRate ?? 0,
+     selectedClient?.withholdingExempt ?? false,
+   ), [computedLines, selectedClient]);
+   ```
+   APRÈS :
+   ```ts
+   const effectiveWithholdingRate = selectedClient?.withholdingExempt
+     ? 0
+     : (overrideWithholdingRate ?? selectedClient?.withholdingRate ?? 0);
+
+   const totals = useMemo(() => calcTotals(
+     computedLines,
+     effectiveWithholdingRate,
+     selectedClient?.withholdingExempt ?? false,
+   ), [computedLines, effectiveWithholdingRate, selectedClient?.withholdingExempt]);
+   ```
+
+5) Dans `buildPayload()` (ligne ~155), ajoute `withholdingRate: effectiveWithholdingRate,` dans l'objet retourné.
+
+6) Dans la section "Résumé" à droite (CardContent ~ligne 388), remplace le bloc conditionnel :
+   AVANT :
+   ```tsx
+   {totals.withholdingTax > 0 && (
+     <div className="flex justify-between py-1 border-b border-border/50 text-orange-600 dark:text-orange-400">
+       <span>
+         الخصم في المنبع
+         {selectedClient?.withholdingRate ? ` (${selectedClient.withholdingRate}%)` : ""}
+       </span>
+       <span dir="ltr" className="font-mono whitespace-nowrap">- <Money amount={totals.withholdingTax} /></span>
+     </div>
+   )}
+   ```
+   APRÈS :
+   ```tsx
+   {!selectedClient?.withholdingExempt && (
+     <div className="flex justify-between items-center py-1 border-b border-border/50">
+       <div className="flex items-center gap-2">
+         <span className="text-muted-foreground text-xs">الخصم في المنبع</span>
+         <select
+           className="text-xs border border-border rounded px-1 py-0.5 bg-background"
+           value={overrideWithholdingRate ?? (selectedClient?.withholdingRate ?? 0)}
+           onChange={e => setOverrideWithholdingRate(Number(e.target.value))}
+           disabled={!clientId}
+         >
+           <option value={0}>0%</option>
+           <option value={3}>3%</option>
+           <option value={5}>5%</option>
+         </select>
+       </div>
+       <span dir="ltr" className={`font-mono whitespace-nowrap text-sm ${effectiveWithholdingRate > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>
+         {effectiveWithholdingRate > 0 ? `- ` : ""}<Money amount={totals.withholdingTax} />
+       </span>
+     </div>
+   )}
+   ```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+M7 — NUMÉROTATION FACTURES : harmoniser F-YYYY-NNNN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── api-server/src/routes/migrate.ts ──
+Ajoute un DEUXIÈME endpoint juste avant `export default router;` :
+
+```ts
+router.get("/admin/fix-invoice-numbers", async (req, res) => {
+  const secret = process.env["MIGRATION_SECRET"] ?? "migrate-legal-2026";
+  if (req.query["secret"] !== secret) {
+    return res.status(403).json({ error: "Token invalide." });
+  }
+  try {
+    const result = await db.execute(sql.raw(`
+      UPDATE invoices
+      SET invoice_number = 'F-' || to_char(created_at, 'YYYY') || '-' || lpad(CAST(id AS text), 4, '0')
+      WHERE invoice_number IS NULL
+         OR invoice_number NOT LIKE 'F-%'
+    `));
+    const fixed = result.rowCount ?? 0;
+    return res.json({ ok: true, fixed, message: `${fixed} facture(s) corrigée(s) au format F-YYYY-NNNN` });
+  } catch (err) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+```
+
+── law-firm/src/pages/InvoicePage.tsx ──
+Ligne ~137, remplace le fallback :
+  AVANT : `{inv.invoiceNumber ?? \`#INV-${String(inv.id).padStart(4, "0")}\`}`
+  APRÈS : `{inv.invoiceNumber ?? \`F-${new Date(inv.createdAt ?? Date.now()).getFullYear()}-${String(inv.id).padStart(4, "0")}\`}`
+
+Note : après le push, appelle l'URL
+  https://legal-suite-manager.replit.app/api/admin/fix-invoice-numbers?secret=migrate-legal-2026
+pour corriger les enregistrements existants.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+M1 — VALIDATIONS : CIN, matricule fiscal, montants
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── law-firm/src/pages/Clients.tsx ──
+
+1) Ajoute l'état `errors` juste après la déclaration de `form` :
+   ```ts
+   const [fieldErrors, setFieldErrors] = useState<{ cin?: string; taxId?: string }>({});
+   ```
+
+2) Dans la fonction `save()`, AVANT `if (!form.name.trim()) return;`, ajoute :
+   ```ts
+   const errs: { cin?: string; taxId?: string } = {};
+   if (form.cin && !/^\d{8}$/.test(form.cin.trim())) {
+     errs.cin = "رقم البطاقة يجب أن يتكوّن من 8 أرقام بالضبط";
+   }
+   if (form.taxId && !/^\d{7}[A-Za-z]/.test(form.taxId.trim())) {
+     errs.taxId = "المعرف الجبائي غير صحيح (مثال: 1234567A/P/M/000)";
+   }
+   setFieldErrors(errs);
+   if (Object.keys(errs).length > 0) return;
+   ```
+
+3) Dans le modal, sous le champ CIN (FormField "رقم بطاقة التعريف"), ajoute après l'Input :
+   ```tsx
+   {fieldErrors.cin && <p className="text-xs text-destructive mt-1">{fieldErrors.cin}</p>}
+   ```
+
+4) Sous le champ taxId (FormField "المعرف الجبائي"), ajoute après l'Input :
+   ```tsx
+   {fieldErrors.taxId && <p className="text-xs text-destructive mt-1">{fieldErrors.taxId}</p>}
+   ```
+
+5) Sur les deux Input concernés, ajoute `onChange` étendu pour effacer l'erreur à la frappe :
+   - CIN onChange : `onChange={e => { setForm(f => ({ ...f, cin: e.target.value })); setFieldErrors(fe => ({ ...fe, cin: undefined })); }}`
+   - taxId onChange : `onChange={e => { setForm(f => ({ ...f, taxId: e.target.value })); setFieldErrors(fe => ({ ...fe, taxId: undefined })); }}`
+
+── law-firm/src/components/cases/CaseWizard.tsx ──
+
+Dans la fonction `isStepValid`, remplace le bloc `if (step === 4)` :
+  AVANT :
+  ```ts
+  if (step === 4) {
+    if (!f.feeMethod || !f.confidentialityLevel) return false;
+    if (f.feeMethod === "fixed" || f.feeMethod === "per_hearing") return f.agreedFees !== "";
+    if (f.feeMethod === "hourly") return f.hourlyRate !== "";
+    if (f.feeMethod === "percentage") return f.percentage !== "";
+    return true;
+  }
+  ```
+  APRÈS :
+  ```ts
+  if (step === 4) {
+    if (!f.feeMethod || !f.confidentialityLevel) return false;
+    if (f.feeMethod === "fixed" || f.feeMethod === "per_hearing") {
+      const v = parseFloat(f.agreedFees);
+      return f.agreedFees !== "" && !isNaN(v) && v > 0;
+    }
+    if (f.feeMethod === "hourly") {
+      const v = parseFloat(f.hourlyRate);
+      return f.hourlyRate !== "" && !isNaN(v) && v > 0;
+    }
+    if (f.feeMethod === "percentage") {
+      const v = parseFloat(f.percentage);
+      return f.percentage !== "" && !isNaN(v) && v > 0 && v <= 100;
+    }
+    return true;
+  }
+  ```
+
+Dans l'affichage de l'étape 4 (champs agreedFees, hourlyRate, percentage), ajoute un message d'erreur inline sous chaque champ concerné.
+  Exemple sous le champ `agreedFees` (après son Input) :
+  ```tsx
+  {(f.feeMethod === "fixed" || f.feeMethod === "per_hearing") &&
+   f.agreedFees !== "" && parseFloat(f.agreedFees) <= 0 && (
+    <p className="text-xs text-destructive mt-1">يجب أن يكون المبلغ أكبر من 0</p>
+  )}
+  ```
+  Applique le même principe pour `hourlyRate` et `percentage` (avec message `"لا يمكن أن تتجاوز النسبة 100%"` si > 100).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LIVRAISON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+git add -A
+git commit -m "fix(audit): M1/M4/M5/M7/M8 — vocab ملف, retenue/facture, numérotation F-YYYY, validations"
+git push origin fix/audit-m1-m4-m5-m7-m8
+```
+
+---
+
+**Après le push :**
+1. Teste la création d'un nouveau client avec un CIN invalide (ex. `123`) → tu dois voir le message d'erreur rouge sous le champ
+2. Ouvre une nouvelle facture → le sélecteur 0%/3%/5% doit apparaître dans le récapitulatif
+3. Lance l'URL de correction des numéros :  
+   `https://legal-suite-manager.replit.app/api/admin/fix-invoice-numbers?secret=migrate-legal-2026`  
+   → doit répondre `{ "ok": true, "fixed": N }`
+4. Vérifie que "ملف جديد" apparaît dans le menu latéral et la recherche globale

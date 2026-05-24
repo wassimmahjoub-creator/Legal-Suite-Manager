@@ -795,7 +795,7 @@ export default function ClientPage() {
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{typeInfo.label}</span>
                             </div>
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                              {c.caseName && <span>القضية: <span className="text-foreground">{c.caseName}</span></span>}
+                              {c.caseName && <span>الملف: <span className="text-foreground">{c.caseName}</span></span>}
                               {c.reference && <span>المرجع: <span className="font-mono text-primary">{c.reference}</span></span>}
                               <span>{fmt(c.date)}</span>
                             </div>
@@ -863,7 +863,7 @@ export default function ClientPage() {
             </div>
           </div>
 
-          <FormField label="عنوان القضية *" htmlFor="c-title">
+          <FormField label="عنوان الملف *" htmlFor="c-title">
             <Input id="c-title" placeholder="مثال: قضية ميراث عائلة بن علي" className={inputCls}
               value={caseForm.title} onChange={e => setCaseForm(f => ({ ...f, title: e.target.value }))} autoFocus />
           </FormField>
@@ -924,7 +924,7 @@ export default function ClientPage() {
           </FormField>
 
           <FormField label="وصف القضية" htmlFor="c-desc">
-            <SmartTextarea id="c-desc" rows={2} placeholder="وصف مختصر للقضية والوقائع..."
+            <SmartTextarea id="c-desc" rows={2} placeholder="وصف مختصر للملف والوقائع..."
               aiContext="وصف قضية قانونية"
               value={caseForm.description} onChange={v => setCaseForm(f => ({ ...f, description: v }))} />
           </FormField>
@@ -1211,7 +1211,7 @@ export default function ClientPage() {
           </div>
 
           {cases.filter(c => !c.archivedAt).length > 0 && (
-            <FormField label="القضية المرتبطة" htmlFor="corr-case">
+            <FormField label="الملف المرتبط" htmlFor="corr-case">
               <SelectNative id="corr-case" className={inputCls + " px-3 cursor-pointer"}
                 value={corrForm.caseId} onChange={e => setCorrForm(f => ({ ...f, caseId: e.target.value }))}>
                 <option value="">بدون قضية (اختياري)</option>

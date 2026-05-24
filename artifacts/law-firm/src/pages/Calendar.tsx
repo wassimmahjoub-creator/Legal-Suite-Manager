@@ -671,7 +671,7 @@ export default function CalendarView() {
               value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
           </FormField>
 
-          <FormField label="القضية المرتبطة" htmlFor="ev-case">
+          <FormField label="الملف المرتبط" htmlFor="ev-case">
             <SelectNative id="ev-case" value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}
               className={inputCls + " px-3 cursor-pointer"}>
               <option value="">— بدون قضية —</option>

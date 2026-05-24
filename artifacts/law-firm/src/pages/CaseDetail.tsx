@@ -471,7 +471,7 @@ export default function CaseDetail() {
   }
 
   if (isLoading) return <SkeletonClientPage tabs={6} />;
-  if (!caseData) return <div className="text-center py-20 text-muted-foreground">القضية غير موجودة</div>;
+  if (!caseData) return <div className="text-center py-20 text-muted-foreground">الملف غير موجود</div>;
 
   const c = caseData as typeof caseData & {
     caseNumber?: string; courtCaseNumber?: string; clientFileRef?: string; division?: string;
@@ -1527,7 +1527,7 @@ export default function CaseDetail() {
               <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">سري</span>
             </div>
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-xs text-primary flex items-center gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> هذه الملاحظات لا تظهر للموكّل في بوابة العميل
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> هذه الملاحظات لا تظهر للموكّل في بوابة الموكّل
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{c.internalNotes}</p>
           </CardContent></Card>
@@ -1918,7 +1918,7 @@ export default function CaseDetail() {
                 .map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
             </SelectNative>
           </FormField>
-          <FormField label="الدور في القضية" htmlFor="tm-role">
+          <FormField label="الدور في الملف" htmlFor="tm-role">
             <SelectNative id="tm-role" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} className={inputCls + " px-3 cursor-pointer"}>
               {["مسؤول رئيسي","مساعد","متربص"].map(r => <option key={r} value={r}>{r}</option>)}
             </SelectNative>
@@ -2218,10 +2218,10 @@ export default function CaseDetail() {
       </Modal>
 
       {/* Edit Case modal */}
-      <Modal open={modal === "edit"} onClose={() => setModal(null)} title="تعديل بيانات القضية">
+      <Modal open={modal === "edit"} onClose={() => setModal(null)} title="تعديل بيانات الملف">
         <div className="space-y-4">
-          <FormField label="عنوان القضية *" htmlFor="ed-title">
-            <Input id="ed-title" value={editForm.title} onChange={e => setEditForm(f => ({...f, title: e.target.value}))} className={inputCls} placeholder="عنوان القضية" />
+          <FormField label="عنوان الملف *" htmlFor="ed-title">
+            <Input id="ed-title" value={editForm.title} onChange={e => setEditForm(f => ({...f, title: e.target.value}))} className={inputCls} placeholder="عنوان الملف" />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="الحالة" htmlFor="ed-status">
@@ -2263,7 +2263,7 @@ export default function CaseDetail() {
             <Input id="ed-judgment" value={editForm.judgmentText} onChange={e => setEditForm(f => ({...f, judgmentText: e.target.value}))} className={inputCls} placeholder="نص الحكم أو القرار النهائي" />
           </FormField>
           <FormField label="الوصف" htmlFor="ed-desc">
-            <SmartTextarea id="ed-desc" value={editForm.description} onChange={v => setEditForm(f => ({...f, description: v}))} rows={3} aiContext="وصف قضية قانونية" placeholder="وصف القضية..." />
+            <SmartTextarea id="ed-desc" value={editForm.description} onChange={v => setEditForm(f => ({...f, description: v}))} rows={3} aiContext="وصف قضية قانونية" placeholder="وصف الملف..." />
           </FormField>
           <div className="flex gap-3 pt-1">
             <Button className="flex-1" disabled={saving || !editForm.title} onClick={saveEdit}>{saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</Button>
@@ -2372,7 +2372,7 @@ export default function CaseDetail() {
       <ConfirmDestructive
         open={confirmOppId !== null} onClose={() => setConfirmOppId(null)}
         onConfirm={async () => { await authFetch(`${BASE}/api/opponents/${confirmOppId}`, { method: "DELETE" }); await load.opponents(); }}
-        title="حذف الخصم؟" description="سيتم حذف هذا الخصم نهائياً من القضية." confirmLabel="حذف"
+        title="حذف الخصم؟" description="سيتم حذف هذا الخصم نهائياً من الملف." confirmLabel="حذف"
       />
 
       {/* Confirm document delete */}
@@ -2386,7 +2386,7 @@ export default function CaseDetail() {
       <ConfirmDestructive
         open={confirmTeamId !== null} onClose={() => setConfirmTeamId(null)}
         onConfirm={async () => { await authFetch(`${BASE}/api/case-teams/${confirmTeamId}`, { method: "DELETE" }); await load.team(); }}
-        title="إزالة العضو من الفريق؟" description="سيتم إزالة هذا العضو من فريق القضية." confirmLabel="إزالة"
+        title="إزالة العضو من الفريق؟" description="سيتم إزالة هذا العضو من فريق الملف." confirmLabel="إزالة"
       />
 
       {/* Confirm confidential note delete */}

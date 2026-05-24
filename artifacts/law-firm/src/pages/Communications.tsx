@@ -217,7 +217,7 @@ export default function Communications() {
               value={form.summary} onChange={v => setForm(f => ({ ...f, summary: v }))} />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="رقم القضية" htmlFor="cm-case">
+            <FormField label="رقم الملف" htmlFor="cm-case">
               <CaseCombobox
                 cases={cases}
                 value={form.caseId}

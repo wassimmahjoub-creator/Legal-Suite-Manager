@@ -55,6 +55,7 @@ export default function InvoiceForm() {
   const [saving, setSaving] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [loading, setLoading] = useState(isEdit);
+  const [overrideWithholdingRate, setOverrideWithholdingRate] = useState<number | null>(null);
   const uid = useId();
   const { toast } = useToast();
 
@@ -103,6 +104,10 @@ export default function InvoiceForm() {
   }, [isEdit]);
 
   useEffect(() => {
+    setOverrideWithholdingRate(null);
+  }, [clientId]);
+
+  useEffect(() => {
     if (!isEdit) return;
     setLoading(true);
     authFetch(`${BASE}/api/invoices/${params.id}`)
@@ -114,6 +119,7 @@ export default function InvoiceForm() {
         setDueDate(inv.dueDate ?? "");
         setPaymentTerms(inv.paymentTerms ?? "");
         setNotes(inv.notes ?? "");
+        if (inv.withholdingRate != null) setOverrideWithholdingRate(inv.withholdingRate);
         if (inv.lines?.length > 0) {
           setLines(inv.lines.map((l: { description: string | null; unit: string | null; quantity: number; unitPriceHt: number; vatRate: number }) => ({
             _id: Math.random().toString(36).slice(2),
@@ -137,11 +143,15 @@ export default function InvoiceForm() {
     [lines]
   );
 
+  const effectiveWithholdingRate = selectedClient?.withholdingExempt
+    ? 0
+    : (overrideWithholdingRate ?? selectedClient?.withholdingRate ?? 0);
+
   const totals = useMemo(() => calcTotals(
     computedLines,
-    selectedClient?.withholdingRate ?? 0,
+    effectiveWithholdingRate,
     selectedClient?.withholdingExempt ?? false,
-  ), [computedLines, selectedClient]);
+  ), [computedLines, effectiveWithholdingRate, selectedClient?.withholdingExempt]);
 
   function updateLine(idx: number, field: keyof LineForm, value: string) {
     setLines(ls => ls.map((l, i) => i === idx ? { ...l, [field]: value } : l));
@@ -159,6 +169,7 @@ export default function InvoiceForm() {
       dueDate: dueDate || null,
       paymentTerms: paymentTerms || null,
       notes: notes || null,
+      withholdingRate: effectiveWithholdingRate,
       lines: lines.map((l, i) => ({
         description: l.description,
         unit: l.unit,
@@ -253,7 +264,7 @@ export default function InvoiceForm() {
                 </SelectNative>
               </FormField>
 
-              <FormField label="القضية (اختياري)" htmlFor={`${uid}-case`}>
+              <FormField label="الملف (اختياري)" htmlFor={`${uid}-case`}>
                 <SelectNative id={`${uid}-case`} value={caseId}
                   onChange={e => {
                     const val = e.target.value;
@@ -401,13 +412,24 @@ export default function InvoiceForm() {
                 <span>المجموع ش.ض</span>
                 <Money amount={totals.totalTtc} />
               </div>
-              {totals.withholdingTax > 0 && (
-                <div className="flex justify-between py-1 border-b border-border/50 text-orange-600 dark:text-orange-400">
-                  <span>
-                    الخصم في المنبع
-                    {selectedClient?.withholdingRate ? ` (${selectedClient.withholdingRate}%)` : ""}
+              {!selectedClient?.withholdingExempt && (
+                <div className="flex justify-between items-center py-1 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">الخصم في المنبع</span>
+                    <select
+                      className="text-xs border border-border rounded px-1 py-0.5 bg-background"
+                      value={overrideWithholdingRate ?? (selectedClient?.withholdingRate ?? 0)}
+                      onChange={e => setOverrideWithholdingRate(Number(e.target.value))}
+                      disabled={!clientId}
+                    >
+                      <option value={0}>0%</option>
+                      <option value={3}>3%</option>
+                      <option value={5}>5%</option>
+                    </select>
+                  </div>
+                  <span dir="ltr" className={`font-mono whitespace-nowrap text-sm ${effectiveWithholdingRate > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>
+                    {effectiveWithholdingRate > 0 ? "- " : ""}<Money amount={totals.withholdingTax} />
                   </span>
-                  <span dir="ltr" className="font-mono whitespace-nowrap">- <Money amount={totals.withholdingTax} /></span>
                 </div>
               )}
               <div className="flex justify-between py-2 text-base font-bold text-primary">

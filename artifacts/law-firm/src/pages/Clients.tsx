@@ -49,6 +49,7 @@ export default function Clients() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ cin?: string; taxId?: string }>({});
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteBlock, setDeleteBlock] = useState<string | null>(null);
   const [, navigate] = useLocation();
@@ -63,11 +64,13 @@ export default function Clients() {
   function openNew() {
     setEditing(null);
     setForm(EMPTY);
+    setFieldErrors({});
     setModal(true);
   }
 
   function openEdit(c: Client) {
     setEditing(c);
+    setFieldErrors({});
     setForm({
       name:       c.name,
       clientType: c.clientType ?? "individual",
@@ -82,6 +85,15 @@ export default function Clients() {
   }
 
   async function save() {
+    const errs: { cin?: string; taxId?: string } = {};
+    if (form.cin && !/^\d{8}$/.test(form.cin.trim())) {
+      errs.cin = "رقم البطاقة يجب أن يتكوّن من 8 أرقام بالضبط";
+    }
+    if (form.taxId && !/^\d{7}[A-Za-z]/.test(form.taxId.trim())) {
+      errs.taxId = "المعرف الجبائي غير صحيح (مثال: 1234567A/P/M/000)";
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     if (!form.name.trim()) return;
     setSaving(true);
     try {
@@ -258,11 +270,13 @@ export default function Clients() {
           <div className="grid grid-cols-2 gap-4">
             <FormField label="رقم بطاقة التعريف (CIN)" htmlFor="cl-cin">
               <Input id="cl-cin" placeholder="مثال: 12345678" className={inputCls} dir="ltr"
-                value={form.cin} onChange={e => setForm(f => ({ ...f, cin: e.target.value }))} />
+                value={form.cin} onChange={e => { setForm(f => ({ ...f, cin: e.target.value })); setFieldErrors(fe => ({ ...fe, cin: undefined })); }} />
+              {fieldErrors.cin && <p className="text-xs text-destructive mt-1">{fieldErrors.cin}</p>}
             </FormField>
             <FormField label="المعرف الجبائي" htmlFor="cl-taxid">
               <Input id="cl-taxid" placeholder="مثال: 1234567A/P/M/000" className={inputCls} dir="ltr"
-                value={form.taxId} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))} />
+                value={form.taxId} onChange={e => { setForm(f => ({ ...f, taxId: e.target.value })); setFieldErrors(fe => ({ ...fe, taxId: undefined })); }} />
+              {fieldErrors.taxId && <p className="text-xs text-destructive mt-1">{fieldErrors.taxId}</p>}
             </FormField>
           </div>
           <div className="grid grid-cols-2 gap-4">

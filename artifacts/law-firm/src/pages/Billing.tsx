@@ -121,7 +121,7 @@ export default function Billing() {
               <TableRow>
                 <TableHead className="text-start py-3 font-semibold">رقم الفاتورة</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
-                <TableHead className="text-start py-3 font-semibold hidden md:table-cell">القضية</TableHead>
+                <TableHead className="text-start py-3 font-semibold hidden md:table-cell">الملف</TableHead>
                 <TableHead className="text-start py-3 font-semibold">خ.ض</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الصافي</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden sm:table-cell">الرصيد</TableHead>

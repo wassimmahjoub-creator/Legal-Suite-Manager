@@ -237,7 +237,7 @@ export default function Cases() {
       {/* Stats */}
       {!isLoading && cases && (
         <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="px-2.5 py-1 bg-muted/40 rounded-full">{cases.filter((c: any) => !c.archivedAt && !c.deletedAt).length} قضية نشطة</span>
+          <span className="px-2.5 py-1 bg-muted/40 rounded-full">{cases.filter((c: any) => !c.archivedAt && !c.deletedAt).length} ملف نشط</span>
           <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full">{cases.filter((c: any) => c.archivedAt).length} مؤرشفة</span>
         </div>
       )}
@@ -249,7 +249,7 @@ export default function Cases() {
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="text-start py-3 font-semibold w-28">رقم الملف</TableHead>
-                <TableHead className="text-start py-3 font-semibold">القضية</TableHead>
+                <TableHead className="text-start py-3 font-semibold">الملف</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden md:table-cell">المحكمة</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الحالة</TableHead>

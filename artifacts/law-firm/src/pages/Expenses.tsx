@@ -222,7 +222,7 @@ export default function Expenses() {
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="text-start py-3 px-4 font-semibold">التاريخ</th>
-                    <th className="text-start py-3 px-4 font-semibold">القضية</th>
+                    <th className="text-start py-3 px-4 font-semibold">الملف</th>
                     <th className="text-start py-3 px-4 font-semibold w-[200px]">نوع المصروف</th>
                     <th className="text-start py-3 px-4 font-semibold hidden md:table-cell">الوصف</th>
                     <th className="text-start py-3 px-4 font-semibold">المبلغ</th>
@@ -311,7 +311,7 @@ export default function Expenses() {
                 <Input id="exp-date" type="date" className={inputCls} dir="ltr"
                   value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
               </FormField>
-              <FormField label="القضية *" htmlFor="exp-case">
+              <FormField label="الملف *" htmlFor="exp-case">
                 <SelectNative id="exp-case" className={inputCls + " px-3 cursor-pointer"}
                   value={form.caseId} onChange={e => setForm(f => ({ ...f, caseId: e.target.value }))}>
                   {cases.map(c => <option key={c.id} value={String(c.id)}>{caseLabel(c)}</option>)}

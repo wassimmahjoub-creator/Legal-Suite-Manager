@@ -403,4 +403,23 @@ $$`,
 </body></html>`);
 });
 
+router.get("/admin/fix-invoice-numbers", async (req, res) => {
+  const secret = process.env["MIGRATION_SECRET"] ?? "migrate-legal-2026";
+  if (req.query["secret"] !== secret) {
+    return res.status(403).json({ error: "Token invalide." });
+  }
+  try {
+    const result = await db.execute(sql.raw(`
+      UPDATE invoices
+      SET invoice_number = 'F-' || to_char(created_at, 'YYYY') || '-' || lpad(CAST(id AS text), 4, '0')
+      WHERE invoice_number IS NULL
+         OR invoice_number NOT LIKE 'F-%'
+    `));
+    const fixed = result.rowCount ?? 0;
+    return res.json({ ok: true, fixed, message: `${fixed} facture(s) corrigée(s) au format F-YYYY-NNNN` });
+  } catch (err) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 export default router;

@@ -35,7 +35,7 @@ const TYPE_CONFIG: Record<ResultType, { label: string; Icon: React.ElementType; 
 };
 
 const ACTIONS = [
-  { label: "+ قضية جديدة",    href: "/cases",        Icon: Briefcase,      color: "text-primary" },
+  { label: "+ ملف جديد",    href: "/cases",        Icon: Briefcase,      color: "text-primary" },
   { label: "+ موكّل جديد",     href: "/clients",      Icon: Users,          color: "text-green-400" },
   { label: "+ فاتورة جديدة",  href: "/billing",      Icon: CreditCard,     color: "text-yellow-400" },
   { label: "+ موعد جديد",     href: "/calendar",     Icon: Calendar,       color: "text-orange-400" },
@@ -163,7 +163,7 @@ export function GlobalSearch() {
               <Command.Input
                 value={q}
                 onValueChange={setQ}
-                placeholder="ابحث عن قضية، موكّل، فاتورة، وثيقة..."
+                placeholder="ابحث عن ملف، موكّل، فاتورة، وثيقة..."
                 autoFocus
                 className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base min-w-0"
               />

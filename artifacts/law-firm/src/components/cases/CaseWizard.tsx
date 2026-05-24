@@ -252,9 +252,18 @@ function isStepValid(step: number, f: WizardForm, editMode = false) {
   const steps = getSteps(f.serviceType);
   if (step === steps.length) {
     if (!f.feeMethod || !f.confidentialityLevel) return false;
-    if (f.feeMethod === "fixed" || f.feeMethod === "per_hearing") return f.agreedFees !== "";
-    if (f.feeMethod === "hourly") return f.hourlyRate !== "";
-    if (f.feeMethod === "percentage") return f.percentage !== "";
+    if (f.feeMethod === "fixed" || f.feeMethod === "per_hearing") {
+      const v = parseFloat(f.agreedFees);
+      return f.agreedFees !== "" && !isNaN(v) && v > 0;
+    }
+    if (f.feeMethod === "hourly") {
+      const v = parseFloat(f.hourlyRate);
+      return f.hourlyRate !== "" && !isNaN(v) && v > 0;
+    }
+    if (f.feeMethod === "percentage") {
+      const v = parseFloat(f.percentage);
+      return f.percentage !== "" && !isNaN(v) && v > 0 && v <= 100;
+    }
     return true;
   }
   // Step 2 contentieux
@@ -402,7 +411,7 @@ function Step1({ form, upd, clients, onAddClient, stepErrors }: { form: WizardFo
         <Label>وصف الملف</Label>
         <SmartTextarea
           rows={3}
-          placeholder="ملخص وقائع القضية..."
+          placeholder="ملخص وقائع الملف..."
           value={form.description}
           onChange={v => upd({ description: v })}
           aiContext="وصف ملف قانوني"
@@ -600,6 +609,9 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
               <Label>الأتعاب المتفق عليها (د.ت) <Req /></Label>
               <Input autoFocus type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
                 value={form.agreedFees} onChange={e => upd({ agreedFees: e.target.value })} />
+              {form.agreedFees !== "" && parseFloat(form.agreedFees) <= 0 && (
+                <p className="text-xs text-destructive mt-1">يجب أن يكون المبلغ أكبر من 0</p>
+              )}
             </div>
           )}
 
@@ -608,6 +620,9 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
               <Label>التعرفة بالساعة (د.ت) <Req /></Label>
               <Input autoFocus type="number" min="0" step="0.001" placeholder="0.000" className={cls} dir="ltr"
                 value={form.hourlyRate} onChange={e => upd({ hourlyRate: e.target.value })} />
+              {form.hourlyRate !== "" && parseFloat(form.hourlyRate) <= 0 && (
+                <p className="text-xs text-destructive mt-1">يجب أن يكون المبلغ أكبر من 0</p>
+              )}
             </div>
           )}
 
@@ -617,6 +632,11 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
                 <Label>النسبة % <Req /></Label>
                 <Input autoFocus type="number" min="0" max="100" step="0.1" placeholder="10" className={cls} dir="ltr"
                   value={form.percentage} onChange={e => upd({ percentage: e.target.value })} />
+                {form.percentage !== "" && (parseFloat(form.percentage) <= 0 || parseFloat(form.percentage) > 100) && (
+                  <p className="text-xs text-destructive mt-1">
+                    {parseFloat(form.percentage) > 100 ? "لا يمكن أن تتجاوز النسبة 100%" : "يجب أن تكون النسبة أكبر من 0"}
+                  </p>
+                )}
               </div>
               <div>
                 <Label>أساس الاحتساب</Label>
@@ -650,7 +670,7 @@ function Step4({ form, upd }: { form: WizardForm; upd: (u: Partial<WizardForm>) 
               value={form.internalNotes}
               onChange={v => upd({ internalNotes: v })}
             />
-            <p className="text-xs text-muted-foreground mt-1">⚠️ هذه الملاحظات لا تظهر للموكّل في بوابة العميل</p>
+            <p className="text-xs text-muted-foreground mt-1">⚠️ هذه الملاحظات لا تظهر للموكّل في بوابة الموكّل</p>
           </div>
         </div>
       </div>
@@ -968,7 +988,7 @@ interface CaseWizardProps {
 }
 
 const Step1Schema = z.object({
-  title:    z.string().min(2, "عنوان القضية مطلوب (حرفان على الأقل)"),
+  title:    z.string().min(2, "عنوان الملف مطلوب (حرفان على الأقل)"),
   clientId: z.string().min(1, "يجب اختيار موكّل"),
 });
 
