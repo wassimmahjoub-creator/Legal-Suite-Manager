@@ -36,23 +36,40 @@ export default function Cases() {
     new URLSearchParams(window.location.search).get("serviceType") ?? "all"
   );
 
-  const OTHER_TYPES: string[] = [];
-
-  const TABS = [
-    { key: "all",                label: "الكل" },
-    { key: "lawsuit",            label: "قضايا" },
-    { key: "consultation",       label: "استشارات" },
-    { key: "contract",           label: "عقود" },
-    { key: "debt_recovery",      label: "تحصيل" },
-    { key: "company_creation",   label: "شركات" },
-    { key: "legal_notice",       label: "إنذارات" },
-    { key: "judgment_execution", label: "تنفيذ" },
-    { key: "real_estate_file",   label: "عقاري" },
-    { key: "labor_file",         label: "شغل" },
-    { key: "tax_file",           label: "جبائي" },
-    { key: "administrative",     label: "إداري" },
-    { key: "mediation",          label: "وساطة" },
-    { key: "other",              label: "أخرى" },
+  const TAB_GROUPS = [
+    {
+      tabs: [
+        { key: "all", label: "الكل" },
+      ],
+    },
+    {
+      label: "الملفات القضائية",
+      tabs: [
+        { key: "lawsuit",            label: "دعوى قضائية" },
+        { key: "real_estate_file",   label: "ملف عقاري" },
+        { key: "labor_file",         label: "ملف شغل" },
+        { key: "tax_file",           label: "ملف جبائي" },
+        { key: "judgment_execution", label: "تنفيذ حكم" },
+      ],
+    },
+    {
+      label: "الاستشارات والعقود",
+      tabs: [
+        { key: "consultation",     label: "استشارة" },
+        { key: "contract",         label: "تحرير عقد" },
+        { key: "company_creation", label: "تأسيس شركة" },
+        { key: "debt_recovery",    label: "استخلاص ديون" },
+      ],
+    },
+    {
+      label: "الإجراءات الأخرى",
+      tabs: [
+        { key: "legal_notice",  label: "إنذار" },
+        { key: "administrative",label: "ملف إداري" },
+        { key: "mediation",     label: "وساطة" },
+        { key: "other",         label: "أخرى" },
+      ],
+    },
   ];
 
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
@@ -174,30 +191,39 @@ export default function Cases() {
         </div>
       </div>
 
-      {/* ── Onglets type de dossier ── */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-        {TABS.map(tab => {
-          const count = tabCounts[tab.key] ?? 0;
-          const active = serviceTypeFilter === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setServiceTypeFilter(tab.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors
-                ${active
-                  ? "bg-primary text-primary-foreground border-primary font-semibold"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
-                  ${active ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* ── Onglets type de dossier — sections groupées ── */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {TAB_GROUPS.map((group, gi) => (
+          <div key={gi} className="flex items-center gap-1.5 flex-wrap">
+            {group.label && (
+              <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wide pe-1 border-e border-border">
+                {group.label}
+              </span>
+            )}
+            {group.tabs.map(tab => {
+              const count = tabCounts[tab.key] ?? 0;
+              const active = serviceTypeFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setServiceTypeFilter(tab.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors
+                    ${active
+                      ? "bg-primary text-primary-foreground border-primary font-semibold"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
+                      ${active ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Stats */}
