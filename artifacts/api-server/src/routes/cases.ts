@@ -4,6 +4,7 @@ import { eq, isNull, isNotNull, like, sql, inArray, and, or } from "drizzle-orm"
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 import { getActor } from "../middleware/auth.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -180,7 +181,7 @@ router.post("/cases", async (req, res): Promise<void> => {
     newCase    = result.created;
     clientName = result.clientName;
   } catch (err) {
-    console.error("[POST /cases] transaction failed:", err);
+    logger.error({ err }, "[POST /cases] transaction failed");
     res.status(500).json({ error: "فشل إنشاء الملف. يرجى المحاولة مجدداً." });
     return;
   }

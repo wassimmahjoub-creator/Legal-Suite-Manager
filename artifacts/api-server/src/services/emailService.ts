@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { logger } from "../lib/logger.js";
 
 const _apiKey = process.env["RESEND_API_KEY"];
 const FROM = process.env["EMAIL_FROM"] ?? "noreply@yourdomain.com";
@@ -6,7 +7,7 @@ const FRONTEND_URL = (process.env["FRONTEND_URL"] ?? "").split(",")[0].trim();
 
 export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
   if (!_apiKey) {
-    console.warn(`[DEV] Password reset link for ${to}: ${FRONTEND_URL}/reset-password?token=${token}`);
+    logger.warn({ to }, `[DEV] Password reset link: ${FRONTEND_URL}/reset-password?token=${token}`);
     return;
   }
   const resend = new Resend(_apiKey);

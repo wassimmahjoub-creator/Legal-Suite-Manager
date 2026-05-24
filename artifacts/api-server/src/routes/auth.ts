@@ -7,6 +7,7 @@ import { signToken, requireAuth, COOKIE_NAME, cookieOptions, getActor } from "..
 import { loginLimiter, forgotPasswordLimiter, registerLimiter } from "../middleware/security.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
 import { logAudit } from "./audit-logs.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -200,7 +201,7 @@ router.post("/auth/forgot-password", forgotPasswordLimiter, async (req, res): Pr
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
   await db.insert(passwordResetsTable).values({ userId: user.id, token, expiresAt });
   await sendPasswordResetEmail(user.email, token).catch((err) =>
-    console.error("Failed to send reset email:", err),
+    logger.error({ err }, "Failed to send reset email"),
   );
   res.json({ message: SAFE_MSG });
 });

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { uploadToStorage } from "../services/objectStorage.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -48,7 +49,7 @@ router.post("/uploads", upload.single("file"), async (req, res): Promise<void> =
       url,
     });
   } catch (err) {
-    console.error("Upload error:", err);
+    logger.error({ err }, "Upload error");
     res.status(500).json({ error: "فشل رفع الملف، يرجى المحاولة مجدداً" });
   }
 });

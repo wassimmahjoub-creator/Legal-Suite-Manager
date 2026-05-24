@@ -47,7 +47,7 @@ function round3(n: number) {
 if (process.env.RUN_CALC_TESTS === "1") {
   const assert = (cond: boolean, msg: string) => {
     if (!cond) throw new Error(`FAIL: ${msg}`);
-    console.log(`PASS: ${msg}`);
+    process.stdout.write(`PASS: ${msg}\n`);
   };
 
   // T1: single line, 19% TVA, no retenue
@@ -100,5 +100,5 @@ if (process.env.RUN_CALC_TESTS === "1") {
     assert(t.netToPay === round3(t.totalTtc - 150), "T5 netToPay");
   })();
 
-  console.log("All invoice calculator tests passed.");
+  process.stdout.write("All invoice calculator tests passed.\n");
 }

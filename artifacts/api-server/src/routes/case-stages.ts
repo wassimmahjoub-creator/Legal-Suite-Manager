@@ -3,6 +3,7 @@ import { db, caseStagesTable, legalDeadlinesTable, casesTable } from "@workspace
 import { eq, and } from "drizzle-orm";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 import { getActor } from "../middleware/auth.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -156,7 +157,7 @@ router.post("/cases/:caseId/stages/transition", async (req, res): Promise<void> 
     newStage          = result.newStage;
     insertedDeadlines = result.deadlines;
   } catch (err) {
-    console.error("[stages/transition] transaction failed:", err);
+    logger.error({ err }, "[stages/transition] transaction failed");
     res.status(500).json({ error: "فشل تغيير الطور. يرجى المحاولة مجدداً." });
     return;
   }
