@@ -1,6 +1,12 @@
 import { Router } from "express";
-import { db, casesTable, clientsTable, documentsTable, invoicesTable, eventsTable } from "@workspace/db";
-import { isNotNull, eq } from "drizzle-orm";
+import {
+  db, casesTable, clientsTable, documentsTable, invoicesTable,
+  tasksTable, proceduresTable, deadlinesTable, caseTeamsTable,
+  caseRelationsTable, confidentialNotesTable, expensesTable,
+  opponentsTable, eventsTable, communicationsTable, correspondancesTable,
+  conflictChecksTable,
+} from "@workspace/db";
+import { isNotNull, eq, or } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
@@ -37,6 +43,30 @@ router.delete("/trash/permanent/:entity/:id", requireAdmin, async (req, res): Pr
   const { entity, id } = req.params;
   const numId = Number(id);
   if (entity === "cases") {
+    // Nullify nullable FK references first
+    await Promise.all([
+      db.update(opponentsTable).set({ caseId: null }).where(eq(opponentsTable.caseId, numId)),
+      db.update(eventsTable).set({ caseId: null }).where(eq(eventsTable.caseId, numId)),
+      db.update(invoicesTable).set({ caseId: null }).where(eq(invoicesTable.caseId, numId)),
+      db.update(communicationsTable).set({ caseId: null }).where(eq(communicationsTable.caseId, numId)),
+      db.update(correspondancesTable).set({ caseId: null }).where(eq(correspondancesTable.caseId, numId)),
+      db.update(conflictChecksTable).set({ otherCaseId: null }).where(eq(conflictChecksTable.otherCaseId, numId)),
+    ]);
+    // Delete non-nullable child rows
+    await Promise.all([
+      db.delete(tasksTable).where(eq(tasksTable.caseId, numId)),
+      db.delete(proceduresTable).where(eq(proceduresTable.caseId, numId)),
+      db.delete(deadlinesTable).where(eq(deadlinesTable.caseId, numId)),
+      db.delete(caseTeamsTable).where(eq(caseTeamsTable.caseId, numId)),
+      db.delete(confidentialNotesTable).where(eq(confidentialNotesTable.caseId, numId)),
+      db.delete(expensesTable).where(eq(expensesTable.caseId, numId)),
+      db.delete(documentsTable).where(eq(documentsTable.caseId, numId)),
+      db.delete(caseRelationsTable).where(
+        or(eq(caseRelationsTable.caseId, numId), eq(caseRelationsTable.relatedCaseId, numId))
+      ),
+    ]);
+    // Now safe to delete the case (CASCADE handles: case_stages, legal_deadlines,
+    // case_events, conflict_checks, company_files, contracts, debt_recovery_files)
     await db.delete(casesTable).where(eq(casesTable.id, numId));
   } else if (entity === "clients") {
     await db.delete(clientsTable).where(eq(clientsTable.id, numId));
