@@ -66,6 +66,35 @@ const TR_FEE_METHOD: Record<string, string> = {
 const TR_CONFIDENTIALITY: Record<string, string> = {
   normal: "عادي", confidential: "سري", sensitive: "حساس",
 };
+const TR_CONTRACT_STATUS: Record<string, string> = {
+  draft: "مسودة", under_review: "قيد المراجعة", ready_to_sign: "جاهز للتوقيع",
+  signed: "موقّع", expired: "منتهي الصلاحية", terminated: "مفسوخ",
+};
+const TR_CONTRACT_TYPE: Record<string, string> = {
+  sale: "بيع", rental: "إيجار", service: "خدمات", employment: "عمل",
+  partnership: "شراكة", loan: "قرض", guarantee: "ضمان",
+  agency: "وكالة", franchise: "امتياز تجاري", other: "آخر",
+};
+const TR_DEBT_STAGE: Record<string, string> = {
+  notice: "إنذار", negotiation: "تفاوض", lawsuit: "دعوى قضائية",
+  execution: "تنفيذ", completed: "منتهي",
+};
+const TR_COMPANY_TYPE: Record<string, string> = {
+  sarl: "ش.ذ.م.م", suarl: "ش.ذ.م.م أ.و", sa: "ش.خ.م",
+  single_person_company: "م.ف.م", other: "أخرى",
+};
+const TR_SERVICE_TYPE: Record<string, string> = {
+  lawsuit: "دعوى قضائية", consultation: "استشارة قانونية", contract: "عقد",
+  company_creation: "تأسيس شركة", debt_recovery: "استخلاص ديون",
+  legal_notice: "إعذار قانوني", judgment_execution: "تنفيذ حكم",
+  real_estate_file: "ملف عقاري", labor_file: "ملف شغلي",
+  tax_file: "ملف جبائي", administrative: "إداري",
+  mediation: "وساطة", other: "آخر",
+};
+// Service type classification
+const LITIGATION_TYPES = new Set([
+  "lawsuit", "judgment_execution", "real_estate_file", "labor_file", "tax_file",
+]);
 function tr(map: Record<string, string>, val: string | null | undefined): string | null {
   if (!val) return null;
   return map[val] ?? val;
@@ -107,7 +136,7 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 // ─── Tab config ───────────────────────────────────────────────
-const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
+const TAB_IDS = ["overview","timeline","type-specific","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
 type TabId = typeof TAB_IDS[number];
 
 // ─── Types ────────────────────────────────────────────────────
@@ -122,6 +151,30 @@ type DocItem    = { id: number; name: string; type: string | null; url: string |
 type Invoice    = { id: number; invoiceNumber: string | null; netToPay: number; amountPaid: number | null; status: string; issueDate: string | null; dueDate: string | null; caseId: number | null; clientId: number | null; description: string | null; deletedAt: string | null; };
 type AuditLog   = { id: number; entityType: string; entityId: number | null; action: string; userName: string | null; createdAt: string; details: string | null; };
 type HearingEvent = { id: number; title: string; date: string; time: string | null; type: string; legalStatus: string | null; court: string | null; division: string | null; location: string | null; objective: string | null; result: string | null; };
+
+// ── Type-specific data types ──────────────────────────────────
+type ContractVersion = { id: number; versionNumber: number; notes: string | null; createdAt: string; };
+type ContractData = {
+  id: number; caseId: number; contractType: string; status: string;
+  partyOneName: string | null; partyTwoName: string | null;
+  contractValue: string | null; startDate: string | null; endDate: string | null;
+  signingDate: string | null; notes: string | null;
+  versions: ContractVersion[];
+};
+type DebtPayment = { id: number; amount: string; paymentMethod: string | null; reference: string | null; receivedAt: string; notes: string | null; };
+type DebtData = {
+  id: number; caseId: number; debtorName: string; debtAmount: string;
+  recoveredAmount: string; currentStage: string; dueDate: string | null;
+  debtorPhone: string | null; notes: string | null;
+  payments: DebtPayment[];
+};
+type CompanyStep = { id: number; stepNameAr: string; stepOrder: number; isCompleted: number; completedAt: string | null; notes: string | null; };
+type CompanyData = {
+  id: number; caseId: number; companyType: string; proposedName: string | null;
+  capital: string | null; activity: string | null; taxId: string | null;
+  rneNumber: string | null; procedureStatus: string | null; notes: string | null;
+  steps: CompanyStep[];
+};
 
 const HEARING_TYPES = [
   { value: "hearing", label: "جلسة" }, { value: "meeting", label: "اجتماع" },
@@ -244,6 +297,12 @@ export default function CaseDetail() {
   const [dlFilter,  setDlFilter]  = useState<"all" | "upcoming" | "past">("all");
   const [docSearch, setDocSearch] = useState("");
 
+  // Type-specific data state
+  const [contractData,   setContractData]   = useState<ContractData | null>(null);
+  const [debtData,       setDebtData]       = useState<DebtData | null>(null);
+  const [companyData,    setCompanyData]    = useState<CompanyData | null>(null);
+  const [typeDataLoaded, setTypeDataLoaded] = useState(false);
+
   // Confirm dialogs
   const [confirmOppId,      setConfirmOppId]      = useState<number | null>(null);
   const [confirmCaseDelete, setConfirmCaseDelete] = useState(false);
@@ -285,6 +344,28 @@ export default function CaseDetail() {
     }
     return () => { if (timeInterval.current) clearInterval(timeInterval.current); };
   }, [timeRunning]);
+
+  // Load type-specific data once caseData is available
+  useEffect(() => {
+    if (!id || !caseData) return;
+    const stype = (caseData as Record<string, unknown>).serviceType as string | null | undefined;
+    if (!stype) return;
+    if (stype === "contract") {
+      authFetch(`${BASE}/api/cases/${id}/contract`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { setContractData(data); setTypeDataLoaded(true); });
+    } else if (stype === "debt_recovery") {
+      authFetch(`${BASE}/api/cases/${id}/debt-recovery`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { setDebtData(data); setTypeDataLoaded(true); });
+    } else if (stype === "company_creation") {
+      authFetch(`${BASE}/api/cases/${id}/company-creation`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { setCompanyData(data); setTypeDataLoaded(true); });
+    } else {
+      setTypeDataLoaded(true);
+    }
+  }, [id, caseData]);
 
   async function withSave(fn: () => Promise<void>, reloader: () => Promise<void>) {
     setSaving(true); await fn(); await reloader(); setSaving(false); setModal(null);
@@ -335,7 +416,15 @@ export default function CaseDetail() {
     disputeValue?: number | null; clientSource?: string | null; judgeName?: string | null;
     firstHearingDate?: string | null; openedAt?: string | null;
     confidentialityLevel?: string | null; internalNotes?: string | null;
+    serviceType?: string | null; typeSpecificData?: Record<string, unknown> | null;
   };
+
+  // Service-type helpers (depend on `c`, defined after guard)
+  const serviceType   = c.serviceType ?? "lawsuit";
+  const isLitigation  = LITIGATION_TYPES.has(serviceType);
+  const isContract    = serviceType === "contract";
+  const isDebtRecovery= serviceType === "debt_recovery";
+  const isCompany     = serviceType === "company_creation";
 
   const today = new Date().toISOString().slice(0, 10);
   const in30   = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -357,22 +446,37 @@ export default function CaseDetail() {
     return true;
   }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Tab definitions
+  // Tab definitions — conditional on service type
+  const typeSpecificLabel = isContract ? "العقد" : isDebtRecovery ? "الاستخلاص" : isCompany ? "التأسيس" : "تفاصيل الملف";
+  const typeSpecificIcon  = isContract ? <FileText className="h-4 w-4" /> : isDebtRecovery ? <Banknote className="h-4 w-4" /> : isCompany ? <Briefcase className="h-4 w-4" /> : <Layers className="h-4 w-4" />;
+  const hasTypeSpecificTab= isContract || isDebtRecovery || isCompany || (!isLitigation && serviceType !== "lawsuit");
+
   const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = [
-    { id: "overview",   label: "نظرة عامة",          icon: <BarChart2 className="h-4 w-4" /> },
-    { id: "timeline",   label: "التسلسل الإجرائي",   icon: <GitBranch className="h-4 w-4" /> },
-    { id: "hearings",   label: "الجلسات والآجال",     icon: <Clock className="h-4 w-4" />,
+    { id: "overview",       label: "نظرة عامة",        icon: <BarChart2 className="h-4 w-4" /> },
+    ...(isLitigation ? [
+      { id: "timeline" as TabId,   label: "التسلسل الإجرائي", icon: <GitBranch className="h-4 w-4" /> },
+    ] : []),
+    ...(hasTypeSpecificTab ? [
+      { id: "type-specific" as TabId, label: typeSpecificLabel, icon: typeSpecificIcon },
+    ] : []),
+    { id: "hearings",   label: "الجلسات والآجال",   icon: <Clock className="h-4 w-4" />,
       badge: upcomingCount > 0 ? upcomingCount : 0 },
-    { id: "judgment",   label: "الحكم والتنفيذ",      icon: <Scale className="h-4 w-4" /> },
-    { id: "documents",  label: "المؤيدات والوثائق",   icon: <FolderOpen className="h-4 w-4" />,
+    ...(isLitigation ? [
+      { id: "judgment" as TabId, label: "الحكم والتنفيذ", icon: <Scale className="h-4 w-4" /> },
+    ] : []),
+    { id: "documents",  label: "المؤيدات والوثائق", icon: <FolderOpen className="h-4 w-4" />,
       badge: activeDocs.length > 0 ? activeDocs.length : 0 },
-    { id: "invoicing",  label: "الأتعاب والفواتير",   icon: <Receipt className="h-4 w-4" />,
+    { id: "invoicing",  label: "الأتعاب والفواتير",  icon: <Receipt className="h-4 w-4" />,
       badge: hasOverdueInv ? 1 : 0 },
     { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
     { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
     { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
   ];
+
+  // If current tab is not available for this service type, switch to overview
+  const availableTabIds = tabs.map(t => t.id);
+  const safeActiveTab = availableTabIds.includes(activeTab) ? activeTab : "overview";
 
   // ─────────────────────────────────────────────────────────────
   // TAB CONTENT RENDERERS
@@ -499,6 +603,368 @@ export default function CaseDetail() {
         </CardContent>
       </Card>
     );
+  }
+
+  // ── Type-specific renderers ────────────────────────────────────────────────
+
+  function renderContractTab() {
+    const CONTRACT_STATUS_COLORS: Record<string, string> = {
+      draft: "bg-muted text-muted-foreground",
+      under_review: "bg-primary/10 text-primary",
+      ready_to_sign: "bg-warning/10 text-warning",
+      signed: "bg-success/10 text-success",
+      expired: "bg-destructive/10 text-destructive",
+      terminated: "bg-destructive/10 text-destructive",
+    };
+    const CONTRACT_STEPS = ["draft","under_review","ready_to_sign","signed"];
+    const currentStatusIdx = contractData ? CONTRACT_STEPS.indexOf(contractData.status) : -1;
+
+    return (
+      <div className="space-y-4">
+        {/* Status stepper */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">حالة العقد</h3>
+              {contractData && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CONTRACT_STATUS_COLORS[contractData.status] ?? "bg-muted"}`}>
+                  {TR_CONTRACT_STATUS[contractData.status] ?? contractData.status}
+                </span>
+              )}
+            </div>
+            {/* Steps bar */}
+            <div className="flex items-center gap-0 overflow-x-auto">
+              {CONTRACT_STEPS.map((step, i) => {
+                const done = contractData ? i <= currentStatusIdx : false;
+                return (
+                  <React.Fragment key={step}>
+                    <div className="flex flex-col items-center gap-1 min-w-[70px]">
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                        {done && i < currentStatusIdx ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+                      </div>
+                      <span className="text-[9px] text-center text-muted-foreground leading-tight">{TR_CONTRACT_STATUS[step] ?? step}</span>
+                    </div>
+                    {i < CONTRACT_STEPS.length - 1 && (
+                      <div className={`h-0.5 flex-1 min-w-[20px] ${contractData && i < currentStatusIdx ? "bg-primary" : "bg-muted"}`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contract details */}
+        {contractData ? (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2">تفاصيل العقد</h3>
+              {[
+                ["نوع العقد",        TR_CONTRACT_TYPE[contractData.contractType] ?? contractData.contractType],
+                ["الطرف الأول",      contractData.partyOneName],
+                ["الطرف الثاني",     contractData.partyTwoName],
+                ["قيمة العقد",       contractData.contractValue ? <TNDAmount amount={Number(contractData.contractValue)} /> : null],
+                ["تاريخ البداية",    contractData.startDate ? formatDateTN(contractData.startDate) : null],
+                ["تاريخ الانتهاء",   contractData.endDate   ? formatDateTN(contractData.endDate)   : null],
+                ["تاريخ التوقيع",    contractData.signingDate ? formatDateTN(contractData.signingDate) : null],
+              ].filter(([, v]) => v).map(([label, value]) => (
+                <div key={label as string} className="flex items-start justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground shrink-0">{label as string}</span>
+                  <span className="font-medium text-end">{value as React.ReactNode}</span>
+                </div>
+              ))}
+              {contractData.notes && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-1">ملاحظات</p>
+                  <p className="text-sm leading-relaxed bg-muted/30 p-3 rounded-xl">{contractData.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 text-center text-muted-foreground">
+              <FileText className="h-8 w-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm">لا توجد بيانات عقد مسجلة لهذا الملف بعد</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Versions */}
+        {contractData && contractData.versions.length > 0 && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2 flex items-center gap-2"><GitBranch className="h-4 w-4 text-muted-foreground" />نسخ العقد ({contractData.versions.length})</h3>
+              {contractData.versions.map(v => (
+                <div key={v.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border text-sm">
+                  <span className="font-mono font-semibold text-primary">v{v.versionNumber}</span>
+                  <span className="text-xs text-muted-foreground">{formatDateTN(v.createdAt)}</span>
+                  {v.notes && <span className="text-xs text-muted-foreground">{v.notes}</span>}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  function renderDebtRecoveryTab() {
+    const DEBT_STAGE_STEPS = ["notice","negotiation","lawsuit","execution","completed"];
+    const currentStageIdx = debtData ? DEBT_STAGE_STEPS.indexOf(debtData.currentStage) : -1;
+    const debtAmount  = debtData ? Number(debtData.debtAmount) : 0;
+    const recovered   = debtData ? Number(debtData.recoveredAmount) : 0;
+    const balance     = debtAmount - recovered;
+    const pct         = debtAmount > 0 ? Math.min(100, Math.round((recovered / debtAmount) * 100)) : 0;
+
+    return (
+      <div className="space-y-4">
+        {/* KPI cards */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-red-500/10 rounded-xl"><TrendingDown className="h-4 w-4 text-red-400" /></div>
+            <div><p className="text-[11px] text-muted-foreground">إجمالي الدين</p><TNDAmount amount={debtAmount} className="text-lg font-bold" /></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-success/10 rounded-xl"><Banknote className="h-4 w-4 text-success" /></div>
+            <div><p className="text-[11px] text-muted-foreground">المستخلص</p><TNDAmount amount={recovered} className="text-lg font-bold text-success" /></div>
+          </CardContent></Card>
+          <Card className="border-none shadow-sm"><CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 bg-warning/10 rounded-xl"><Clock className="h-4 w-4 text-warning" /></div>
+            <div><p className="text-[11px] text-muted-foreground">الرصيد المتبقي</p><TNDAmount amount={balance} className={`text-lg font-bold ${balance > 0 ? "text-warning" : "text-success"}`} /></div>
+          </CardContent></Card>
+        </div>
+
+        {/* Progress bar */}
+        {debtData && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">نسبة الاستخلاص</span>
+                <span className="font-bold text-primary">{pct}%</span>
+              </div>
+              <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-success" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+              </div>
+              {/* Stage stepper */}
+              <div className="flex items-center gap-0 overflow-x-auto pt-2">
+                {DEBT_STAGE_STEPS.map((step, i) => {
+                  const done = i <= currentStageIdx;
+                  return (
+                    <React.Fragment key={step}>
+                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                          {done && i < currentStageIdx ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                        </div>
+                        <span className="text-[9px] text-center text-muted-foreground leading-tight">{TR_DEBT_STAGE[step] ?? step}</span>
+                      </div>
+                      {i < DEBT_STAGE_STEPS.length - 1 && (
+                        <div className={`h-0.5 flex-1 min-w-[12px] ${i < currentStageIdx ? "bg-primary" : "bg-muted"}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Debtor info */}
+        {debtData && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2">معلومات المدين</h3>
+              {[
+                ["اسم المدين", debtData.debtorName],
+                ["هاتف المدين", debtData.debtorPhone],
+                ["تاريخ الاستحقاق", debtData.dueDate ? formatDateTN(debtData.dueDate) : null],
+              ].filter(([, v]) => v).map(([label, value]) => (
+                <div key={label as string} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{label as string}</span>
+                  <span className="font-medium">{value as string}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payments list */}
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="font-semibold text-sm">سجل التسديدات</h3>
+              <Button size="sm" className="gap-1.5 text-xs" onClick={async () => {
+                const amtStr = prompt("مبلغ التسديد (د.ت):");
+                if (!amtStr || isNaN(Number(amtStr))) return;
+                const method = prompt("طريقة الدفع (اختياري):");
+                const r = await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments`, {
+                  method: "POST",
+                  body: JSON.stringify({ amount: Number(amtStr), paymentMethod: method || null }),
+                });
+                if (r.ok) {
+                  authFetch(`${BASE}/api/cases/${id}/debt-recovery`)
+                    .then(r2 => r2.ok ? r2.json() : null)
+                    .then(data => setDebtData(data));
+                }
+              }}><Plus className="h-3.5 w-3.5" />تسجيل تسديد</Button>
+            </div>
+            {!debtData || debtData.payments.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <Banknote className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد تسديدات مسجلة بعد</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="text-right py-2 px-4 font-medium">التاريخ</th>
+                    <th className="text-right py-2 px-4 font-medium">المبلغ</th>
+                    <th className="text-right py-2 px-4 font-medium hidden md:table-cell">الطريقة</th>
+                    <th className="text-right py-2 px-4 font-medium hidden md:table-cell">المرجع</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {debtData.payments.map(p => (
+                    <tr key={p.id} className="hover:bg-muted/20">
+                      <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">{formatDateTN(p.receivedAt)}</td>
+                      <td className="py-2.5 px-4 font-semibold text-success" dir="ltr"><TNDAmount amount={Number(p.amount)} /></td>
+                      <td className="py-2.5 px-4 text-muted-foreground hidden md:table-cell">{p.paymentMethod ?? "—"}</td>
+                      <td className="py-2.5 px-4 text-muted-foreground hidden md:table-cell">{p.reference ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  function renderCompanyCreationTab() {
+    const steps = companyData?.steps ?? [];
+    const done  = steps.filter(s => s.isCompleted).length;
+    const total = steps.length;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        {companyData && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <h3 className="font-semibold text-sm border-b border-border pb-2">بيانات الشركة</h3>
+              {[
+                ["نوع الشركة",    TR_COMPANY_TYPE[companyData.companyType] ?? companyData.companyType],
+                ["الاسم المقترح", companyData.proposedName],
+                ["رأس المال",     companyData.capital ? <TNDAmount amount={Number(companyData.capital)} /> : null],
+                ["النشاط",        companyData.activity],
+                ["المعرف الجبائي", companyData.taxId],
+                ["رقم السجل التجاري", companyData.rneNumber],
+              ].filter(([, v]) => v).map(([label, value]) => (
+                <div key={label as string} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{label as string}</span>
+                  <span className="font-medium">{value as React.ReactNode}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Progress */}
+        {total > 0 && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">تقدم الإجراءات</span>
+                <span className="font-bold text-primary">{done}/{total} ({pct}%)</span>
+              </div>
+              <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-success" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Checklist */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-2">
+            <h3 className="font-semibold text-sm border-b border-border pb-2">قائمة الإجراءات</h3>
+            {steps.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
+                <CheckCircle2 className="h-7 w-7 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد إجراءات مسجلة لهذا الملف بعد</p>
+              </div>
+            ) : (
+              steps.map(step => (
+                <div key={step.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${step.isCompleted ? "border-success/30 bg-success/5" : "border-border hover:border-primary/30 hover:bg-primary/5"}`}
+                  onClick={async () => {
+                    const r = await authFetch(`${BASE}/api/cases/${id}/company-creation/steps/${step.id}`, {
+                      method: "PATCH",
+                      body: JSON.stringify({ isCompleted: !step.isCompleted }),
+                    });
+                    if (r.ok) {
+                      authFetch(`${BASE}/api/cases/${id}/company-creation`)
+                        .then(r2 => r2.ok ? r2.json() : null)
+                        .then(data => setCompanyData(data));
+                    }
+                  }}>
+                  <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${step.isCompleted ? "bg-success text-white" : "border-2 border-muted-foreground"}`}>
+                    {step.isCompleted && <CheckCircle2 className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${step.isCompleted ? "line-through text-muted-foreground" : ""}`}>{step.stepNameAr}</p>
+                    {step.completedAt && (
+                      <p className="text-[10px] text-success">{formatDateTN(step.completedAt)}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{step.stepOrder}</span>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  function renderSimpleTypeTab() {
+    return (
+      <Card className="border-none shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 rounded-xl"><Layers className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h3 className="font-semibold">{TR_SERVICE_TYPE[serviceType] ?? serviceType}</h3>
+              <p className="text-xs text-muted-foreground">نوع الملف</p>
+            </div>
+          </div>
+          {c.typeSpecificData && Object.keys(c.typeSpecificData).length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">بيانات مخصصة</p>
+              {Object.entries(c.typeSpecificData).map(([key, val]) => (
+                <div key={key} className="flex items-center justify-between text-sm p-2 bg-muted/30 rounded-lg">
+                  <span className="text-muted-foreground">{key}</span>
+                  <span className="font-medium">{String(val)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {c.description && (
+            <div className="p-4 bg-muted/30 rounded-xl text-sm leading-relaxed">
+              {c.description}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function renderTypeSpecific() {
+    if (isContract)     return renderContractTab();
+    if (isDebtRecovery) return renderDebtRecoveryTab();
+    if (isCompany)      return renderCompanyCreationTab();
+    return renderSimpleTypeTab();
   }
 
   function renderHearings() {
@@ -1115,14 +1581,16 @@ export default function CaseDetail() {
         </CardContent>
       </Card>
 
-      {/* Stage Stepper — always visible above tabs */}
-      <CaseStageStepper
-        caseId={Number(id)}
-        refreshKey={stageRefreshKey}
-        onStageClick={(stage, mode) => {
-          changeTab("judgment");
-        }}
-      />
+      {/* Stage Stepper — only for litigation types */}
+      {isLitigation && (
+        <CaseStageStepper
+          caseId={Number(id)}
+          refreshKey={stageRefreshKey}
+          onStageClick={(_stage, _mode) => {
+            changeTab("judgment");
+          }}
+        />
+      )}
 
       {/* Tabs */}
       <div>
@@ -1132,7 +1600,7 @@ export default function CaseDetail() {
               <button key={tab.id} onClick={() => changeTab(tab.id)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
-                  activeTab === tab.id
+                  safeActiveTab === tab.id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 )}>
@@ -1150,15 +1618,16 @@ export default function CaseDetail() {
         </div>
 
         <div className="mt-4">
-          {activeTab === "overview"   && renderOverview()}
-          {activeTab === "timeline"   && renderTimeline()}
-          {activeTab === "hearings"   && renderHearings()}
-          {activeTab === "judgment"   && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
-          {activeTab === "documents"  && renderDocuments()}
-          {activeTab === "invoicing"  && renderInvoicing()}
-          {activeTab === "expenses"   && renderExpenses()}
-          {activeTab === "time"       && renderTime()}
-          {activeTab === "notes"      && renderNotes()}
+          {safeActiveTab === "overview"       && renderOverview()}
+          {safeActiveTab === "timeline"       && renderTimeline()}
+          {safeActiveTab === "type-specific"  && renderTypeSpecific()}
+          {safeActiveTab === "hearings"       && renderHearings()}
+          {safeActiveTab === "judgment"       && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
+          {safeActiveTab === "documents"      && renderDocuments()}
+          {safeActiveTab === "invoicing"      && renderInvoicing()}
+          {safeActiveTab === "expenses"       && renderExpenses()}
+          {safeActiveTab === "time"           && renderTime()}
+          {safeActiveTab === "notes"          && renderNotes()}
         </div>
       </div>
 

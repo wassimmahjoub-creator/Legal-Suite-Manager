@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { db, casesTable, clientsTable } from "@workspace/db";
+import {
+  db, casesTable, clientsTable,
+  contractsTable, contractVersionsTable,
+  debtRecoveryFilesTable, debtRecoveryPaymentsTable,
+  companyFilesTable, companyCreationStepsTable,
+} from "@workspace/db";
 import { eq, isNull, isNotNull, like, sql, inArray, and, or } from "drizzle-orm";
 import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
@@ -48,6 +53,9 @@ const caseFields = {
   archivedAt: casesTable.archivedAt,
   deletedAt: casesTable.deletedAt,
   createdAt: casesTable.createdAt,
+  // Multi-type file fields
+  serviceType: casesTable.serviceType,
+  typeSpecificData: casesTable.typeSpecificData,
 };
 
 function extractExtras(body: Record<string, unknown>) {
@@ -292,6 +300,165 @@ router.delete("/cases/:id", async (req, res) => {
   const actor = (req as typeof req & { user?: { orgId?: number } }).user;
   await db.delete(casesTable).where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   res.status(204).send();
+});
+
+// ── Contract routes ──────────────────────────────────────────────────────────
+router.get("/cases/:id/contract", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const [contract] = await db.select().from(contractsTable).where(eq(contractsTable.caseId, id));
+  if (!contract) return res.json(null);
+  const versions = await db.select().from(contractVersionsTable)
+    .where(eq(contractVersionsTable.contractId, contract.id))
+    .orderBy(contractVersionsTable.versionNumber);
+  res.json({ ...contract, versions });
+});
+
+router.put("/cases/:id/contract", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const b = req.body as Record<string, unknown>;
+  const [existing] = await db.select().from(contractsTable).where(eq(contractsTable.caseId, id));
+  let result;
+  if (existing) {
+    [result] = await db.update(contractsTable).set({
+      contractType: (b.contractType as string | undefined) ?? existing.contractType,
+      status: (b.status as string | undefined) ?? existing.status,
+      partyOneName: (b.partyOneName as string | null | undefined) ?? existing.partyOneName,
+      partyTwoName: (b.partyTwoName as string | null | undefined) ?? existing.partyTwoName,
+      contractValue: (b.contractValue as string | null | undefined) ?? existing.contractValue,
+      startDate: (b.startDate as string | null | undefined) ?? existing.startDate,
+      endDate: (b.endDate as string | null | undefined) ?? existing.endDate,
+      signingDate: (b.signingDate as string | null | undefined) ?? existing.signingDate,
+      notes: (b.notes as string | null | undefined) ?? existing.notes,
+      updatedAt: new Date(),
+    }).where(eq(contractsTable.id, existing.id)).returning();
+  } else {
+    [result] = await db.insert(contractsTable).values({
+      caseId: id,
+      contractType: (b.contractType as "sale" | "rental" | "service" | "employment" | "partnership" | "loan" | "guarantee" | "agency" | "franchise" | "other" | undefined) ?? "other",
+      status: (b.status as "draft" | "under_review" | "ready_to_sign" | "signed" | "expired" | "terminated" | undefined) ?? "draft",
+      partyOneName: (b.partyOneName as string) ?? null,
+      partyTwoName: (b.partyTwoName as string) ?? null,
+      contractValue: (b.contractValue as string) ?? null,
+      startDate: (b.startDate as string) ?? null,
+      endDate: (b.endDate as string) ?? null,
+      signingDate: (b.signingDate as string) ?? null,
+      notes: (b.notes as string) ?? null,
+    }).returning();
+  }
+  res.json(result);
+});
+
+// ── Debt recovery routes ─────────────────────────────────────────────────────
+router.get("/cases/:id/debt-recovery", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable).where(eq(debtRecoveryFilesTable.caseId, id));
+  if (!debtFile) return res.json(null);
+  const payments = await db.select().from(debtRecoveryPaymentsTable)
+    .where(eq(debtRecoveryPaymentsTable.debtRecoveryFileId, debtFile.id))
+    .orderBy(debtRecoveryPaymentsTable.receivedAt);
+  res.json({ ...debtFile, payments });
+});
+
+router.put("/cases/:id/debt-recovery", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const b = req.body as Record<string, unknown>;
+  const [existing] = await db.select().from(debtRecoveryFilesTable).where(eq(debtRecoveryFilesTable.caseId, id));
+  let result;
+  if (existing) {
+    [result] = await db.update(debtRecoveryFilesTable).set({
+      debtorName: (b.debtorName as string | undefined) ?? existing.debtorName,
+      debtAmount: (b.debtAmount as string | undefined) ?? existing.debtAmount,
+      currentStage: (b.currentStage as string | undefined) ?? existing.currentStage,
+      dueDate: (b.dueDate as string | null | undefined) ?? existing.dueDate,
+      notes: (b.notes as string | null | undefined) ?? existing.notes,
+      updatedAt: new Date(),
+    }).where(eq(debtRecoveryFilesTable.id, existing.id)).returning();
+  } else {
+    [result] = await db.insert(debtRecoveryFilesTable).values({
+      caseId: id,
+      debtorName: (b.debtorName as string) ?? "مجهول",
+      debtAmount: String(b.debtAmount ?? "0"),
+      currentStage: (b.currentStage as "notice" | "negotiation" | "lawsuit" | "execution" | "completed" | undefined) ?? "notice",
+      dueDate: (b.dueDate as string) ?? null,
+      notes: (b.notes as string) ?? null,
+    }).returning();
+  }
+  res.json(result);
+});
+
+router.post("/cases/:id/debt-recovery/payments", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const [debtFile] = await db.select().from(debtRecoveryFilesTable).where(eq(debtRecoveryFilesTable.caseId, id));
+  if (!debtFile) return res.status(404).json({ error: "No debt recovery file for this case" });
+  const b = req.body as Record<string, unknown>;
+  const [payment] = await db.insert(debtRecoveryPaymentsTable).values({
+    debtRecoveryFileId: debtFile.id,
+    amount: String(b.amount ?? "0"),
+    paymentMethod: (b.paymentMethod as string) ?? null,
+    reference: (b.reference as string) ?? null,
+    receivedAt: b.receivedAt ? new Date(b.receivedAt as string) : new Date(),
+    notes: (b.notes as string) ?? null,
+  }).returning();
+  // Recalculate recoveredAmount
+  const allPayments = await db.select({ amount: debtRecoveryPaymentsTable.amount })
+    .from(debtRecoveryPaymentsTable)
+    .where(eq(debtRecoveryPaymentsTable.debtRecoveryFileId, debtFile.id));
+  const recovered = allPayments.reduce((s, p) => s + Number(p.amount), 0);
+  await db.update(debtRecoveryFilesTable).set({ recoveredAmount: String(recovered) })
+    .where(eq(debtRecoveryFilesTable.id, debtFile.id));
+  res.status(201).json(payment);
+});
+
+// ── Company creation routes ──────────────────────────────────────────────────
+router.get("/cases/:id/company-creation", async (req, res) => {
+  const id = Number(req.params.id);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) return res.status(404).json({ error: "Not found" });
+  const [companyFile] = await db.select().from(companyFilesTable).where(eq(companyFilesTable.caseId, id));
+  if (!companyFile) return res.json(null);
+  const steps = await db.select().from(companyCreationStepsTable)
+    .where(eq(companyCreationStepsTable.companyFileId, companyFile.id))
+    .orderBy(companyCreationStepsTable.stepOrder);
+  res.json({ ...companyFile, steps });
+});
+
+router.patch("/cases/:id/company-creation/steps/:stepId", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const stepId = Number(req.params.stepId);
+  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const [cas] = await db.select({ id: casesTable.id }).from(casesTable)
+    .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  if (!cas) { res.status(404).json({ error: "Not found" }); return; }
+  const b = req.body as { isCompleted?: boolean };
+  const isCompleted = b.isCompleted ? 1 : 0;
+  const [step] = await db.update(companyCreationStepsTable).set({
+    isCompleted,
+    completedAt: isCompleted ? new Date() : null,
+  }).where(eq(companyCreationStepsTable.id, stepId)).returning();
+  if (!step) { res.status(404).json({ error: "Step not found" }); return; }
+  res.json(step);
 });
 
 export default router;
