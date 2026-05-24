@@ -1,0 +1,450 @@
+IMPORTANT:
+This is a HOMEPAGE / DASHBOARD UX REORGANIZATION prompt only.
+
+DO NOT rebuild the app.
+DO NOT modify backend logic unless needed for existing dashboard data.
+DO NOT break routing.
+DO NOT break RTL.
+DO NOT change the global design system.
+DO NOT remove existing modules.
+
+Goal:
+Transform the homepage from a generic SaaS dashboard into a daily operational cockpit for Tunisian lawyers.
+
+The homepage must answer one question immediately:
+
+"شنوّة يلزمني نعمل اليوم؟"
+
+The lawyer must instantly see:
+- today’s hearings
+- urgent legal deadlines
+- tasks to complete
+- files needing attention
+- recent activity
+- quick actions
+
+Financial metrics should remain available but must not dominate the homepage.
+
+====================================================
+1) CORE UX PRINCIPLE
+====================================================
+
+The current homepage gives too much visual weight to generic KPIs and finance.
+
+Reorganize the page around the lawyer’s real morning priorities:
+
+1. جلسات اليوم
+2. آجال قانونية قريبة
+3. المهام العاجلة
+4. التنبيهات المهمة
+5. آخر النشاطات
+6. آخر الملفات
+7. ملخص مالي صغير
+
+The dashboard must feel:
+- operational
+- urgent when needed
+- calm when nothing is critical
+- compact
+- useful
+- professional
+
+NOT:
+- generic SaaS analytics
+- finance-first
+- empty cards
+- oversized KPI layout
+
+====================================================
+2) NEW HEADER SUMMARY
+====================================================
+
+At the top of the homepage, create a compact daily summary.
+
+Example:
+
+الأحد، 24 ماي 2026
+
+اليوم:
+- 3 جلسات
+- 2 آجال حرجة
+- 5 مهام عاجلة
+- 1 فاتورة معلقة
+
+This section must be compact, not oversized.
+
+Use clear visual priority:
+- red for critical
+- amber for soon/important
+- blue/neutral for normal
+
+====================================================
+3) PRIMARY SECTION: اليوم
+====================================================
+
+Create the main top section:
+
+اليوم
+
+This must be the first major section on the page.
+
+It contains three cards side-by-side on desktop, stacked on mobile:
+
+1. جلسات اليوم
+2. آجال قريبة
+3. المهام العاجلة
+
+====================================================
+3A) جلسات اليوم
+====================================================
+
+This card is the highest priority.
+
+Display:
+- time
+- court
+- chamber/circuit
+- file name
+- client
+- responsible lawyer
+
+Example:
+09:00 — المحكمة الابتدائية بتونس
+قضية شركة التركي
+الحريف: شركة التركي
+
+If no hearings today:
+Do NOT waste a large empty card.
+
+Instead show:
+"لا توجد جلسات اليوم"
+and below:
+"الجلسة القادمة: [date] — [file]"
+
+Add button:
++ حدث جديد
+
+====================================================
+3B) آجال قريبة
+====================================================
+
+Display legal deadlines.
+
+Examples:
+- آخر أجل للاستئناف
+- أجل التعقيب
+- أجل الرد
+- أجل الإعلام
+
+Each item must show:
+- file
+- deadline type
+- remaining days
+- urgency status
+
+Urgency rules:
+- today / overdue = red
+- within 3 days = red
+- within 7 days = amber
+- later = neutral
+
+Example:
+آخر أجل للاستئناف — باقي 3 أيام
+ملف: قضية عقار الزهراء
+
+====================================================
+3C) المهام العاجلة
+====================================================
+
+Display:
+- overdue tasks
+- tasks due today
+- important tasks
+
+Each task:
+- checkbox
+- title
+- linked file
+- priority
+- responsible person
+
+Add button:
++ مهمة جديدة
+
+====================================================
+4) SMART ALERTS SECTION
+====================================================
+
+Create section:
+
+تنبيهات مهمة
+
+This should replace generic alert cards.
+
+Display actionable alerts only.
+
+Examples:
+- فاتورة معلقة: 21.421,000 د.ت
+- ملف بدون تحديث منذ 14 يوم
+- وثيقة ناقصة في ملف
+- أجل قانوني قريب
+- مهمة متأخرة
+
+Each alert must have:
+- severity icon
+- short message
+- linked file/client if available
+- action button or link
+
+If there are no alerts:
+show small calm state:
+"لا توجد تنبيهات مهمة"
+
+Do NOT create large empty whitespace.
+
+====================================================
+5) RECENT ACTIVITY SECTION
+====================================================
+
+Replace or reduce “آخر الملفات” as the dominant bottom section.
+
+Create:
+
+آخر النشاطات
+
+This is more useful than a passive list of files.
+
+Show chronological activity:
+- document uploaded
+- file updated
+- hearing added
+- invoice created
+- payment received
+- task completed
+- client updated
+
+Example:
+10:42 — تمت إضافة وثيقة — ملف شركة التركي
+11:15 — تم تعديل جلسة — المحكمة الابتدائية
+12:02 — تم إصدار فاتورة — قضية عقار الزهراء
+
+Use compact timeline style.
+
+====================================================
+6) RECENT FILES SECTION
+====================================================
+
+Keep “آخر الملفات”, but make it secondary.
+
+Move it below today/alerts/activity.
+
+Make it compact.
+
+Display:
+- file reference
+- file title
+- type
+- client
+- status
+- last update
+
+Do NOT let it dominate the homepage.
+
+====================================================
+7) FINANCIAL SUMMARY
+====================================================
+
+Keep financial information, but move it lower and make it compact.
+
+Create small section:
+
+ملخص مالي
+
+Include:
+- فواتير معلقة
+- مداخيل هذا الشهر
+- مصاريف هذا الشهر
+- صافي
+
+Do NOT display monthly revenue as the largest number on the page.
+
+Financial numbers are important, but not the lawyer’s first morning priority.
+
+Use the existing TNDAmount formatting component.
+
+====================================================
+8) QUICK ACTIONS
+====================================================
+
+Add or improve quick actions visible near the top.
+
+Actions:
+- + ملف
+- + جلسة
+- + استشارة
+- + عقد
+- + فاتورة
+- + مهمة
+
+These should be easy to access but not visually overwhelming.
+
+If there is already a floating + button, improve it to open these options.
+
+====================================================
+9) FILES NEEDING ATTENTION
+====================================================
+
+Add a compact section:
+
+ملفات تستحق المتابعة
+
+Show files that need action because:
+- no update for X days
+- missing document
+- pending client response
+- unpaid invoice
+- upcoming deadline
+- incomplete information
+
+This section should help the lawyer know what to follow up.
+
+====================================================
+10) DATA PRIORITY RULES
+====================================================
+
+The homepage should prioritize action over statistics.
+
+Priority order:
+1. Critical deadlines
+2. Today’s hearings
+3. Urgent tasks
+4. Important alerts
+5. Recent activity
+6. Files needing follow-up
+7. Financial summary
+8. Generic statistics
+
+====================================================
+11) EMPTY STATES
+====================================================
+
+Avoid large empty cards.
+
+If a section has no data:
+- show a compact calm message
+- suggest next useful item
+- never waste large vertical space
+
+Examples:
+"لا توجد جلسات اليوم"
+"الجلسة القادمة يوم الثلاثاء 26 ماي"
+
+"لا توجد آجال قريبة"
+"كل الآجال تحت السيطرة"
+
+====================================================
+12) VISUAL DENSITY
+====================================================
+
+The current page has too much empty space.
+
+Improve:
+- card density
+- vertical spacing
+- information per screen
+- compact tables/lists
+
+Reduce height of KPI cards.
+
+Keep design premium and readable.
+
+Do NOT make it crowded.
+
+Goal:
+more useful information above the fold.
+
+====================================================
+13) MOBILE EXPERIENCE
+====================================================
+
+On mobile:
+- today section appears first
+- urgent deadlines appear before finance
+- quick actions remain accessible
+- cards stack cleanly
+- no wide tables
+
+Mobile lawyer use case:
+checking the app quickly before/during court.
+
+====================================================
+14) TERMINOLOGY
+====================================================
+
+Use realistic Tunisian legal-office Arabic.
+
+Use:
+- الملفات الجارية
+- آجال قريبة
+- جلسات اليوم
+- المهام العاجلة
+- تنبيهات مهمة
+- آخر النشاطات
+- ملفات تستحق المتابعة
+- ملخص مالي
+
+Avoid generic dashboard language.
+
+====================================================
+15) CURRENCY FORMAT
+====================================================
+
+Use existing TNDAmount component everywhere.
+
+Correct Tunisian format:
+1.250,000 د.ت
+
+Do not use American format.
+
+Apply consistently to:
+- alerts
+- financial summary
+- invoices
+- revenue
+- expenses
+
+====================================================
+16) FINAL PAGE STRUCTURE
+====================================================
+
+Final homepage order:
+
+1. Compact daily header
+2. Quick actions
+3. Section: اليوم
+   - جلسات اليوم
+   - آجال قريبة
+   - المهام العاجلة
+4. Section: تنبيهات مهمة
+5. Section: ملفات تستحق المتابعة
+6. Section: آخر النشاطات
+7. Section: آخر الملفات
+8. Section: ملخص مالي
+
+====================================================
+17) DO NOT BREAK EXISTING APP
+====================================================
+
+Preserve:
+- sidebar
+- routing
+- RTL
+- design system
+- existing data models
+- current components where reusable
+
+Only reorganize and improve the homepage/dashboard experience.
+
+The final homepage must feel like:
+a daily operational cockpit for a Tunisian lawyer,
+not a generic SaaS analytics dashboard.
