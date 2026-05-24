@@ -41,6 +41,7 @@ import dataExportsRouter from "./data-exports.js";
 import exportsRouter from "./exports.js";
 import uploadsRouter from "./uploads.js";
 import migrateRouter from "./migrate.js";
+import caseTypesRouter from "./case-types.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router: IRouter = Router();
@@ -103,5 +104,6 @@ router.use(dataExportsRouter);
 router.use(exportsRouter);
 router.use(uploadsRouter);
 router.use(migrateRouter);
+router.use(caseTypesRouter);
 
 export default router;

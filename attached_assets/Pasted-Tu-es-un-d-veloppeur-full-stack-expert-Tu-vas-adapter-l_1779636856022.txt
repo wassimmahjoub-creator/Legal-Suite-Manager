@@ -1,0 +1,766 @@
+Tu es un développeur full-stack expert. Tu vas adapter la page CaseDetail pour que
+chaque type de dossier affiche l'interface qui lui correspond.
+
+git checkout -b fix/case-detail-by-type
+
+══════════════════════════════════════════════════════
+ÉTAPE 1 — BACKEND : exposer serviceType dans l'API
+══════════════════════════════════════════════════════
+Fichier : artifacts/api-server/src/routes/cases.ts
+
+Dans l'objet caseFields (lignes ~10-51), ajoute deux lignes AVANT la fermeture } :
+  serviceType:      casesTable.serviceType,
+  typeSpecificData: casesTable.typeSpecificData,
+
+Résultat : GET /api/cases/:id retournera désormais serviceType et typeSpecificData.
+
+══════════════════════════════════════════════════════
+ÉTAPE 2 — BACKEND : routes pour les 3 nouveaux types
+══════════════════════════════════════════════════════
+Crée le fichier : artifacts/api-server/src/routes/case-types.ts
+Contenu exact :
+
+─────────────────────────────────────────────────────
+import { Router, type IRouter } from "express";
+import { db } from "@workspace/db";
+import { sql } from "drizzle-orm";
+
+const router: IRouter = Router();
+
+// ─── Helpers ─────────────────────────────────────
+function actor(req: any) { return req.user as { orgId?: number; id?: number }; }
+
+async function caseOrgCheck(caseId: number, orgId: number): Promise<boolean> {
+  const r = await db.execute(sql`SELECT 1 FROM cases WHERE id=${caseId} AND org_id=${orgId}`);
+  return (r.rows?.length ?? 0) > 0;
+}
+
+// ══════════════════════════════════════════════════
+// CONTRAT — /api/cases/:id/contract
+// ══════════════════════════════════════════════════
+
+router.get("/cases/:id/contract", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  const contract = await db.execute(sql`
+    SELECT c.*, json_agg(
+      json_build_object('id',v.id,'version_number',v.version_number,'notes',v.notes,'created_at',v.created_at)
+      ORDER BY v.version_number DESC
+    ) FILTER (WHERE v.id IS NOT NULL) AS versions
+    FROM contracts c
+    LEFT JOIN contract_versions v ON v.contract_id = c.id
+    WHERE c.case_id = ${caseId}
+    GROUP BY c.id
+  `);
+  res.json(contract.rows?.[0] ?? null);
+});
+
+router.patch("/cases/:id/contract", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const { contractType, partyOneName, partyOneTaxId, partyTwoName, partyTwoTaxId,
+            contractValue, status, startDate, endDate, signingDate, notes } = req.body;
+    await db.execute(sql`
+      INSERT INTO contracts (case_id, contract_type, party_one_name, party_one_tax_id,
+        party_two_name, party_two_tax_id, contract_value, status,
+        start_date, end_date, signing_date, notes)
+      VALUES (${caseId}, ${contractType ?? 'other'}, ${partyOneName ?? null},
+        ${partyOneTaxId ?? null}, ${partyTwoName ?? null}, ${partyTwoTaxId ?? null},
+        ${contractValue ?? null}, ${status ?? 'draft'},
+        ${startDate ?? null}, ${endDate ?? null}, ${signingDate ?? null}, ${notes ?? null})
+      ON CONFLICT (case_id) DO UPDATE SET
+        contract_type = EXCLUDED.contract_type,
+        party_one_name = EXCLUDED.party_one_name,
+        party_one_tax_id = EXCLUDED.party_one_tax_id,
+        party_two_name = EXCLUDED.party_two_name,
+        party_two_tax_id = EXCLUDED.party_two_tax_id,
+        contract_value = EXCLUDED.contract_value,
+        status = EXCLUDED.status,
+        start_date = EXCLUDED.start_date,
+        end_date = EXCLUDED.end_date,
+        signing_date = EXCLUDED.signing_date,
+        notes = EXCLUDED.notes,
+        updated_at = now()
+    `);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+router.post("/cases/:id/contract/versions", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId, id: userId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const contractRow = await db.execute(sql`SELECT id FROM contracts WHERE case_id=${caseId}`);
+    if (!contractRow.rows?.length) { res.status(400).json({ error: "أنشئ العقد أولاً" }); return; }
+    const contractId = (contractRow.rows[0] as any).id;
+    const maxRow = await db.execute(sql`SELECT COALESCE(MAX(version_number),0)+1 AS next FROM contract_versions WHERE contract_id=${contractId}`);
+    const nextVersion = (maxRow.rows?.[0] as any)?.next ?? 1;
+    const result = await db.execute(sql`
+      INSERT INTO contract_versions (contract_id, version_number, notes, created_by)
+      VALUES (${contractId}, ${nextVersion}, ${req.body.notes ?? null}, ${userId ?? null})
+      RETURNING *
+    `);
+    res.status(201).json(result.rows?.[0]);
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+router.delete("/cases/:id/contract/versions/:vid", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const vid = Number(req.params.vid);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  await db.execute(sql`
+    DELETE FROM contract_versions WHERE id=${vid}
+    AND contract_id IN (SELECT id FROM contracts WHERE case_id=${caseId})
+  `);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════════════
+// RECOUVREMENT — /api/cases/:id/debt-recovery
+// ══════════════════════════════════════════════════
+
+router.get("/cases/:id/debt-recovery", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  const result = await db.execute(sql`
+    SELECT d.*, json_agg(
+      json_build_object('id',p.id,'received_at',p.received_at,'amount',p.amount,
+        'payment_method',p.payment_method,'reference',p.reference,'notes',p.notes)
+      ORDER BY p.received_at DESC
+    ) FILTER (WHERE p.id IS NOT NULL) AS payments
+    FROM debt_recovery_files d
+    LEFT JOIN debt_recovery_payments p ON p.debt_recovery_file_id = d.id
+    WHERE d.case_id = ${caseId}
+    GROUP BY d.id
+  `);
+  res.json(result.rows?.[0] ?? null);
+});
+
+router.patch("/cases/:id/debt-recovery", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const { debtorName, debtorTaxId, debtorPhone, debtorAddress,
+            debtAmount, debtReason, dueDate, currentStage, notes } = req.body;
+    await db.execute(sql`
+      INSERT INTO debt_recovery_files (case_id, debtor_name, debtor_tax_id, debtor_phone,
+        debtor_address, debt_amount, debt_reason, due_date, current_stage, notes)
+      VALUES (${caseId}, ${debtorName ?? ''}, ${debtorTaxId ?? null},
+        ${debtorPhone ?? null}, ${debtorAddress ?? null}, ${debtAmount ?? 0},
+        ${debtReason ?? null}, ${dueDate ?? null}, ${currentStage ?? 'notice'}, ${notes ?? null})
+      ON CONFLICT (case_id) DO UPDATE SET
+        debtor_name = EXCLUDED.debtor_name,
+        debtor_tax_id = EXCLUDED.debtor_tax_id,
+        debtor_phone = EXCLUDED.debtor_phone,
+        debtor_address = EXCLUDED.debtor_address,
+        debt_amount = EXCLUDED.debt_amount,
+        debt_reason = EXCLUDED.debt_reason,
+        due_date = EXCLUDED.due_date,
+        current_stage = EXCLUDED.current_stage,
+        notes = EXCLUDED.notes,
+        updated_at = now()
+    `);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+router.post("/cases/:id/debt-recovery/payments", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId, id: userId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const fileRow = await db.execute(sql`SELECT id FROM debt_recovery_files WHERE case_id=${caseId}`);
+    if (!fileRow.rows?.length) { res.status(400).json({ error: "أنشئ ملف التحصيل أولاً" }); return; }
+    const fileId = (fileRow.rows[0] as any).id;
+    const { amount, receivedAt, paymentMethod, reference, notes } = req.body;
+    const result = await db.execute(sql`
+      INSERT INTO debt_recovery_payments
+        (debt_recovery_file_id, amount, received_at, payment_method, reference, notes, recorded_by)
+      VALUES (${fileId}, ${amount}, ${receivedAt ?? 'now()'}, ${paymentMethod ?? null},
+              ${reference ?? null}, ${notes ?? null}, ${userId ?? null})
+      RETURNING *
+    `);
+    // update recovered_amount
+    await db.execute(sql`
+      UPDATE debt_recovery_files
+      SET recovered_amount = (SELECT COALESCE(SUM(amount),0) FROM debt_recovery_payments WHERE debt_recovery_file_id=${fileId})
+      WHERE id=${fileId}
+    `);
+    res.status(201).json(result.rows?.[0]);
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+router.delete("/cases/:id/debt-recovery/payments/:pid", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const pid = Number(req.params.pid);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  await db.execute(sql`
+    DELETE FROM debt_recovery_payments WHERE id=${pid}
+    AND debt_recovery_file_id IN (SELECT id FROM debt_recovery_files WHERE case_id=${caseId})
+  `);
+  res.json({ ok: true });
+});
+
+// ══════════════════════════════════════════════════
+// SOCIÉTÉ — /api/cases/:id/company-creation
+// ══════════════════════════════════════════════════
+
+router.get("/cases/:id/company-creation", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  const result = await db.execute(sql`
+    SELECT
+      cf.*,
+      COALESCE(json_agg(DISTINCT jsonb_build_object('id',p.id,'partner_name',p.partner_name,
+        'partner_tax_id',p.partner_tax_id,'shares_percentage',p.shares_percentage,
+        'position',p.position,'position_order',p.position_order))
+        FILTER (WHERE p.id IS NOT NULL), '[]') AS partners,
+      COALESCE(json_agg(DISTINCT jsonb_build_object('id',s.id,'step_name_ar',s.step_name_ar,
+        'step_order',s.step_order,'is_completed',s.is_completed,
+        'completed_at',s.completed_at,'notes',s.notes))
+        FILTER (WHERE s.id IS NOT NULL), '[]') AS steps
+    FROM company_files cf
+    LEFT JOIN company_partners p ON p.company_file_id = cf.id
+    LEFT JOIN company_creation_steps s ON s.company_file_id = cf.id
+    WHERE cf.case_id = ${caseId}
+    GROUP BY cf.id
+  `);
+  res.json(result.rows?.[0] ?? null);
+});
+
+router.patch("/cases/:id/company-creation", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const { companyType, proposedName, capital, activity, taxId, rneNumber, procedureStatus, notes } = req.body;
+    await db.execute(sql`
+      INSERT INTO company_files (case_id, company_type, proposed_name, capital, activity,
+        tax_id, rne_number, procedure_status, notes)
+      VALUES (${caseId}, ${companyType ?? 'sarl'}, ${proposedName ?? null},
+        ${capital ?? null}, ${activity ?? null}, ${taxId ?? null},
+        ${rneNumber ?? null}, ${procedureStatus ?? null}, ${notes ?? null})
+      ON CONFLICT (case_id) DO UPDATE SET
+        company_type = EXCLUDED.company_type,
+        proposed_name = EXCLUDED.proposed_name,
+        capital = EXCLUDED.capital,
+        activity = EXCLUDED.activity,
+        tax_id = EXCLUDED.tax_id,
+        rne_number = EXCLUDED.rne_number,
+        procedure_status = EXCLUDED.procedure_status,
+        notes = EXCLUDED.notes,
+        updated_at = now()
+    `);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+router.patch("/cases/:id/company-creation/steps/:stepId", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const stepId = Number(req.params.stepId);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  const { isCompleted } = req.body as { isCompleted: boolean };
+  await db.execute(sql`
+    UPDATE company_creation_steps SET
+      is_completed = ${isCompleted},
+      completed_at = ${isCompleted ? sql`now()` : sql`NULL`}
+    WHERE id = ${stepId}
+    AND company_file_id IN (SELECT id FROM company_files WHERE case_id = ${caseId})
+  `);
+  res.json({ ok: true });
+});
+
+router.post("/cases/:id/company-creation/steps", async (req, res): Promise<void> => {
+  const caseId = Number(req.params.id);
+  const { orgId } = actor(req);
+  if (!orgId || !(await caseOrgCheck(caseId, orgId))) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    const fileRow = await db.execute(sql`SELECT id FROM company_files WHERE case_id=${caseId}`);
+    if (!fileRow.rows?.length) { res.status(400).json({ error: "أنشئ ملف الشركة أولاً" }); return; }
+    const fileId = (fileRow.rows[0] as any).id;
+    const maxRow = await db.execute(sql`SELECT COALESCE(MAX(step_order),0)+1 AS next FROM company_creation_steps WHERE company_file_id=${fileId}`);
+    const stepOrder = (maxRow.rows?.[0] as any)?.next ?? 1;
+    const result = await db.execute(sql`
+      INSERT INTO company_creation_steps (company_file_id, step_name_ar, step_order)
+      VALUES (${fileId}, ${req.body.stepNameAr ?? 'خطوة جديدة'}, ${stepOrder})
+      RETURNING *
+    `);
+    res.status(201).json(result.rows?.[0]);
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
+export default router;
+─────────────────────────────────────────────────────
+
+══════════════════════════════════════════════════════
+ÉTAPE 3 — Enregistrer les nouvelles routes
+══════════════════════════════════════════════════════
+Fichier : artifacts/api-server/src/routes/index.ts
+
+Après la ligne :
+  import migrateRouter from "./migrate.js";
+
+Ajoute :
+  import caseTypesRouter from "./case-types.js";
+
+Et après :
+  router.use(migrateRouter);
+
+Ajoute :
+  router.use(caseTypesRouter);
+
+══════════════════════════════════════════════════════
+ÉTAPE 4 — FRONTEND : adapter CaseDetail.tsx
+══════════════════════════════════════════════════════
+Fichier : artifacts/law-firm/src/pages/CaseDetail.tsx
+
+── 4a. Constantes (ajoute juste après la ligne `const BASE = ...`) ─────────────
+
+const CONTENTIOUS_TYPES = [
+  "lawsuit", "real_estate_file", "labor_file", "tax_file", "judgment_execution",
+] as const;
+
+const SERVICE_TYPE_LABELS: Record<string, string> = {
+  lawsuit:            "قضية",
+  consultation:       "استشارة",
+  contract:           "عقد",
+  company_creation:   "تأسيس شركة",
+  debt_recovery:      "تحصيل ديون",
+  legal_notice:       "إعلام قانوني",
+  judgment_execution: "تنفيذ حكم",
+  real_estate_file:   "ملف عقاري",
+  labor_file:         "قضية شغل",
+  tax_file:           "ملف جبائي",
+  administrative:     "إداري",
+  mediation:          "وساطة",
+  other:              "آخر",
+};
+
+── 4b. Types supplémentaires (ajoute après les types existants ~ligne 125) ──────
+
+type ContractData = {
+  id: number; contractType: string; partyOneName: string | null;
+  partyTwoName: string | null; contractValue: number | null;
+  status: string; startDate: string | null; endDate: string | null;
+  signingDate: string | null; notes: string | null;
+  versions: Array<{ id: number; version_number: number; notes: string | null; created_at: string }>;
+} | null;
+
+type DebtData = {
+  id: number; debtorName: string; debtAmount: number; recoveredAmount: number;
+  currentStage: string; dueDate: string | null; debtReason: string | null; notes: string | null;
+  payments: Array<{ id: number; amount: number; received_at: string; payment_method: string | null; reference: string | null }>;
+} | null;
+
+type CompanyData = {
+  id: number; companyType: string; proposedName: string | null;
+  capital: number | null; activity: string | null; taxId: string | null;
+  rneNumber: string | null; procedureStatus: string | null; notes: string | null;
+  partners: Array<{ id: number; partner_name: string; shares_percentage: number | null; position: string | null }>;
+  steps: Array<{ id: number; step_name_ar: string; step_order: number; is_completed: boolean; completed_at: string | null }>;
+} | null;
+
+── 4c. Variables dérivées du serviceType (ajoute dans la section "Data state") ─
+
+  const serviceType = (caseData as any)?.serviceType as string | null | undefined;
+  const isContentious = CONTENTIOUS_TYPES.includes((serviceType ?? "") as any);
+
+  const [contractData,  setContractData]  = useState<ContractData>(null);
+  const [debtData,      setDebtData]      = useState<DebtData>(null);
+  const [companyData,   setCompanyData]   = useState<CompanyData>(null);
+  const [typeLoading,   setTypeLoading]   = useState(false);
+
+── 4d. Chargement des données type-spécifiques (ajoute un useEffect après le
+       useEffect principal de chargement des données) ──────────────────────────
+
+  useEffect(() => {
+    if (!caseData || !serviceType) return;
+    setTypeLoading(true);
+    const load = async () => {
+      try {
+        if (serviceType === "contract") {
+          const r = await authFetch(`${BASE}/api/cases/${id}/contract`);
+          if (r.ok) setContractData(await r.json());
+        } else if (serviceType === "debt_recovery") {
+          const r = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`);
+          if (r.ok) setDebtData(await r.json());
+        } else if (serviceType === "company_creation") {
+          const r = await authFetch(`${BASE}/api/cases/${id}/company-creation`);
+          if (r.ok) setCompanyData(await r.json());
+        }
+      } finally { setTypeLoading(false); }
+    };
+    load();
+  }, [caseData, serviceType, id]);
+
+── 4e. Mise à jour des TAB_IDS (remplace la ligne const TAB_IDS) ───────────────
+
+AVANT :
+const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
+
+APRÈS :
+const TAB_IDS = ["overview","timeline","hearings","judgment","contract_versions","debt_payments","company_steps","documents","invoicing","expenses","time","notes"] as const;
+
+── 4f. Mise à jour du tableau tabs (remplace la définition const tabs) ──────────
+
+AVANT :
+  const tabs: Array<...> = [
+    { id: "overview",   label: "نظرة عامة", ... },
+    { id: "timeline",   label: "التسلسل الإجرائي", ... },
+    { id: "hearings",   label: "الجلسات والآجال", ... },
+    { id: "judgment",   label: "الحكم والتنفيذ", ... },
+    { id: "documents",  label: "المؤيدات والوثائق", ... },
+    { id: "invoicing",  label: "الأتعاب والفواتير", ... },
+    { id: "expenses",   label: "المصاريف", ... },
+    { id: "time",       label: "الوقت", ... },
+    { id: "notes",      label: "الملاحظات والسجل", ... },
+  ];
+
+APRÈS (garde exactement les mêmes objets, ajoute juste le filtre conditionnel) :
+  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = [
+    { id: "overview",   label: "نظرة عامة",          icon: <BarChart2 className="h-4 w-4" /> },
+    ...(isContentious ? [
+      { id: "timeline"  as TabId, label: "التسلسل الإجرائي",  icon: <GitBranch className="h-4 w-4" /> },
+      { id: "hearings"  as TabId, label: "الجلسات والآجال",    icon: <Clock className="h-4 w-4" />, badge: upcomingCount > 0 ? upcomingCount : 0 },
+      { id: "judgment"  as TabId, label: "الحكم والتنفيذ",     icon: <Scale className="h-4 w-4" /> },
+    ] : []),
+    ...(serviceType === "contract" ? [
+      { id: "contract_versions" as TabId, label: "نسخ العقد وأطرافه", icon: <FileText className="h-4 w-4" /> },
+    ] : []),
+    ...(serviceType === "debt_recovery" ? [
+      { id: "debt_payments" as TabId, label: "التحصيلات والمدفوعات", icon: <Banknote className="h-4 w-4" /> },
+    ] : []),
+    ...(serviceType === "company_creation" ? [
+      { id: "company_steps" as TabId, label: "مراحل التأسيس", icon: <CheckCircle2 className="h-4 w-4" /> },
+    ] : []),
+    { id: "documents",  label: "المؤيدات والوثائق",   icon: <FolderOpen className="h-4 w-4" />, badge: activeDocs.length > 0 ? activeDocs.length : 0 },
+    { id: "invoicing",  label: "الأتعاب والفواتير",   icon: <Receipt className="h-4 w-4" />, badge: hasOverdueInv ? 1 : 0 },
+    { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
+    { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
+    { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
+      badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
+  ];
+
+── 4g. CaseStageStepper conditionnel (remplace le bloc stepper ~ligne 1118) ─────
+
+AVANT :
+      {/* Stage Stepper — always visible above tabs */}
+      <CaseStageStepper
+        caseId={Number(id)}
+        refreshKey={stageRefreshKey}
+        onStageClick={(stage, mode) => {
+          changeTab("judgment");
+        }}
+      />
+
+APRÈS :
+      {/* Stage Stepper — visible uniquement pour les types contentieux */}
+      {isContentious && (
+        <CaseStageStepper
+          caseId={Number(id)}
+          refreshKey={stageRefreshKey}
+          onStageClick={(_stage, _mode) => changeTab("judgment")}
+        />
+      )}
+
+── 4h. Dispatch des nouveaux onglets (après la ligne `renderNotes()`) ───────────
+
+AVANT :
+          {activeTab === "notes"      && renderNotes()}
+
+APRÈS :
+          {activeTab === "notes"              && renderNotes()}
+          {activeTab === "contract_versions"  && renderContractVersions()}
+          {activeTab === "debt_payments"      && renderDebtPayments()}
+          {activeTab === "company_steps"      && renderCompanySteps()}
+
+── 4i. Ajoute les 3 fonctions de rendu juste avant renderOverview() ─────────────
+       (colle ce bloc entier juste AVANT la ligne `function renderOverview()`)
+
+  // ── CONTRAT ──────────────────────────────────────────────────────────────────
+  function renderContractVersions() {
+    const CONTRACT_TYPES: Record<string, string> = {
+      sale: "بيع", rental: "إيجار", service: "خدمات", employment: "شغل",
+      partnership: "شراكة", loan: "قرض", guarantee: "ضمان",
+      agency: "وكالة", franchise: "امتياز", other: "آخر",
+    };
+    const CONTRACT_STATUS: Record<string, string> = {
+      draft: "مسودة", under_review: "قيد المراجعة", ready_to_sign: "جاهز للإمضاء",
+      signed: "مُمضى", expired: "منتهي", terminated: "مُنهى",
+    };
+    if (typeLoading) return <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>;
+    return (
+      <div className="space-y-5">
+        {/* Infos contractuelles */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">بيانات العقد</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const r = await authFetch(`${BASE}/api/cases/${id}/contract`, {
+                  method: "PATCH",
+                  body: JSON.stringify({ contractType: contractData?.contractType ?? "other", notes: contractData?.notes }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json()); }
+              }}><Plus className="h-3.5 w-3.5" />تهيئة العقد</Button>
+            </div>
+            {contractData ? (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-muted-foreground">نوع العقد</p><p className="font-medium">{CONTRACT_TYPES[contractData.contractType] ?? contractData.contractType}</p></div>
+                <div><p className="text-xs text-muted-foreground">الحالة</p><p className="font-medium">{CONTRACT_STATUS[contractData.status] ?? contractData.status}</p></div>
+                <div><p className="text-xs text-muted-foreground">الطرف الأول</p><p className="font-medium">{contractData.partyOneName ?? "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">الطرف الثاني</p><p className="font-medium">{contractData.partyTwoName ?? "—"}</p></div>
+                {contractData.contractValue != null && (
+                  <div><p className="text-xs text-muted-foreground">قيمة العقد</p><p className="font-medium"><TNDAmount amount={Number(contractData.contractValue)} /></p></div>
+                )}
+                {contractData.signingDate && (
+                  <div><p className="text-xs text-muted-foreground">تاريخ الإمضاء</p><p className="font-medium">{formatDateTN(contractData.signingDate)}</p></div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4 text-center">لم يتم تهيئة بيانات العقد بعد. انقر "تهيئة العقد" للبدء.</p>
+            )}
+          </CardContent>
+        </Card>
+        {/* Versions */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">نسخ العقد ({contractData?.versions?.length ?? 0})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const r = await authFetch(`${BASE}/api/cases/${id}/contract/versions`, { method: "POST", body: JSON.stringify({ notes: "" }) });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json()); toast({ title: "تمت إضافة النسخة" }); }
+                else toast({ title: "فشل الإضافة", variant: "destructive" });
+              }}><Plus className="h-3.5 w-3.5" />نسخة جديدة</Button>
+            </div>
+            {(contractData?.versions ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">لا توجد نسخ مسجلة بعد.</p>
+            ) : (
+              <div className="space-y-2">
+                {(contractData?.versions ?? []).map(v => (
+                  <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
+                    <div>
+                      <p className="text-sm font-medium">النسخة {v.version_number}</p>
+                      {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
+                      <p className="text-xs text-muted-foreground">{formatDateTN(v.created_at)}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 w-8 p-0" onClick={async () => {
+                      await authFetch(`${BASE}/api/cases/${id}/contract/versions/${v.id}`, { method: "DELETE" });
+                      const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json());
+                    }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── RECOUVREMENT ─────────────────────────────────────────────────────────────
+  function renderDebtPayments() {
+    const DEBT_STAGES: Record<string, string> = {
+      notice: "إنذار", negotiation: "مفاوضة", lawsuit: "دعوى قضائية",
+      execution: "تنفيذ", completed: "منجز",
+    };
+    if (typeLoading) return <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>;
+    const totalDebt      = Number(debtData?.debtAmount ?? 0);
+    const totalRecovered = Number(debtData?.recoveredAmount ?? 0);
+    const remaining      = totalDebt - totalRecovered;
+    const progressPct    = totalDebt > 0 ? Math.min(100, Math.round((totalRecovered / totalDebt) * 100)) : 0;
+    return (
+      <div className="space-y-5">
+        {/* KPIs */}
+        <div className="grid grid-cols-3 gap-3">
+          {kpiCard("إجمالي الدين", <TNDAmount amount={totalDebt} />, undefined, undefined, "text-destructive")}
+          {kpiCard("المُحصَّل", <TNDAmount amount={totalRecovered} />, undefined, undefined, "text-success")}
+          {kpiCard("المتبقي", <TNDAmount amount={remaining} />, undefined, undefined, remaining > 0 ? "text-warning" : undefined)}
+        </div>
+        {/* Progress */}
+        {totalDebt > 0 && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">نسبة التحصيل</p>
+                <span className="text-sm font-bold text-primary">{progressPct}%</span>
+              </div>
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              {debtData?.currentStage && (
+                <p className="text-xs text-muted-foreground mt-2">المرحلة الحالية: {DEBT_STAGES[debtData.currentStage] ?? debtData.currentStage}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        {/* Payments table */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">سجل المدفوعات ({debtData?.payments?.length ?? 0})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const amount = prompt("المبلغ المدفوع (TND):");
+                if (!amount || isNaN(Number(amount))) return;
+                const r = await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments`, {
+                  method: "POST",
+                  body: JSON.stringify({ amount: Number(amount), receivedAt: new Date().toISOString().slice(0, 10) }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`); if (res.ok) setDebtData(await res.json()); toast({ title: "تمت إضافة الدفعة" }); }
+                else toast({ title: "فشل تسجيل الدفعة", variant: "destructive" });
+              }}><Plus className="h-3.5 w-3.5" />تسجيل دفعة</Button>
+            </div>
+            {(debtData?.payments ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">لم تُسجَّل أي مدفوعات بعد.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="text-right py-2">التاريخ</th>
+                  <th className="text-right py-2">المبلغ</th>
+                  <th className="text-right py-2">طريقة الدفع</th>
+                  <th className="py-2" />
+                </tr></thead>
+                <tbody>
+                  {(debtData?.payments ?? []).map(p => (
+                    <tr key={p.id} className="border-b border-border/30">
+                      <td className="py-2.5">{formatDateTN(p.received_at)}</td>
+                      <td className="py-2.5 font-semibold text-success"><TNDAmount amount={Number(p.amount)} /></td>
+                      <td className="py-2.5 text-muted-foreground">{p.payment_method ?? "—"}</td>
+                      <td className="py-2.5 text-right">
+                        <Button variant="ghost" size="sm" className="text-destructive h-7 w-7 p-0" onClick={async () => {
+                          await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments/${p.id}`, { method: "DELETE" });
+                          const res = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`); if (res.ok) setDebtData(await res.json());
+                        }}><Trash2 className="h-3 w-3" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── SOCIÉTÉ ──────────────────────────────────────────────────────────────────
+  function renderCompanySteps() {
+    if (typeLoading) return <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>;
+    const steps = [...(companyData?.steps ?? [])].sort((a, b) => a.step_order - b.step_order);
+    const doneCount = steps.filter(s => s.is_completed).length;
+    return (
+      <div className="space-y-5">
+        {/* Company info */}
+        {companyData && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-sm mb-3">بيانات الشركة</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {companyData.proposedName && <div><p className="text-xs text-muted-foreground">الاسم المقترح</p><p className="font-medium">{companyData.proposedName}</p></div>}
+                {companyData.capital != null && <div><p className="text-xs text-muted-foreground">رأس المال</p><p className="font-medium"><TNDAmount amount={Number(companyData.capital)} /></p></div>}
+                {companyData.taxId && <div><p className="text-xs text-muted-foreground">المعرف الجبائي</p><p className="font-medium">{companyData.taxId}</p></div>}
+                {companyData.rneNumber && <div><p className="text-xs text-muted-foreground">رقم السجل التجاري</p><p className="font-medium">{companyData.rneNumber}</p></div>}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* Steps checklist */}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">مراحل التأسيس ({doneCount}/{steps.length})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const stepName = prompt("اسم المرحلة:");
+                if (!stepName) return;
+                const r = await authFetch(`${BASE}/api/cases/${id}/company-creation/steps`, {
+                  method: "POST", body: JSON.stringify({ stepNameAr: stepName }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/company-creation`); if (res.ok) setCompanyData(await res.json()); }
+              }}><Plus className="h-3.5 w-3.5" />مرحلة جديدة</Button>
+            </div>
+            {/* Progress bar */}
+            {steps.length > 0 && (
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-success rounded-full transition-all"
+                  style={{ width: `${steps.length > 0 ? Math.round((doneCount / steps.length) * 100) : 0}%` }} />
+              </div>
+            )}
+            {steps.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">لا توجد مراحل مسجلة. أضف مرحلة للبدء.</p>
+            ) : (
+              <div className="space-y-2">
+                {steps.map(s => (
+                  <div key={s.id}
+                    className={cn("flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
+                      s.is_completed ? "border-success/30 bg-success/5" : "border-border/50 hover:bg-muted/30")}
+                    onClick={async () => {
+                      const r = await authFetch(`${BASE}/api/cases/${id}/company-creation/steps/${s.id}`,
+                        { method: "PATCH", body: JSON.stringify({ isCompleted: !s.is_completed }) });
+                      if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/company-creation`); if (res.ok) setCompanyData(await res.json()); }
+                    }}>
+                    {s.is_completed
+                      ? <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+                      : <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />}
+                    <p className={cn("text-sm flex-1", s.is_completed && "line-through text-muted-foreground")}>{s.step_name_ar}</p>
+                    {s.completed_at && <span className="text-xs text-muted-foreground shrink-0">{formatDateTN(s.completed_at)}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+══════════════════════════════════════════════════════
+ÉTAPE 5 — COMMIT ET PUSH
+══════════════════════════════════════════════════════
+git add \
+  artifacts/api-server/src/routes/cases.ts \
+  artifacts/api-server/src/routes/case-types.ts \
+  artifacts/api-server/src/routes/index.ts \
+  artifacts/law-firm/src/pages/CaseDetail.tsx
+
+git commit -m "feat: CaseDetail adapté au service_type (contrat/recouvrement/société/contentieux)
+
+- cases.ts: expose serviceType et typeSpecificData dans GET /cases/:id
+- case-types.ts: nouvelles routes pour contrats, recouvrement de dettes, société
+- CaseDetail: onglets conditionnels selon serviceType, CaseStageStepper
+  uniquement pour contentieux, nouveaux renderers contrat/recouvrement/société"
+
+git push origin fix/case-detail-by-type
+
+══════════════════════════════════════════════════════
+COMMENT TESTER
+══════════════════════════════════════════════════════
+
+1. Ouvre un dossier existant (type lawsuit par défaut) :
+   → Doit afficher le stepper + onglets "التسلسل الإجرائي", "الجلسات", "الحكم"
+
+2. Crée un nouveau dossier de type "عقد" (contract) :
+   → Doit afficher l'onglet "نسخ العقد وأطرافه" à la place des onglets de procès
+   → Stepper absent
+   → Clique "تهيئة العقد" puis "نسخة جديدة" → doit apparaître dans la liste
+
+3. Crée un dossier type "تحصيل ديون" (debt_recovery) :
+   → Onglet "التحصيلات والمدفوعات" visible
+   → Ajoute une dفعة → barre de progression se met à jour
+
+4. Crée un dossier type "تأسيس شركة" (company_creation) :
+   → Onglet "مراحل التأسيس" visible
+   → Ajoute une مرحلة → coche-la → barre verte avance
+
+Note : si le wizard ne propose pas encore le champ "نوع الخدمة", les dossiers
+existants ont tous serviceType="lawsuit" par défaut (valeur DB). Les nouveaux types
+seront testables une fois le wizard mis à jour pour envoyer serviceType.

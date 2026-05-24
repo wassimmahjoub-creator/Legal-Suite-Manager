@@ -365,13 +365,13 @@ export default function CaseDetail() {
     id: number; debtorName: string; debtorPhone: string | null; debtAmount: string;
     recoveredAmount: string; debtReason: string | null; dueDate: string | null;
     currentStage: string; notes: string | null;
-    payments: Array<{ id: number; amount: string; receivedAt: string; paymentMethod: string | null; reference: string | null; notes: string | null }>;
+    payments: Array<{ id: number; amount: string; received_at: string; payment_method: string | null; reference: string | null; notes: string | null }>;
   };
   type CompanyData = {
     id: number; companyType: string; proposedName: string | null; capital: string | null;
-    activity: string | null; taxId: string | null; rneNumber: string | null; notes: string | null;
-    partners: Array<{ id: number; partnerName: string; sharesPercentage: string | null; position: string | null }>;
-    steps: Array<{ id: number; stepNameAr: string; stepOrder: number; isCompleted: number; completedAt: string | null }>;
+    activity: string | null; taxId: string | null; rneNumber: string | null; procedureStatus: string | null; notes: string | null;
+    partners: Array<{ id: number; partner_name: string; shares_percentage: string | null; position: string | null }>;
+    steps: Array<{ id: number; step_name_ar: string; step_order: number; is_completed: boolean; completed_at: string | null }>;
   };
   const [contractData, setContractData] = useState<ContractData | null>(null);
   const [debtData,     setDebtData]     = useState<DebtData | null>(null);
@@ -421,7 +421,7 @@ export default function CaseDetail() {
     else if (st === "debt_recovery")
       authFetch(`${BASE}/api/cases/${id}/debt-recovery`).then(r => { if (r.ok) r.json().then(setDebtData); });
     else if (st === "company_creation")
-      authFetch(`${BASE}/api/cases/${id}/company`).then(r => { if (r.ok) r.json().then(setCompanyData); });
+      authFetch(`${BASE}/api/cases/${id}/company-creation`).then(r => { if (r.ok) r.json().then(setCompanyData); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, (caseData as unknown as Record<string, unknown> | undefined)?.serviceType]);
 
@@ -705,10 +705,10 @@ export default function CaseDetail() {
                   {companyData.partners.map(p => (
                     <div key={p.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
                       <div>
-                        <p className="font-medium text-sm">{p.partnerName}</p>
+                        <p className="font-medium text-sm">{p.partner_name}</p>
                         {p.position && <p className="text-xs text-muted-foreground">{p.position}</p>}
                       </div>
-                      {p.sharesPercentage && <span className="text-sm font-bold text-primary">{p.sharesPercentage}%</span>}
+                      {p.shares_percentage && <span className="text-sm font-bold text-primary">{p.shares_percentage}%</span>}
                     </div>
                   ))}
                 </CardContent>
@@ -1249,34 +1249,72 @@ export default function CaseDetail() {
   }
 
   function renderContractVersions() {
-    if (!contractData) return renderPlaceholder(<Layers className="h-8 w-8" />, "لا توجد بيانات", "ملف العقد غير موجود أو لم يُحمَّل بعد");
+    const CONTRACT_TYPES: Record<string, string> = {
+      sale: "بيع", rental: "إيجار", service: "خدمات", employment: "شغل",
+      partnership: "شراكة", loan: "قرض", guarantee: "ضمان",
+      agency: "وكالة", franchise: "امتياز", other: "آخر",
+    };
+    const CONTRACT_STATUS: Record<string, string> = {
+      draft: "مسودة", under_review: "قيد المراجعة", ready_to_sign: "جاهز للإمضاء",
+      signed: "مُمضى", expired: "منتهي", terminated: "مُنهى",
+    };
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Card className="border-none shadow-sm">
           <CardContent className="p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
-              <h3 className="font-semibold">إصدارات العقد</h3>
-              <ContractStatusStepper status={contractData.status} />
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">بيانات العقد</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const r = await authFetch(`${BASE}/api/cases/${id}/contract`, {
+                  method: "PATCH",
+                  body: JSON.stringify({ contractType: contractData?.contractType ?? "other", notes: contractData?.notes }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json()); }
+              }}><Plus className="h-3.5 w-3.5" />تهيئة العقد</Button>
             </div>
-            {contractData.versions.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
-                <Layers className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">لا توجد إصدارات مسجلة</p>
+            {contractData ? (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-muted-foreground">نوع العقد</p><p className="font-medium">{CONTRACT_TYPES[contractData.contractType] ?? contractData.contractType}</p></div>
+                <div><p className="text-xs text-muted-foreground">الحالة</p><p className="font-medium">{CONTRACT_STATUS[contractData.status] ?? contractData.status}</p></div>
+                <div><p className="text-xs text-muted-foreground">الطرف الأول</p><p className="font-medium">{contractData.partyOneName ?? "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">الطرف الثاني</p><p className="font-medium">{contractData.partyTwoName ?? "—"}</p></div>
+                {contractData.contractValue != null && (
+                  <div><p className="text-xs text-muted-foreground">قيمة العقد</p><p className="font-medium"><TNDAmount amount={Number(contractData.contractValue)} /></p></div>
+                )}
+                {contractData.signingDate && (
+                  <div><p className="text-xs text-muted-foreground">تاريخ الإمضاء</p><p className="font-medium">{formatDateTN(contractData.signingDate)}</p></div>
+                )}
               </div>
             ) : (
+              <p className="text-sm text-muted-foreground py-4 text-center">لم يتم تهيئة بيانات العقد بعد. انقر "تهيئة العقد" للبدء.</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">نسخ العقد ({contractData?.versions?.length ?? 0})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const r = await authFetch(`${BASE}/api/cases/${id}/contract/versions`, { method: "POST", body: JSON.stringify({ notes: "" }) });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json()); toast({ title: "تمت إضافة النسخة" }); }
+                else toast({ title: "فشل الإضافة", variant: "destructive" });
+              }}><Plus className="h-3.5 w-3.5" />نسخة جديدة</Button>
+            </div>
+            {(contractData?.versions ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">لا توجد نسخ مسجلة بعد.</p>
+            ) : (
               <div className="space-y-2">
-                {contractData.versions.map(v => (
-                  <div key={v.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-violet-500/10 text-violet-400 flex items-center justify-center text-xs font-bold border border-violet-500/20 shrink-0">
-                        {v.versionNumber}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">الإصدار رقم {v.versionNumber}</p>
-                        {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
-                      </div>
+                {(contractData?.versions ?? []).map(v => (
+                  <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
+                    <div>
+                      <p className="text-sm font-medium">النسخة {v.version_number}</p>
+                      {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
+                      <p className="text-xs text-muted-foreground">{formatDateTN(v.created_at)}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground">{formatDateTN(v.createdAt)}</span>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-8 w-8 p-0" onClick={async () => {
+                      await authFetch(`${BASE}/api/cases/${id}/contract/versions/${v.id}`, { method: "DELETE" });
+                      const res = await authFetch(`${BASE}/api/cases/${id}/contract`); if (res.ok) setContractData(await res.json());
+                    }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 ))}
               </div>
@@ -1287,52 +1325,79 @@ export default function CaseDetail() {
     );
   }
 
-  function renderPaymentPlan() {
-    if (!debtData) return renderPlaceholder(<Banknote className="h-8 w-8" />, "لا توجد بيانات", "ملف الاستخلاص غير موجود");
-    const debt      = Number(debtData.debtAmount);
-    const recovered = Number(debtData.recoveredAmount);
-    const remaining = debt - recovered;
+  function renderDebtPayments() {
+    const DEBT_STAGES: Record<string, string> = {
+      notice: "إنذار", negotiation: "مفاوضة", lawsuit: "دعوى قضائية",
+      execution: "تنفيذ", completed: "منجز",
+    };
+    const totalDebt      = Number(debtData?.debtAmount ?? 0);
+    const totalRecovered = Number(debtData?.recoveredAmount ?? 0);
+    const remaining      = totalDebt - totalRecovered;
+    const progressPct    = totalDebt > 0 ? Math.min(100, Math.round((totalRecovered / totalDebt) * 100)) : 0;
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="grid grid-cols-3 gap-3">
-          {kpiCard("إجمالي الدين", <TNDAmount amount={debt} />,      "المبلغ الأصلي")}
-          {kpiCard("المُستخلَص",   <TNDAmount amount={recovered} />, "تم تحصيله",  undefined, "text-green-400")}
-          {kpiCard("المتبقي",      <TNDAmount amount={remaining} />, remaining > 0 ? "غير محصّل" : "مكتمل ✓", undefined, remaining > 0 ? "text-destructive" : "text-green-400")}
+          {kpiCard("إجمالي الدين", <TNDAmount amount={totalDebt} />, undefined, undefined, "text-destructive")}
+          {kpiCard("المُحصَّل", <TNDAmount amount={totalRecovered} />, undefined, undefined, "text-green-400")}
+          {kpiCard("المتبقي", <TNDAmount amount={remaining} />, undefined, undefined, remaining > 0 ? "text-warning" : undefined)}
         </div>
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">سجل التحصيلات</h3>
-              {remaining > 0 && (
-                <Button size="sm" onClick={() => { setPayForm({ amount: "", paymentMethod: "", reference: "", notes: "", receivedAt: new Date().toISOString().slice(0, 10) }); setShowPayModal(true); }} className="gap-1.5 text-xs">
-                  <Plus className="h-3.5 w-3.5" />تسجيل دفعة
-                </Button>
+        {totalDebt > 0 && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">نسبة التحصيل</p>
+                <span className="text-sm font-bold text-primary">{progressPct}%</span>
+              </div>
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              {debtData?.currentStage && (
+                <p className="text-xs text-muted-foreground mt-2">المرحلة الحالية: {DEBT_STAGES[debtData.currentStage] ?? debtData.currentStage}</p>
               )}
+            </CardContent>
+          </Card>
+        )}
+        <Card className="border-none shadow-sm">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">سجل المدفوعات ({debtData?.payments?.length ?? 0})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const amount = prompt("المبلغ المدفوع (TND):");
+                if (!amount || isNaN(Number(amount))) return;
+                const r = await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments`, {
+                  method: "POST",
+                  body: JSON.stringify({ amount: Number(amount), receivedAt: new Date().toISOString().slice(0, 10) }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`); if (res.ok) setDebtData(await res.json()); toast({ title: "تمت إضافة الدفعة" }); }
+                else toast({ title: "فشل تسجيل الدفعة", variant: "destructive" });
+              }}><Plus className="h-3.5 w-3.5" />تسجيل دفعة</Button>
             </div>
-            {debtData.payments.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground border border-dashed border-border rounded-xl">
-                <Banknote className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">لا توجد دفعات مسجلة</p>
-              </div>
+            {(debtData?.payments ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">لم تُسجَّل أي مدفوعات بعد.</p>
             ) : (
-              <div className="space-y-2">
-                {debtData.payments.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-xl">
-                    <div>
-                      <p className="font-semibold text-sm"><TNDAmount amount={p.amount} /></p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                        <span>{formatDateTN(p.receivedAt)}</span>
-                        {p.paymentMethod && <span>· {p.paymentMethod}</span>}
-                        {p.reference     && <span>· مرجع: {p.reference}</span>}
-                      </div>
-                      {p.notes && <p className="text-xs text-muted-foreground mt-0.5">{p.notes}</p>}
-                    </div>
-                    <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-4 w-4 text-green-400" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="text-right py-2">التاريخ</th>
+                  <th className="text-right py-2">المبلغ</th>
+                  <th className="text-right py-2">طريقة الدفع</th>
+                  <th className="py-2" />
+                </tr></thead>
+                <tbody>
+                  {(debtData?.payments ?? []).map(p => (
+                    <tr key={p.id} className="border-b border-border/30">
+                      <td className="py-2.5">{formatDateTN(p.received_at)}</td>
+                      <td className="py-2.5 font-semibold text-green-400"><TNDAmount amount={Number(p.amount)} /></td>
+                      <td className="py-2.5 text-muted-foreground">{p.payment_method ?? "—"}</td>
+                      <td className="py-2.5 text-right">
+                        <Button variant="ghost" size="sm" className="text-destructive h-7 w-7 p-0" onClick={async () => {
+                          await authFetch(`${BASE}/api/cases/${id}/debt-recovery/payments/${p.id}`, { method: "DELETE" });
+                          const res = await authFetch(`${BASE}/api/cases/${id}/debt-recovery`); if (res.ok) setDebtData(await res.json());
+                        }}><Trash2 className="h-3 w-3" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </CardContent>
         </Card>
@@ -1341,61 +1406,72 @@ export default function CaseDetail() {
   }
 
   function renderCompanySteps() {
-    if (!companyData) return renderPlaceholder(<CheckCircle2 className="h-8 w-8" />, "لا توجد بيانات", "ملف التأسيس غير موجود");
-    const total     = companyData.steps.length;
-    const completed = companyData.steps.filter(s => s.isCompleted === 1).length;
-    const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const steps = [...(companyData?.steps ?? [])].sort((a, b) => a.step_order - b.step_order);
+    const doneCount = steps.filter(s => s.is_completed).length;
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {companyData && (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-sm mb-3">بيانات الشركة</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {companyData.proposedName && <div><p className="text-xs text-muted-foreground">الاسم المقترح</p><p className="font-medium">{companyData.proposedName}</p></div>}
+                {companyData.capital != null && <div><p className="text-xs text-muted-foreground">رأس المال</p><p className="font-medium"><TNDAmount amount={Number(companyData.capital)} /></p></div>}
+                {companyData.taxId && <div><p className="text-xs text-muted-foreground">المعرف الجبائي</p><p className="font-medium">{companyData.taxId}</p></div>}
+                {companyData.rneNumber && <div><p className="text-xs text-muted-foreground">رقم السجل التجاري</p><p className="font-medium">{companyData.rneNumber}</p></div>}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <Card className="border-none shadow-sm">
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="font-semibold">إجراءات التأسيس</h3>
-              <span className="text-sm font-bold text-primary">{completed} / {total}</span>
+              <h3 className="font-semibold">مراحل التأسيس ({doneCount}/{steps.length})</h3>
+              <Button size="sm" className="text-xs gap-1.5" onClick={async () => {
+                const stepName = prompt("اسم المرحلة:");
+                if (!stepName) return;
+                const r = await authFetch(`${BASE}/api/cases/${id}/company-creation/steps`, {
+                  method: "POST", body: JSON.stringify({ stepNameAr: stepName }),
+                });
+                if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/company-creation`); if (res.ok) setCompanyData(await res.json()); }
+              }}><Plus className="h-3.5 w-3.5" />مرحلة جديدة</Button>
             </div>
             <div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${steps.length > 0 ? Math.round((doneCount / steps.length) * 100) : 0}%` }} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{pct}% مكتمل</p>
+              <p className="text-xs text-muted-foreground mt-1">{steps.length > 0 ? Math.round((doneCount / steps.length) * 100) : 0}% مكتمل</p>
             </div>
-            {companyData.steps.length === 0 ? (
+            {steps.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
                 <p className="text-sm">لا توجد إجراءات محددة</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {companyData.steps.map(step => (
+                {steps.map(step => (
                   <div
                     key={step.id}
                     onClick={async () => {
-                      const r = await authFetch(`${BASE}/api/company-creation-steps/${step.id}/toggle`, { method: "PATCH" });
-                      if (r.ok) {
-                        const updated = await r.json();
-                        setCompanyData(prev => prev ? {
-                          ...prev,
-                          steps: prev.steps.map(s => s.id === step.id ? { ...s, isCompleted: updated.isCompleted, completedAt: updated.completedAt } : s),
-                        } : null);
-                      }
+                      const r = await authFetch(`${BASE}/api/cases/${id}/company-creation/steps/${step.id}`,
+                        { method: "PATCH", body: JSON.stringify({ isCompleted: !step.is_completed }) });
+                      if (r.ok) { const res = await authFetch(`${BASE}/api/cases/${id}/company-creation`); if (res.ok) setCompanyData(await res.json()); }
                     }}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/40 hover:bg-muted/40 transition-colors cursor-pointer"
+                    className={cn("flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer",
+                      step.is_completed ? "border-success/30 bg-success/5" : "border-border hover:border-primary/40 hover:bg-muted/40")}
                   >
-                    <div className={cn(
-                      "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                      step.isCompleted === 1 ? "border-primary bg-primary" : "border-muted-foreground"
-                    )}>
-                      {step.isCompleted === 1 && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
-                    </div>
+                    {step.is_completed
+                      ? <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+                      : <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />}
                     <div className="flex-1">
-                      <p className={cn("text-sm font-medium", step.isCompleted === 1 && "line-through text-muted-foreground")}>
-                        {step.stepNameAr}
+                      <p className={cn("text-sm font-medium", step.is_completed && "line-through text-muted-foreground")}>
+                        {step.step_name_ar}
                       </p>
-                      {step.completedAt && (
-                        <p className="text-xs text-muted-foreground">اكتمل في {formatDateTN(step.completedAt)}</p>
+                      {step.completed_at && (
+                        <p className="text-xs text-muted-foreground">اكتمل في {formatDateTN(step.completed_at)}</p>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0 font-mono">{step.stepOrder}</span>
+                    <span className="text-xs text-muted-foreground shrink-0 font-mono">{step.step_order}</span>
                   </div>
                 ))}
               </div>
@@ -1419,9 +1495,7 @@ export default function CaseDetail() {
         {financeSubTab === "invoicing"    && renderInvoicing()}
         {financeSubTab === "expenses"     && renderExpenses()}
         {financeSubTab === "time"         && renderTime()}
-        {financeSubTab === "payment-plan" && isDebtRecovery &&
-          (typeof renderPaymentPlan === "function" ? renderPaymentPlan() : null)
-        }
+        {financeSubTab === "payment-plan" && isDebtRecovery && renderDebtPayments()}
       </div>
     );
   }
@@ -1607,7 +1681,7 @@ export default function CaseDetail() {
       {isCompany && companyData && (
         <CompanyProgressBar
           total={companyData.steps.length}
-          completed={companyData.steps.filter(s => s.isCompleted === 1).length}
+          completed={companyData.steps.filter(s => s.is_completed).length}
         />
       )}
 
