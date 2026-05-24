@@ -3,6 +3,8 @@ import { db, documentsTable, casesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { CreateDocumentBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { getActor } from "../middleware/auth.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -28,6 +30,7 @@ router.get("/documents", async (req, res) => {
 router.post("/documents", async (req, res) => {
   const parsed = CreateDocumentBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
+  const actor = getActor(req);
   const [row] = await db.insert(documentsTable).values(parsed.data).returning();
   if (row.caseId) {
     void CaseEventLogger.log({
@@ -36,6 +39,11 @@ router.post("/documents", async (req, res) => {
       relatedEntityType: "document", relatedEntityId: row.id,
     });
   }
+  void logAudit({
+    entityType: "document", entityId: row.id, action: "create",
+    newValue: row.name,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(201).json({ ...row, caseName: null });
 });
 
@@ -53,6 +61,7 @@ router.put("/documents/:id", async (req, res): Promise<void> => {
 
 router.delete("/documents/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const actor = getActor(req);
   const [doc] = await db.select().from(documentsTable).where(eq(documentsTable.id, id));
   await db.delete(documentsTable).where(eq(documentsTable.id, id));
   if (doc?.caseId) {
@@ -61,6 +70,11 @@ router.delete("/documents/:id", async (req, res) => {
       metadata: { document_name: doc.name },
     });
   }
+  void logAudit({
+    entityType: "document", entityId: id, action: "delete",
+    oldValue: doc?.name ?? String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(204).send();
 });
 

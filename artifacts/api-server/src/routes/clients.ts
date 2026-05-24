@@ -3,6 +3,8 @@ import { db, clientsTable, clientContactsTable, clientEventsTable, casesTable, i
 import { eq, ilike, isNull, sql, like, and } from "drizzle-orm";
 import { CreateClientBody, UpdateClientBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger.js";
+import { getActor, requireAuth } from "../middleware/auth.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -49,7 +51,7 @@ router.post("/clients", async (req, res) => {
 
   const year = new Date().getFullYear();
   const yearPrefix = `${year}/`;
-  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const actor = getActor(req);
   const [count] = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(clientsTable)
@@ -68,6 +70,11 @@ router.post("/clients", async (req, res) => {
       orgId: actor.orgId ?? 0,
       officeSeq: extras.officeSeq ?? officeSeq,
     }).returning();
+    void logAudit({
+      entityType: "client", entityId: client.id, action: "create",
+      newValue: client.name,
+      userId: actor.id, userName: actor.name,
+    });
     res.status(201).json(client);
   } catch (err) {
     logger.error({ err }, "[POST /clients] insert failed");
@@ -87,13 +94,18 @@ router.get("/clients/:id", async (req, res) => {
 
 router.put("/clients/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
   const parsed = UpdateClientBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const extras = extractExtras(req.body as Record<string, unknown>);
   const [client] = await db.update(clientsTable).set({ ...parsed.data, ...extras })
     .where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0))).returning();
   if (!client) return res.status(404).json({ error: "Not found" });
+  void logAudit({
+    entityType: "client", entityId: id, action: "update",
+    newValue: client.name,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json(client);
 });
 
@@ -122,16 +134,30 @@ router.get("/clients/:id/delete-check", async (req, res): Promise<void> => {
 
 router.patch("/clients/:id/soft-delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ name: clientsTable.name })
+    .from(clientsTable).where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
   await db.update(clientsTable).set({ deletedAt: new Date() })
     .where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "client", entityId: id, action: "delete",
+    oldValue: toDelete?.name ?? String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ deleted: true });
 });
 
 router.delete("/clients/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ name: clientsTable.name })
+    .from(clientsTable).where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
   await db.delete(clientsTable).where(and(eq(clientsTable.id, id), eq(clientsTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "client", entityId: id, action: "delete_permanent",
+    oldValue: toDelete?.name ?? String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(204).send();
 });
 

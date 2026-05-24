@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db, consultationsTable, clientsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, getActor } from "../middleware/auth.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -33,18 +34,25 @@ router.post("/consultations", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "الموضوع والتاريخ مطلوبان" });
     return;
   }
+  const actor = getActor(req);
   const [row] = await db.insert(consultationsTable).values({
     clientId: clientId ? Number(clientId) : null,
     subject, date, status: status ?? "pending",
     amount: amount ? amount : null,
     notes: notes ?? null,
   }).returning();
+  void logAudit({
+    entityType: "consultation", entityId: row.id, action: "create",
+    newValue: subject,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(201).json({ ...row, clientName: null });
 });
 
 router.put("/consultations/:id", requireAuth, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { clientId, subject, date, amount, status, notes } = req.body as Record<string, string>;
+  const actor = getActor(req);
   const [row] = await db.update(consultationsTable).set({
     clientId: clientId ? Number(clientId) : null,
     subject, date, status,
@@ -55,11 +63,25 @@ router.put("/consultations/:id", requireAuth, async (req, res): Promise<void> =>
     res.status(404).json({ error: "غير موجود" });
     return;
   }
+  void logAudit({
+    entityType: "consultation", entityId: id, action: "update",
+    newValue: subject,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ ...row, clientName: null });
 });
 
 router.delete("/consultations/:id", requireAuth, async (req, res) => {
-  await db.delete(consultationsTable).where(eq(consultationsTable.id, Number(req.params.id)));
+  const id = Number(req.params.id);
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ subject: consultationsTable.subject })
+    .from(consultationsTable).where(eq(consultationsTable.id, id));
+  await db.delete(consultationsTable).where(eq(consultationsTable.id, id));
+  void logAudit({
+    entityType: "consultation", entityId: id, action: "delete",
+    oldValue: toDelete?.subject ?? String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(204).send();
 });
 

@@ -10,6 +10,8 @@ import { eq, isNull, desc, and, SQL } from "drizzle-orm";
 import { calcLine, calcTotals } from "../services/invoiceCalculator";
 import { generateInvoiceNumber } from "../services/invoiceNumberService";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { getActor } from "../middleware/auth.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -138,6 +140,12 @@ router.post("/invoices", async (req, res) => {
 
   const [fresh] = await withJoins().where(eq(invoicesTable.id, inv.id));
   const freshLines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, inv.id)).orderBy(invoiceLinesTable.position);
+  const auditActor = getActor(req);
+  void logAudit({
+    entityType: "invoice", entityId: inv.id, action: "create",
+    newValue: `فاتورة مسودة — موكّل #${clientId}`,
+    userId: auditActor?.id, userName: auditActor?.name,
+  });
   res.status(201).json({ ...fmtInvoice(fresh), lines: freshLines.map(fmtLine) });
 });
 
@@ -208,6 +216,7 @@ router.post("/invoices/:id/issue", async (req, res) => {
 
   const [fresh] = await withJoins().where(eq(invoicesTable.id, id));
   const lines = await db.select().from(invoiceLinesTable).where(eq(invoiceLinesTable.invoiceId, id)).orderBy(invoiceLinesTable.position);
+  const issueActor = getActor(req);
   if (fresh?.caseId) {
     void CaseEventLogger.log({
       caseId: fresh.caseId, eventType: "invoice_issued",
@@ -215,6 +224,11 @@ router.post("/invoices/:id/issue", async (req, res) => {
       relatedEntityType: "invoice", relatedEntityId: id,
     });
   }
+  void logAudit({
+    entityType: "invoice", entityId: id, action: "issue",
+    newValue: invoiceNumber,
+    userId: issueActor?.id, userName: issueActor?.name,
+  });
   res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
 });
 
@@ -287,6 +301,12 @@ router.post("/invoices/:id/payment", async (req, res) => {
       });
     }
   }
+  const payActor = getActor(req);
+  void logAudit({
+    entityType: "invoice", entityId: id, action: "payment",
+    newValue: `${amount.toFixed(3)} TND — ${existing.invoiceNumber ?? `#${id}`}`,
+    userId: payActor?.id, userName: payActor?.name,
+  });
   res.json({ ...fmtInvoice(fresh), lines: lines.map(fmtLine) });
 });
 
@@ -352,9 +372,16 @@ router.post("/invoices/:id/credit-note", async (req, res) => {
 
 router.patch("/invoices/:id/soft-delete", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ invoiceNumber: invoicesTable.invoiceNumber })
+    .from(invoicesTable).where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
   await db.update(invoicesTable).set({ deletedAt: new Date() })
     .where(and(eq(invoicesTable.id, id), eq(invoicesTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "invoice", entityId: id, action: "delete",
+    oldValue: toDelete?.invoiceNumber ?? String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ deleted: true });
 });
 

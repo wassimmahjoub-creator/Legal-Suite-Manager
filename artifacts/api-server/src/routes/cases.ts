@@ -5,6 +5,7 @@ import { CreateCaseBody, UpdateCaseBody } from "@workspace/api-zod";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
 import { getActor } from "../middleware/auth.js";
 import { logger } from "../lib/logger.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -193,6 +194,11 @@ router.post("/cases", async (req, res): Promise<void> => {
     occurredAt: newCase.openedAt ? new Date(newCase.openedAt) : newCase.createdAt,
     actorUserId: actor.id ?? null,
   });
+  void logAudit({
+    entityType: "case", entityId: newCase.id, action: "create",
+    newValue: `${newCase.caseNumber} — ${newCase.title}`,
+    userId: actor.id, userName: actor.name,
+  });
 
   res.status(201).json({ ...newCase, clientName });
 });
@@ -211,7 +217,7 @@ router.get("/cases/:id", async (req, res) => {
 
 router.put("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
   const parsed = UpdateCaseBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const extras = extractExtras(req.body as Record<string, unknown>);
@@ -219,13 +225,18 @@ router.put("/cases/:id", async (req, res) => {
     .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, row.clientId));
+  void logAudit({
+    entityType: "case", entityId: id, action: "update",
+    newValue: row.title ?? undefined,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ ...row, clientName: client?.name ?? "" });
 });
 
 // Partial update — used by wizard, CaseDetail tabs, draft saves
 router.patch("/cases/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
+  const actor = getActor(req);
   const b = req.body as Record<string, unknown>;
 
   const set: Record<string, unknown> = {};
@@ -261,6 +272,11 @@ router.patch("/cases/:id", async (req, res): Promise<void> => {
     const changed = watchedFields.filter(f => f in set && String((before as Record<string, unknown>)[f] ?? "") !== String(set[f] ?? ""));
     if (changed.length > 0) {
       void CaseEventLogger.log({ caseId: id, eventType: "case_updated", actorUserId: actor?.id ?? null, metadata: { changed_fields: changed } });
+      void logAudit({
+        entityType: "case", entityId: id, action: "update",
+        newValue: `تعديل: ${changed.join("، ")} — ${row.title ?? ""}`,
+        userId: actor?.id, userName: actor?.name,
+      });
     }
   }
 
@@ -269,7 +285,7 @@ router.patch("/cases/:id", async (req, res): Promise<void> => {
 
 router.patch("/cases/:id/archive", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { id: number; orgId?: number } }).user;
+  const actor = getActor(req);
   const [row] = await db.select().from(casesTable)
     .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
@@ -277,21 +293,40 @@ router.patch("/cases/:id/archive", async (req, res): Promise<void> => {
   await db.update(casesTable).set({ archivedAt, status: archivedAt ? "archived" : "active" })
     .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   void CaseEventLogger.log({ caseId: id, eventType: archivedAt ? "case_archived" : "case_reopened", actorUserId: actor?.id ?? null });
+  void logAudit({
+    entityType: "case", entityId: id, action: archivedAt ? "archive" : "unarchive",
+    newValue: row.title ?? undefined,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ archived: !!archivedAt });
 });
 
 router.patch("/cases/:id/soft-delete", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ title: casesTable.title, caseNumber: casesTable.caseNumber })
+    .from(casesTable).where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   await db.update(casesTable).set({ deletedAt: new Date() })
     .where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "case", entityId: id, action: "delete",
+    oldValue: toDelete ? `${toDelete.caseNumber} — ${toDelete.title}` : String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ deleted: true });
 });
 
 router.delete("/cases/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ title: casesTable.title, caseNumber: casesTable.caseNumber })
+    .from(casesTable).where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
   await db.delete(casesTable).where(and(eq(casesTable.id, id), eq(casesTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "case", entityId: id, action: "delete_permanent",
+    oldValue: toDelete ? `${toDelete.caseNumber} — ${toDelete.title}` : String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(204).send();
 });
 

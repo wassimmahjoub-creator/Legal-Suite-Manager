@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db, eventsTable, casesTable, insertEventSchema } from "@workspace/db";
 import { eq, and, gte, lte, SQL } from "drizzle-orm";
 import { CaseEventLogger } from "../services/caseEventLogger.js";
+import { getActor } from "../middleware/auth.js";
+import { logAudit } from "./audit-logs.js";
 
 const router = Router();
 
@@ -51,7 +53,7 @@ router.get("/events", async (req, res) => {
 router.post("/events", async (req, res) => {
   const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-  const actor = (req as typeof req & { user: { orgId?: number } }).user;
+  const actor = getActor(req);
   const [row] = await db.insert(eventsTable).values({
     ...parsed.data,
     orgId: actor.orgId ?? 0,
@@ -65,17 +67,27 @@ router.post("/events", async (req, res) => {
       relatedEntityType: "hearing", relatedEntityId: row.id,
     });
   }
+  void logAudit({
+    entityType: "event", entityId: row.id, action: "create",
+    newValue: row.title ?? row.date ?? undefined,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(201).json({ ...row, caseName: null });
 });
 
 router.put("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
   const parsed = insertEventSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
   const [row] = await db.update(eventsTable).set(parsed.data)
     .where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0))).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
+  void logAudit({
+    entityType: "event", entityId: id, action: "update",
+    newValue: row.title ?? row.date ?? undefined,
+    userId: actor?.id, userName: actor?.name,
+  });
   res.json({ ...row, caseName: null });
 });
 
@@ -97,8 +109,15 @@ router.patch("/events/:id", async (req, res) => {
 
 router.delete("/events/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const actor = (req as typeof req & { user?: { orgId?: number } }).user;
+  const actor = getActor(req);
+  const [toDelete] = await db.select({ title: eventsTable.title, date: eventsTable.date })
+    .from(eventsTable).where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0)));
   await db.delete(eventsTable).where(and(eq(eventsTable.id, id), eq(eventsTable.orgId, actor?.orgId ?? 0)));
+  void logAudit({
+    entityType: "event", entityId: id, action: "delete",
+    oldValue: toDelete ? (toDelete.title ?? toDelete.date ?? String(id)) : String(id),
+    userId: actor?.id, userName: actor?.name,
+  });
   res.status(204).send();
 });
 
