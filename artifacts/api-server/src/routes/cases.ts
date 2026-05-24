@@ -80,6 +80,9 @@ function extractExtras(body: Record<string, unknown>) {
     internalNotes: str("internalNotes"),
     draftData: str("draftData"),
     draftLastStep: typeof body["draftLastStep"] === "number" ? body["draftLastStep"] as number : undefined,
+    ...(typeof body["serviceType"] === "string" && body["serviceType"]
+      ? { serviceType: body["serviceType"] as string }
+      : {}),
   };
 }
 

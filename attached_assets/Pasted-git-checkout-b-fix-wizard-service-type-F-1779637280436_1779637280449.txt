@@ -1,0 +1,170 @@
+git checkout -b fix/wizard-service-type
+
+══════════════════════════════════════════════════════
+FICHIER 1 — artifacts/law-firm/src/components/cases/CaseWizard.tsx
+══════════════════════════════════════════════════════
+
+── 1a. Ajoute la constante SERVICE_TYPES juste après CONFIDENTIALITY_LEVELS ────
+
+const CONTENTIOUS_SERVICE_TYPES = [
+  "lawsuit", "real_estate_file", "labor_file", "tax_file", "judgment_execution",
+];
+
+const SERVICE_TYPES = [
+  { value: "lawsuit",            label: "قضية (تقاضي)",            group: "contentieux" },
+  { value: "real_estate_file",   label: "ملف عقاري",               group: "contentieux" },
+  { value: "labor_file",         label: "قضية شغل",                group: "contentieux" },
+  { value: "tax_file",           label: "ملف جبائي",               group: "contentieux" },
+  { value: "judgment_execution", label: "تنفيذ حكم",               group: "contentieux" },
+  { value: "contract",           label: "عقد",                     group: "non-contentieux" },
+  { value: "consultation",       label: "استشارة قانونية",         group: "non-contentieux" },
+  { value: "company_creation",   label: "تأسيس شركة",              group: "non-contentieux" },
+  { value: "debt_recovery",      label: "تحصيل ديون",              group: "non-contentieux" },
+  { value: "legal_notice",       label: "إعلام قانوني",            group: "non-contentieux" },
+  { value: "administrative",     label: "إداري",                   group: "non-contentieux" },
+  { value: "mediation",          label: "وساطة",                   group: "non-contentieux" },
+  { value: "other",              label: "آخر",                     group: "non-contentieux" },
+];
+
+── 1b. Ajoute serviceType dans l'interface WizardForm ──────────────────────────
+
+AVANT :
+interface WizardForm {
+  title: string;
+  clientId: string;
+  caseType: string;
+
+APRÈS :
+interface WizardForm {
+  title: string;
+  clientId: string;
+  serviceType: string;
+  caseType: string;
+
+── 1c. Ajoute serviceType dans defaultForm() ────────────────────────────────────
+
+AVANT :
+  title: "", clientId: "", caseType: "",
+
+APRÈS :
+  title: "", clientId: "", serviceType: "lawsuit", caseType: "",
+
+── 1d. Rends Step 2 optionnel pour les types non-contentieux ────────────────────
+
+AVANT :
+  if (step === 2) return f.litigationDegree !== "" && f.procedureType !== "";
+
+APRÈS :
+  if (step === 2) {
+    if (CONTENTIOUS_SERVICE_TYPES.includes(f.serviceType)) {
+      return f.litigationDegree !== "" && f.procedureType !== "";
+    }
+    return true; // non-contentieux : محكمة/إجراء non requis
+  }
+
+── 1e. Ajoute le select serviceType dans Step1, EN PREMIER (avant le champ
+       clientId ou juste en haut du JSX retourné par Step1) ─────────────────────
+
+Dans la fonction Step1 (function Step1(...)), ajoute EN PREMIER dans le JSX
+retourné, AVANT le bloc client :
+
+      {/* ── نوع الخدمة القانونية ─────────────── */}
+      <div>
+        <Label>نوع الخدمة <Req /></Label>
+        <SelectNative
+          value={form.serviceType}
+          onChange={e => upd({ serviceType: e.target.value })}
+          className={cls + " px-3"}
+        >
+          <optgroup label="ملفات التقاضي">
+            {SERVICE_TYPES.filter(t => t.group === "contentieux").map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label="خدمات أخرى">
+            {SERVICE_TYPES.filter(t => t.group === "non-contentieux").map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+        </SelectNative>
+      </div>
+
+── 1f. Ajoute serviceType dans le payload handleSubmit ──────────────────────────
+
+AVANT :
+      const payload = {
+        title: form.title,
+        clientId: Number(form.clientId),
+        ...(editMode ? {} : { status: "active" }),
+
+APRÈS :
+      const payload = {
+        title: form.title,
+        clientId: Number(form.clientId),
+        serviceType: form.serviceType || "lawsuit",
+        ...(editMode ? {} : { status: "active" }),
+
+══════════════════════════════════════════════════════
+FICHIER 2 — artifacts/api-server/src/routes/cases.ts
+══════════════════════════════════════════════════════
+
+Dans la fonction extractExtras, ajoute une ligne à la fin du bloc return,
+juste avant la fermeture } :
+
+AVANT :
+    internalNotes: str("internalNotes"),
+    draftData: str("draftData"),
+    draftLastStep: typeof body["draftLastStep"] === "number" ? body["draftLastStep"] as number : undefined,
+  };
+}
+
+APRÈS :
+    internalNotes: str("internalNotes"),
+    draftData: str("draftData"),
+    draftLastStep: typeof body["draftLastStep"] === "number" ? body["draftLastStep"] as number : undefined,
+    ...(typeof body["serviceType"] === "string" && body["serviceType"]
+      ? { serviceType: body["serviceType"] as string }
+      : {}),
+  };
+}
+
+══════════════════════════════════════════════════════
+COMMIT ET PUSH
+══════════════════════════════════════════════════════
+
+git add \
+  artifacts/law-firm/src/components/cases/CaseWizard.tsx \
+  artifacts/api-server/src/routes/cases.ts
+
+git commit -m "feat: ajout du champ serviceType dans le wizard de création de dossier
+
+- SERVICE_TYPES : 13 valeurs avec groupes contentieux / non-contentieux
+- Step 1 : nouveau select نوع الخدمة en premier champ
+- Step 2 : litigationDegree/procedureType optionnels pour types non-contentieux
+- payload handleSubmit : serviceType envoyé au backend
+- extractExtras : serviceType extrait du body et passé au INSERT"
+
+git push origin fix/wizard-service-type
+
+══════════════════════════════════════════════════════
+COMMENT TESTER
+══════════════════════════════════════════════════════
+
+1. Clique "ملف جديد" → Step 1 : le 1er champ est "نوع الخدمة"
+   → Vérifie les deux groupes d'options dans le select
+
+2. Sélectionne "عقد" (contract) → Avance au Step 2
+   → Le bouton "التالي" doit être ACTIF sans remplir litigationDegree/procedureType
+   (Step 2 devient optionnel pour les types non-contentieux)
+
+3. Sélectionne "قضية (تقاضي)" → Avance au Step 2
+   → "التالي" doit rester INACTIF tant que litigationDegree et procedureType
+   ne sont pas remplis
+
+4. Crée un dossier de type "عقد" → Ouvre le dossier créé
+   → L'onglet "نسخ العقد وأطرافه" doit apparaître (fix B3 déjà appliqué)
+   → PAS d'onglet "الجلسات" ni "الحكم"
+   → Stepper absent
+
+5. Vérifie en base : SELECT id, title, service_type FROM cases ORDER BY id DESC LIMIT 3;
+   → Le nouveau dossier doit avoir service_type = 'contract' (ou la valeur choisie)

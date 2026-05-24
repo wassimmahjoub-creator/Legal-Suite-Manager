@@ -70,6 +70,22 @@ const CONFIDENTIALITY_LEVELS = [
   { value: "sensitive", label: "حساس" },
 ];
 
+const SERVICE_TYPES = [
+  { value: "lawsuit",            label: "قضية (تقاضي)",          group: "contentieux" },
+  { value: "real_estate_file",   label: "ملف عقاري",             group: "contentieux" },
+  { value: "labor_file",         label: "قضية شغل",              group: "contentieux" },
+  { value: "tax_file",           label: "ملف جبائي",             group: "contentieux" },
+  { value: "judgment_execution", label: "تنفيذ حكم",             group: "contentieux" },
+  { value: "contract",           label: "عقد",                   group: "non-contentieux" },
+  { value: "consultation",       label: "استشارة قانونية",       group: "non-contentieux" },
+  { value: "company_creation",   label: "تأسيس شركة",            group: "non-contentieux" },
+  { value: "debt_recovery",      label: "تحصيل ديون",            group: "non-contentieux" },
+  { value: "legal_notice",       label: "إعلام قانوني",          group: "non-contentieux" },
+  { value: "administrative",     label: "إداري",                 group: "non-contentieux" },
+  { value: "mediation",          label: "وساطة",                 group: "non-contentieux" },
+  { value: "other",              label: "آخر",                   group: "non-contentieux" },
+];
+
 const CAPACITY_SUGGESTIONS = ["مدعى عليه", "مدعي", "متدخل", "ضامن"];
 
 const CONTENTIEUX_TYPES = ["lawsuit", "real_estate_file", "labor_file", "tax_file", "judgment_execution"];
@@ -220,7 +236,7 @@ const defaultForm = (): WizardForm => ({
   feeMethod: "", agreedFees: "", hourlyRate: "",
   percentage: "", percentageBasis: "", disputeValue: "",
   confidentialityLevel: "normal", internalNotes: "",
-  serviceType: "",
+  serviceType: "lawsuit",
   typeSpecificData: {},
   contractData: { contractType: "", partyOneName: "", partyOneTaxId: "", partyTwoName: "", partyTwoTaxId: "", contractValue: "", startDate: "", endDate: "", signingDate: "", status: "draft", notes: "" },
   debtData: { debtorName: "", debtorTaxId: "", debtorPhone: "", debtorAddress: "", debtAmount: "", debtReason: "", dueDate: "", currentStage: "notice", notes: "" },
@@ -292,6 +308,27 @@ function RadioGroup({ options, value, onChange }: {
 function Step1({ form, upd, clients, onAddClient, stepErrors }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[]; onAddClient: () => void; stepErrors: Record<string, string> }) {
   return (
     <div className="space-y-4">
+      {/* ── نوع الخدمة القانونية ─────────────── */}
+      <div>
+        <Label>نوع الخدمة <Req /></Label>
+        <SelectNative
+          value={form.serviceType}
+          onChange={e => upd({ serviceType: e.target.value })}
+          className={cls + " px-3"}
+        >
+          <optgroup label="ملفات التقاضي">
+            {SERVICE_TYPES.filter(t => t.group === "contentieux").map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label="خدمات أخرى">
+            {SERVICE_TYPES.filter(t => t.group === "non-contentieux").map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+        </SelectNative>
+      </div>
+
       <div>
         <Label>عنوان الملف <Req /></Label>
         <Input placeholder="مثال: قضية ميراث عائلة بن علي" className={cls}
