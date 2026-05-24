@@ -138,7 +138,7 @@ export default function Cases() {
               الملفات المؤرشفة
             </Button>
           )}
-          <Button onClick={() => setShowWizard(true)} className="rounded-lg gap-2 px-5">
+          <Button onClick={() => navigate("/cases/new")} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />
             ملف جديد
           </Button>

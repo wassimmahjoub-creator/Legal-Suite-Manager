@@ -22,6 +22,7 @@ const Pricing          = lazy(() => import("@/pages/Pricing"));
 const Today              = lazy(() => import("@/pages/Today"));
 const Dashboard          = lazy(() => import("@/pages/Dashboard"));
 const Cases              = lazy(() => import("@/pages/Cases"));
+const NewCasePage        = lazy(() => import("@/pages/NewCasePage"));
 const CaseDetail         = lazy(() => import("@/pages/CaseDetail"));
 const Clients            = lazy(() => import("@/pages/Clients"));
 const ClientPage         = lazy(() => import("@/pages/ClientPage"));
@@ -174,6 +175,7 @@ function Router() {
                   <Route path="/today"                  component={Today} />
                   <Route path="/"                      component={Dashboard} />
                   <Route path="/cases"                 component={Cases} />
+                  <Route path="/cases/new"             component={NewCasePage} />
                   <Route path="/cases/:id"             component={CaseDetail} />
                   <Route path="/clients"               component={Clients} />
                   <Route path="/clients/:id"           component={ClientPage} />

@@ -117,6 +117,7 @@ interface WizardForm {
   disputeValue: string;
   confidentialityLevel: string;
   internalNotes: string;
+  serviceType: string;
 }
 
 type Client = { id: number; name: string };
@@ -140,6 +141,7 @@ const defaultForm = (): WizardForm => ({
   feeMethod: "", agreedFees: "", hourlyRate: "",
   percentage: "", percentageBasis: "", disputeValue: "",
   confidentialityLevel: "normal", internalNotes: "",
+  serviceType: "lawsuit",
 });
 
 // ── Validation ──────────────────────────────────────────────────────────
@@ -585,7 +587,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
 
   useEffect(() => {
     if (!open) return;
-    setForm(editMode && initialData ? { ...defaultForm(), ...initialData } : defaultForm());
+    setForm(initialData ? { ...defaultForm(), ...initialData } : defaultForm());
     setStep(1);
     setConfirmClose(false);
     authFetch(`${BASE}/api/clients`).then(r => r.ok ? r.json() : []).then(setClients);
