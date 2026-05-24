@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Filter, Archive, Hash, ArrowRight } from "lucide-react";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ServiceTypeBadge } from "@/components/ServiceTypeBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,6 +32,29 @@ export default function Cases() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewArchived, setViewArchived] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<string>(() =>
+    new URLSearchParams(window.location.search).get("serviceType") ?? "all"
+  );
+
+  const OTHER_TYPES: string[] = [];
+
+  const TABS = [
+    { key: "all",                label: "الكل" },
+    { key: "lawsuit",            label: "قضايا" },
+    { key: "consultation",       label: "استشارات" },
+    { key: "contract",           label: "عقود" },
+    { key: "debt_recovery",      label: "تحصيل" },
+    { key: "company_creation",   label: "شركات" },
+    { key: "legal_notice",       label: "إنذارات" },
+    { key: "judgment_execution", label: "تنفيذ" },
+    { key: "real_estate_file",   label: "عقاري" },
+    { key: "labor_file",         label: "شغل" },
+    { key: "tax_file",           label: "جبائي" },
+    { key: "administrative",     label: "إداري" },
+    { key: "mediation",          label: "وساطة" },
+    { key: "other",              label: "أخرى" },
+  ];
+
   const [lawyerCases, setLawyerCases] = useState<any[] | null>(null);
   const [, navigate] = useLocation();
   const { data: cases, isLoading } = useListCases();
@@ -44,14 +68,32 @@ export default function Cases() {
   }, [userIdParam]);
 
   const casesSource = lawyerCases ?? cases;
-  const filteredCases = casesSource?.filter((c: any) => {
-    if (viewArchived) {
-      if (!c.archivedAt) return false;
-    } else {
-      if (c.archivedAt) return false;
+
+  const baseFiltered = (casesSource ?? []).filter((c: any) => {
+    if (viewArchived) { if (!c.archivedAt) return false; }
+    else              { if (c.archivedAt)  return false; }
+    return true;
+  });
+
+  const tabCounts: Record<string, number> = { all: baseFiltered.length };
+  for (const c of baseFiltered) {
+    const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
+    tabCounts[t] = (tabCounts[t] ?? 0) + 1;
+  }
+
+  const filteredCases = baseFiltered.filter((c: any) => {
+    const t: string = c.serviceType ?? c.service_type ?? "lawsuit";
+    if (serviceTypeFilter !== "all") {
+      if (t !== serviceTypeFilter) return false;
     }
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
-    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.clientName?.includes(search) && !(c.caseNumber ?? "").includes(search) && !(c.courtCaseNumber ?? "").includes(search)) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!c.title?.toLowerCase().includes(q) &&
+          !c.clientName?.includes(search) &&
+          !(c.caseNumber ?? "").includes(search) &&
+          !(c.courtCaseNumber ?? "").includes(search)) return false;
+    }
     return true;
   });
 
@@ -72,15 +114,16 @@ export default function Cases() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-start gap-3">
-          {viewArchived && (
-            <button onClick={() => setViewArchived(false)} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0" title="رجوع">
-              <ArrowRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          )}
           <div>
+            {(fromParam === "dashboard" || viewArchived) && (
+              <button onClick={() => fromParam === "dashboard" ? navigate("/") : setViewArchived(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
             <h1 className="text-2xl font-bold">القضايا</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              {viewArchived ? "القضايا المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+              {viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
             </p>
           </div>
         </div>
@@ -90,14 +133,14 @@ export default function Cases() {
             params={{ search, status: statusFilter !== "all" ? statusFilter : undefined, archived: viewArchived ? "true" : undefined }}
           />
           {!viewArchived && (
-            <Button size="sm" onClick={() => setViewArchived(true)} className="gap-2">
+            <Button onClick={() => setViewArchived(true)} className="rounded-lg gap-2 px-5">
               <Archive className="h-4 w-4" />
-              القضايا المؤرشفة
+              الملفات المؤرشفة
             </Button>
           )}
           <Button onClick={() => setShowWizard(true)} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" />
-            قضية جديدة
+            ملف جديد
           </Button>
         </div>
       </div>
@@ -131,6 +174,32 @@ export default function Cases() {
         </div>
       </div>
 
+      {/* ── Onglets type de dossier ── */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+        {TABS.map(tab => {
+          const count = tabCounts[tab.key] ?? 0;
+          const active = serviceTypeFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setServiceTypeFilter(tab.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap border transition-colors
+                ${active
+                  ? "bg-primary text-primary-foreground border-primary font-semibold"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"}`}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
+                  ${active ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Stats */}
       {!isLoading && cases && (
         <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
@@ -150,6 +219,7 @@ export default function Cases() {
                 <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden md:table-cell">المحكمة</TableHead>
                 <TableHead className="text-start py-3 font-semibold">الحالة</TableHead>
+                <TableHead className="text-start py-3 font-semibold hidden md:table-cell">النوع</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">الجلسة القادمة</TableHead>
                 <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">المرحلة</TableHead>
               </TableRow>
@@ -158,7 +228,7 @@ export default function Cases() {
               {isLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <TableCell key={j} className="py-3"><Skeleton className="h-5 w-full" /></TableCell>
                       ))}
                     </TableRow>
@@ -166,7 +236,7 @@ export default function Cases() {
                 : filteredCases?.length === 0
                 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-0">
+                    <TableCell colSpan={8} className="py-0">
                       <EmptyState
                         illustration={<EmptyCasesIllustration />}
                         title={viewArchived ? "لا توجد قضايا مؤرشفة" : "لا توجد قضايا بعد"}
@@ -201,6 +271,9 @@ export default function Cases() {
                     <TableCell className="py-3 text-muted-foreground">{c.clientName}</TableCell>
                     <TableCell className="py-3 text-muted-foreground hidden md:table-cell">{c.court || "—"}</TableCell>
                     <TableCell className="py-3"><StatusBadge status={c.status} /></TableCell>
+                    <TableCell className="py-3 hidden md:table-cell">
+                      <ServiceTypeBadge type={c.serviceType ?? c.service_type} />
+                    </TableCell>
                     <TableCell className="py-3 hidden lg:table-cell">
                       {c.nextHearing ? (
                         <span title={formatDateLongTN(c.nextHearing)}>{formatDateTN(c.nextHearing)}</span>
