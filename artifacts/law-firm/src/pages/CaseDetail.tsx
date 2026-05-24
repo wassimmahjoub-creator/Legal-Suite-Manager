@@ -107,12 +107,13 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 // ─── Tab config ───────────────────────────────────────────────
-const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
+const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","tasks","notes"] as const;
 type TabId = typeof TAB_IDS[number];
 
 // ─── Types ────────────────────────────────────────────────────
 type Procedure  = { id: number; stage: string; status: string; notes: string | null; startedAt: string | null; endedAt: string | null; };
 type Deadline   = { id: number; title: string; type: string; dueDate: string; urgency: string; notes: string | null; completedAt: string | null; };
+type CaseTask   = { id: number; title: string; done: boolean; dueDate: string | null; createdAt: string; };
 type TeamMember = { id: number; userId: number; role: string; userName: string | null; };
 type ConfNote   = { id: number; content: string; createdBy: string | null; createdAt: string; };
 type Relation   = { id: number; relatedCaseId: number; relationType: string; relatedTitle: string | null; };
@@ -200,6 +201,13 @@ export default function CaseDetail() {
   const [allUsers,    setAllUsers]    = useState<UserItem[]>([]);
   const [expenses,    setExpenses]    = useState<ExpenseItem[]>([]);
   const [showExpModal, setShowExpModal] = useState(false);
+
+  // Tasks state
+  const [caseTasks,     setCaseTasks]     = useState<CaseTask[]>([]);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskEditId,    setTaskEditId]    = useState<number | null>(null);
+  const [taskForm,      setTaskForm]      = useState({ title: "", dueDate: "" });
+  const [confirmTaskId, setConfirmTaskId] = useState<number | null>(null);
   const [expForm, setExpForm] = useState({ date: new Date().toISOString().slice(0, 10), typeValue: EXPENSE_TYPES[0].value, description: "", amount: "", reimbursable: true });
 
   // Time tracking state
@@ -268,6 +276,7 @@ export default function CaseDetail() {
     auditLogs:  async () => { const r = await authFetch(`${BASE}/api/audit-logs`); if (r.ok) setAuditLogs(await r.json()); },
     hearings:   async () => { const r = await authFetch(`${BASE}/api/events?caseId=${id}`, { cache: "no-store" }); if (r.ok) setHearingEvents(await r.json()); },
     expenses:   async () => { const r = await authFetch(`${BASE}/api/expenses?caseId=${id}`); if (r.ok) setExpenses(await r.json()); },
+    tasks:      async () => { const r = await authFetch(`${BASE}/api/tasks?caseId=${id}`); if (r.ok) setCaseTasks(await r.json()); },
   };
 
   useEffect(() => {
@@ -370,6 +379,8 @@ export default function CaseDetail() {
       badge: hasOverdueInv ? 1 : 0 },
     { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
     { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
+    { id: "tasks",      label: "المهام",               icon: <CheckCircle2 className="h-4 w-4" />,
+      badge: caseTasks.filter(t => !t.done).length > 0 ? caseTasks.filter(t => !t.done).length : 0 },
     { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
   ];
@@ -1060,6 +1071,157 @@ export default function CaseDetail() {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // RENDER TASKS
+  // ─────────────────────────────────────────────────────────────
+  function renderTasks() {
+    const pending = caseTasks.filter(t => !t.done);
+    const done    = caseTasks.filter(t =>  t.done);
+
+    async function toggleTask(task: CaseTask) {
+      await authFetch(`${BASE}/api/tasks/${task.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ title: task.title, done: !task.done }),
+      });
+      load.tasks();
+    }
+
+    async function saveTask() {
+      if (!taskForm.title.trim()) return;
+      setSaving(true);
+      if (taskEditId) {
+        await authFetch(`${BASE}/api/tasks/${taskEditId}`, {
+          method: "PUT",
+          body: JSON.stringify({ title: taskForm.title, dueDate: taskForm.dueDate || undefined }),
+        });
+      } else {
+        await authFetch(`${BASE}/api/tasks`, {
+          method: "POST",
+          body: JSON.stringify({ title: taskForm.title, caseId: Number(id), dueDate: taskForm.dueDate || undefined }),
+        });
+      }
+      setSaving(false);
+      setShowTaskModal(false);
+      setTaskEditId(null);
+      load.tasks();
+    }
+
+    async function deleteTask(taskId: number) {
+      await authFetch(`${BASE}/api/tasks/${taskId}`, { method: "DELETE" });
+      setConfirmTaskId(null);
+      load.tasks();
+    }
+
+    return (
+      <div className="space-y-4">
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                المهام
+                {pending.length > 0 && (
+                  <span className="text-[10px] bg-primary text-white rounded-full px-1.5 py-0.5 font-bold">{pending.length}</span>
+                )}
+              </h3>
+              <Button size="sm" onClick={() => { setTaskForm({ title: "", dueDate: "" }); setTaskEditId(null); setShowTaskModal(true); }} className="gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" />مهمة جديدة
+              </Button>
+            </div>
+
+            {caseTasks.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <CircleCheck className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">لا توجد مهام — أضف مهمة للبدء</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {[...pending, ...done].map(task => (
+                  <div key={task.id} className={cn(
+                    "flex items-center gap-3 px-4 py-3 transition-colors",
+                    task.done ? "opacity-50" : "hover:bg-muted/20"
+                  )}>
+                    <button onClick={() => toggleTask(task)} className="shrink-0 focus:outline-none">
+                      {task.done
+                        ? <CheckCircle2 className="h-[18px] w-[18px] text-success" />
+                        : <Circle className="h-[18px] w-[18px] text-muted-foreground/50" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm font-medium truncate", task.done && "line-through text-muted-foreground")}>
+                        {task.title}
+                      </p>
+                      {task.dueDate && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Calendar className="h-3 w-3" />
+                          {formatDateTN(task.dueDate)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => { setTaskEditId(task.id); setTaskForm({ title: task.title, dueDate: task.dueDate ?? "" }); setShowTaskModal(true); }}
+                        className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                      <button onClick={() => setConfirmTaskId(task.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg transition-colors">
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Add/Edit task modal */}
+        <Modal
+          open={showTaskModal}
+          onClose={() => { setShowTaskModal(false); setTaskEditId(null); }}
+          title={taskEditId ? "تعديل المهمة" : "إضافة مهمة"}
+        >
+          <div className="space-y-4">
+            <FormField label="عنوان المهمة *">
+              <Input
+                value={taskForm.title}
+                onChange={e => setTaskForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="أدخل عنوان المهمة..."
+                className={inputCls}
+                onKeyDown={e => { if (e.key === "Enter") saveTask(); }}
+                autoFocus
+              />
+            </FormField>
+            <FormField label="تاريخ الاستحقاق (اختياري)">
+              <Input
+                type="date"
+                value={taskForm.dueDate}
+                onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))}
+                className={inputCls}
+                dir="ltr"
+              />
+            </FormField>
+            <div className="flex gap-2 justify-end pt-1">
+              <Button variant="outline" onClick={() => { setShowTaskModal(false); setTaskEditId(null); }}>إلغاء</Button>
+              <Button onClick={saveTask} disabled={saving || !taskForm.title.trim()}>
+                {saving ? "جاري الحفظ..." : taskEditId ? "تحديث" : "إضافة"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Confirm delete task */}
+        <ConfirmDestructive
+          open={confirmTaskId !== null}
+          title="حذف المهمة"
+          description="هل أنت متأكد من حذف هذه المهمة؟ لا يمكن التراجع."
+          onConfirm={() => confirmTaskId && deleteTask(confirmTaskId)}
+          onCancel={() => setConfirmTaskId(null)}
+        />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────
   return (
@@ -1158,6 +1320,7 @@ export default function CaseDetail() {
           {activeTab === "invoicing"  && renderInvoicing()}
           {activeTab === "expenses"   && renderExpenses()}
           {activeTab === "time"       && renderTime()}
+          {activeTab === "tasks"      && renderTasks()}
           {activeTab === "notes"      && renderNotes()}
         </div>
       </div>
