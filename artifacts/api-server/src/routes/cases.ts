@@ -63,6 +63,7 @@ function extractExtras(body: Record<string, unknown>) {
     opponentLawyer: str("opponentLawyer"),
     judgmentText: str("judgmentText"),
     // Wizard fields
+    serviceType: str("serviceType") as any,
     caseType: str("caseType"),
     litigationDegree: str("litigationDegree"),
     procedureType: str("procedureType"),
