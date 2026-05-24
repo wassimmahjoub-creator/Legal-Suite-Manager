@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Briefcase, Calendar as CalendarIcon, Users, FileText,
-  Settings as SettingsIcon, CreditCard, LayoutDashboard,
-  Timer, BarChart3, TrendingDown, Mic, Shield, MessageSquare,
+  Settings as SettingsIcon, CreditCard, Home,
+  Timer, BarChart3, TrendingDown, Mic, Shield,
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
@@ -29,24 +29,29 @@ interface OrgTrial {
 /* ─────────────────────── nav data ─────────────────────── */
 
 const NAV_PRIMARY = [
-  { href: "/today",      label: "لوحة اليوم",    icon: CalendarIcon    },
-  { href: "/",           label: "لوحة القيادة", icon: LayoutDashboard },
-  { href: "/cases",      label: "القضايا",       icon: Briefcase       },
-  { href: "/clients",    label: "الموكّلون",     icon: Users           },
-  { href: "/billing",    label: "الفواتير",      icon: CreditCard      },
-  { href: "/documents",  label: "الوثائق",       icon: FileText        },
+  { href: "/",                label: "الرئيسية",   icon: Home         },
+  { href: "/cases",           label: "الملفات",    icon: Briefcase    },
+  { href: "/clients",         label: "الموكّلون",  icon: Users        },
+  { href: "/calendar",        label: "الرزنامة",   icon: CalendarIcon },
+  { href: "/correspondances", label: "المراسلات",  icon: MailOpen     },
 ];
 
-const NAV_SECONDARY = [
-  { href: "/opponents",           label: "الخصوم",        icon: Shield       },
-  { href: "/consultations",       label: "الاستشارات",    icon: MessageSquare},
-  { href: "/communications",      label: "الاتصالات",     icon: PhoneCall    },
-  { href: "/correspondances",     label: "المراسلات",     icon: MailOpen     },
-  { href: "/time-tracking",       label: "تتبع الوقت",    icon: Timer        },
-  { href: "/reports",             label: "المحاسبة",      icon: BarChart3    },
-  { href: "/courts",              label: "المحاكم",       icon: Building2    },
-  { href: "/templates",           label: "النماذج",       icon: FilePen      },
-  { href: "/expenses",            label: "المصاريف",      icon: TrendingDown },
+const NAV_FINANCE = [
+  { href: "/billing",  label: "الفواتير",  icon: CreditCard  },
+  { href: "/reports",  label: "المحاسبة",  icon: BarChart3   },
+  { href: "/expenses", label: "المصاريف",  icon: TrendingDown},
+];
+
+const NAV_DOCS = [
+  { href: "/documents",  label: "الوثائق",  icon: FileText },
+  { href: "/templates",  label: "النماذج",  icon: FilePen  },
+];
+
+const NAV_MORE = [
+  { href: "/opponents",      label: "الخصوم",     icon: Shield      },
+  { href: "/communications", label: "الاتصالات",  icon: PhoneCall   },
+  { href: "/courts",         label: "المحاكم",    icon: Building2   },
+  { href: "/time-tracking",  label: "تتبع الوقت", icon: Timer       },
 ];
 
 /* Visible admin items — high frequency */
@@ -70,20 +75,20 @@ const NAV_SYSTEM = [
 const ADMIN_ONLY_HREFS = new Set(["/users", "/legal-config", "/audit-logs", "/data-privacy"]);
 
 const NAV_MOBILE_BOTTOM = [
-  { href: "/",         label: "الرئيسية", icon: LayoutDashboard },
-  { href: "/cases",    label: "القضايا",  icon: Briefcase       },
-  { href: "/calendar", label: "الرزنامة", icon: CalendarIcon    },
-  { href: "/clients",  label: "الموكّلون",  icon: Users           },
+  { href: "/",         label: "الرئيسية",  icon: Home         },
+  { href: "/cases",    label: "الملفات",   icon: Briefcase    },
+  { href: "/calendar", label: "الرزنامة",  icon: CalendarIcon },
+  { href: "/clients",  label: "الموكّلون", icon: Users        },
 ];
 
 const QUICK_ACTIONS = [
-  { label: "قضية جديدة",   href: "/cases",    icon: Briefcase    },
-  { label: "موكّل جديد",    href: "/clients",  icon: Users        },
-  { label: "فاتورة جديدة", href: "/billing",  icon: CreditCard   },
-  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon },
+  { label: "ملف جديد",      href: "/cases",    icon: Briefcase,    kbd: "Alt+1" },
+  { label: "موكّل جديد",    href: "/clients",  icon: Users,        kbd: "Alt+2" },
+  { label: "فاتورة جديدة",  href: "/billing",  icon: CreditCard,   kbd: "Alt+3" },
+  { label: "حدث جديد",     href: "/calendar", icon: CalendarIcon, kbd: "Alt+4" },
 ];
 
-const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_SECONDARY, ...NAV_ADMIN, ...NAV_SYSTEM];
+const ALL_ITEMS = [...NAV_PRIMARY, ...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE, ...NAV_ADMIN, ...NAV_SYSTEM];
 
 const ROLE_LABELS: Record<string, string> = {
   admin:      "مدير",
@@ -229,7 +234,7 @@ function ExpandableSection({
 /* ─────────────────────── Layout ─────────────────────── */
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { isAdmin } = useRole();
 
@@ -239,6 +244,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [orgTrial, setOrgTrial] = useState<OrgTrial | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [systemOpen, setSystemOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -256,13 +264,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
 
-  const inSecondary = NAV_SECONDARY.some(i => isActive(i.href));
+  const inSecondary = [...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].some(i => isActive(i.href));
+  const inFinance = NAV_FINANCE.some(i => isActive(i.href));
+  const inDocs    = NAV_DOCS.some(i => isActive(i.href));
+  const inMore    = NAV_MORE.some(i => isActive(i.href));
   const inAdmin = NAV_ADMIN.some(i => isActive(i.href));
   const inSystem = NAV_SYSTEM.some(i => isActive(i.href));
 
   useEffect(() => {
-    if (inAdmin) setAdminOpen(true);
-    if (inSystem) { setAdminOpen(true); setSystemOpen(true); }
+    if (inFinance) setFinanceOpen(true);
+    if (inDocs)    setDocsOpen(true);
+    if (inMore)    setMoreOpen(true);
+    if (inAdmin)   setAdminOpen(true);
+    if (inSystem)  { setAdminOpen(true); setSystemOpen(true); }
   }, [location]);
 
   useEffect(() => {
@@ -305,6 +319,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handle);
   }, [quickOpen]);
 
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (!e.altKey) return;
+      const idx = ["1","2","3","4"].indexOf(e.key);
+      if (idx === -1) return;
+      e.preventDefault();
+      setLocation(QUICK_ACTIONS[idx].href);
+      setQuickOpen(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [setLocation]);
+
   function toggleFavorite(href: string) {
     setFavorites(prev =>
       prev.includes(href) ? prev.filter(f => f !== href) : [...prev, href]
@@ -318,7 +345,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.setItem("theme", next ? "dark" : "light");
   }
 
-  const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "لوحة القيادة";
+  const currentLabel = ALL_ITEMS.find(i => isActive(i.href))?.label ?? "الرئيسية";
   const favItems = ALL_ITEMS.filter(i => favorites.includes(i.href));
 
   /* ── Sidebar content ── */
@@ -362,8 +389,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        {/* Daily work */}
-        <SectionHeader label="العمل اليومي" collapsed={collapsed} />
+        {/* Primary 5 */}
         <div className="space-y-px">
           {NAV_PRIMARY.map(item => (
             <NavItem key={item.href} {...item}
@@ -374,17 +400,62 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* Services */}
-        <SectionHeader label="الخدمات" collapsed={collapsed} />
-        <div className="space-y-px">
-          {NAV_SECONDARY.map(item => (
+        {/* Finances */}
+        <ExpandableSection
+          label="الفواتير والمحاسبة"
+          icon={CreditCard}
+          open={financeOpen}
+          onToggle={() => setFinanceOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inFinance}
+        >
+          {NAV_FINANCE.map(item => (
             <NavItem key={item.href} {...item}
               active={isActive(item.href)} collapsed={collapsed}
               favorited={favorites.includes(item.href)}
-              onToggleFav={toggleFavorite} onNavigate={onNavigate}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
             />
           ))}
-        </div>
+        </ExpandableSection>
+
+        {/* Docs */}
+        <ExpandableSection
+          label="الوثائق والنماذج"
+          icon={FileText}
+          open={docsOpen}
+          onToggle={() => setDocsOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inDocs}
+        >
+          {NAV_DOCS.map(item => (
+            <NavItem key={item.href} {...item}
+              active={isActive(item.href)} collapsed={collapsed}
+              favorited={favorites.includes(item.href)}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
+            />
+          ))}
+        </ExpandableSection>
+
+        {/* المزيد */}
+        <ExpandableSection
+          label="المزيد"
+          icon={MoreHorizontal}
+          open={moreOpen}
+          onToggle={() => setMoreOpen(o => !o)}
+          collapsed={collapsed}
+          hasActive={inMore}
+        >
+          {NAV_MORE.map(item => (
+            <NavItem key={item.href} {...item}
+              active={isActive(item.href)} collapsed={collapsed}
+              favorited={favorites.includes(item.href)}
+              onToggleFav={!collapsed ? toggleFavorite : undefined}
+              onNavigate={onNavigate} indent
+            />
+          ))}
+        </ExpandableSection>
 
         {/* Admin */}
         <SectionHeader label="الإدارة" collapsed={collapsed} />
@@ -406,7 +477,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </ExpandableSection>
 
-        {/* Deep system */}
         <ExpandableSection
           label="النظام"
           icon={Settings2}
@@ -610,11 +680,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5" dir="rtl">
-                {/* Services */}
+                {/* Services regroupés */}
                 <div>
-                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>الخدمات</p>
+                  <p className="text-[11px] font-semibold px-1 mb-2 tracking-wide" style={{ color: "color-mix(in oklch, var(--foreground) 45%, var(--primary) 20%)" }}>
+                    الخدمات
+                  </p>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {NAV_SECONDARY.map(item => {
+                    {[...NAV_FINANCE, ...NAV_DOCS, ...NAV_MORE].map(item => {
                       const Icon = item.icon;
                       const active = isActive(item.href);
                       return (
@@ -622,9 +694,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           onClick={() => setMobileSheetOpen(false)}
                           className={cn(
                             "flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl text-[11px] transition-all",
-                            active
-                              ? "text-primary font-medium"
-                              : "bg-muted/40 text-muted-foreground/70 hover:bg-muted/60"
+                            active ? "text-primary font-medium" : "bg-muted/40 text-muted-foreground/70 hover:bg-muted/60"
                           )}
                           style={active ? { backgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)" } : undefined}
                         >
@@ -782,7 +852,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Quick Actions FAB — desktop */}
       <div ref={quickRef} className="fixed bottom-5 end-5 z-40 hidden lg:block">
         {quickOpen && (
-          <div className="absolute bottom-11 start-0 mb-1 bg-card/95 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl overflow-hidden w-40">
+          <div className="absolute bottom-12 end-0 mb-1 bg-card/97 backdrop-blur-md border border-border/60 rounded-xl shadow-2xl w-56">
+            <div className="px-3.5 py-2 border-b border-border/40">
+              <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide">إجراءات سريعة</p>
+            </div>
             {QUICK_ACTIONS.map(a => {
               const Icon = a.icon;
               return (
@@ -791,24 +864,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] hover:bg-muted/50 transition-colors"
                   dir="rtl"
                 >
-                  <Icon className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                  <span>{a.label}</span>
+                  <Icon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                  <span className="flex-1 whitespace-nowrap">{a.label}</span>
+                  <kbd className="text-[10px] font-mono bg-muted/80 border border-border/60 px-1.5 py-0.5 rounded text-muted-foreground/60 shrink-0">
+                    {a.kbd}
+                  </kbd>
                 </Link>
               );
             })}
+            <div className="px-3.5 py-1.5 border-t border-border/40">
+              <p className="text-[10px] text-muted-foreground/40 text-center">Alt+1 → Alt+4 للوصول السريع</p>
+            </div>
           </div>
         )}
         <button
           onClick={() => setQuickOpen(o => !o)}
-          title="إجراءات سريعة"
+          title="إجراءات سريعة (Alt+1..4)"
           className={cn(
-            "h-9 w-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-200",
+            "h-10 w-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200",
             quickOpen
               ? "bg-primary/80 text-primary-foreground rotate-45 scale-95"
               : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-xl hover:scale-105"
           )}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </button>
       </div>
 
