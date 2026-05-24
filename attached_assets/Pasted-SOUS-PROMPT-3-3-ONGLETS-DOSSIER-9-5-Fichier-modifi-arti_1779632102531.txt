@@ -1,0 +1,184 @@
+SOUS-PROMPT 3 / 3 — ONGLETS DOSSIER : 9 → 5
+Fichier modifié : artifacts/law-firm/src/pages/CaseDetail.tsx
+
+⚠️ Prérequis : Ce sous-prompt suppose que les Sessions 4/5 ont été appliquées. Vérifier que serviceType, isContentious, renderContractVersions(), renderPaymentPlan(), renderCompanySteps() existent déjà dans ce fichier. Si ces éléments n'existent pas encore, sauter les branches conditionnelles spécifiques (elles se réduiront au else → renderTimeline()).
+
+ÉTAPE 1 — Remplacer TAB_IDS (ligne 110)
+// AVANT
+const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes"] as const;
+type TabId = typeof TAB_IDS[number];
+
+// APRÈS
+const TAB_IDS = ["overview","sessions","documents","finance","notes"] as const;
+type TabId = typeof TAB_IDS[number];
+ÉTAPE 2 — Remplacer TAB_ALIASES (lignes 165-170)
+// AVANT
+const TAB_ALIASES: Record<string, TabId> = {
+  billing: "invoicing", facturation: "invoicing", invoices: "invoicing",
+  procedures: "timeline", lifecycle: "timeline",
+  audiences: "hearings", sessions: "hearings",
+  jugement: "judgment", verdict: "judgment",
+  docs: "documents", fichiers: "documents",
+};
+
+// APRÈS
+const TAB_ALIASES: Record<string, TabId> = {
+  // Finance
+  billing: "finance", facturation: "finance", invoices: "finance",
+  invoicing: "finance", expenses: "finance", time: "finance",
+  "payment-plan": "finance",
+  // Sessions/processus
+  timeline: "sessions", procedures: "sessions", lifecycle: "sessions",
+  hearings: "sessions", audiences: "sessions",
+  judgment: "sessions", jugement: "sessions", verdict: "sessions",
+  "company-steps": "sessions",
+  // Documents
+  docs: "documents", fichiers: "documents", versions: "documents",
+};
+ÉTAPE 3 — Ajouter les états des sous-onglets
+Après const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL); (ligne 179), ajouter :
+
+// Sous-onglets de "الجلسات والمهام" (pour dossiers contentieux)
+type SessionsSubTab = "hearings" | "timeline" | "judgment";
+const [sessionsSubTab, setSessionsSubTab] = useState<SessionsSubTab>("hearings");
+
+// Sous-onglets de "المالية"
+type FinanceSubTab = "invoicing" | "expenses" | "time" | "payment-plan";
+const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>("invoicing");
+ÉTAPE 4 — Remplacer la définition des tabs (lignes 361-375)
+// AVANT (9 entrées)
+const tabs: Array<...> = [
+  { id: "overview",   label: "نظرة عامة", ... },
+  { id: "timeline",   label: "التسلسل الإجرائي", ... },
+  { id: "hearings",   label: "الجلسات والآجال", badge: upcomingCount > 0 ? upcomingCount : 0 },
+  { id: "judgment",   label: "الحكم والتنفيذ", ... },
+  { id: "documents",  label: "المؤيدات والوثائق", badge: activeDocs.length > 0 ? activeDocs.length : 0 },
+  { id: "invoicing",  label: "الأتعاب والفواتير", badge: hasOverdueInv ? 1 : 0 },
+  { id: "expenses",   label: "المصاريف", ... },
+  { id: "time",       label: "الوقت", ... },
+  { id: "notes",      label: "الملاحظات والسجل", badgeIcon: ... },
+];
+
+// APRÈS (5 entrées)
+const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeIcon?: React.ReactNode }> = [
+  { id: "overview",   label: "نظرة عامة",       icon: <BarChart2 className="h-4 w-4" /> },
+  { id: "sessions",   label: "الجلسات والمهام",  icon: <Clock className="h-4 w-4" />,
+    badge: upcomingCount > 0 ? upcomingCount : undefined },
+  { id: "documents",  label: "الوثائق",           icon: <FolderOpen className="h-4 w-4" />,
+    badge: activeDocs.length > 0 ? activeDocs.length : undefined },
+  { id: "finance",    label: "المالية",            icon: <Receipt className="h-4 w-4" />,
+    badge: hasOverdueInv ? 1 : undefined },
+  { id: "notes",      label: "الملاحظات",         icon: <StickyNote className="h-4 w-4" />,
+    badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
+];
+ÉTAPE 5 — Ajouter renderSessions() (juste avant renderOverview())
+Insérer cette nouvelle fonction avant function renderOverview() (ligne 381) :
+
+// Sous-onglets internes réutilisables
+function SubTabBar({ tabs: stabs, active, onChange }: { tabs: { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex gap-1 border-b border-border/50 mb-4 -mx-5 px-5" dir="rtl">
+      {stabs.map(t => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            "px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+            active === t.id
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function renderSessions() {
+  // Vérifier si la Session 4 a ajouté isContentious / serviceType
+  // Si oui : utiliser les branches ci-dessous
+  // Si non : rendre directement renderHearings() comme comportement par défaut
+
+  const st = (c as any).serviceType ?? "lawsuit";
+  const CONTENTIOUS = ["lawsuit", "real_estate_file", "labor_file", "tax_file", "judgment_execution"];
+  const isContentious = CONTENTIOUS.includes(st);
+
+  if (isContentious) {
+    const subTabs = [
+      { id: "hearings",  label: "الجلسات والآجال"   },
+      { id: "timeline",  label: "التسلسل الإجرائي" },
+      { id: "judgment",  label: "الحكم والتنفيذ"    },
+    ];
+    return (
+      <div>
+        <SubTabBar tabs={subTabs} active={sessionsSubTab} onChange={v => setSessionsSubTab(v as SessionsSubTab)} />
+        {sessionsSubTab === "hearings"  && renderHearings()}
+        {sessionsSubTab === "timeline"  && renderTimeline()}
+        {sessionsSubTab === "judgment"  && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
+      </div>
+    );
+  }
+
+  // Types non-contentieux — onglets conditionnels issus de Session 4
+  if (st === "contract") {
+    // renderContractVersions() ajouté en Session 4
+    return typeof renderContractVersions === "function" ? renderContractVersions() : renderTimeline();
+  }
+  if (st === "company_creation") {
+    // renderCompanySteps() ajouté en Session 4
+    return typeof renderCompanySteps === "function" ? renderCompanySteps() : renderTimeline();
+  }
+
+  // Tous les autres types (consultation, legal_notice, debt_recovery, mediation...) → timeline
+  return renderTimeline();
+}
+ÉTAPE 6 — Ajouter renderFinance() (juste avant renderNotes())
+Insérer cette fonction avant function renderNotes() (ligne 954) :
+
+function renderFinance() {
+  const st = (c as any).serviceType ?? "lawsuit";
+  const isDebtRecovery = st === "debt_recovery";
+
+  const subTabs = [
+    { id: "invoicing",    label: "الفواتير"  },
+    { id: "expenses",     label: "المصاريف"  },
+    { id: "time",         label: "الوقت"     },
+    ...(isDebtRecovery ? [{ id: "payment-plan", label: "خطة الدفع" }] : []),
+  ];
+
+  return (
+    <div>
+      <SubTabBar tabs={subTabs} active={financeSubTab} onChange={v => setFinanceSubTab(v as FinanceSubTab)} />
+      {financeSubTab === "invoicing"     && renderInvoicing()}
+      {financeSubTab === "expenses"      && renderExpenses()}
+      {financeSubTab === "time"          && renderTime()}
+      {financeSubTab === "payment-plan"  && isDebtRecovery &&
+        (typeof renderPaymentPlan === "function" ? renderPaymentPlan() : null)
+      }
+    </div>
+  );
+}
+ÉTAPE 7 — Remplacer le dispatch des onglets (lignes 1152-1161)
+// AVANT (9 conditionnels)
+{activeTab === "overview"   && renderOverview()}
+{activeTab === "timeline"   && renderTimeline()}
+{activeTab === "hearings"   && renderHearings()}
+{activeTab === "judgment"   && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
+{activeTab === "documents"  && renderDocuments()}
+{activeTab === "invoicing"  && renderInvoicing()}
+{activeTab === "expenses"   && renderExpenses()}
+{activeTab === "time"       && renderTime()}
+{activeTab === "notes"      && renderNotes()}
+
+// APRÈS (5 conditionnels)
+{activeTab === "overview"   && renderOverview()}
+{activeTab === "sessions"   && renderSessions()}
+{activeTab === "documents"  && renderDocuments()}
+{activeTab === "finance"    && renderFinance()}
+{activeTab === "notes"      && renderNotes()}
+ÉTAPE 8 — Vérifier les imports dans CaseDetail.tsx
+S'assurer que cn est bien importé. Rechercher import { cn } — si absent, ajouter :
+
+import { cn } from "@/lib/utils";

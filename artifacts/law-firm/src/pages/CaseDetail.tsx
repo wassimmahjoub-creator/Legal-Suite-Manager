@@ -205,7 +205,7 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 // ─── Tab config ───────────────────────────────────────────────
-const TAB_IDS = ["overview","timeline","hearings","judgment","documents","invoicing","expenses","time","notes","versions","payment-plan","company-steps"] as const;
+const TAB_IDS = ["overview","sessions","documents","finance","notes"] as const;
 type TabId = typeof TAB_IDS[number];
 
 // ─── Types ────────────────────────────────────────────────────
@@ -261,11 +261,14 @@ export default function CaseDetail() {
 
   // URL tab sync
   const TAB_ALIASES: Record<string, TabId> = {
-    billing: "invoicing", facturation: "invoicing", invoices: "invoicing",
-    procedures: "timeline", lifecycle: "timeline",
-    audiences: "hearings", sessions: "hearings",
-    jugement: "judgment", verdict: "judgment",
-    docs: "documents", fichiers: "documents",
+    billing: "finance", facturation: "finance", invoices: "finance",
+    invoicing: "finance", expenses: "finance", time: "finance",
+    "payment-plan": "finance",
+    timeline: "sessions", procedures: "sessions", lifecycle: "sessions",
+    hearings: "sessions", audiences: "sessions",
+    judgment: "sessions", jugement: "sessions", verdict: "sessions",
+    "company-steps": "sessions",
+    docs: "documents", fichiers: "documents", versions: "documents",
   };
   const getTabFromURL = (): TabId => {
     const p = new URLSearchParams(window.location.search).get("tab") ?? "";
@@ -277,6 +280,12 @@ export default function CaseDetail() {
   const fromReports     = fromParam_ === "reports";
   const fromDashboard   = fromParam_ === "dashboard";
   const [activeTab, setActiveTab] = useState<TabId>(getTabFromURL);
+
+  type SessionsSubTab = "hearings" | "timeline" | "judgment";
+  const [sessionsSubTab, setSessionsSubTab] = useState<SessionsSubTab>("hearings");
+
+  type FinanceSubTab = "invoicing" | "expenses" | "time" | "payment-plan";
+  const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>("invoicing");
   const changeTab = useCallback((t: TabId) => {
     setActiveTab(t);
     const from = new URLSearchParams(window.location.search).get("from");
@@ -502,28 +511,67 @@ export default function CaseDetail() {
     return true;
   }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Tab definitions — conditionnels selon le type de dossier
-  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = [
-    { id: "overview",  label: "نظرة عامة",        icon: <BarChart2 className="h-4 w-4" /> },
-    { id: "timeline",  label: "التسلسل الزمني",   icon: <GitBranch className="h-4 w-4" /> },
-    ...(isContentious ? [
-      { id: "hearings" as TabId, label: "الجلسات والآجال", icon: <Clock className="h-4 w-4" />, badge: upcomingCount > 0 ? upcomingCount : 0 },
-      { id: "judgment" as TabId, label: "الحكم والتنفيذ",  icon: <Scale className="h-4 w-4" /> },
-    ] : []),
-    { id: "documents", label: "المؤيدات والوثائق", icon: <FolderOpen className="h-4 w-4" />, badge: activeDocs.length > 0 ? activeDocs.length : 0 },
-    { id: "invoicing", label: "الأتعاب والفواتير", icon: <Receipt className="h-4 w-4" />,    badge: hasOverdueInv ? 1 : 0 },
-    { id: "expenses",  label: "المصاريف",           icon: <DollarSign className="h-4 w-4" /> },
-    { id: "time",      label: "الوقت",              icon: <Timer className="h-4 w-4" /> },
-    { id: "notes",     label: "الملاحظات والسجل",  icon: <StickyNote className="h-4 w-4" />,
+  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeIcon?: React.ReactNode }> = [
+    { id: "overview",  label: "نظرة عامة",       icon: <BarChart2 className="h-4 w-4" /> },
+    { id: "sessions",  label: "الجلسات والمهام",  icon: <Clock className="h-4 w-4" />,
+      badge: upcomingCount > 0 ? upcomingCount : undefined },
+    { id: "documents", label: "الوثائق",           icon: <FolderOpen className="h-4 w-4" />,
+      badge: activeDocs.length > 0 ? activeDocs.length : undefined },
+    { id: "finance",   label: "المالية",            icon: <Receipt className="h-4 w-4" />,
+      badge: hasOverdueInv ? 1 : undefined },
+    { id: "notes",     label: "الملاحظات",         icon: <StickyNote className="h-4 w-4" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
-    ...(isContract     ? [{ id: "versions"      as TabId, label: "الإصدارات", icon: <Layers className="h-4 w-4" /> }] : []),
-    ...(isDebtRecovery ? [{ id: "payment-plan"  as TabId, label: "خطة الدفع", icon: <Banknote className="h-4 w-4" /> }] : []),
-    ...(isCompany      ? [{ id: "company-steps" as TabId, label: "الإجراءات", icon: <CheckCircle2 className="h-4 w-4" /> }] : []),
   ];
 
   // ─────────────────────────────────────────────────────────────
   // TAB CONTENT RENDERERS
   // ─────────────────────────────────────────────────────────────
+
+  function SubTabBar({ tabs: stabs, active, onChange }: { tabs: { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {
+    return (
+      <div className="flex gap-1 border-b border-border/50 mb-4 -mx-5 px-5" dir="rtl">
+        {stabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => onChange(t.id)}
+            className={cn(
+              "px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
+              active === t.id
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function renderSessions() {
+    if (isContentious) {
+      const subTabs = [
+        { id: "hearings",  label: "الجلسات والآجال"   },
+        { id: "timeline",  label: "التسلسل الإجرائي" },
+        { id: "judgment",  label: "الحكم والتنفيذ"    },
+      ];
+      return (
+        <div>
+          <SubTabBar tabs={subTabs} active={sessionsSubTab} onChange={v => setSessionsSubTab(v as SessionsSubTab)} />
+          {sessionsSubTab === "hearings"  && renderHearings()}
+          {sessionsSubTab === "timeline"  && renderTimeline()}
+          {sessionsSubTab === "judgment"  && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
+        </div>
+      );
+    }
+    if (isContract) {
+      return typeof renderContractVersions === "function" ? renderContractVersions() : renderTimeline();
+    }
+    if (isCompany) {
+      return typeof renderCompanySteps === "function" ? renderCompanySteps() : renderTimeline();
+    }
+    return renderTimeline();
+  }
 
   function renderOverview() {
     // ── ملخص الملف — contenu variable selon le type ───────────────────────
@@ -626,14 +674,14 @@ export default function CaseDetail() {
             <>
               {kpiCard("إجمالي الدين",  <TNDAmount amount={debtData.debtAmount} />,    "المبلغ الأصلي")}
               {kpiCard("المُستخلَص",    <TNDAmount amount={debtData.recoveredAmount} />, "تم استخلاصه", undefined, "text-green-400")}
-              {kpiCard("المتبقي",       <TNDAmount amount={Number(debtData.debtAmount) - Number(debtData.recoveredAmount)} />, "غير محصّل", () => changeTab("payment-plan"), "text-destructive")}
+              {kpiCard("المتبقي",       <TNDAmount amount={Number(debtData.debtAmount) - Number(debtData.recoveredAmount)} />, "غير محصّل", () => { changeTab("finance"); setFinanceSubTab("payment-plan"); }, "text-destructive")}
               {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
             </>
           ) : (
             <>
-              {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("invoicing"), totalDue > 0 ? "text-primary" : undefined)}
-              {kpiCard("ساعات العمل",    "—", "قيد التطوير", () => changeTab("time"))}
-              {kpiCard("الموعد القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("hearings") : undefined)}
+              {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("finance"), totalDue > 0 ? "text-primary" : undefined)}
+              {kpiCard("ساعات العمل",    "—", "قيد التطوير", () => changeTab("finance"))}
+              {kpiCard("الموعد القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("sessions") : undefined)}
               {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
             </>
           )}
@@ -1358,6 +1406,26 @@ export default function CaseDetail() {
     );
   }
 
+  function renderFinance() {
+    const subTabs = [
+      { id: "invoicing",   label: "الفواتير"  },
+      { id: "expenses",    label: "المصاريف"  },
+      { id: "time",        label: "الوقت"     },
+      ...(isDebtRecovery ? [{ id: "payment-plan", label: "خطة الدفع" }] : []),
+    ];
+    return (
+      <div>
+        <SubTabBar tabs={subTabs} active={financeSubTab} onChange={v => setFinanceSubTab(v as FinanceSubTab)} />
+        {financeSubTab === "invoicing"    && renderInvoicing()}
+        {financeSubTab === "expenses"     && renderExpenses()}
+        {financeSubTab === "time"         && renderTime()}
+        {financeSubTab === "payment-plan" && isDebtRecovery &&
+          (typeof renderPaymentPlan === "function" ? renderPaymentPlan() : null)
+        }
+      </div>
+    );
+  }
+
   function renderNotes() {
     return (
       <div className="space-y-4">
@@ -1527,7 +1595,7 @@ export default function CaseDetail() {
         <CaseStageStepper
           caseId={Number(id)}
           refreshKey={stageRefreshKey}
-          onStageClick={() => { changeTab("judgment"); }}
+          onStageClick={() => { changeTab("sessions"); setSessionsSubTab("judgment"); }}
         />
       )}
       {isContract && contractData && (
@@ -1559,7 +1627,7 @@ export default function CaseDetail() {
                 {tab.label}
                 {tab.badgeIcon}
                 {tab.badge != null && tab.badge > 0 && (
-                  <span className={`text-[10px] ${tab.badgeColor ?? "bg-primary text-white"} rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center`}>
+                  <span className="text-[10px] bg-primary text-white rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center">
                     {tab.badge}
                   </span>
                 )}
@@ -1569,18 +1637,11 @@ export default function CaseDetail() {
         </div>
 
         <div className="mt-4">
-          {activeTab === "overview"   && renderOverview()}
-          {activeTab === "timeline"   && renderTimeline()}
-          {activeTab === "hearings"   && renderHearings()}
-          {activeTab === "judgment"   && <CaseJudgmentTab caseId={Number(id)} onStagesChanged={() => setStageRefreshKey(k => k + 1)} />}
-          {activeTab === "documents"  && renderDocuments()}
-          {activeTab === "invoicing"  && renderInvoicing()}
-          {activeTab === "expenses"   && renderExpenses()}
-          {activeTab === "time"       && renderTime()}
-          {activeTab === "notes"         && renderNotes()}
-          {activeTab === "versions"      && renderContractVersions()}
-          {activeTab === "payment-plan"  && renderPaymentPlan()}
-          {activeTab === "company-steps" && renderCompanySteps()}
+          {activeTab === "overview"  && renderOverview()}
+          {activeTab === "sessions"  && renderSessions()}
+          {activeTab === "documents" && renderDocuments()}
+          {activeTab === "finance"   && renderFinance()}
+          {activeTab === "notes"     && renderNotes()}
         </div>
       </div>
 
