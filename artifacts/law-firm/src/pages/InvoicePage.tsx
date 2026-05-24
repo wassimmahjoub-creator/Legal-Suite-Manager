@@ -13,8 +13,7 @@ import {
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { InvoicePdfButton } from "@/components/InvoicePdf";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
-import { Money } from "@/components/Money";
-import { formatAmount } from "@/lib/currency";
+import { Money, TNDAmount } from "@/components/Money";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -241,9 +240,9 @@ export default function InvoicePage() {
                     <th className="border border-border px-3 py-2 text-right w-24">الوحدة</th>
                     <th className="border border-border px-3 py-2 text-right w-20">الكمية</th>
                     <th className="border border-border px-3 py-2 text-right w-28">سعر الوحدة خ.ض</th>
-                    <th className="border border-border px-3 py-2 text-right w-20">TVA %</th>
+                    <th className="border border-border px-3 py-2 text-right w-20">ض.ق.م %</th>
                     <th className="border border-border px-3 py-2 text-right w-28">الإجمالي خ.ض</th>
-                    <th className="border border-border px-3 py-2 text-right w-24">TVA</th>
+                    <th className="border border-border px-3 py-2 text-right w-24">ض.ق.م</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -252,10 +251,10 @@ export default function InvoicePage() {
                       <td className="border border-border px-3 py-2">{l.description}</td>
                       <td className="border border-border px-3 py-2 text-muted-foreground text-xs">{l.unit}</td>
                       <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.quantity.toFixed(3)}</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.unitPriceHt)}</td>
+                      <td className="border border-border px-3 py-2 font-mono text-right"><TNDAmount amount={l.unitPriceHt} /></td>
                       <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{l.vatRate}%</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono font-semibold" dir="ltr">{formatAmount(l.lineTotalHt)}</td>
-                      <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.lineVat)}</td>
+                      <td className="border border-border px-3 py-2 font-mono font-semibold text-right"><TNDAmount amount={l.lineTotalHt} /></td>
+                      <td className="border border-border px-3 py-2 font-mono text-right"><TNDAmount amount={l.lineVat} /></td>
                     </tr>
                   ))}
                   {inv.lines.length === 0 && (
@@ -287,7 +286,7 @@ export default function InvoicePage() {
             <CardHeader className="pb-3"><CardTitle className="text-base">الملخص المالي</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               <Row label="المجموع خ.ض" amount={inv.subtotalHt} />
-              <Row label="TVA" amount={inv.vatTotal} />
+              <Row label="ض.ق.م" amount={inv.vatTotal} />
               <Row label="الطابع الجبائي" amount={inv.stampDuty} />
               <div className="border-t border-border pt-2">
                 <Row label="المجموع ش.ض" amount={inv.totalTtc} bold />

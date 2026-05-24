@@ -1,0 +1,175 @@
+git checkout -b fix/audit-visual
+
+══════════════════════════════════════════════════════
+POINT B6 — Format devise : généraliser <TNDAmount>
+══════════════════════════════════════════════════════
+
+── Fichier 1 : artifacts/law-firm/src/pages/BankAccounts.tsx ──────────────────
+
+Ajoute l'import TNDAmount (il n'existe pas encore dans ce fichier).
+Trouve la ligne qui importe depuis "@/lib/currency" ou ajoute juste après
+les imports existants :
+  import { TNDAmount } from "@/components/Money";
+
+Remplace :
+  <p className="text-xl font-bold text-primary" dir="ltr">{formatAmount(a.balance)} <span className="text-sm text-muted-foreground">{a.currency}</span></p>
+
+Par :
+  <p className="text-xl font-bold text-primary"><TNDAmount amount={Number(a.balance)} /></p>
+
+(Supprime aussi l'import formatAmount de ce fichier s'il n'est plus utilisé ailleurs.)
+
+── Fichier 2 : artifacts/law-firm/src/pages/Billing.tsx ───────────────────────
+
+TNDAmount est déjà importé. Remplace les deux occurrences de formatAmount :
+
+OCCURRENCE 1 — ligne ~160 :
+AVANT :  {inv.withholdingTax > 0 ? formatAmount(inv.withholdingTax) : "—"}
+APRÈS :  {inv.withholdingTax > 0 ? <TNDAmount amount={inv.withholdingTax} /> : "—"}
+
+OCCURRENCE 2 — ligne ~167 :
+AVANT :  {formatAmount(inv.balanceDue)}
+APRÈS :  <TNDAmount amount={inv.balanceDue} />
+
+(Supprime l'import formatAmount si plus utilisé dans ce fichier.)
+
+── Fichier 3 : artifacts/law-firm/src/pages/InvoiceForm.tsx ───────────────────
+
+Ajoute l'import :
+  import { TNDAmount } from "@/components/Money";
+
+Remplace :
+  {formatAmount(computed.lineTotalHt)}
+Par :
+  <TNDAmount amount={computed.lineTotalHt} />
+
+── Fichier 4 : artifacts/law-firm/src/pages/InvoicePage.tsx ───────────────────
+
+Ajoute l'import :
+  import { TNDAmount } from "@/components/Money";
+
+Remplace les 3 occurrences dans le tableau des lignes de facture :
+
+AVANT :
+  <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.unitPriceHt)}</td>
+APRÈS :
+  <td className="border border-border px-3 py-2 font-mono text-right"><TNDAmount amount={l.unitPriceHt} /></td>
+
+AVANT :
+  <td className="border border-border px-3 py-2 text-left font-mono font-semibold" dir="ltr">{formatAmount(l.lineTotalHt)}</td>
+APRÈS :
+  <td className="border border-border px-3 py-2 font-mono font-semibold text-right"><TNDAmount amount={l.lineTotalHt} /></td>
+
+AVANT :
+  <td className="border border-border px-3 py-2 text-left font-mono" dir="ltr">{formatAmount(l.lineVat)}</td>
+APRÈS :
+  <td className="border border-border px-3 py-2 font-mono text-right"><TNDAmount amount={l.lineVat} /></td>
+
+(Supprime l'import formatAmount si plus utilisé.)
+
+── Fichier 5 : artifacts/law-firm/src/pages/Reports.tsx ───────────────────────
+
+TNDAmount est déjà importé. Remplace :
+
+AVANT :
+  <span className="text-[10px] text-primary font-medium">{m.income > 0 ? formatAmount(m.income) : ""}</span>
+APRÈS :
+  {m.income > 0 && <span className="text-[10px] text-primary font-medium"><TNDAmount amount={m.income} /></span>}
+
+══════════════════════════════════════════════════════
+POINT M3 — Textes en français / anglais → arabe
+══════════════════════════════════════════════════════
+
+── Fichier 6 : artifacts/law-firm/src/components/InvoicePdf.tsx ───────────────
+
+AVANT (ligne ~234, bouton téléchargement) :
+  {({ loading }) => (loading ? "Génération PDF..." : "Télécharger PDF")}
+APRÈS :
+  {({ loading }) => (loading ? "جاري إنشاء PDF..." : "تحميل PDF")}
+
+── Fichier 7 : artifacts/law-firm/src/pages/InvoicePage.tsx ───────────────────
+
+(Dans le tableau des lignes de facture, en-têtes)
+
+AVANT :
+  <th className="border border-border px-3 py-2 text-right w-20">TVA %</th>
+APRÈS :
+  <th className="border border-border px-3 py-2 text-right w-20">ض.ق.م %</th>
+
+AVANT :
+  <th className="border border-border px-3 py-2 text-right w-24">TVA</th>
+APRÈS :
+  <th className="border border-border px-3 py-2 text-right w-24">ض.ق.م</th>
+
+── Fichier 8 : artifacts/law-firm/src/pages/ClientPage.tsx ────────────────────
+
+CHANGEMENT 1 — Label du champ TVA :
+AVANT :  <FormField label="نسبة الضريبة (TVA)" htmlFor="inv-vat">
+APRÈS :  <FormField label="نسبة الضريبة (ض.ق.م)" htmlFor="inv-vat">
+
+CHANGEMENT 2 — Ligne de récapitulatif TVA :
+AVANT :  <span>TVA {vat}%</span><TNDAmount amount={vatAmt} />
+APRÈS :  <span>ض.ق.م {vat}%</span><TNDAmount amount={vatAmt} />
+
+CHANGEMENT 3 — Unité "forfait" :
+AVANT :  unit: "forfait",
+APRÈS :  unit: "جزافي",
+
+══════════════════════════════════════════════════════
+POINT M9 — Supprimer "قيد التطوير" du KPI
+══════════════════════════════════════════════════════
+
+── Fichier 9 : artifacts/law-firm/src/pages/CaseDetail.tsx ────────────────────
+
+AVANT (ligne ~387) :
+  {kpiCard("ساعات العمل", "—", "قيد التطوير", () => changeTab("time"))}
+APRÈS :
+  {kpiCard("ساعات العمل", "—", undefined, () => changeTab("time"))}
+
+══════════════════════════════════════════════════════
+POINT M11 — Données de test (action manuelle requise)
+══════════════════════════════════════════════════════
+
+⚠️ "Test Timeline Hooks", "قضية 1" et l'alerte fictive sont des enregistrements
+dans la base de données, pas du code. Aucune modification de code nécessaire.
+
+Action à faire manuellement depuis l'interface de l'application :
+1. Va dans القضايا → trouve les dossiers intitulés "Test Timeline Hooks" et "قضية 1"
+   → clique Supprimer (ils iront en سلة المحذوفات, puis supprimer définitivement)
+2. L'alerte fictive disparaîtra automatiquement une fois les données de test supprimées
+   (les alertes sont générées dynamiquement depuis les deadlines/factures)
+
+══════════════════════════════════════════════════════
+COMMIT ET PUSH
+══════════════════════════════════════════════════════
+
+git add \
+  artifacts/law-firm/src/pages/BankAccounts.tsx \
+  artifacts/law-firm/src/pages/Billing.tsx \
+  artifacts/law-firm/src/pages/InvoiceForm.tsx \
+  artifacts/law-firm/src/pages/InvoicePage.tsx \
+  artifacts/law-firm/src/pages/Reports.tsx \
+  artifacts/law-firm/src/components/InvoicePdf.tsx \
+  artifacts/law-firm/src/pages/ClientPage.tsx \
+  artifacts/law-firm/src/pages/CaseDetail.tsx
+
+git commit -m "fix: corrections audit visuel — devise TNDAmount, textes FR/EN, قيد التطوير
+
+- B6: BankAccounts, Billing, InvoiceForm, InvoicePage, Reports migrent
+  vers <TNDAmount> pour un format devise uniforme (1.250,000 د.ت)
+- M3: bouton PDF arabisé, TVA → ض.ق.م dans labels et en-têtes,
+  forfait → جزافي
+- M9: suppression du sous-titre قيد التطوير du KPI ساعات العمل"
+
+git push origin fix/audit-visual
+
+══════════════════════════════════════════════════════
+COMMENT TESTER (30 secondes)
+══════════════════════════════════════════════════════
+1. Fiche client → Factures → les montants affichent "1.250,000 د.ت"
+2. Page facture détail → colonne "ض.ق.م %" visible dans le tableau
+3. Client → créer une facture → label "نسبة الضريبة (ض.ق.م)" + ligne récap "ض.ق.م x%"
+4. Client → créer facture → unité par défaut : "جزافي"
+5. Facture → bouton de téléchargement : "تحميل PDF" (pas "Télécharger PDF")
+6. Détail dossier → onglet نظرة عامة → KPI "ساعات العمل" sans sous-titre
+7. Comptes bancaires → solde affiché au format "x.xxx,xxx د.ت"

@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { authFetch } from "@/lib/authFetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Money } from "@/components/Money";
-import { formatAmount } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
@@ -88,7 +87,7 @@ export default function BankAccounts() {
                   <p className="text-xl font-bold text-primary">
                     {a.currency === "TND"
                       ? <Money amount={a.balance} />
-                      : <span style={{ direction: "ltr", unicodeBidi: "isolate", display: "inline-flex", gap: "0.25em" } as React.CSSProperties}><span className="text-sm text-muted-foreground">{a.currency}</span><span>{formatAmount(a.balance)}</span></span>}
+                      : <span style={{ direction: "ltr", unicodeBidi: "isolate", display: "inline-flex", gap: "0.25em" } as React.CSSProperties}><span className="text-sm text-muted-foreground">{a.currency}</span><span>{Number(a.balance).toLocaleString("fr-TN", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span></span>}
                   </p>
                 </div>
               </CardContent>

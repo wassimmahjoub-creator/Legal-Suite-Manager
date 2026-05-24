@@ -680,7 +680,7 @@ export default function CaseDetail() {
           ) : (
             <>
               {kpiCard("الرصيد المستحق", totalDue > 0 ? <TNDAmount amount={totalDue} /> : "—", totalDue > 0 ? "مستحق" : "لا توجد ديون", () => changeTab("finance"), totalDue > 0 ? "text-primary" : undefined)}
-              {kpiCard("ساعات العمل",    "—", "قيد التطوير", () => changeTab("finance"))}
+              {kpiCard("ساعات العمل",    "—", undefined, () => changeTab("finance"))}
               {kpiCard("الموعد القادم",  nextDeadline ? formatDateTN(nextDeadline.dueDate) : "—", nextDeadline ? nextDeadline.title : "لا توجد آجال", nextDeadline ? () => changeTab("sessions") : undefined)}
               {kpiCard("عدد الوثائق",   activeDocs.length, "وثيقة مرفوعة", () => changeTab("documents"))}
             </>

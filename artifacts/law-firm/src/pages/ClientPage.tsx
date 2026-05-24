@@ -1007,7 +1007,7 @@ export default function ClientPage() {
                 onChange={e => setInvForm(f => ({ ...f, unitPriceHt: e.target.value }))}
                 className={inputCls} />
             </FormField>
-            <FormField label="نسبة الضريبة (TVA)" htmlFor="inv-vat">
+            <FormField label="نسبة الضريبة (ض.ق.م)" htmlFor="inv-vat">
               <SelectNative id="inv-vat" value={invForm.vatRate}
                 onChange={e => setInvForm(f => ({ ...f, vatRate: e.target.value }))}
                 className={inputCls + " px-3 cursor-pointer"}>
@@ -1035,7 +1035,7 @@ export default function ClientPage() {
                 </div>
                 {vatAmt > 0 && (
                   <div className="flex justify-between text-muted-foreground">
-                    <span>TVA {vat}%</span><TNDAmount amount={vatAmt} />
+                    <span>ض.ق.م {vat}%</span><TNDAmount amount={vatAmt} />
                   </div>
                 )}
                 {whAmt > 0 && (
@@ -1073,7 +1073,7 @@ export default function ClientPage() {
                     dueDate: invForm.dueDate || null,
                     lines: [{
                       description: invForm.description.trim(),
-                      unit: "forfait",
+                      unit: "جزافي",
                       quantity: 1,
                       unitPriceHt: parseFloat(invForm.unitPriceHt) || 0,
                       vatRate: parseFloat(invForm.vatRate) || 19,

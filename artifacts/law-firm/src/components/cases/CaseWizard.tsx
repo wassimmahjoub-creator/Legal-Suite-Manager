@@ -327,6 +327,15 @@ function Step1({ form, upd, clients, onAddClient, stepErrors }: { form: WizardFo
             ))}
           </optgroup>
         </SelectNative>
+        {(() => {
+          const steps = getSteps(form.serviceType);
+          const nextLabel = steps[1]?.label;
+          return nextLabel ? (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              الخطوة التالية: <span className="font-medium text-foreground">{nextLabel}</span>
+            </p>
+          ) : null;
+        })()}
       </div>
 
       <div>
