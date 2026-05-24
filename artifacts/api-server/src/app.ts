@@ -12,6 +12,7 @@ import { generalApiLimiter, sanitizeBody } from "./middleware/security.js";
 import { requestId } from "./middleware/requestId.js";
 
 const app: Express = express();
+app.set("etag", false); // Disable ETags — prevents stale 304s for dynamic API data
 
 app.use(
   pinoHttp({
