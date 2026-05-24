@@ -23,8 +23,53 @@
         });
       })();
     </script>
+    <!-- Global JS error catcher — surfaces fatal errors before React mounts -->
+    <script>
+      window.__jsErrors = [];
+      window.addEventListener('error', function(e) {
+        window.__jsErrors.push(e.message || String(e));
+        var el = document.getElementById('js-error-display');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'js-error-display';
+          el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fee2e2;color:#7f1d1d;padding:1rem;font-family:monospace;font-size:0.8rem;direction:ltr;white-space:pre-wrap;border-bottom:2px solid #ef4444';
+          document.body && document.body.appendChild(el);
+        }
+        el.textContent = '[JS Error] ' + (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled promise rejection';
+        window.__jsErrors.push(msg);
+        var el = document.getElementById('js-error-display');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'js-error-display';
+          el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fee2e2;color:#7f1d1d;padding:1rem;font-family:monospace;font-size:0.8rem;direction:ltr;white-space:pre-wrap;border-bottom:2px solid #ef4444';
+          document.body && document.body.appendChild(el);
+        }
+        el.textContent = '[Unhandled Rejection] ' + msg;
+      });
+    </script>
+    <style>
+      #pre-react-loader {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: hsl(60, 14%, 97%); z-index: 9000;
+      }
+      .dark #pre-react-loader { background: hsl(222, 43%, 7%); }
+      #pre-react-loader .spinner {
+        width: 40px; height: 40px; border-radius: 50%;
+        border: 4px solid #1a3a5c; border-top-color: transparent;
+        animation: spin 0.8s linear infinite;
+      }
+      .dark #pre-react-loader .spinner { border-color: #5b9bd5; border-top-color: transparent; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
+    <!-- Visible before React mounts — removed by main.tsx once React starts -->
+    <div id="pre-react-loader" aria-hidden="true">
+      <div class="spinner"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -13,6 +13,9 @@ import { requestId } from "./middleware/requestId.js";
 
 const app: Express = express();
 app.set("etag", false); // Disable ETags — prevents stale 304s for dynamic API data
+// Trust Replit's load-balancer proxy so X-Forwarded-For is handled correctly
+// (required for express-rate-limit and accurate IP detection in production)
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -35,11 +38,15 @@ app.use(
 );
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (curl, server-to-server)
     if (!origin) return callback(null, true);
-    const isDev = process.env["NODE_ENV"] === "development";
-    if (isDev) return callback(null, true);
-    const allowed = (process.env["FRONTEND_URL"] ?? "").split(",").map((u) => u.trim()).filter(Boolean);
-    if (allowed.includes(origin)) return callback(null, true);
+    // Always allow in development
+    if (process.env["NODE_ENV"] === "development") return callback(null, true);
+    // Allow any *.replit.app or *.replit.dev domain (Replit deployments)
+    if (/\.replit\.(app|dev)$/.test(origin)) return callback(null, true);
+    // Allow explicitly configured origins
+    const extra = (process.env["FRONTEND_URL"] ?? "").split(",").map((u) => u.trim()).filter(Boolean);
+    if (extra.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
