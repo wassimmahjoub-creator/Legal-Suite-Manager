@@ -29,6 +29,7 @@ const caseFields = {
   description: casesTable.description,
   notes: casesTable.notes,
   procedureStage: casesTable.procedureStage,
+  serviceType: casesTable.serviceType,
   // Wizard fields
   caseType: casesTable.caseType,
   litigationDegree: casesTable.litigationDegree,
