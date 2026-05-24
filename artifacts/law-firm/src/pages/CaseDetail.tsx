@@ -366,23 +366,29 @@ export default function CaseDetail() {
     return true;
   }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Tab definitions
-  const tabs: Array<{ id: TabId; label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = [
-    { id: "overview",   label: "نظرة عامة",          icon: <BarChart2 className="h-4 w-4" /> },
-    { id: "timeline",   label: "التسلسل الإجرائي",   icon: <GitBranch className="h-4 w-4" /> },
-    { id: "hearings",   label: "الجلسات والآجال",     icon: <Clock className="h-4 w-4" />,
-      badge: upcomingCount > 0 ? upcomingCount : 0 },
-    { id: "judgment",   label: "الحكم والتنفيذ",      icon: <Scale className="h-4 w-4" /> },
-    { id: "documents",  label: "المؤيدات والوثائق",   icon: <FolderOpen className="h-4 w-4" />,
-      badge: activeDocs.length > 0 ? activeDocs.length : 0 },
-    { id: "invoicing",  label: "الأتعاب والفواتير",   icon: <Receipt className="h-4 w-4" />,
-      badge: hasOverdueInv ? 1 : 0 },
-    { id: "expenses",   label: "المصاريف",             icon: <DollarSign className="h-4 w-4" /> },
-    { id: "time",       label: "الوقت",                icon: <Timer className="h-4 w-4" /> },
-    { id: "tasks",      label: "المهام",               icon: <CheckCircle2 className="h-4 w-4" />,
-      badge: caseTasks.filter(t => !t.done).length > 0 ? caseTasks.filter(t => !t.done).length : 0 },
-    { id: "notes",      label: "الملاحظات والسجل",    icon: <StickyNote className="h-4 w-4" />,
+  // ── Sub-tab metadata (labels / icons / badges) ─────────────
+  const pendingTasksCount = caseTasks.filter(t => !t.done).length;
+  const subTabMeta: Record<TabId, { label: string; icon: React.ReactNode; badge?: number; badgeColor?: string; badgeIcon?: React.ReactNode }> = {
+    overview:  { label: "نظرة عامة",          icon: <BarChart2    className="h-3.5 w-3.5" /> },
+    timeline:  { label: "التسلسل الإجرائي",   icon: <GitBranch   className="h-3.5 w-3.5" /> },
+    hearings:  { label: "الجلسات والآجال",     icon: <Clock       className="h-3.5 w-3.5" />, badge: upcomingCount },
+    judgment:  { label: "الحكم والتنفيذ",      icon: <Scale       className="h-3.5 w-3.5" /> },
+    documents: { label: "الوثائق",             icon: <FolderOpen  className="h-3.5 w-3.5" />, badge: activeDocs.length },
+    invoicing: { label: "الأتعاب والفواتير",   icon: <Receipt     className="h-3.5 w-3.5" />, badge: hasOverdueInv ? 1 : 0 },
+    expenses:  { label: "المصاريف",             icon: <DollarSign  className="h-3.5 w-3.5" /> },
+    time:      { label: "الوقت",                icon: <Timer       className="h-3.5 w-3.5" /> },
+    tasks:     { label: "المهام",               icon: <CheckCircle2 className="h-3.5 w-3.5" />, badge: pendingTasksCount },
+    notes:     { label: "الملاحظات والسجل",    icon: <StickyNote  className="h-3.5 w-3.5" />,
       badgeIcon: c.confidentialityLevel && c.confidentialityLevel !== "عادي" ? <Lock className="h-3 w-3 text-primary" /> : undefined },
+  };
+
+  // ── Main-tab groups (5 tabs) ─────────────────────────────────
+  const mainTabsDef = [
+    { id: "overview",   label: "نظرة عامة",  icon: <BarChart2   className="h-4 w-4" />, members: ["overview"]                             as TabId[], badge: undefined as number | undefined },
+    { id: "procedures", label: "الإجراءات",  icon: <GitBranch   className="h-4 w-4" />, members: ["timeline","hearings","judgment"]        as TabId[], badge: upcomingCount > 0 ? upcomingCount : undefined },
+    { id: "documents",  label: "الوثائق",    icon: <FolderOpen  className="h-4 w-4" />, members: ["documents"]                            as TabId[], badge: activeDocs.length > 0 ? activeDocs.length : undefined },
+    { id: "finances",   label: "المالية",    icon: <Receipt     className="h-4 w-4" />, members: ["invoicing","expenses","time"]           as TabId[], badge: hasOverdueInv ? 1 : undefined },
+    { id: "notes",      label: "الملاحظات", icon: <StickyNote  className="h-4 w-4" />, members: ["tasks","notes"]                        as TabId[], badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
   ];
 
   // ─────────────────────────────────────────────────────────────
@@ -1212,10 +1218,10 @@ export default function CaseDetail() {
         {/* Confirm delete task */}
         <ConfirmDestructive
           open={confirmTaskId !== null}
+          onClose={() => setConfirmTaskId(null)}
           title="حذف المهمة"
           description="هل أنت متأكد من حذف هذه المهمة؟ لا يمكن التراجع."
-          onConfirm={() => confirmTaskId && deleteTask(confirmTaskId)}
-          onCancel={() => setConfirmTaskId(null)}
+          onConfirm={async () => { if (confirmTaskId) await deleteTask(confirmTaskId); }}
         />
       </div>
     );
@@ -1286,30 +1292,68 @@ export default function CaseDetail() {
         }}
       />
 
-      {/* Tabs */}
+      {/* ── Tabs (5 principaux + sous-onglets dynamiques) ── */}
       <div>
+        {/* Barre principale : 5 onglets */}
         <div className="border-b border-border">
-          <div className="flex gap-0.5 overflow-x-auto no-scrollbar">
-            {tabs.map(tab => (
-              <button key={tab.id} onClick={() => changeTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                )}>
-                {tab.icon}
-                {tab.label}
-                {tab.badgeIcon}
-                {tab.badge != null && tab.badge > 0 && (
-                  <span className={`text-[10px] ${tab.badgeColor ?? "bg-primary text-white"} rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="flex gap-0 overflow-x-auto no-scrollbar">
+            {mainTabsDef.map(mt => {
+              const isActive = mt.members.includes(activeTab);
+              return (
+                <button key={mt.id}
+                  onClick={() => { if (!isActive) changeTab(mt.members[0]); }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0",
+                    isActive
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  )}>
+                  {mt.icon}
+                  {mt.label}
+                  {mt.badge != null && (
+                    <span className="text-[10px] bg-primary text-white rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center">
+                      {mt.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* Sous-onglets — visibles uniquement pour les groupes multi-membres */}
+        {(() => {
+          const group = mainTabsDef.find(mt => mt.members.includes(activeTab));
+          if (!group || group.members.length <= 1) return null;
+          return (
+            <div className="border-b border-border/40 bg-muted/20">
+              <div className="flex gap-0 overflow-x-auto no-scrollbar px-2">
+                {group.members.map(subId => {
+                  const meta = subTabMeta[subId];
+                  return (
+                    <button key={subId}
+                      onClick={() => changeTab(subId)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
+                        activeTab === subId
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      )}>
+                      {meta.icon}
+                      {meta.label}
+                      {meta.badgeIcon}
+                      {meta.badge != null && meta.badge > 0 && (
+                        <span className={`text-[10px] ${meta.badgeColor ?? "bg-primary text-white"} rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center`}>
+                          {meta.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="mt-4">
           {activeTab === "overview"   && renderOverview()}
