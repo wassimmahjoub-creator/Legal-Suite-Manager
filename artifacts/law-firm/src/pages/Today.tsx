@@ -25,9 +25,9 @@ export default function Today() {
   const queryClient = useQueryClient();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
 
-  const { data: today, isLoading: loadingToday } = useGetDashboardToday();
-  const { data: alerts, isLoading: loadingAlerts } = useGetDashboardAlerts();
-  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
+  const { data: today, isLoading: loadingToday } = useGetDashboardToday({ query: { staleTime: 0 } });
+  const { data: alerts, isLoading: loadingAlerts } = useGetDashboardAlerts({ query: { staleTime: 0 } });
+  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({ query: { staleTime: 0 } });
   const updateTask = useUpdateTask();
 
   function toggleTask(taskId: number, currentDone: boolean) {

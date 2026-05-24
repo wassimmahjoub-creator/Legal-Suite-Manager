@@ -59,9 +59,9 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
-  const { data: today,   isLoading: loadingToday   } = useGetDashboardToday();
-  const { data: alerts,  isLoading: loadingAlerts  } = useGetDashboardAlerts();
+  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({ query: { staleTime: 0 } });
+  const { data: today,   isLoading: loadingToday   } = useGetDashboardToday({ query: { staleTime: 0 } });
+  const { data: alerts,  isLoading: loadingAlerts  } = useGetDashboardAlerts({ query: { staleTime: 0 } });
   const [, navigate]  = useLocation();
   const queryClient   = useQueryClient();
   const updateTask    = useUpdateTask();
