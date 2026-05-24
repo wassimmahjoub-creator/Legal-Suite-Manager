@@ -25,6 +25,26 @@ const CASE_TYPES = [
   { value: "family", label: "أحوال شخصية" },
 ];
 
+const SERVICE_TYPES = [
+  { value: "lawsuit",            label: "دعوى قضائية" },
+  { value: "consultation",       label: "استشارة قانونية" },
+  { value: "contract",           label: "عقد" },
+  { value: "company_creation",   label: "تأسيس شركة" },
+  { value: "debt_recovery",      label: "استخلاص ديون" },
+  { value: "legal_notice",       label: "إعذار قانوني" },
+  { value: "judgment_execution", label: "تنفيذ حكم" },
+  { value: "real_estate_file",   label: "ملف عقاري" },
+  { value: "labor_file",         label: "ملف شغلي" },
+  { value: "tax_file",           label: "ملف جبائي" },
+  { value: "administrative",     label: "إداري" },
+  { value: "mediation",          label: "وساطة" },
+  { value: "other",              label: "آخر" },
+];
+
+const LITIGATION_SERVICE_TYPES = new Set([
+  "lawsuit", "judgment_execution", "real_estate_file", "labor_file", "tax_file",
+]);
+
 const LITIGATION_DEGREES = [
   { value: "first_instance", label: "ابتدائي" },
   { value: "appeal", label: "استئناف" },
@@ -92,6 +112,7 @@ interface OpponentBlock {
 interface WizardForm {
   title: string;
   clientId: string;
+  serviceType: string;
   caseType: string;
   openedAt: string;
   clientSource: string;
@@ -128,7 +149,7 @@ const mkOpp = (): OpponentBlock => ({
 });
 
 const defaultForm = (): WizardForm => ({
-  title: "", clientId: "", caseType: "",
+  title: "", clientId: "", serviceType: "lawsuit", caseType: "",
   openedAt: new Date().toISOString().slice(0, 10),
   clientSource: "", casePriority: "normal",
   description: "", clientFileRef: "",
@@ -147,7 +168,10 @@ const defaultForm = (): WizardForm => ({
 function isStepValid(step: number, f: WizardForm, editMode = false) {
   if (step === 1) return f.title.trim() !== "" && f.clientId !== "";
   if (editMode) return true; // steps 2-4 are optional when editing
-  if (step === 2) return f.litigationDegree !== "" && f.procedureType !== "";
+  if (step === 2) {
+    if (!LITIGATION_SERVICE_TYPES.has(f.serviceType)) return true;
+    return f.litigationDegree !== "" && f.procedureType !== "";
+  }
   if (step === 3) return f.opponents.some(o => o.name.trim() !== "") && f.responsibleUserId !== "";
   if (step === 4) {
     if (!f.feeMethod || !f.confidentialityLevel) return false;
@@ -198,6 +222,13 @@ function RadioGroup({ options, value, onChange }: {
 function Step1({ form, upd, clients, onAddClient }: { form: WizardForm; upd: (u: Partial<WizardForm>) => void; clients: Client[]; onAddClient: () => void }) {
   return (
     <div className="space-y-4">
+      <div>
+        <Label>طبيعة الملف <Req /></Label>
+        <SelectNative value={form.serviceType} onChange={e => upd({ serviceType: e.target.value })} className={cls + " px-3"}>
+          {SERVICE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </SelectNative>
+      </div>
+
       <div>
         <Label>عنوان الملف <Req /></Label>
         <Input placeholder="مثال: قضية ميراث عائلة بن علي" className={cls}
@@ -622,6 +653,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
         description: form.description || null,
         clientFileRef: form.clientFileRef || null,
         courtCaseNumber: form.courtCaseNumber || null,
+        serviceType: form.serviceType || "lawsuit",
         caseType: form.caseType || null,
         litigationDegree: form.litigationDegree || null,
         procedureType: form.procedureType || null,
@@ -857,7 +889,7 @@ export function CaseWizard({ open, onClose, onCreated, caseId, initialData }: Ca
               ? <Button onClick={() => {
                   const schemas: Record<number, z.ZodTypeAny> = {
                     1: Step1Schema,
-                    2: editMode ? z.object({}) : Step2Schema,
+                    2: (editMode || !LITIGATION_SERVICE_TYPES.has(form.serviceType)) ? z.object({}) : Step2Schema,
                     3: editMode ? z.object({}) : Step3Schema,
                   };
                   const schema = schemas[step];
