@@ -12,9 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
-  Briefcase, Clock, AlertTriangle, CheckCircle2, Calendar,
+  Briefcase, Clock, AlertTriangle, CheckCircle2,
   TrendingUp, Scale, Users, ArrowLeft, Circle, CalendarClock,
-  Plus, FileText, Receipt, MessageSquare, Activity, Timer,
+  Plus, FileText, Receipt, MessageSquare, Timer,
   ChevronLeft,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,11 +33,6 @@ type Deadline = {
   title: string; type: string; dueDate: string;
   urgency: string; completedAt: string | null;
 };
-type AuditEntry = {
-  id: number; entityType: string; entityId: number | null;
-  action: string; userName: string | null; createdAt: string;
-  newValue?: string | null;
-};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function daysLeft(dueDate: string): number {
@@ -54,16 +49,6 @@ function deadlineBadge(days: number) {
   return              { label: `${days} يوم`,     cls: "bg-muted text-muted-foreground border-border" };
 }
 
-const ACTION_AR: Record<string, string> = {
-  create: "إضافة", update: "تعديل", delete: "حذف", restore: "استرجاع",
-  archive: "أرشفة", complete: "إنجاز",
-};
-const ENTITY_AR: Record<string, string> = {
-  case: "ملف", client: "موكّل", invoice: "فاتورة", document: "وثيقة",
-  event: "جلسة", task: "مهمة", deadline: "أجل قانوني",
-  communication: "اتصال", correspondance: "مراسلة",
-  consultation: "استشارة", opponent: "خصم",
-};
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   active:    { label: "نشطة",   color: "text-success bg-success/10"        },
@@ -84,7 +69,6 @@ export default function Dashboard() {
   const [togglingIds,  setTogglingIds]  = useState<Set<number>>(new Set());
   const [recentCases,  setRecentCases]  = useState<RecentCase[]>([]);
   const [deadlines,    setDeadlines]    = useState<Deadline[]>([]);
-  const [auditLogs,    setAuditLogs]    = useState<AuditEntry[]>([]);
   const [loadingExtra, setLoadingExtra] = useState(true);
 
   const pendingTasks = today?.tasks?.filter(t => !t.done) ?? [];
@@ -93,9 +77,8 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       authFetch(`${BASE}/api/deadlines`).then(r => r.ok ? r.json() : []),
-      authFetch(`${BASE}/api/audit-logs`).then(r => r.ok ? r.json() : []),
       authFetch(`${BASE}/api/cases`).then(r => r.ok ? r.json() : []),
-    ]).then(([dl, al, cs]) => {
+    ]).then(([dl, cs]) => {
       const now = new Date(); now.setHours(0,0,0,0);
       const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() + 30);
       setDeadlines(
@@ -104,7 +87,6 @@ export default function Dashboard() {
           .sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
           .slice(0, 6)
       );
-      setAuditLogs((Array.isArray(al) ? al as AuditEntry[] : []).slice(0, 8));
       setRecentCases((Array.isArray(cs) ? cs as RecentCase[] : []).slice(0, 5));
     }).catch(() => {}).finally(() => setLoadingExtra(false));
   }, []);
@@ -400,55 +382,6 @@ export default function Dashboard() {
                     <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   </div>
                 ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ══ 5. RECENT ACTIVITY ═══════════════════════════════════════════════ */}
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-          آخر النشاطات
-        </h2>
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-0">
-            {loadingExtra ? (
-              <div className="p-4 space-y-2">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-              </div>
-            ) : auditLogs.length === 0 ? (
-              <div className="py-5 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-                <Activity className="h-4 w-4 opacity-40" />
-                لا توجد نشاطات مسجّلة بعد
-              </div>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {auditLogs.map(log => {
-                  const action = ACTION_AR[log.action]  ?? log.action;
-                  const entity = ENTITY_AR[log.entityType] ?? log.entityType;
-                  const time   = new Date(log.createdAt).toLocaleTimeString("ar-TN", { hour: "2-digit", minute: "2-digit" });
-                  const date   = formatDateTN(log.createdAt);
-                  return (
-                    <div key={log.id} className="flex items-center gap-3 px-4 py-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-foreground">
-                          <span className="font-medium">{action} {entity}</span>
-                          {log.newValue && (
-                            <span className="text-muted-foreground"> — {log.newValue.slice(0, 40)}{log.newValue.length > 40 ? "…" : ""}</span>
-                          )}
-                        </p>
-                        {log.userName && (
-                          <p className="text-xs text-muted-foreground">{log.userName}</p>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
-                        {time} · {date}
-                      </span>
-                    </div>
-                  );
-                })}
               </div>
             )}
           </CardContent>
