@@ -41,8 +41,8 @@ router.post("/voice-dictation/enhance", async (req, res) => {
 - استخدم المصطلحات القانونية الصحيحة`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5.4",
-      max_completion_tokens: 8192,
+      model: "gpt-4o",
+      max_tokens: 2048,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `حوّل هذا النص إلى وثيقة قانونية مهيكلة:\n\n${text}` },
