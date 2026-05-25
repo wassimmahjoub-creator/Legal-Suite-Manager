@@ -63,8 +63,8 @@ export default function Billing() {
   });
 
   const totalNet     = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.netToPay, 0);
-  const totalPaid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
-  const totalBalance = invoices.reduce((s, i) => s + i.balanceDue, 0);
+  const totalPaid    = invoices.reduce((s, i) => s + i.amountPaid, 0);
+  const totalBalance = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.balanceDue, 0);
   const overdueCount = invoices.filter(i =>
     i.dueDate && i.status !== "paid" && i.status !== "cancelled" && i.lockedAt &&
     new Date(i.dueDate) < new Date()

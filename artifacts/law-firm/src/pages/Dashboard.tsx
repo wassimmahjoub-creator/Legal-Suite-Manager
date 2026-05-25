@@ -376,7 +376,7 @@ export default function Dashboard() {
                     className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <TrendingUp className="h-3.5 w-3.5 text-success" />
-                      المداخيل هذا الشهر
+                      إجمالي الفواتير
                     </div>
                     <span className="text-sm font-bold text-success tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />

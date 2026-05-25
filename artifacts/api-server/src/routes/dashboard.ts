@@ -17,8 +17,8 @@ router.get("/dashboard/summary", async (req, res) => {
     .select({ total: sql<string>`coalesce(sum(net_to_pay), 0)` })
     .from(invoicesTable)
     .where(and(
-      sql`${invoicesTable.status} IN ('issued', 'partially_paid', 'paid')`,
-      sql`${invoicesTable.lockedAt} >= ${firstOfMonth}`
+      sql`${invoicesTable.status} NOT IN ('draft', 'cancelled')`,
+      isNull(invoicesTable.deletedAt)
     ));
 
   const [pendingInvoicesRow] = await db

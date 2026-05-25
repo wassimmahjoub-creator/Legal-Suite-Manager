@@ -310,9 +310,9 @@ export default function ClientPage() {
 
   const activeCases = cases.filter(c => !c.archivedAt);
   const archivedCases = cases.filter(c => !!c.archivedAt);
-  const totalInvoiced = invoices.reduce((s, i) => s + Number(i.netToPay ?? 0), 0);
+  const totalInvoiced = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + Number(i.netToPay ?? 0), 0);
   const totalPaid = invoices.reduce((s, i) => s + Number(i.amountPaid ?? 0), 0);
-  const balance = invoices.reduce((s, i) => s + Number(i.balanceDue ?? 0), 0);
+  const balance = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + Number(i.balanceDue ?? 0), 0);
 
   if (loading) return <SkeletonClientPage tabs={7} />;
 
