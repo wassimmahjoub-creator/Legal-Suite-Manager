@@ -42,6 +42,13 @@ router.post("/opponents", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "الاسم مطلوب" });
     return;
   }
+  if (caseId) {
+    const orgId = getActor(req).orgId ?? 0;
+    const [ownedCase] = await db.select({ id: casesTable.id })
+      .from(casesTable)
+      .where(and(eq(casesTable.id, Number(caseId)), eq(casesTable.orgId, orgId)));
+    if (!ownedCase) { res.status(403).json({ error: "غير مصرّح" }); return; }
+  }
   const [row] = await db.insert(opponentsTable).values({
     name,
     lawyerName: lawyerName ?? null,
