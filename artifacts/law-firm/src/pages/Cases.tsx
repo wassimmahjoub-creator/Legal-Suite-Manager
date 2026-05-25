@@ -244,6 +244,20 @@ export default function Cases() {
       {activeGroupDef && (
         <div className="border-b border-border/40 bg-muted/20 -mx-0 rounded-b-none">
           <div className="flex gap-0 overflow-x-auto no-scrollbar px-2">
+            {/* الكل — sous-onglet par défaut */}
+            <button
+              onClick={() => setServiceTypeFilter("all")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium border-b-2 transition-colors whitespace-nowrap shrink-0
+                ${serviceTypeFilter === "all"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              الكل
+              <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none min-w-[1.1rem] text-center
+                ${serviceTypeFilter === "all" ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                {groupCount(activeGroup)}
+              </span>
+            </button>
             {activeGroupDef.types.map(t => {
               const isActive = serviceTypeFilter === t.key;
               const cnt = typeCounts[t.key] ?? 0;
