@@ -323,22 +323,21 @@ export default function ClientPage() {
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
-      <div className="rounded-2xl bg-card border border-border p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => window.history.back()}
-              className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
-              <ArrowRight className="h-5 w-5" />
-            </button>
-            <div className={cn(
-              "h-16 w-16 rounded-2xl flex items-center justify-center font-bold text-2xl shrink-0",
-              isCompany ? "bg-blue-500/10 text-blue-400" : "bg-primary/10 text-primary"
-            )}>
-              {isCompany ? <Building2 className="h-8 w-8" /> : client.name.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold">{client.name}</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => window.history.back()}
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            <ArrowRight className="h-5 w-5" />
+          </button>
+          <div className={cn(
+            "h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0",
+            isCompany ? "bg-blue-500/10 text-blue-400" : "bg-primary/10 text-primary"
+          )}>
+            {isCompany ? <Building2 className="h-6 w-6" /> : client.name.charAt(0)}
+          </div>
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold">{client.name}</h1>
                 <span className={cn(
                   "text-xs px-2.5 py-1 rounded-full border font-medium",
                   isCompany
@@ -377,17 +376,17 @@ export default function ClientPage() {
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" className="gap-1.5 text-xs"
-              onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
-              <Plus className="h-3.5 w-3.5" /> ملف جديد
-            </Button>
-          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <Button size="sm" className="gap-1.5 text-xs"
+            onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
+            <Plus className="h-3.5 w-3.5" /> ملف جديد
+          </Button>
         </div>
       </div>
 
       {/* Tabs */}
+
       <div className="border-b border-border">
         <div className="flex gap-1 overflow-x-auto no-scrollbar">
           {TABS.map(tab => {
