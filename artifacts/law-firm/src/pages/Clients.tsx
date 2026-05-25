@@ -5,7 +5,8 @@ import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink, LayoutGrid, List } from "lucide-react";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/ui/skeletons";
@@ -45,6 +46,7 @@ export default function Clients() {
   const fromTabParam = urlParams.get("fromTab");
 
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState(EMPTY);
@@ -158,20 +160,63 @@ export default function Clients() {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="بحث بالاسم أو الهاتف..."
-          className="pr-9 h-10 bg-card border-border"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="بحث بالاسم أو الهاتف..."
+            className="pr-9 h-10 bg-card border-border"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 border border-border shrink-0">
+          <button
+            onClick={() => setViewMode("list")}
+            title="عرض قائمة"
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <List className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            title="عرض شبكة"
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
+        viewMode === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : (
+          <Card className="border-none shadow-md overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    {["الموكّل", "النوع", "الهاتف", "البريد الإلكتروني", "العنوان", ""].map((h, i) => (
+                      <TableHead key={i} className="text-start py-3 font-semibold">{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <TableCell key={j} className="py-2.5"><Skeleton className="h-4 w-full" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )
       ) : filtered.length === 0 ? (
         <div className="bg-card rounded-xl shadow-sm">
           <EmptyState
@@ -180,7 +225,7 @@ export default function Clients() {
             description="أضف موكّلك الأول — سيظهر هنا فور إضافته بالضغط على «+ موكّل جديد» أعلاه"
           />
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map(client => (
             <Card
@@ -237,6 +282,70 @@ export default function Clients() {
             </Card>
           ))}
         </div>
+      ) : (
+        <Card className="border-none shadow-md overflow-hidden">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead className="text-start py-3 font-semibold">الموكّل</TableHead>
+                  <TableHead className="text-start py-3 font-semibold hidden sm:table-cell">النوع</TableHead>
+                  <TableHead className="text-start py-3 font-semibold hidden md:table-cell">الهاتف</TableHead>
+                  <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">البريد الإلكتروني</TableHead>
+                  <TableHead className="text-start py-3 font-semibold hidden lg:table-cell">العنوان</TableHead>
+                  <TableHead className="py-3 w-20"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(client => (
+                  <TableRow
+                    key={client.id}
+                    className="cursor-pointer hover:bg-muted/30 transition-colors group"
+                    onClick={() => navigate(`/clients/${client.id}`)}
+                  >
+                    <TableCell className="py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          {client.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-semibold text-sm group-hover:underline block truncate">{client.name}</span>
+                          {client.officeSeq && (
+                            <span className="text-[10px] font-mono text-primary/70">{client.officeSeq}</span>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 text-sm text-muted-foreground hidden sm:table-cell">
+                      {client.clientType === "company" ? "شخص معنوي" : "شخص طبيعي"}
+                    </TableCell>
+                    <TableCell className="py-2.5 text-sm text-muted-foreground hidden md:table-cell" dir="ltr">
+                      {client.phone || "—"}
+                    </TableCell>
+                    <TableCell className="py-2.5 text-sm text-muted-foreground hidden lg:table-cell">
+                      {client.email || "—"}
+                    </TableCell>
+                    <TableCell className="py-2.5 text-sm text-muted-foreground hidden lg:table-cell max-w-[200px]">
+                      <span className="truncate block">{client.address || "—"}</span>
+                    </TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={e => { e.stopPropagation(); openEdit(client); }}
+                          className="p-1.5 hover:bg-muted rounded-lg">
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        <button onClick={e => { e.stopPropagation(); remove(client); }}
+                          className="p-1.5 hover:bg-destructive/10 rounded-lg">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
       {/* New / Edit Modal */}
