@@ -383,7 +383,6 @@ export default function Dashboard() {
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
                         onClick={() => navigate(`/cases/${c.id}`)}
                       >
-                        <Scale className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         <div className="flex-1 min-w-0 text-right">
                           <p className="font-medium text-sm truncate">{c.title}</p>
                         </div>
@@ -394,7 +393,7 @@ export default function Dashboard() {
                           <span className="text-xs text-muted-foreground/60 font-mono tabular-nums shrink-0">{c.caseNumber}</span>
                         )}
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
-                        <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+                        <Scale className="h-4 w-4 text-muted-foreground/30 shrink-0" />
                       </div>
                     );
                   })}
