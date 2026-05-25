@@ -376,7 +376,6 @@ export default function ClientPage() {
               </div>
             </div>
           </div>
-        </div>
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           <Button size="sm" className="gap-1.5 text-xs"
             onClick={() => { setCaseForm({ title: "", court: "", division: "", lawyer: "", status: "active", nextHearing: "", description: "", procedureStage: "ابتدائي", courtCaseNumber: "", clientFileRef: "", opponentName: "", opponentLawyer: "" }); setCaseModal(true); }}>
