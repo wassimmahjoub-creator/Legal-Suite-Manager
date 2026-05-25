@@ -387,7 +387,7 @@ export default function Dashboard() {
                           <p className="font-medium text-sm truncate">{c.title}</p>
                         </div>
                         {c.clientName && (
-                          <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline truncate max-w-[120px]">{c.clientName}</span>
+                          <span className="text-xs font-medium text-foreground shrink-0 hidden sm:inline truncate max-w-[120px]">{c.clientName}</span>
                         )}
                         {c.caseNumber && (
                           <span className="text-xs font-medium text-foreground shrink-0 tabular-nums">{c.caseNumber}</span>
