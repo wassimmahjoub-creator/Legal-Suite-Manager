@@ -9,6 +9,7 @@ import {
   useUpdateTask, getGetDashboardTodayQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { cn } from "@/lib/utils";
 import {
@@ -151,13 +152,13 @@ export default function Dashboard() {
           { label: "فاتورة +",     icon: Receipt,       path: "/billing/new"    },
           { label: "مراسلة +",     icon: FileText,      path: "/correspondances"},
         ].map(a => (
-          <button key={a.path}
+          <Button key={a.path} variant="ghost" size="sm"
             onClick={() => navigate(a.path)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted/50 transition-colors font-medium"
+            className="gap-1.5 text-xs font-medium border border-border/60 hover:border-border"
           >
             <a.icon className="h-3.5 w-3.5 text-muted-foreground" />
             {a.label}
-          </button>
+          </Button>
         ))}
       </div>
 
