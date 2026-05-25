@@ -42,13 +42,6 @@ const STAGE: Record<string, string> = {
   taaqqib: "تعقيب",  tanfidh: "تنفيذ", khatm: "ختم",
 };
 
-const STATUS_CLS: Record<string, string> = {
-  active:    "text-emerald-400 bg-emerald-500/10",
-  pending:   "text-amber-400 bg-amber-500/10",
-  suspended: "text-amber-400 bg-amber-500/10",
-  closed:    "text-muted-foreground bg-muted/50",
-};
-
 export default function MorningBrief() {
   const [, navigate]  = useLocation();
   const { user }      = useAuth();
@@ -98,7 +91,6 @@ export default function MorningBrief() {
 
   const pendingTasks = today?.tasks?.filter(t => !t.done) ?? [];
 
-  // greeting based on time
   const hour = new Date().getHours();
   const salut = hour < 12 ? "صباح الخير" : hour < 17 ? "مساء النور" : "مساء الخير";
   const firstName = user?.name?.split(" ")[0];
@@ -112,13 +104,13 @@ export default function MorningBrief() {
         </span>
       )}
       {pendingTasks.length > 0 && (
-        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-medium">
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/20 text-warning font-medium">
           <CheckCircle2 className="h-3 w-3" />
           {pendingTasks.length} مهمة
         </span>
       )}
       {(summary?.pendingInvoices ?? 0) > 0 && (
-        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive font-medium">
           <Receipt className="h-3 w-3" />
           {summary?.pendingInvoices} فاتورة
         </span>
@@ -126,13 +118,15 @@ export default function MorningBrief() {
     </div>
   );
 
+  const hasUrgentDl = deadlines.some(d => daysLeft(d.dueDate) <= 3);
+
   return (
     <div className="space-y-6">
 
       <PageHeader
         title={firstName ? `${salut}، ${firstName}` : salut}
         subtitle={
-          <span className="text-muted-foreground/70">
+          <span>
             {new Date().toLocaleDateString("ar-TN", {
               weekday: "long", day: "numeric", month: "long"
             })}
@@ -151,7 +145,7 @@ export default function MorningBrief() {
               "h-7 w-7 rounded-full flex items-center justify-center text-sm font-bold",
               (today?.sessions?.length ?? 0) > 0
                 ? "bg-primary/15 text-primary"
-                : "bg-muted/50 text-muted-foreground"
+                : "bg-muted text-muted-foreground"
             )}>
               {loadingToday ? "…" : today?.sessions?.length ?? 0}
             </span>
@@ -167,7 +161,7 @@ export default function MorningBrief() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : (today?.sessions?.length ?? 0) === 0 ? (
-              <div className="py-6 text-center text-muted-foreground text-xs space-y-1">
+              <div className="py-6 text-center text-muted-foreground text-xs">
                 <CalendarClock className="h-6 w-6 mx-auto opacity-10 mb-2" />
                 لا توجد جلسات اليوم
               </div>
@@ -198,14 +192,14 @@ export default function MorningBrief() {
             <span className={cn(
               "h-7 w-7 rounded-full flex items-center justify-center text-sm font-bold",
               pendingTasks.length > 0
-                ? "bg-amber-500/15 text-amber-400"
-                : "bg-emerald-500/10 text-emerald-400"
+                ? "bg-warning/15 text-warning"
+                : "bg-success/10 text-success"
             )}>
               {loadingToday ? "…" : pendingTasks.length}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">المهام</span>
-              <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-amber-400" : "text-emerald-400")} />
+              <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-warning" : "text-success")} />
             </div>
           </div>
           <CardContent className="px-0 pb-0 pt-0">
@@ -216,7 +210,7 @@ export default function MorningBrief() {
               </div>
             ) : (today?.tasks?.length ?? 0) === 0 ? (
               <div className="py-6 text-center text-muted-foreground text-xs">
-                <CheckCircle2 className="h-6 w-6 mx-auto text-emerald-400/30 mb-2" />
+                <CheckCircle2 className="h-6 w-6 mx-auto opacity-20 mb-2" />
                 لا توجد مهام
               </div>
             ) : (
@@ -236,7 +230,7 @@ export default function MorningBrief() {
                         className={cn("shrink-0", toggling && "opacity-40")}
                       >
                         {t.done
-                          ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                          ? <CheckCircle2 className="h-4 w-4 text-success" />
                           : <Circle className="h-4 w-4 text-muted-foreground/30" />}
                       </button>
                       <div className="flex-1 min-w-0 text-right cursor-pointer"
@@ -259,18 +253,15 @@ export default function MorningBrief() {
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <span className={cn(
               "h-7 w-7 rounded-full flex items-center justify-center text-sm font-bold",
-              deadlines.some(d => daysLeft(d.dueDate) <= 3)
-                ? "bg-red-500/15 text-red-400"
-                : "bg-muted/50 text-muted-foreground"
+              hasUrgentDl
+                ? "bg-destructive/15 text-destructive"
+                : "bg-muted text-muted-foreground"
             )}>
               {loadingExtra ? "…" : deadlines.length}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">آجال قريبة</span>
-              <Timer className={cn(
-                "h-4 w-4",
-                deadlines.some(d => daysLeft(d.dueDate) <= 3) ? "text-red-400" : "text-muted-foreground"
-              )} />
+              <Timer className={cn("h-4 w-4", hasUrgentDl ? "text-destructive" : "text-muted-foreground")} />
             </div>
           </div>
           <CardContent className="px-0 pb-0 pt-0">
@@ -281,15 +272,15 @@ export default function MorningBrief() {
               </div>
             ) : deadlines.length === 0 ? (
               <div className="py-6 text-center text-muted-foreground text-xs">
-                <CheckCircle2 className="h-6 w-6 mx-auto text-emerald-400/30 mb-2" />
+                <CheckCircle2 className="h-6 w-6 mx-auto opacity-20 mb-2" />
                 لا آجال قادمة
               </div>
             ) : (
               <div className="divide-y divide-border/40">
                 {deadlines.map(d => {
                   const days = daysLeft(d.dueDate);
-                  const urgent = days < 0;
-                  const soon   = days <= 3;
+                  const overdue = days < 0;
+                  const soon    = days <= 3;
                   return (
                     <div key={d.id}
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 cursor-pointer transition-colors"
@@ -297,13 +288,11 @@ export default function MorningBrief() {
                     >
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded-full border shrink-0 font-medium tabular-nums",
-                        urgent
-                          ? "bg-red-500/15 text-red-400 border-red-500/20"
-                          : soon
-                            ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
-                            : "bg-muted/40 text-muted-foreground border-border"
+                        overdue || soon
+                          ? "bg-destructive/10 text-destructive border-destructive/20"
+                          : "bg-muted/40 text-muted-foreground border-border"
                       )}>
-                        {urgent ? `−${Math.abs(days)}ي` : days === 0 ? "اليوم" : `${days}ي`}
+                        {overdue ? `−${Math.abs(days)}ي` : days === 0 ? "اليوم" : `${days}ي`}
                       </span>
                       <div className="flex-1 min-w-0 text-right">
                         <p className="text-xs font-medium truncate">{d.title}</p>
@@ -327,9 +316,7 @@ export default function MorningBrief() {
           <Card className="border-border/60 shadow-sm">
             <CardContent className="px-0 pb-0 pt-0">
               {loadingAlerts ? (
-                <div className="p-4 space-y-2">
-                  <Skeleton className="h-10 w-full" />
-                </div>
+                <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /></div>
               ) : (
                 <div className="divide-y divide-border/40">
                   {alerts?.map(a => (
@@ -342,7 +329,7 @@ export default function MorningBrief() {
                         <p className="text-sm font-semibold truncate">{a.message}</p>
                         {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
                       </div>
-                      <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -352,10 +339,9 @@ export default function MorningBrief() {
         </div>
       )}
 
-      {/* ── Dossiers actifs + résumé financier ─────────────── */}
+      {/* ── ملفات جارية + ملخص مالي ───────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
 
-        {/* آخر الملفات الجارية */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <button onClick={() => navigate("/cases")}
@@ -378,7 +364,6 @@ export default function MorningBrief() {
               ) : (
                 <div className="divide-y divide-border/40">
                   {cases.map(c => {
-                    const cls = STATUS_CLS[c.status] ?? STATUS_CLS.active;
                     const stage = c.procedureStage ? STAGE[c.procedureStage] : null;
                     return (
                       <div key={c.id}
@@ -407,7 +392,6 @@ export default function MorningBrief() {
           </Card>
         </div>
 
-        {/* ملخص مالي */}
         <div>
           <h2 className="font-semibold text-sm mb-3 text-right">ملخص مالي</h2>
           <Card className="border-border/60 shadow-sm">
@@ -419,24 +403,27 @@ export default function MorningBrief() {
               ) : (
                 <>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                    <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                    <span className="text-sm font-bold text-success tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       المداخيل هذا الشهر
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                      <TrendingUp className="h-3.5 w-3.5 text-success" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                     <span className={cn(
                       "text-sm font-bold tabular-nums",
-                      (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground"
+                      (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-foreground"
                     )}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       فواتير معلقة
-                      <Receipt className="h-3.5 w-3.5 text-amber-400" />
+                      <Receipt className={cn(
+                        "h-3.5 w-3.5",
+                        (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-muted-foreground"
+                      )} />
                     </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3">
@@ -455,7 +442,6 @@ export default function MorningBrief() {
         </div>
 
       </div>
-
     </div>
   );
 }

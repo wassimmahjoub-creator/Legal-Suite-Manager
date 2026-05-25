@@ -38,18 +38,18 @@ function daysLeft(dueDate: string): number {
 }
 
 function deadlineBadge(days: number) {
-  if (days < 0)  return { label: `متأخر ${Math.abs(days)} يوم`, cls: "bg-red-500/15 text-red-400 border-red-500/20" };
-  if (days === 0) return { label: "اليوم",        cls: "bg-red-500/15 text-red-400 border-red-500/20" };
-  if (days <= 3)  return { label: `${days} أيام`,  cls: "bg-red-500/15 text-red-400 border-red-500/20" };
-  if (days <= 7)  return { label: `${days} أيام`,  cls: "bg-amber-500/15 text-amber-400 border-amber-500/20" };
+  if (days < 0)  return { label: `متأخر ${Math.abs(days)} يوم`, cls: "bg-destructive/15 text-destructive border-destructive/20" };
+  if (days === 0) return { label: "اليوم",        cls: "bg-destructive/15 text-destructive border-destructive/20" };
+  if (days <= 3)  return { label: `${days} أيام`,  cls: "bg-destructive/15 text-destructive border-destructive/20" };
+  if (days <= 7)  return { label: `${days} أيام`,  cls: "bg-warning/15 text-warning border-warning/20" };
   return              { label: `${days} يوم`,     cls: "bg-muted text-muted-foreground border-border" };
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active:    { label: "نشطة",   color: "text-emerald-400 bg-emerald-500/10" },
-  pending:   { label: "انتظار", color: "text-amber-400 bg-amber-500/10"    },
-  suspended: { label: "موقوفة", color: "text-amber-400 bg-amber-500/10"    },
-  closed:    { label: "مغلقة",  color: "text-muted-foreground bg-muted/50"  },
+  active:    { label: "نشطة",   color: "text-success bg-success/10"              },
+  pending:   { label: "انتظار", color: "text-warning bg-warning/10"              },
+  suspended: { label: "موقوفة", color: "text-warning bg-warning/10"              },
+  closed:    { label: "مغلقة",  color: "text-muted-foreground bg-muted/50"       },
 };
 
 export default function Dashboard() {
@@ -108,7 +108,7 @@ export default function Dashboard() {
       <span className={cn(
         "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
         urgentDeadlines.length > 0
-          ? "bg-red-500/10 border-red-500/25 text-red-400"
+          ? "bg-destructive/10 border-destructive/25 text-destructive"
           : "bg-muted/40 border-border text-muted-foreground"
       )}>
         <Timer className="h-3 w-3" />
@@ -117,14 +117,14 @@ export default function Dashboard() {
       <span className={cn(
         "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
         pendingTasks.length > 0
-          ? "bg-violet-500/10 border-violet-500/25 text-violet-400"
+          ? "bg-warning/10 border-warning/25 text-warning"
           : "bg-muted/40 border-border text-muted-foreground"
       )}>
         <CheckCircle2 className="h-3 w-3" />
         {loadingToday ? "…" : pendingTasks.length} مهمة
       </span>
       {(summary?.pendingInvoices ?? 0) > 0 && (
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-rose-500/10 border-rose-500/25 text-rose-400 font-medium">
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-destructive/10 border-destructive/25 text-destructive font-medium">
           <Receipt className="h-3 w-3" />
           {loadingSummary ? "…" : summary?.pendingInvoices} فاتورة معلقة
         </span>
@@ -217,14 +217,14 @@ export default function Dashboard() {
               <div className={cn(
                 "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
                 urgentDeadlines.length > 0
-                  ? "bg-red-500/15 text-red-400"
+                  ? "bg-destructive/15 text-destructive"
                   : "bg-muted/50 text-muted-foreground"
               )}>
                 {loadingExtra ? "…" : deadlines.length}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold">آجال قريبة</span>
-                <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
+                <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-destructive" : "text-muted-foreground")} />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -267,14 +267,14 @@ export default function Dashboard() {
               <div className={cn(
                 "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
                 pendingTasks.length > 0
-                  ? "bg-amber-500/15 text-amber-400"
-                  : "bg-emerald-500/10 text-emerald-400"
+                  ? "bg-warning/15 text-warning"
+                  : "bg-success/10 text-success"
               )}>
                 {loadingToday ? "…" : pendingTasks.length}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold">المهام العاجلة</span>
-                <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-amber-400" : "text-emerald-400")} />
+                <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-warning" : "text-success")} />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -299,7 +299,7 @@ export default function Dashboard() {
                           disabled={toggling}
                         >
                           {t.done
-                            ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                            ? <CheckCircle2 className="h-4 w-4 text-success" />
                             : <Circle className="h-4 w-4 text-muted-foreground/30" />}
                         </button>
                         <div className="flex-1 min-w-0 cursor-pointer text-right"
@@ -343,7 +343,7 @@ export default function Dashboard() {
                         <p className="text-sm font-semibold leading-tight truncate text-foreground">{a.message}</p>
                         {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
                       </div>
-                      <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -412,22 +412,22 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                    <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                    <span className="text-sm font-bold text-success tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       المداخيل هذا الشهر
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                      <TrendingUp className="h-3.5 w-3.5 text-success" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                     <span className={cn("text-sm font-bold tabular-nums",
-                      (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
+                      (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-foreground")}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       فواتير معلقة
-                      <Clock className="h-3.5 w-3.5 text-amber-400" />
+                      <Clock className="h-3.5 w-3.5 text-warning" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
