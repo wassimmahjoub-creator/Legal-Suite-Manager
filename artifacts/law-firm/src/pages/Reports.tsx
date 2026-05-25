@@ -226,7 +226,7 @@ function SummaryTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm" className="gap-2" onClick={load} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> تحديث
@@ -237,12 +237,12 @@ function SummaryTab() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm text-center">
+        <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm text-center">
           {error} — <button className="underline" onClick={load}>حاول مجدداً</button>
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "إجمالي المداخيل (7 أشهر)", value: loading ? null : <TNDAmount amount={totalIncome} />, icon: TrendingUp, color: "text-success", bg: "bg-success/10", action: () => navigate("/billing") },
           { label: "فواتير مدفوعة",  value: loading ? null : data?.billing.paidCount ?? 0,    icon: CheckCircle2, color: "text-primary",  bg: "bg-primary/10",  action: () => navigate("/billing") },
@@ -250,76 +250,76 @@ function SummaryTab() {
           { label: "متوسط شهري",     value: loading ? null : <TNDAmount amount={avgMonthly} />, icon: BarChart3,    color: "text-info",     bg: "bg-info/10",     action: undefined },
         ].map((k, i) => (
           <Card key={i} className={`border-none shadow-sm ${k.action ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`} onClick={k.action}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between mb-2">
                 <p className="text-xs text-muted-foreground leading-tight">{k.label}</p>
-                <div className={`p-2 rounded-lg ${k.bg}`}><k.icon className={`h-4 w-4 ${k.color}`} /></div>
+                <div className={`p-1.5 rounded-lg ${k.bg}`}><k.icon className={`h-3.5 w-3.5 ${k.color}`} /></div>
               </div>
-              {k.value === null ? <Skeleton className="h-7 w-24" /> : <p className="font-bold text-xl">{k.value}</p>}
+              {k.value === null ? <Skeleton className="h-6 w-24" /> : <p className="font-bold text-lg">{k.value}</p>}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border-none shadow-md">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" /> المداخيل الشهرية (7 أشهر)
+          <CardHeader className="border-b py-3 px-4">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" /> المداخيل الشهرية (7 أشهر)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            {loading ? <div className="space-y-2"><Skeleton className="h-32 w-full" /><Skeleton className="h-4 w-full" /></div>
+          <CardContent className="p-4">
+            {loading ? <div className="space-y-2"><Skeleton className="h-28 w-full" /><Skeleton className="h-4 w-full" /></div>
               : !data || data.monthly.every(m => m.income === 0)
-              ? <div className="h-36 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2"><BarChart3 className="h-8 w-8 opacity-20" />لا توجد فواتير مسددة بعد</div>
+              ? <div className="h-28 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2"><BarChart3 className="h-7 w-7 opacity-20" />لا توجد فواتير مسددة بعد</div>
               : <IncomeBar monthly={data!.monthly} />}
-            <div className="flex gap-4 mt-4 justify-center text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-primary inline-block" /> مداخيل مسددة</span>
+            <div className="flex gap-4 mt-3 justify-center text-xs">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> مداخيل مسددة</span>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-md">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base flex items-center gap-2 justify-between">
-              <span className="flex items-center gap-2"><Briefcase className="h-5 w-5 text-primary" /> إحصائيات القضايا</span>
+          <CardHeader className="border-b py-3 px-4">
+            <CardTitle className="text-sm flex items-center gap-2 justify-between">
+              <span className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" /> إحصائيات القضايا</span>
               <span className="text-xs font-normal text-muted-foreground">{loading ? "..." : `${totalCases} قضية`}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-4 space-y-4">
             <div>
-              <p className="text-xs text-muted-foreground font-medium mb-3">حسب الحالة</p>
-              {loading ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
+              <p className="text-xs text-muted-foreground font-medium mb-2">حسب الحالة</p>
+              {loading ? <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
                 : !data || data.caseStatus.length === 0
-                ? <p className="text-xs text-muted-foreground text-center py-4">لا توجد قضايا بعد</p>
-                : <div className="space-y-3">{data!.caseStatus.map((s, i) => <StatBar key={i} label={s.label} value={s.value} total={totalCases} color={s.color} />)}</div>}
+                ? <p className="text-xs text-muted-foreground text-center py-3">لا توجد قضايا بعد</p>
+                : <div className="space-y-2">{data!.caseStatus.map((s, i) => <StatBar key={i} label={s.label} value={s.value} total={totalCases} color={s.color} />)}</div>}
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium mb-3">المهام</p>
+              <p className="text-xs text-muted-foreground font-medium mb-2">المهام</p>
               {loading ? <Skeleton className="h-4 w-full" /> : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <StatBar label="منجزة"      value={data?.tasks.done ?? 0}    total={totalTasks || 1} color="bg-success" />
                   <StatBar label="قيد التنفيذ" value={data?.tasks.pending ?? 0} total={totalTasks || 1} color="bg-warning" />
                 </div>
               )}
               {!loading && totalTasks > 0 && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">نسبة الإنجاز: <span className="font-bold text-success">{taskRate}%</span></p>
+                <p className="text-xs text-muted-foreground mt-1.5 text-center">نسبة الإنجاز: <span className="font-bold text-success">{taskRate}%</span></p>
               )}
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-md">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> أبرز الموكّلون</CardTitle>
+          <CardHeader className="border-b py-3 px-4">
+            <CardTitle className="text-sm flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> أبرز الموكّلون</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 space-y-3">
-            {loading ? <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}</div>
+          <CardContent className="p-3 space-y-2">
+            {loading ? <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
               : !data || data.topClients.length === 0
-              ? <div className="py-8 text-center text-sm text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-20" />لا يوجد موكّلون بعد</div>
+              ? <div className="py-6 text-center text-sm text-muted-foreground"><Users className="h-7 w-7 mx-auto mb-2 opacity-20" />لا يوجد موكّلون بعد</div>
               : data!.topClients.map((c, i) => (
-                <div key={c.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate(`/clients/${c.id}`)}>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">{i + 1}</div>
+                <div key={c.id} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate(`/clients/${c.id}`)}>
+                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">{i + 1}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{c.name}</p>
                     <p className="text-xs text-muted-foreground">{c.cases} قضايا</p>
@@ -334,24 +334,24 @@ function SummaryTab() {
         </Card>
 
         <Card className="border-none shadow-md">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> حالة الفوترة</CardTitle>
+          <CardHeader className="border-b py-3 px-4">
+            <CardTitle className="text-sm flex items-center gap-2"><CreditCard className="h-4 w-4 text-primary" /> حالة الفوترة</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 space-y-4">
-            {loading ? <div className="space-y-3"><Skeleton className="h-24 w-full rounded-xl" /><Skeleton className="h-6 w-full" /></div> : (
+          <CardContent className="p-3 space-y-3">
+            {loading ? <div className="space-y-3"><Skeleton className="h-20 w-full rounded-xl" /><Skeleton className="h-6 w-full" /></div> : (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-xl bg-success/10 cursor-pointer hover:bg-success/15 transition-colors" onClick={() => navigate("/billing")}>
-                    <CheckCircle2 className="h-6 w-6 text-success mb-2" />
-                    <p className="text-2xl font-bold">{data?.billing.paidCount ?? 0}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 rounded-xl bg-success/10 cursor-pointer hover:bg-success/15 transition-colors" onClick={() => navigate("/billing")}>
+                    <CheckCircle2 className="h-5 w-5 text-success mb-1" />
+                    <p className="text-xl font-bold">{data?.billing.paidCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير مدفوعة</p>
-                    <p className="text-sm font-medium mt-1 text-success" dir="ltr"><Money amount={data?.billing.paidAmount ?? 0} /></p>
+                    <p className="text-sm font-medium mt-0.5 text-success" dir="ltr"><Money amount={data?.billing.paidAmount ?? 0} /></p>
                   </div>
-                  <div className="p-4 rounded-xl bg-warning/10 cursor-pointer hover:bg-warning/15 transition-colors" onClick={() => navigate("/billing")}>
-                    <AlertCircle className="h-6 w-6 text-warning mb-2" />
-                    <p className="text-2xl font-bold">{data?.billing.pendingCount ?? 0}</p>
+                  <div className="p-3 rounded-xl bg-warning/10 cursor-pointer hover:bg-warning/15 transition-colors" onClick={() => navigate("/billing")}>
+                    <AlertCircle className="h-5 w-5 text-warning mb-1" />
+                    <p className="text-xl font-bold">{data?.billing.pendingCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">فواتير معلقة</p>
-                    <p className="text-sm font-medium mt-1 text-warning" dir="ltr"><Money amount={data?.billing.pendingAmount ?? 0} /></p>
+                    <p className="text-sm font-medium mt-0.5 text-warning" dir="ltr"><Money amount={data?.billing.pendingAmount ?? 0} /></p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -820,22 +820,22 @@ export default function Reports() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-3 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+            <BarChart3 className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold leading-tight">تقارير الأداء والربحية</h1>
+            <p className="text-xs text-muted-foreground">تحليل شامل للنشاط المالي والقانوني للمكتب</p>
+          </div>
+        </div>
         <button onClick={() => window.history.back()}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors">
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors shrink-0">
           <ArrowRight className="h-3.5 w-3.5" /> رجوع
         </button>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold">تقارير الأداء والربحية</h1>
-          <p className="text-xs text-muted-foreground">تحليل شامل للنشاط المالي والقانوني للمكتب</p>
-        </div>
       </div>
 
       {/* Tab bar */}
@@ -845,12 +845,12 @@ export default function Reports() {
             const Icon = t.icon;
             return (
               <button key={t.key} onClick={() => changeTab(t.key)}
-                className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   tab === t.key
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 }`}>
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
                 {t.label}
               </button>
             );
