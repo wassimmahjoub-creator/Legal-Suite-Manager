@@ -496,7 +496,7 @@ export default function Dashboard() {
                     const s = STATUS_LABELS[c.status] || STATUS_LABELS.active;
                     return (
                       <div key={c.id}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 active:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => navigate(`/cases/${c.id}`)}
                       >
                         <div className="p-1.5 bg-blue-500/10 rounded-lg shrink-0">
@@ -510,7 +510,6 @@ export default function Dashboard() {
                           </p>
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
-                        <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       </div>
                     );
                   })}
