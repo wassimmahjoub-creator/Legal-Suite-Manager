@@ -159,97 +159,77 @@ export default function Dashboard() {
       </div>
 
       {/* ══ KPI CARDS ════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Revenus du mois */}
-        <div
-          onClick={() => navigate("/billing")}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 p-5 cursor-pointer hover:border-emerald-500/40 transition-all"
-        >
-          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-emerald-400/10 blur-2xl" />
-          <div className="flex items-start justify-between mb-3">
-            <div className="p-2 rounded-xl bg-emerald-500/15">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500/40 group-hover:text-emerald-400 transition-colors" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div onClick={() => navigate("/billing")}
+          className="group flex items-center gap-3 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/20 px-4 py-3 cursor-pointer hover:border-emerald-500/40 transition-all">
+          <div className="p-1.5 rounded-lg bg-emerald-500/15 shrink-0">
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
           </div>
-          {loadingSummary ? <Skeleton className="h-7 w-24 mb-1" /> : (
-            <p className="text-2xl font-extrabold text-emerald-400 tabular-nums leading-none mb-1">
-              <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">المداخيل — هذا الشهر</p>
+          <div className="min-w-0">
+            {loadingSummary ? <Skeleton className="h-5 w-20 mb-0.5" /> : (
+              <p className="text-base font-extrabold text-emerald-400 tabular-nums leading-none">
+                <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">المداخيل هذا الشهر</p>
+          </div>
         </div>
 
-        {/* ملفات نشطة */}
-        <div
-          onClick={() => navigate("/cases")}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 p-5 cursor-pointer hover:border-blue-500/40 transition-all"
-        >
-          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-blue-400/10 blur-2xl" />
-          <div className="flex items-start justify-between mb-3">
-            <div className="p-2 rounded-xl bg-blue-500/15">
-              <Briefcase className="h-4 w-4 text-blue-400" />
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-blue-500/40 group-hover:text-blue-400 transition-colors" />
+        <div onClick={() => navigate("/cases")}
+          className="group flex items-center gap-3 rounded-xl bg-gradient-to-br from-blue-500/15 to-blue-500/5 border border-blue-500/20 px-4 py-3 cursor-pointer hover:border-blue-500/40 transition-all">
+          <div className="p-1.5 rounded-lg bg-blue-500/15 shrink-0">
+            <Briefcase className="h-4 w-4 text-blue-400" />
           </div>
-          {loadingSummary ? <Skeleton className="h-7 w-16 mb-1" /> : (
-            <p className="text-2xl font-extrabold text-blue-400 tabular-nums leading-none mb-1">
-              {summary?.activeCases ?? 0}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">ملفات نشطة</p>
+          <div className="min-w-0">
+            {loadingSummary ? <Skeleton className="h-5 w-10 mb-0.5" /> : (
+              <p className="text-base font-extrabold text-blue-400 tabular-nums leading-none">
+                {summary?.activeCases ?? 0}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">ملفات نشطة</p>
+          </div>
         </div>
 
-        {/* Fواتير معلقة */}
-        <div
-          onClick={() => navigate("/billing")}
+        <div onClick={() => navigate("/billing")}
           className={cn(
-            "group relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all",
+            "group flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all",
             (summary?.pendingInvoices ?? 0) > 0
-              ? "bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-amber-500/20 hover:border-amber-500/40"
-              : "bg-gradient-to-br from-muted/30 to-muted/10 border-border hover:border-border/80"
-          )}
-        >
-          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-amber-400/10 blur-2xl" />
-          <div className="flex items-start justify-between mb-3">
-            <div className={cn("p-2 rounded-xl", (summary?.pendingInvoices ?? 0) > 0 ? "bg-amber-500/15" : "bg-muted/50")}>
-              <Receipt className={cn("h-4 w-4", (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-muted-foreground")} />
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+              ? "bg-gradient-to-br from-amber-500/15 to-amber-500/5 border-amber-500/20 hover:border-amber-500/40"
+              : "bg-gradient-to-br from-muted/20 to-muted/5 border-border hover:border-border/80"
+          )}>
+          <div className={cn("p-1.5 rounded-lg shrink-0", (summary?.pendingInvoices ?? 0) > 0 ? "bg-amber-500/15" : "bg-muted/50")}>
+            <Receipt className={cn("h-4 w-4", (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-muted-foreground")} />
           </div>
-          {loadingSummary ? <Skeleton className="h-7 w-16 mb-1" /> : (
-            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mb-1",
-              (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
-              {summary?.pendingInvoices ?? 0}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">فواتير معلقة</p>
+          <div className="min-w-0">
+            {loadingSummary ? <Skeleton className="h-5 w-10 mb-0.5" /> : (
+              <p className={cn("text-base font-extrabold tabular-nums leading-none",
+                (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
+                {summary?.pendingInvoices ?? 0}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">فواتير معلقة</p>
+          </div>
         </div>
 
-        {/* آجال حرجة */}
-        <div
-          onClick={() => navigate("/cases")}
+        <div onClick={() => navigate("/cases")}
           className={cn(
-            "group relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all",
+            "group flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all",
             urgentDeadlines.length > 0
-              ? "bg-gradient-to-br from-red-500/20 to-red-500/5 border-red-500/20 hover:border-red-500/40"
-              : "bg-gradient-to-br from-muted/30 to-muted/10 border-border hover:border-border/80"
-          )}
-        >
-          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-red-400/10 blur-2xl" />
-          <div className="flex items-start justify-between mb-3">
-            <div className={cn("p-2 rounded-xl", urgentDeadlines.length > 0 ? "bg-red-500/15" : "bg-muted/50")}>
-              <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+              ? "bg-gradient-to-br from-red-500/15 to-red-500/5 border-red-500/20 hover:border-red-500/40"
+              : "bg-gradient-to-br from-muted/20 to-muted/5 border-border hover:border-border/80"
+          )}>
+          <div className={cn("p-1.5 rounded-lg shrink-0", urgentDeadlines.length > 0 ? "bg-red-500/15" : "bg-muted/50")}>
+            <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
           </div>
-          {loadingExtra ? <Skeleton className="h-7 w-16 mb-1" /> : (
-            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mb-1",
-              urgentDeadlines.length > 0 ? "text-red-400" : "text-foreground")}>
-              {urgentDeadlines.length}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground">آجال حرجة (≤ 3 أيام)</p>
+          <div className="min-w-0">
+            {loadingExtra ? <Skeleton className="h-5 w-10 mb-0.5" /> : (
+              <p className={cn("text-base font-extrabold tabular-nums leading-none",
+                urgentDeadlines.length > 0 ? "text-red-400" : "text-foreground")}>
+                {urgentDeadlines.length}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">آجال حرجة (≤ 3 أيام)</p>
+          </div>
         </div>
       </div>
 
