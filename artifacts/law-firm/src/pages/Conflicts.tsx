@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ShieldAlert, CheckCircle2, AlertTriangle, ExternalLink, RefreshCw } from "lucide-react";
+import { ShieldAlert, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
 import { formatDateTN } from "@/lib/date";
@@ -35,7 +34,6 @@ export default function Conflicts() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("unresolved");
-  const [backfilling, setBackfilling] = useState(false);
   const [, navigate] = useLocation();
 
   async function load() {
@@ -51,13 +49,6 @@ export default function Conflicts() {
 
   useEffect(() => { void load(); }, []);
 
-  async function runBackfill() {
-    setBackfilling(true);
-    await authFetch(`${BASE}/api/conflict-checks/backfill`, { method: "POST" });
-    setBackfilling(false);
-    void load();
-  }
-
   const filtered = conflicts.filter((c) => {
     if (filter === "unresolved") return !c.resolved;
     if (filter === "resolved") return c.resolved;
@@ -67,25 +58,14 @@ export default function Conflicts() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-destructive/10 rounded-xl">
-            <ShieldAlert className="h-6 w-6 text-destructive" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">تعارض المصالح</h1>
-            <p className="text-muted-foreground text-sm">مراقبة تعارضات المصالح وفق أخلاقيات المهنة</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-destructive/10 rounded-xl">
+          <ShieldAlert className="h-6 w-6 text-destructive" />
         </div>
-        <Button
-          size="sm"
-          onClick={runBackfill}
-          disabled={backfilling}
-          className="gap-1.5 text-xs shrink-0"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${backfilling ? "animate-spin" : ""}`} />
-          {backfilling ? "جارٍ الفحص..." : "فحص شامل لجميع الملفات"}
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">تعارض المصالح</h1>
+          <p className="text-muted-foreground text-sm">مراقبة تعارضات المصالح وفق أخلاقيات المهنة</p>
+        </div>
       </div>
 
       {/* KPI Cards */}
