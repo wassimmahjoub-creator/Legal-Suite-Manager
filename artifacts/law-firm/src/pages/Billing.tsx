@@ -41,6 +41,7 @@ interface Invoice {
 }
 
 export default function Billing() {
+  const fromParam = new URLSearchParams(window.location.search).get("from");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [, navigate] = useLocation();
@@ -66,6 +67,7 @@ export default function Billing() {
       <PageHeader
         title="الفوترة"
         subtitle="إدارة الفواتير والمدفوعات"
+        back={!!fromParam}
         actions={<>
           <ExportDropdown endpoint="invoices" params={{ search, status: statusFilter || undefined }} />
           <Button onClick={() => navigate("/billing/new")} className="rounded-lg gap-2 px-5">

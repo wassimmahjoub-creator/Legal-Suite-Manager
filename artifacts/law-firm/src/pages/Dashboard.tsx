@@ -406,7 +406,7 @@ export default function Dashboard() {
                 <div className="p-4 space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (
                 <>
-                  <div onClick={() => navigate("/billing")}
+                  <div onClick={() => navigate("/billing?from=dashboard")}
                     className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <TrendingUp className="h-3.5 w-3.5 text-success" />
@@ -416,7 +416,7 @@ export default function Dashboard() {
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                   </div>
-                  <div onClick={() => navigate("/billing")}
+                  <div onClick={() => navigate("/billing?from=dashboard")}
                     className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="h-3.5 w-3.5 text-warning" />
@@ -427,7 +427,7 @@ export default function Dashboard() {
                       {summary?.pendingInvoices ?? 0}
                     </span>
                   </div>
-                  <div onClick={() => navigate("/cases")}
+                  <div onClick={() => navigate("/cases?from=dashboard")}
                     className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Briefcase className="h-3.5 w-3.5 text-primary" />

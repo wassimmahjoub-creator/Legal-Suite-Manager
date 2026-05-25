@@ -402,7 +402,7 @@ export default function MorningBrief() {
                 </div>
               ) : (
                 <>
-                  <div onClick={() => navigate("/billing")}
+                  <div onClick={() => navigate("/billing?from=brief")}
                     className="flex items-center gap-3 px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
                       <TrendingUp className="h-3.5 w-3.5 text-success shrink-0" />
@@ -413,7 +413,7 @@ export default function MorningBrief() {
                     </span>
                     <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                   </div>
-                  <div onClick={() => navigate("/billing")}
+                  <div onClick={() => navigate("/billing?from=brief")}
                     className="flex items-center gap-3 px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
                       <Receipt className={cn("h-3.5 w-3.5 shrink-0", (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-muted-foreground")} />
@@ -425,7 +425,7 @@ export default function MorningBrief() {
                     </span>
                     <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                   </div>
-                  <div onClick={() => navigate("/cases")}
+                  <div onClick={() => navigate("/cases?from=brief")}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
                       <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />

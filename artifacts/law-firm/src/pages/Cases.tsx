@@ -139,7 +139,7 @@ export default function Cases() {
       <PageHeader
         title="القضايا"
         subtitle={viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
-        back={!!viewArchived}
+        back={!!viewArchived || fromParam === "dashboard" || fromParam === "brief"}
         actions={<div className="flex gap-2">
           <ExportDropdown
             endpoint="cases"
