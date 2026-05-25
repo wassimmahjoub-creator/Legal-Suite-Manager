@@ -51,6 +51,7 @@ const PUBLIC_PATHS = [
   "/invitations/accept/", "/healthz", "/organization/plans",
   "/admin/migrate-0001",
   "/admin/migrate-0002",
+  "/admin/migrate-0003",
   "/admin/fix-invoice-numbers",
 ];
 

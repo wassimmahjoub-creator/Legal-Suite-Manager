@@ -586,4 +586,200 @@ router.get("/admin/migrate-0002", async (req, res) => {
 </body></html>`);
 });
 
+// ── Migration 0003 — Seed dossiers de démonstration (org_id=2) ──
+// URL : GET /api/admin/migrate-0003?secret=MIGRATION_SECRET
+router.get("/admin/migrate-0003", async (req, res) => {
+  const secret = process.env["MIGRATION_SECRET"] ?? "migrate-legal-2026";
+  if (req.query["secret"] !== secret) {
+    return res.status(403).json({ error: "Token invalide." });
+  }
+
+  const steps: { name: string; status: "ok" | "skipped" | "error"; detail?: string }[] = [];
+
+  async function run(name: string, query: string, skipCheck?: () => Promise<boolean>) {
+    try {
+      if (skipCheck && await skipCheck()) {
+        steps.push({ name, status: "skipped", detail: "déjà appliqué" });
+        return;
+      }
+      await db.execute(sql.raw(query));
+      steps.push({ name, status: "ok" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      steps.push({ name, status: "error", detail: msg });
+    }
+  }
+
+  // ── Clients manquants pour org_id=2 ──
+  await run(
+    "INSERT client — عميل تجريبي",
+    `INSERT INTO clients (name, client_type, org_id, office_seq) VALUES ('عميل تجريبي', 'individual', 2, '2026/003') ON CONFLICT DO NOTHING`,
+    async () => {
+      const r = await db.execute(sql`SELECT 1 FROM clients WHERE name='عميل تجريبي' AND org_id=2`);
+      return (r.rows?.length ?? 0) > 0;
+    },
+  );
+
+  // ── Dossiers de démonstration ──
+  await run(
+    "INSERT dossiers de démonstration (13 dossiers)",
+    `DO $$
+DECLARE
+  v_org integer := 2;
+  v_c   integer := 1;
+  v_cnt integer;
+BEGIN
+  SELECT COUNT(*) INTO v_cnt FROM cases WHERE org_id = v_org AND deleted_at IS NULL;
+  IF v_cnt > 5 THEN
+    RAISE NOTICE 'Already seeded';
+    RETURN;
+  END IF;
+
+  INSERT INTO cases (title, client_id, status, court, lawyer, next_hearing, description,
+    case_number, procedure_stage, court_case_number, opponent_name, opponent_lawyer,
+    case_type, litigation_degree, procedure_type, case_priority, fee_method,
+    agreed_fees, hourly_rate, percentage, percentage_basis, dispute_value,
+    client_source, judge_name, first_hearing_date, opened_at, confidentiality_level,
+    internal_notes, org_id, service_type, type_specific_data)
+  VALUES
+    ('دعوى مدنية — استرداد مبالغ مالية', v_c, 'active', 'المحكمة الابتدائية بتونس', 'المحامي أحمد بن سالم', '2026-06-15',
+     'نزاع حول استرداد مبالغ مدفوعة مقابل عقار لم يُسلَّم في الأجل المتفق عليه',
+     '2026-0006', 'ابتدائي', '2026/154', 'شركة النور للتجارة', 'المحامي خالد المنصوري',
+     'civil', 'first_instance', 'main_action', 'important', 'fixed',
+     4500.000, NULL, NULL, NULL, 35000.000,
+     'referral', 'القاضي محمد الكريمي', '2026-03-10', '2026-03-01', 'normal',
+     'ملف ذو أولوية — الموكّل ينتظر استرداد عربون عقاري', v_org, 'lawsuit', '{}'),
+
+    ('ملف عقاري — تسوية رسم عقاري', v_c, 'active', 'المحكمة العقارية بتونس', 'المحامية فاطمة الزواري', '2026-07-03',
+     'نزاع في رسم عقاري — قطعة أرضية بالمرسى، مساحة 450م²، مطعون في الحدود',
+     '2026-0007', 'ابتدائي', '2026/ع/88', 'ورثة بن علي', NULL,
+     'real_estate', 'first_instance', 'main_action', 'normal', 'percentage',
+     NULL, NULL, 2.50, 'قيمة العقار', 180000.000,
+     'google', 'القاضية سامية بلحاج', '2026-04-20', '2026-04-05', 'confidential',
+     NULL, v_org, 'real_estate_file', '{}'),
+
+    ('ملف شغل — إعادة إدماج موكّل مُطرود', v_c, 'active', 'المحكمة الابتدائية بصفاقس', 'المحامي رضا الحمامي', '2026-06-22',
+     'طرد تعسفي — موكّل أُعفي من منصبه دون إشعار مسبق ودون استيفاء حقوقه القانونية',
+     '2026-0008', 'ابتدائي', '2026/ش/42', 'مؤسسة البناء الحديث', 'المحامية نور الهدى',
+     'labor', 'first_instance', 'main_action', 'urgent', 'fixed',
+     3200.000, NULL, NULL, NULL, 28000.000,
+     'returning_client', 'القاضي توفيق السعداوي', '2026-02-14', '2026-02-01', 'normal',
+     NULL, v_org, 'labor_file', '{}'),
+
+    ('ملف جبائي — طعن في مراجعة ضريبية', v_c, 'active', 'المحكمة الإدارية بتونس', 'المحامية لمياء الشابي', '2026-08-10',
+     'طعن في قرار مراجعة جبائية — مبالغ مطالب بها 95.000 دينار',
+     '2026-0009', 'ابتدائي', NULL, 'المديرية العامة للضرائب', NULL,
+     'tax', 'first_instance', 'appeal', 'urgent', 'hourly',
+     NULL, 200.000, NULL, NULL, 95000.000,
+     'partner', NULL, NULL, '2026-01-15', 'sensitive',
+     NULL, v_org, 'tax_file', '{}'),
+
+    ('تنفيذ حكم — استخلاص تعويض', v_c, 'active', 'كتابة الجلسات — محكمة تونس', 'المحامي بلحسن الغربي', NULL,
+     'تنفيذ حكم نهائي بالتعويض — المدّعى عليه يماطل في التسديد منذ 3 أشهر',
+     '2026-0010', 'ابتدائي', NULL, 'شركة التأمين الوطنية', 'المحامي سامي النفاتي',
+     NULL, NULL, NULL, 'important', 'percentage',
+     NULL, NULL, 10.00, 'المبالغ المستخلصة', 42000.000,
+     NULL, NULL, NULL, '2026-03-20', 'normal',
+     NULL, v_org, 'judgment_execution', '{}'),
+
+    ('إنذار — مطالبة بالإخلاء', v_c, 'active', 'كتابة الجلسات الاستعجالية', 'المحامية إيمان بن يوسف', NULL,
+     'إنذار بالإخلاء لعدم دفع الكراء منذ 6 أشهر — عقار بالمنار',
+     '2026-0011', 'ابتدائي', NULL, 'المستأجر مراد الحاج', NULL,
+     NULL, NULL, NULL, 'important', 'fixed',
+     800.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-05-10', 'normal',
+     NULL, v_org, 'legal_notice', '{}'),
+
+    ('ملف إداري — طعن في قرار سحب الترخيص', v_c, 'active', 'المحكمة الإدارية بتونس', 'المحامي وليد المسعدي', '2026-09-05',
+     'طعن في قرار إداري بسحب الترخيص التجاري — المنشأة تعمل منذ 12 سنة',
+     '2026-0012', 'ابتدائي', NULL, 'وزارة الشغل', NULL,
+     'administrative', 'first_instance', 'opposition', 'normal', 'fixed',
+     2800.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-02-20', 'normal',
+     NULL, v_org, 'administrative', '{}'),
+
+    ('وساطة — نزاع بين شركاء', v_c, 'active', NULL, 'المحامي عماد بن صالح', NULL,
+     'وساطة بين شريكين في شركة ذات مسؤولية محدودة — خلاف حول توزيع الأرباح',
+     '2026-0013', 'ابتدائي', NULL, 'الشريك حسام الطرابلسي', NULL,
+     NULL, NULL, NULL, 'normal', 'hourly',
+     NULL, 250.000, NULL, NULL, 75000.000,
+     NULL, NULL, NULL, '2026-04-01', 'confidential',
+     NULL, v_org, 'mediation', '{}'),
+
+    ('استشارة — هيكلة عقد شراكة', v_c, 'active', NULL, 'المحامية سلمى القاسمي', NULL,
+     'استشارة قانونية حول هيكلة عقد شراكة بين شركتين — مراجعة البنود والضمانات',
+     '2026-0014', 'ابتدائي', NULL, NULL, NULL,
+     NULL, NULL, NULL, 'normal', 'fixed',
+     1500.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-05-05', 'normal',
+     NULL, v_org, 'consultation', '{}'),
+
+    ('تحرير عقد — عقد مقاولة كبرى', v_c, 'active', NULL, 'المحامي كمال بوعزيزي', NULL,
+     'صياغة عقد مقاولة لأشغال بناء — قيمة المشروع 1.2 مليون دينار',
+     '2026-0015', 'ابتدائي', NULL, 'شركة الإنشاءات الحديثة', NULL,
+     NULL, NULL, NULL, 'normal', 'fixed',
+     2200.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-03-15', 'normal',
+     NULL, v_org, 'contract', '{}'),
+
+    ('تأسيس شركة — شركة ذ.م.م تجارية', v_c, 'active', NULL, 'المحامي أنيس العيّاري', NULL,
+     'تأسيس شركة ذات مسؤولية محدودة في قطاع التجارة الإلكترونية — رأس مال 50.000 دينار',
+     '2026-0016', 'ابتدائي', NULL, NULL, NULL,
+     NULL, NULL, NULL, 'normal', 'fixed',
+     3500.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-05-12', 'normal',
+     NULL, v_org, 'company_creation', '{}'),
+
+    ('استخلاص ديون — فواتير متأخرة', v_c, 'active', NULL, 'المحامية ريم بن عيسى', NULL,
+     'استخلاص مبالغ مالية متأخرة — فواتير غير مسددة منذ 14 شهراً',
+     '2026-0017', 'ابتدائي', NULL, 'مؤسسة الأمل للصناعة', 'المحامي زياد الرمضاني',
+     NULL, NULL, NULL, 'urgent', 'percentage',
+     NULL, NULL, 15.00, 'المبالغ المستخلصة', 67000.000,
+     NULL, NULL, NULL, '2026-01-10', 'normal',
+     NULL, v_org, 'debt_recovery', '{}'),
+
+    ('ملف متنوع — متابعة خبرة قضائية', v_c, 'active', 'المحكمة الابتدائية ببنزرت', 'المحامي هشام التليلي', NULL,
+     'متابعة خبرة قضائية أُذن بها في إطار نزاع عقاري — تقييم قيمة العقار',
+     '2026-0018', 'ابتدائي', NULL, NULL, NULL,
+     NULL, NULL, NULL, 'normal', 'fixed',
+     1800.000, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, '2026-04-18', 'normal',
+     NULL, v_org, 'other', '{}');
+END;
+$$`,
+    async () => {
+      const r = await db.execute(sql`SELECT COUNT(*) AS n FROM cases WHERE org_id=2 AND deleted_at IS NULL`);
+      const n = Number((r.rows?.[0] as Record<string, unknown>)?.n ?? 0);
+      return n > 5;
+    },
+  );
+
+  const report: Record<string, unknown> = {};
+  try {
+    const total = await db.execute(sql`SELECT COUNT(*) AS n FROM cases WHERE org_id=2 AND deleted_at IS NULL`);
+    report["cases_org2"] = (total.rows?.[0] as Record<string, unknown>)?.n;
+  } catch (err) {
+    report["error"] = err instanceof Error ? err.message : String(err);
+  }
+
+  const stepsHtml = steps.map(s => {
+    const color = s.status === "ok" ? "#22c55e" : s.status === "skipped" ? "#94a3b8" : "#ef4444";
+    const icon  = s.status === "ok" ? "✅" : s.status === "skipped" ? "⏭️" : "❌";
+    return `<tr><td style="padding:6px 12px;color:${color}">${icon} ${s.name}</td><td style="padding:6px 12px;font-size:12px;color:#64748b">${s.detail ?? ""}</td></tr>`;
+  }).join("");
+
+  res.send(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><title>Migration 0003</title>
+<style>body{font-family:sans-serif;padding:32px;background:#0f172a;color:#e2e8f0}h1{color:#f59e0b}h2{color:#94a3b8;margin-top:32px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #334155;padding:6px 12px;text-align:right}th{background:#1e293b}pre{background:#1e293b;padding:16px;border-radius:8px;overflow-x:auto;font-size:13px}</style>
+</head><body>
+<h1>Migration 0003 — Dossiers de démonstration</h1>
+<h2>Étapes</h2>
+<table>${stepsHtml}</table>
+<h2>Résultat</h2>
+<pre>${JSON.stringify(report, null, 2)}</pre>
+</body></html>`);
+});
+
 export default router;
+
