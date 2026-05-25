@@ -359,11 +359,11 @@ export default function Dashboard() {
         {/* آخر الملفات */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">آخر الملفات</h2>
             <button onClick={() => navigate("/cases")}
               className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
               <ArrowLeft className="h-3 w-3" /> عرض الكل
             </button>
-            <h2 className="font-semibold">آخر الملفات</h2>
           </div>
           <Card className="border-border/60 shadow-sm">
             <CardContent className="px-0 pb-0 pt-0">
