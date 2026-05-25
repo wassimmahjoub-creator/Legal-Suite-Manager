@@ -529,7 +529,8 @@ export default function Dashboard() {
                 <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center justify-between py-2.5 border-b border-border/40 cursor-pointer hover:bg-muted/30 active:bg-muted/50 -mx-4 px-4 transition-colors">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="p-1 rounded bg-emerald-500/10"><TrendingUp className="h-3 w-3 text-emerald-400" /></div>
                       المداخيل هذا الشهر
@@ -538,7 +539,8 @@ export default function Dashboard() {
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center justify-between py-2.5 border-b border-border/40 cursor-pointer hover:bg-muted/30 active:bg-muted/50 -mx-4 px-4 transition-colors">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="p-1 rounded bg-amber-500/10"><Clock className="h-3 w-3 text-amber-400" /></div>
                       فواتير معلقة
@@ -548,7 +550,8 @@ export default function Dashboard() {
                       {summary?.pendingInvoices ?? 0}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2.5">
+                  <div onClick={() => navigate("/cases")}
+                    className="flex items-center justify-between py-2.5 cursor-pointer hover:bg-muted/30 active:bg-muted/50 -mx-4 px-4 transition-colors">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="p-1 rounded bg-blue-500/10"><Briefcase className="h-3 w-3 text-blue-400" /></div>
                       الملفات الجارية
@@ -557,12 +560,6 @@ export default function Dashboard() {
                       {summary?.activeCases ?? 0}
                     </span>
                   </div>
-                  <button
-                    onClick={() => navigate("/billing")}
-                    className="w-full mt-2 text-xs text-center text-primary hover:underline pt-2 border-t border-border/40 flex items-center justify-center gap-1 font-medium"
-                  >
-                    عرض الفوترة الكاملة <ArrowLeft className="inline h-3 w-3" />
-                  </button>
                 </>
               )}
             </CardContent>
