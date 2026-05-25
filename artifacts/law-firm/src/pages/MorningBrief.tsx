@@ -402,38 +402,39 @@ export default function MorningBrief() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                    <span className="text-sm font-bold text-success tabular-nums">
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
+                      <TrendingUp className="h-3.5 w-3.5 text-success shrink-0" />
+                      المداخيل هذا الشهر
+                    </div>
+                    <span className="text-sm font-bold text-success tabular-nums shrink-0">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      المداخيل هذا الشهر
-                      <TrendingUp className="h-3.5 w-3.5 text-success" />
-                    </div>
+                    <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                   </div>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
-                    <span className={cn(
-                      "text-sm font-bold tabular-nums",
-                      (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-foreground"
-                    )}>
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
+                      <Receipt className={cn("h-3.5 w-3.5 shrink-0", (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-muted-foreground")} />
+                      فواتير معلقة
+                    </div>
+                    <span className={cn("text-sm font-bold tabular-nums shrink-0",
+                      (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-foreground")}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      فواتير معلقة
-                      <Receipt className={cn(
-                        "h-3.5 w-3.5",
-                        (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-muted-foreground"
-                      )} />
-                    </div>
+                    <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                   </div>
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-bold tabular-nums text-primary">
+                  <div onClick={() => navigate("/cases")}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
+                      <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
+                      ملفات جارية
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-primary shrink-0">
                       {summary?.activeCases ?? 0}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      ملفات جارية
-                      <Briefcase className="h-3.5 w-3.5 text-primary" />
-                    </div>
+                    <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                   </div>
                 </>
               )}
