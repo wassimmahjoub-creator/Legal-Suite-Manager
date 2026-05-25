@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { cn } from "@/lib/utils";
 import {
   Briefcase, Clock, AlertTriangle, CheckCircle2,
-  TrendingUp, Scale, Users, ArrowLeft, Circle, CalendarClock,
+  TrendingUp, Scale, Users, Circle, CalendarClock,
   ChevronLeft, Timer, Receipt, Plus, MessageSquare, FileText,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -358,13 +358,7 @@ export default function Dashboard() {
 
         {/* آخر الملفات */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">آخر الملفات</h2>
-            <button onClick={() => navigate("/cases")}
-              className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
-              <ArrowLeft className="h-3 w-3" /> عرض الكل
-            </button>
-          </div>
+          <h2 className="font-semibold mb-3">آخر الملفات</h2>
           <Card className="border-border/60 shadow-sm">
             <CardContent className="px-0 pb-0 pt-0">
               {loadingExtra ? (
