@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PhoneCall, Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
+import { Plus, Pencil, Trash2, Mail, MessageCircle, Users, Video, Phone } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
@@ -65,13 +66,11 @@ export default function Communications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-green-500/10 rounded-xl"><PhoneCall className="h-6 w-6 text-green-400" /></div>
-          <div><h1 className="text-2xl font-bold">سجل الاتصالات</h1><p className="text-muted-foreground text-sm">{data.length} اتصال مسجل</p></div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> اتصال جديد</Button>
-      </div>
+      <PageHeader
+        title="سجل الاتصالات"
+        subtitle={`${data.length} اتصال مسجل`}
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> اتصال جديد</Button>}
+      />
       <div className="flex gap-3 flex-wrap items-center">
         <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)} className="h-10 bg-muted/50 border-border rounded-lg w-48" />
         <div className="flex gap-2 flex-wrap">

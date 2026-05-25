@@ -4,7 +4,8 @@ import { authFetch } from "@/lib/authFetch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ClipboardList, Search, Filter } from "lucide-react";
+import { Search, Filter, ClipboardList } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import { DateDisplay } from "@/components/DateDisplay";
@@ -50,10 +51,7 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-warning/10 rounded-xl"><ClipboardList className="h-6 w-6 text-warning" /></div>
-        <div><h1 className="text-2xl font-bold">سجل التعديلات</h1><p className="text-muted-foreground text-sm">تاريخ كل العمليات على النظام</p></div>
-      </div>
+      <PageHeader title="سجل التعديلات" subtitle="تاريخ كل العمليات على النظام" />
 
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Filter, Archive, Hash, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ServiceTypeBadge } from "@/components/ServiceTypeBadge";
@@ -135,23 +136,11 @@ export default function Cases() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-start gap-3">
-          <div>
-            {(fromParam === "dashboard" || viewArchived) && (
-              <button onClick={() => fromParam === "dashboard" ? navigate("/") : setViewArchived(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors mb-1">
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
-            <h1 className="text-2xl font-bold">القضايا</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              {viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="القضايا"
+        subtitle={viewArchived ? "الملفات المؤرشفة" : "إدارة وتتبع جميع قضايا المكتب"}
+        back={fromParam === "dashboard" || !!viewArchived}
+        actions={<div className="flex gap-2">
           <ExportDropdown
             endpoint="cases"
             params={{ search, status: statusFilter !== "all" ? statusFilter : undefined, archived: viewArchived ? "true" : undefined }}
@@ -166,8 +155,8 @@ export default function Cases() {
             <Plus className="h-4 w-4" />
             ملف جديد
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

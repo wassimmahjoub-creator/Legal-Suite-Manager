@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/select";
 import {
   TrendingUp, Briefcase, Users, CreditCard, Download,
-  BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw, ArrowRight,
+  BarChart3, CheckCircle2, AlertCircle, Clock, RefreshCw,
   ChevronUp, ChevronDown, Wallet,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
 import { Money, TNDAmount } from "@/components/Money";
@@ -821,22 +822,11 @@ export default function Reports() {
 
   return (
     <div className="space-y-3 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div>
-        <button onClick={() => window.history.back()}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-          <ArrowRight className="h-3.5 w-3.5" /> رجوع
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-            <BarChart3 className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold leading-tight">تقارير الأداء والربحية</h1>
-            <p className="text-xs text-muted-foreground">تحليل شامل للنشاط المالي والقانوني للمكتب</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="تقارير الأداء والربحية"
+        subtitle="تحليل شامل للنشاط المالي والقانوني للمكتب"
+        back
+      />
 
       {/* Tab bar */}
       <div className="border-b border-border">

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, Phone, Mail, MapPin, Users, Pencil, Trash2, ExternalLink, LayoutGrid, List, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/ui/skeletons";
@@ -147,18 +148,16 @@ export default function Clients() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">الموكّلون</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة معلومات وبيانات الموكّلون</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="الموكّلون"
+        subtitle="إدارة معلومات وبيانات الموكّلين"
+        actions={<>
           <ExportDropdown endpoint="clients" params={{ search }} />
           <Button onClick={openNew} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" /> موكّل جديد
           </Button>
-        </div>
-      </div>
+        </>}
+      />
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">

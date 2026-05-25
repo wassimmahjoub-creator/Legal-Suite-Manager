@@ -23,8 +23,9 @@ import { MicButton } from "@/components/MicButton";
 import {
   CalendarIcon, Clock, MapPin, Briefcase, Plus, Pencil, Trash2,
   Target, CheckCircle2, Scale, ChevronRight, ChevronLeft,
-  LayoutGrid, List, Columns2, ArrowRight,
+  LayoutGrid, List, Columns2,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useAgendaEvents, type AgendaEvent, type CalEvent, toCalEvent } from "@/hooks/useAgendaEvents";
 
 // ── Setup ────────────────────────────────────────────────────────────────────
@@ -371,13 +372,11 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* ── Title row ── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">الرزنامة</h1>
-        <Button onClick={() => openNew()} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" /> حدث جديد
-        </Button>
-      </div>
+      <PageHeader
+        title="الرزنامة"
+        subtitle="مواعيد الجلسات، الاجتماعات والآجال القانونية"
+        actions={<Button onClick={() => openNew()} className="rounded-lg gap-2 px-5"><Plus className="h-4 w-4" /> حدث جديد</Button>}
+      />
 
       {/* ── Compact toolbar ── */}
       <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">

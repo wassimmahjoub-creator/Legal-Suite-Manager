@@ -4,7 +4,8 @@ import { authFetch } from "@/lib/authFetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
-import { Settings2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -57,13 +58,11 @@ export default function LegalConfig() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-primary/10 rounded-xl"><Settings2 className="h-6 w-6 text-primary" /></div>
-          <div><h1 className="text-2xl font-bold">الإعدادات القانونية</h1><p className="text-muted-foreground text-sm">قوائم قابلة للتخصيص</p></div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> إضافة</Button>
-      </div>
+      <PageHeader
+        title="الإعدادات القانونية"
+        subtitle="قوائم قابلة للتخصيص"
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> إضافة</Button>}
+      />
 
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-56 space-y-1 shrink-0">

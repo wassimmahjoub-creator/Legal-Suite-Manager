@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
-import { FilePen, Plus, Pencil, Trash2, Copy, Download, Wand2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, Download, Wand2 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -99,16 +100,11 @@ export default function Templates() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-purple-500/10 rounded-xl"><FilePen className="h-6 w-6 text-purple-400" /></div>
-          <div>
-            <h1 className="text-2xl font-bold">نماذج الوثائق</h1>
-            <p className="text-muted-foreground text-sm">قوالب قانونية جاهزة للاستخدام</p>
-          </div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> نموذج جديد</Button>
-      </div>
+      <PageHeader
+        title="نماذج الوثائق"
+        subtitle="قوالب قانونية جاهزة للاستخدام"
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> نموذج جديد</Button>}
+      />
 
       <div className="flex gap-3 flex-wrap items-center">
         <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)}

@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
-import { ShieldCheck, Plus, Pencil, Trash2, Phone, Mail, User } from "lucide-react";
+import { Plus, Pencil, Trash2, Phone, Mail, User, ShieldCheck } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -41,13 +42,11 @@ export default function InsuranceCompanies() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-cyan-500/10 rounded-xl"><ShieldCheck className="h-6 w-6 text-cyan-400" /></div>
-          <div><h1 className="text-2xl font-bold">شركات التأمين</h1><p className="text-muted-foreground text-sm">دليل شركات التأمين</p></div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> شركة جديدة</Button>
-      </div>
+      <PageHeader
+        title="شركات التأمين"
+        subtitle="دليل شركات التأمين"
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> شركة جديدة</Button>}
+      />
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1,2,3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}</div>
       ) : data.length === 0 ? (

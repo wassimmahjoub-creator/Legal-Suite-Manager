@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
-import { Mail, Plus, Pencil, Trash2, FileText, ArrowUpRight, ArrowDownLeft, Send } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, ArrowUpRight, ArrowDownLeft, Send, Mail } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { SkeletonTable } from "@/components/ui/skeletons";
@@ -142,18 +143,11 @@ export default function Correspondances() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Mail className="h-6 w-6 text-primary" /> المراسلات
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">المراسلات الرسمية مع الموكّلون ({filtered.length})</p>
-        </div>
-        <Button onClick={openNew} className="bg-primary hover:bg-primary/90 gap-2 shrink-0">
-          <Plus className="h-4 w-4" /> مراسلة جديدة
-        </Button>
-      </div>
+      <PageHeader
+        title="المراسلات"
+        subtitle={`المراسلات الرسمية مع الموكّلين (${filtered.length})`}
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> مراسلة جديدة</Button>}
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">

@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   FileText, Upload, Search, Download, Eye,
-  FileImage, File, FileSpreadsheet, ArrowRight,
+  FileImage, File, FileSpreadsheet,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
@@ -44,20 +45,12 @@ export default function Documents() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <button onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-            <ArrowRight className="h-3.5 w-3.5" /> رجوع
-          </button>
-          <h1 className="text-2xl font-bold">الوثائق</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة الملفات والوثائق الخاصة بالقضايا</p>
-        </div>
-        <Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5">
-          <Upload className="h-4 w-4" />
-          رفع وثيقة
-        </Button>
-      </div>
+      <PageHeader
+        title="الوثائق"
+        subtitle="إدارة الملفات والوثائق الخاصة بالقضايا"
+        back
+        actions={<Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5"><Upload className="h-4 w-4" /> رفع وثيقة</Button>}
+      />
 
       <div className="relative max-w-sm">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

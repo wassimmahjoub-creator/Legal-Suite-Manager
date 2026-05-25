@@ -8,10 +8,11 @@ import { Modal, FormField } from "@/components/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyDocumentsIllustration } from "@/components/illustrations/EmptyDocuments";
 import {
-  Building2, Plus, Pencil, Trash2, MapPin, Search,
+  Plus, Pencil, Trash2, MapPin, Search,
   Filter, Upload, Download, ChevronDown, DatabaseZap,
   Phone, Globe, Layers,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 import {
@@ -187,19 +188,10 @@ export default function Courts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-500/10 rounded-xl">
-            <Building2 className="h-6 w-6 text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">المحاكم</h1>
-            <p className="text-muted-foreground text-sm">
-              {loading ? "..." : `${data.length} محكمة مسجلة`}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title="المحاكم"
+        subtitle={loading ? "..." : `${data.length} محكمة مسجلة`}
+        actions={<>
           <Button variant="outline" size="sm" onClick={runSeed} disabled={seeding} className="gap-2 text-xs">
             <DatabaseZap className="h-3.5 w-3.5" />
             {seeding ? "جارٍ التهيئة..." : "تهيئة المحاكم الافتراضية"}
@@ -211,8 +203,8 @@ export default function Courts() {
           <Button onClick={openNew} size="sm" className="gap-2">
             <Plus className="h-4 w-4" /> محكمة جديدة
           </Button>
-        </div>
-      </div>
+        </>}
+      />
 
       <Card className="border-none shadow-sm">
         <CardContent className="p-4 space-y-3">

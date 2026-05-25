@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal, FormField } from "@/components/Modal";
 import { Plus, Receipt, TrendingDown, Banknote, Scale, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Tooltip,
   TooltipContent,
@@ -164,15 +165,11 @@ export default function Expenses() {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">المصاريف القضائية</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">تتبع مصاريف التقاضي والتكاليف القابلة للاسترجاع</p>
-          </div>
-          <Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5">
-            <Plus className="h-4 w-4" /> إضافة مصروف
-          </Button>
-        </div>
+        <PageHeader
+          title="المصاريف القضائية"
+          subtitle="تتبع مصاريف التقاضي والتكاليف القابلة للاسترجاع"
+          actions={<Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5"><Plus className="h-4 w-4" /> إضافة مصروف</Button>}
+        />
 
         {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

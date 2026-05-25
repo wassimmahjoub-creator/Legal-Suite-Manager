@@ -116,11 +116,8 @@ export default function Dashboard() {
       {/* ══ 1. COMPACT DAILY HEADER ══════════════════════════════════════════ */}
       <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Scale className="h-4 w-4 text-primary" />
-            <h1 className="text-base font-bold">الرئيسية</h1>
-          </div>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold">الرئيسية</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             <DateDisplay date={new Date()} format="full" />
           </p>
         </div>

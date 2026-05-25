@@ -10,7 +10,8 @@ import { Modal, FormField } from "@/components/Modal";
 import { SmartTextarea } from "@/components/SmartTextarea";
 import { MicButton } from "@/components/MicButton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { MessageSquare, Plus, Pencil, Trash2, User, Calendar, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, User, Calendar, CheckCircle2, Clock } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeletons";
 
@@ -75,16 +76,11 @@ export default function Consultations() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-info/10 rounded-xl"><MessageSquare className="h-6 w-6 text-info" /></div>
-          <div>
-            <h1 className="text-2xl font-bold">الاستشارات</h1>
-            <p className="text-muted-foreground text-sm">استشارات قانونية • مداخيل: <Money amount={totalRevenue} className="text-primary font-bold" /></p>
-          </div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> استشارة جديدة</Button>
-      </div>
+      <PageHeader
+        title="الاستشارات"
+        subtitle={`استشارات قانونية • مداخيل: ${totalRevenue.toFixed(3)} د.ت`}
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> استشارة جديدة</Button>}
+      />
 
       <Input placeholder="بحث..." value={search} onChange={e => setSearch(e.target.value)}
         className="h-10 bg-muted/50 border-border rounded-lg max-w-sm" />

@@ -4,6 +4,7 @@ import { formatTND } from "@/lib/currency";
 import { DateDisplay } from "@/components/DateDisplay";
 import { Button } from "@/components/ui/button";
 import { Trash2, RotateCcw, AlertTriangle, Briefcase, Users, FileText, CreditCard } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
@@ -72,10 +73,7 @@ export default function Trash() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-destructive/10 rounded-xl"><Trash2 className="h-6 w-6 text-destructive" /></div>
-        <div><h1 className="text-2xl font-bold">سلة المحذوفات</h1><p className="text-muted-foreground text-sm">{total} عنصر محذوف</p></div>
-      </div>
+      <PageHeader title="سلة المحذوفات" subtitle={`${total} عنصر محذوف`} />
 
       {!isAdmin && (
         <div className="flex items-center gap-3 p-4 bg-orange-500/10 text-orange-400 rounded-xl border border-orange-500/20 text-sm">

@@ -8,7 +8,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
 import { Input } from "@/components/ui/input";
 import { Modal, FormField } from "@/components/Modal";
-import { Landmark, Plus, Pencil, Trash2, CreditCard } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -47,16 +48,11 @@ export default function BankAccounts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Landmark className="h-6 w-6 text-emerald-400" /></div>
-          <div>
-            <h1 className="text-2xl font-bold">الحسابات البنكية</h1>
-            <p className="text-muted-foreground text-sm">إجمالي TND: <Money amount={totalTND} className="text-primary font-bold" /></p>
-          </div>
-        </div>
-        <Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> حساب جديد</Button>
-      </div>
+      <PageHeader
+        title="الحسابات البنكية"
+        subtitle={`إجمالي TND: ${totalTND.toFixed(3)}`}
+        actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> حساب جديد</Button>}
+      />
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1,2].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
       ) : data.length === 0 ? (

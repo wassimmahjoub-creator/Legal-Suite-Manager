@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, TrendingUp, CreditCard, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money, TNDAmount } from "@/components/Money";
@@ -62,19 +63,16 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">الفوترة</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">إدارة الفواتير والمدفوعات</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="الفوترة"
+        subtitle="إدارة الفواتير والمدفوعات"
+        actions={<>
           <ExportDropdown endpoint="invoices" params={{ search, status: statusFilter || undefined }} />
           <Button onClick={() => navigate("/billing/new")} className="rounded-lg gap-2 px-5">
             <Plus className="h-4 w-4" /> فاتورة جديدة
           </Button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

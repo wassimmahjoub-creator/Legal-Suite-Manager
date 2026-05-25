@@ -11,6 +11,7 @@ import {
   Plus, UserPlus, Pencil, Trash2, RefreshCw, Copy, Check,
   Shield, ShieldOff, Users, Link2, X,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { cn } from "@/lib/utils";
 import { ConfirmDestructive } from "@/components/ui/ConfirmDestructive";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -198,22 +199,18 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">إدارة المستخدمين</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">أعضاء الفريق والدعوات المعلقة</p>
-        </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setModal("invite")} className="gap-1.5">
-              <Link2 className="h-4 w-4" /> دعوة
-            </Button>
-            <Button size="sm" onClick={() => setModal("add-user")} className="gap-1.5">
-              <UserPlus className="h-4 w-4" /> إضافة مستخدم
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="إدارة المستخدمين"
+        subtitle="أعضاء الفريق والدعوات المعلقة"
+        actions={isAdmin ? <>
+          <Button variant="outline" size="sm" onClick={() => setModal("invite")} className="gap-1.5">
+            <Link2 className="h-4 w-4" /> دعوة
+          </Button>
+          <Button size="sm" onClick={() => setModal("add-user")} className="gap-1.5">
+            <UserPlus className="h-4 w-4" /> إضافة مستخدم
+          </Button>
+        </> : undefined}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-muted/40 p-1 rounded-xl w-fit">
