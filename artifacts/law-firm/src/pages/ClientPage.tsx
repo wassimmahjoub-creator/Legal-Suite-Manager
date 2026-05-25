@@ -322,16 +322,14 @@ export default function ClientPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* Back button */}
-      <button onClick={() => window.history.back()}
-        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors">
-        <ArrowRight className="h-3.5 w-3.5" /> رجوع
-      </button>
-
       {/* Header */}
       <div className="rounded-2xl bg-card border border-border p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => window.history.back()}
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+              <ArrowRight className="h-5 w-5" />
+            </button>
             <div className={cn(
               "h-16 w-16 rounded-2xl flex items-center justify-center font-bold text-2xl shrink-0",
               isCompany ? "bg-blue-500/10 text-blue-400" : "bg-primary/10 text-primary"
