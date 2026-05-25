@@ -390,7 +390,7 @@ export default function Dashboard() {
                           <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline truncate max-w-[120px]">{c.clientName}</span>
                         )}
                         {c.caseNumber && (
-                          <span className="text-xs text-muted-foreground/60 font-mono tabular-nums shrink-0">{c.caseNumber}</span>
+                          <span className="text-xs font-medium text-foreground shrink-0 tabular-nums">{c.caseNumber}</span>
                         )}
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
                         <Scale className="h-4 w-4 text-muted-foreground/30 shrink-0" />
