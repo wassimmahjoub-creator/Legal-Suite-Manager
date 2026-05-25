@@ -10,19 +10,21 @@ interface PageHeaderProps {
 export function PageHeader({ title, subtitle, back = false, actions }: PageHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
+      <div className="flex items-center gap-2">
         {back && (
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
-            <ArrowRight className="h-3.5 w-3.5" /> رجوع
+            <ArrowRight className="h-5 w-5" />
           </button>
         )}
-        <h1 className="text-2xl font-bold">{title}</h1>
-        {subtitle && (
-          <p className="text-muted-foreground text-sm mt-0.5">{subtitle}</p>
-        )}
+        <div>
+          <h1 className="text-2xl font-bold">{title}</h1>
+          {subtitle && (
+            <p className="text-muted-foreground text-sm mt-0.5">{subtitle}</p>
+          )}
+        </div>
       </div>
       {actions && (
         <div className="flex items-center gap-2 shrink-0 pt-1">{actions}</div>
