@@ -124,12 +124,6 @@ export default function Dashboard() {
         <CheckCircle2 className="h-3 w-3" />
         {loadingToday ? "…" : pendingTasks.length} مهمة
       </span>
-      {(summary?.pendingInvoices ?? 0) > 0 && (
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-destructive/10 border-destructive/25 text-destructive font-medium">
-          <Receipt className="h-3 w-3" />
-          {loadingSummary ? "…" : summary?.pendingInvoices} فاتورة معلقة
-        </span>
-      )}
     </div>
   );
 
