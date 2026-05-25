@@ -116,67 +116,46 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
 
-      {/* ══ HERO BANNER ══════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-bl from-[#0f2044] via-[#162d5a] to-[#1a1f35] border border-white/5 p-6 sm:p-8">
-        {/* Decorative glow blobs */}
-        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
-
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          {/* Left: greeting */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-xs text-primary font-medium uppercase tracking-widest">{roleLabel}</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-              مرحباً، {firstName}
-            </h1>
-            <p className="text-sm text-white/50 mt-1">
-              <DateDisplay date={new Date()} format="full" />
-            </p>
+      {/* ══ HEADER ═══════════════════════════════════════════════════════════ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs text-primary font-medium">{roleLabel}</span>
           </div>
+          <h1 className="text-2xl font-bold">مرحباً، {firstName}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            <DateDisplay date={new Date()} format="full" />
+          </p>
+        </div>
 
-          {/* Right: mini KPI row */}
-          <div className="flex flex-wrap gap-3 text-sm">
-            {loadingToday || loadingExtra || loadingSummary ? (
-              <Skeleton className="h-14 w-48 rounded-xl" />
-            ) : (
-              <>
-                <div className="flex flex-col items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 min-w-[72px]">
-                  <span className="text-xl font-extrabold text-primary tabular-nums">{summary?.activeCases ?? 0}</span>
-                  <span className="text-[11px] text-white/50 mt-0.5">ملف نشط</span>
-                </div>
-                <div className="flex flex-col items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 min-w-[72px]">
-                  <span className="text-xl font-extrabold text-emerald-400 tabular-nums">{today?.sessions?.length ?? 0}</span>
-                  <span className="text-[11px] text-white/50 mt-0.5">جلسة اليوم</span>
-                </div>
-                <div className={cn(
-                  "flex flex-col items-center px-4 py-2.5 rounded-xl border min-w-[72px]",
-                  urgentDeadlines.length > 0
-                    ? "bg-red-500/10 border-red-500/20"
-                    : "bg-white/5 border-white/10"
-                )}>
-                  <span className={cn("text-xl font-extrabold tabular-nums", urgentDeadlines.length > 0 ? "text-red-400" : "text-white/70")}>
-                    {urgentDeadlines.length}
-                  </span>
-                  <span className="text-[11px] text-white/50 mt-0.5">آجال حرجة</span>
-                </div>
-                <div className={cn(
-                  "flex flex-col items-center px-4 py-2.5 rounded-xl border min-w-[72px]",
-                  (summary?.pendingInvoices ?? 0) > 0
-                    ? "bg-amber-500/10 border-amber-500/20"
-                    : "bg-white/5 border-white/10"
-                )}>
-                  <span className={cn("text-xl font-extrabold tabular-nums", (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-white/70")}>
-                    {summary?.pendingInvoices ?? 0}
-                  </span>
-                  <span className="text-[11px] text-white/50 mt-0.5">فاتورة معلقة</span>
-                </div>
-              </>
+        {/* Status pills */}
+        {loadingToday || loadingExtra || loadingSummary ? (
+          <Skeleton className="h-9 w-64 rounded-xl" />
+        ) : (
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-primary/8 border-primary/20 text-primary font-medium">
+              <Briefcase className="h-3 w-3" />
+              {summary?.activeCases ?? 0} ملف نشط
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-emerald-500/8 border-emerald-500/20 text-emerald-400 font-medium">
+              <CalendarClock className="h-3 w-3" />
+              {today?.sessions?.length ?? 0} جلسة اليوم
+            </span>
+            {urgentDeadlines.length > 0 && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-red-500/10 border-red-500/25 text-red-400 font-medium">
+                <Timer className="h-3 w-3" />
+                {urgentDeadlines.length} آجال حرجة
+              </span>
+            )}
+            {(summary?.pendingInvoices ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-amber-500/10 border-amber-500/25 text-amber-400 font-medium">
+                <Receipt className="h-3 w-3" />
+                {summary?.pendingInvoices} فاتورة معلقة
+              </span>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* ══ KPI CARDS ════════════════════════════════════════════════════════ */}
