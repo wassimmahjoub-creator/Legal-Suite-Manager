@@ -103,7 +103,6 @@ export default function Templates() {
       <PageHeader
         title="نماذج الوثائق"
         subtitle="قوالب قانونية جاهزة للاستخدام"
-        back
         actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> نموذج جديد</Button>}
       />
 

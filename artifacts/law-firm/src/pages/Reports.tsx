@@ -825,7 +825,6 @@ export default function Reports() {
       <PageHeader
         title="تقارير الأداء والربحية"
         subtitle="تحليل شامل للنشاط المالي والقانوني للمكتب"
-        back
       />
 
       {/* Tab bar */}

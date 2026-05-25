@@ -48,7 +48,6 @@ export default function Documents() {
       <PageHeader
         title="الوثائق"
         subtitle="إدارة الملفات والوثائق الخاصة بالقضايا"
-        back
         actions={<Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5"><Upload className="h-4 w-4" /> رفع وثيقة</Button>}
       />
 

@@ -66,7 +66,6 @@ export default function Billing() {
       <PageHeader
         title="الفوترة"
         subtitle="إدارة الفواتير والمدفوعات"
-        back
         actions={<>
           <ExportDropdown endpoint="invoices" params={{ search, status: statusFilter || undefined }} />
           <Button onClick={() => navigate("/billing/new")} className="rounded-lg gap-2 px-5">

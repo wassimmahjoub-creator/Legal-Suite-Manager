@@ -168,7 +168,6 @@ export default function Expenses() {
         <PageHeader
           title="المصاريف القضائية"
           subtitle="تتبع مصاريف التقاضي والتكاليف القابلة للاسترجاع"
-          back
           actions={<Button onClick={() => setShowModal(true)} className="rounded-lg gap-2 px-5"><Plus className="h-4 w-4" /> إضافة مصروف</Button>}
         />
 
