@@ -434,10 +434,6 @@ export default function CalendarView() {
           ))}
         </div>
 
-        {/* Add button */}
-        <Button onClick={() => openNew()} className="rounded-lg gap-1.5 px-3 h-8 text-xs shrink-0">
-          <Plus className="h-3.5 w-3.5" /> حدث جديد
-        </Button>
       </div>
 
       {/* Calendar grid views */}
