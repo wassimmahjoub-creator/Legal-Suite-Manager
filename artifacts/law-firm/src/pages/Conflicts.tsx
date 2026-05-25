@@ -78,7 +78,6 @@ export default function Conflicts() {
           </div>
         </div>
         <Button
-          variant="outline"
           size="sm"
           onClick={runBackfill}
           disabled={backfilling}
