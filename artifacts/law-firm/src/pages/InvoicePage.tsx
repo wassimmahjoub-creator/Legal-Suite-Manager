@@ -126,18 +126,16 @@ export default function InvoicePage() {
     <div className="space-y-6 pb-10">
       {/* Breadcrumb + actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
+        <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()}
-            className="text-muted-foreground hover:text-foreground transition-colors mb-1">
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
             <ArrowRight className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold font-mono">
-              {inv.invoiceNumber ?? `#INV-${String(inv.id).padStart(4, "0")}`}
-            </h1>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCls}`}>{statusLabel}</span>
-            {isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-          </div>
+          <h1 className="text-2xl font-bold font-mono">
+            {inv.invoiceNumber ?? `#INV-${String(inv.id).padStart(4, "0")}`}
+          </h1>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCls}`}>{statusLabel}</span>
+          {isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
         </div>
         <div className="flex gap-2 flex-wrap">
           {!isLocked && (
