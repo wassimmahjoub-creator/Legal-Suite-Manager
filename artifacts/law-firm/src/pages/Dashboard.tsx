@@ -146,17 +146,17 @@ export default function Dashboard() {
       {/* ══ QUICK ACTIONS ════════════════════════════════════════════════════ */}
       <div className="flex flex-wrap gap-2">
         {[
-          { label: "ملف +",        icon: Briefcase,     path: "/cases/new"      },
-          { label: "جلسة +",       icon: CalendarClock, path: "/calendar"       },
-          { label: "استشارة +",    icon: MessageSquare, path: "/consultations"  },
-          { label: "فاتورة +",     icon: Receipt,       path: "/billing/new"    },
-          { label: "مراسلة +",     icon: FileText,      path: "/correspondances"},
+          { label: "ملف",       path: "/cases/new"      },
+          { label: "جلسة",      path: "/calendar"       },
+          { label: "استشارة",   path: "/consultations"  },
+          { label: "فاتورة",    path: "/billing/new"    },
+          { label: "مراسلة",    path: "/correspondances"},
         ].map(a => (
           <Button key={a.path}
             onClick={() => navigate(a.path)}
-            className="rounded-lg px-5"
+            className="rounded-lg gap-2 px-5"
           >
-            {a.label}
+            <Plus className="h-4 w-4" />{a.label}
           </Button>
         ))}
       </div>
