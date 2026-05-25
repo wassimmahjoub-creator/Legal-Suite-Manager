@@ -231,7 +231,7 @@ export function InvoicePdfButton({ inv, cab }: { inv: Invoice; cab: CabinetSetti
   const filename = `${inv.invoiceNumber ?? `facture-${inv.id}`}.pdf`;
   return (
     <PDFDownloadLink document={<InvoiceDocument inv={inv} cab={cab} />} fileName={filename}>
-      {({ loading }) => (loading ? "Génération PDF..." : "Télécharger PDF")}
+      {({ loading }) => (loading ? "جارٍ إنشاء PDF..." : "تحميل PDF")}
     </PDFDownloadLink>
   );
 }
