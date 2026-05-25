@@ -1279,55 +1279,47 @@ export default function CaseDetail() {
   return (
     <div className="space-y-6">
       {/* Case Header */}
-      <Card className="border-none shadow-sm">
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              {fromReports ? (
-                <button onClick={() => {
-                  const fromTab = new URLSearchParams(window.location.search).get("fromTab") ?? "profitability";
-                  navigate(`/reports?tab=${fromTab}`);
-                }}
-                  className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-muted transition-colors shrink-0 text-xs text-muted-foreground hover:text-foreground">
-                  <ArrowRight className="h-4 w-4" /> التقارير
-                </button>
-              ) : (
-                <button onClick={() => window.history.back()} className="mt-1 p-2 rounded-xl hover:bg-muted transition-colors shrink-0">
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                </button>
-              )}
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
-                  {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
-                  {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الموكّل">📁 {c.clientFileRef}</span>}
-                  <StatusBadge status={caseData.status} />
-                  {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
-                  {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
-                  {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{tr(TR_CASE_TYPE, c.caseType)}</span>}
-                  {c.casePriority && c.casePriority !== "normal" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "urgent" ? "bg-red-500/10 text-red-400" : "bg-primary/10 text-primary"}`}><AlertTriangle className="h-3 w-3" />{tr(TR_PRIORITY, c.casePriority)}</span>}
-                  {c.confidentialityLevel && c.confidentialityLevel !== "normal" && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{tr(TR_CONFIDENTIALITY, c.confidentialityLevel)}</span>}
-                </div>
-                <h1 className="text-xl font-bold mb-1">{caseData.title}</h1>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  {caseData.clientName && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />{caseData.clientName}</span>}
-                  {caseData.court     && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
-                  {caseData.lawyer    && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
-                  {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDateTN(caseData.nextHearing)}</span>}
-                  {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-primary"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
-                </div>
-              </div>
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fromReports
+              ? navigate(`/reports?tab=${new URLSearchParams(window.location.search).get("fromTab") ?? "profitability"}`)
+              : window.history.back()
+            }
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <ArrowRight className="h-5 w-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              {c.caseNumber      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-mono flex items-center gap-1" title="رقم الملف الداخلي"><Hash className="h-3 w-3" />{c.caseNumber}</span>}
+              {c.courtCaseNumber && <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-mono flex items-center gap-1" title="رقم القضية لدى المحكمة">⚖ {c.courtCaseNumber}</span>}
+              {c.clientFileRef   && <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded-full font-mono flex items-center gap-1" title="مرجع الموكّل">📁 {c.clientFileRef}</span>}
+              <StatusBadge status={caseData.status} />
+              {c.archivedAt      && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Archive className="h-3 w-3" />مؤرشفة</span>}
+              {c.procedureStage  && <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center gap-1"><Layers className="h-3 w-3" />{c.procedureStage}</span>}
+              {c.caseType        && <span className="text-xs px-2 py-0.5 bg-violet-500/10 text-violet-400 rounded-full">{tr(TR_CASE_TYPE, c.caseType)}</span>}
+              {c.casePriority && c.casePriority !== "normal" && <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${c.casePriority === "urgent" ? "bg-red-500/10 text-red-400" : "bg-primary/10 text-primary"}`}><AlertTriangle className="h-3 w-3" />{tr(TR_PRIORITY, c.casePriority)}</span>}
+              {c.confidentialityLevel && c.confidentialityLevel !== "normal" && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full flex items-center gap-1"><Lock className="h-3 w-3" />{tr(TR_CONFIDENTIALITY, c.confidentialityLevel)}</span>}
             </div>
-            <div className="flex gap-2 flex-wrap shrink-0">
-              {overdueCount > 0 && <span className="text-xs px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر</span>}
-              <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
-              <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
-              <CaseExportMenu caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
-              <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
+            <h1 className="text-2xl font-bold mb-1">{caseData.title}</h1>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {caseData.clientName && <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />{caseData.clientName}</span>}
+              {caseData.court     && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{caseData.court}{c.division ? ` — ${c.division}` : ""}</span>}
+              {caseData.lawyer    && <span className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5" />{caseData.lawyer}</span>}
+              {caseData.nextHearing && !c.archivedAt && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDateTN(caseData.nextHearing)}</span>}
+              {c.archivedAt && c.judgmentText && <span className="flex items-center gap-1.5 text-primary"><FileText className="h-3.5 w-3.5" />نص الحكم: {c.judgmentText}</span>}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex gap-2 flex-wrap shrink-0 pt-1">
+          {overdueCount > 0 && <span className="text-xs px-2 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> {overdueCount} أجل متأخر</span>}
+          <Button size="sm" onClick={() => setShowWizard(true)} className="gap-1.5 text-xs"><Pencil className="h-3.5 w-3.5" />تعديل</Button>
+          <Button size="sm" onClick={() => setConfirmArchive(true)} className="gap-1.5 text-xs"><Archive className="h-3.5 w-3.5" />{c.archivedAt ? "استرجاع" : "أرشفة"}</Button>
+          <CaseExportMenu caseId={Number(id)} caseTitle={caseData?.title} caseNumber={(caseData as { caseNumber?: string | null })?.caseNumber} />
+          <Button variant="destructive" size="sm" onClick={() => setConfirmCaseDelete(true)} className="gap-1.5 text-xs"><Trash2 className="h-3.5 w-3.5" />حذف</Button>
+        </div>
+      </div>
 
       {/* Stage Stepper — visible only for litigation/execution types */}
       {!NON_LITIGATION_TYPES.includes(c.serviceType ?? "lawsuit") && (
