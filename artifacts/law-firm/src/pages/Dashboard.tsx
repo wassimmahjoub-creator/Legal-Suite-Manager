@@ -386,11 +386,6 @@ export default function Dashboard() {
                         <Scale className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         <div className="flex-1 min-w-0 text-right">
                           <p className="font-medium text-sm truncate">{c.title}</p>
-                          {c.clientName && (
-                            <p className="text-xs text-muted-foreground flex items-center justify-end gap-1 truncate">
-                              {c.clientName} <Users className="h-3 w-3 shrink-0" />
-                            </p>
-                          )}
                         </div>
                         {c.caseNumber && (
                           <span className="text-xs text-muted-foreground/60 font-mono tabular-nums shrink-0">{c.caseNumber}</span>
