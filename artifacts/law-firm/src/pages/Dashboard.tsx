@@ -406,7 +406,8 @@ export default function Dashboard() {
                 <div className="p-4 space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <TrendingUp className="h-3.5 w-3.5 text-success" />
                       المداخيل هذا الشهر
@@ -415,7 +416,8 @@ export default function Dashboard() {
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                  <div onClick={() => navigate("/billing")}
+                    className="flex items-center justify-between px-4 py-3 border-b border-border/40 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="h-3.5 w-3.5 text-warning" />
                       فواتير معلقة
@@ -425,7 +427,8 @@ export default function Dashboard() {
                       {summary?.pendingInvoices ?? 0}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                  <div onClick={() => navigate("/cases")}
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Briefcase className="h-3.5 w-3.5 text-primary" />
                       الملفات الجارية
@@ -433,14 +436,6 @@ export default function Dashboard() {
                     <span className="text-sm font-bold text-primary tabular-nums">
                       {summary?.activeCases ?? 0}
                     </span>
-                  </div>
-                  <div className="px-4 py-3">
-                    <button
-                      onClick={() => navigate("/billing")}
-                      className="w-full flex items-center justify-center gap-1.5 text-xs text-primary hover:underline font-medium py-0.5"
-                    >
-                      <Receipt className="h-3.5 w-3.5" /> عرض الفوترة الكاملة
-                    </button>
                   </div>
                 </>
               )}
