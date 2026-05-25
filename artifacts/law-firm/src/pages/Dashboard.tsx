@@ -115,15 +115,6 @@ export default function Dashboard() {
         <Timer className="h-3 w-3" />
         {loadingExtra ? "…" : urgentDeadlines.length} آجال حرجة
       </span>
-      <span className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
-        pendingTasks.length > 0
-          ? "bg-warning/10 border-warning/25 text-warning"
-          : "bg-muted/40 border-border text-muted-foreground"
-      )}>
-        <CheckCircle2 className="h-3 w-3" />
-        {loadingToday ? "…" : pendingTasks.length} مهمة
-      </span>
     </div>
   );
 
