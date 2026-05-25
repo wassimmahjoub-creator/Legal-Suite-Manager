@@ -362,7 +362,7 @@ export default function CalendarView() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
 
       {/* DnD toast */}
       {dndToast && (
@@ -371,41 +371,45 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <button onClick={() => window.history.back()}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
-            <ArrowRight className="h-3.5 w-3.5" /> رجوع
-          </button>
-          <h1 className="text-2xl font-bold">الرزنامة</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">مواعيد الجلسات، الاجتماعات والآجال القانونية</p>
-        </div>
-        <Button onClick={() => openNew()} className="rounded-lg gap-2 px-5">
-          <Plus className="h-4 w-4" /> حدث جديد
-        </Button>
-      </div>
+      {/* ── Compact combined header ── */}
+      <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
+        {/* Title */}
+        <h1 className="text-base font-bold shrink-0">الرزنامة</h1>
 
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-card border border-border rounded-xl p-3">
+        <div className="w-px h-5 bg-border mx-1 shrink-0 hidden sm:block" />
+
         {/* Navigation */}
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => navigate("prev")}>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => navigate("prev")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="outline" className="h-8 px-3 text-xs" onClick={() => navigate("today")}>
+          <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => navigate("today")}>
             اليوم
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => navigate("next")}>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => navigate("next")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="font-semibold text-sm px-2 min-w-[160px]">
+          <span className="font-semibold text-sm px-1 min-w-[130px] shrink-0">
             {formatPeriodTitle(currentDate, viewMode)}
           </span>
         </div>
 
+        <div className="flex-1" />
+
+        {/* Legend — hidden on mobile */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          {LEGEND.map(l => (
+            <div key={l.color} className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: l.color }} />
+              {l.label}
+            </div>
+          ))}
+        </div>
+
+        <div className="w-px h-5 bg-border mx-1 shrink-0 hidden md:block" />
+
         {/* View toggle */}
-        <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-1">
+        <div className="flex items-center gap-0.5 bg-muted/40 rounded-lg p-0.5 shrink-0">
           {([
             { key: "day",   label: "يوم",    Icon: Clock },
             { key: "week",  label: "أسبوع",  Icon: Columns2 },
@@ -415,27 +419,22 @@ export default function CalendarView() {
             <button
               key={key}
               onClick={() => changeView(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                 viewMode === key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
+              <Icon className="h-3 w-3" />
+              <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3">
-        {LEGEND.map(l => (
-          <div key={l.color} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: l.color }} />
-            {l.label}
-          </div>
-        ))}
+        {/* Add button */}
+        <Button onClick={() => openNew()} className="rounded-lg gap-1.5 px-3 h-8 text-xs shrink-0">
+          <Plus className="h-3.5 w-3.5" /> حدث جديد
+        </Button>
       </div>
 
       {/* Calendar grid views */}
