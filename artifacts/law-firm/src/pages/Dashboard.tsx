@@ -14,11 +14,10 @@ import { cn } from "@/lib/utils";
 import {
   Briefcase, Clock, AlertTriangle, CheckCircle2,
   TrendingUp, Scale, Users, ArrowLeft, Circle, CalendarClock,
-  ChevronLeft, Timer, Receipt, Plus,
+  ChevronLeft, Timer, Receipt, Plus, MessageSquare, FileText,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
-import { Button } from "@/components/ui/button";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -100,38 +99,88 @@ export default function Dashboard() {
     );
   }
 
+  const statusPills = (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-primary/8 border-primary/20 text-primary font-medium">
+        <CalendarClock className="h-3 w-3" />
+        {loadingToday ? "…" : today?.sessions?.length ?? 0} جلسة
+      </span>
+      <span className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
+        urgentDeadlines.length > 0
+          ? "bg-red-500/10 border-red-500/25 text-red-400"
+          : "bg-muted/40 border-border text-muted-foreground"
+      )}>
+        <Timer className="h-3 w-3" />
+        {loadingExtra ? "…" : urgentDeadlines.length} آجال حرجة
+      </span>
+      <span className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
+        pendingTasks.length > 0
+          ? "bg-violet-500/10 border-violet-500/25 text-violet-400"
+          : "bg-muted/40 border-border text-muted-foreground"
+      )}>
+        <CheckCircle2 className="h-3 w-3" />
+        {loadingToday ? "…" : pendingTasks.length} مهمة
+      </span>
+      {(summary?.pendingInvoices ?? 0) > 0 && (
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-rose-500/10 border-rose-500/25 text-rose-400 font-medium">
+          <Receipt className="h-3 w-3" />
+          {loadingSummary ? "…" : summary?.pendingInvoices} فاتورة معلقة
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
 
+      {/* ══ HEADER ═══════════════════════════════════════════════════════════ */}
       <PageHeader
-        title="لوحة القيادة"
+        title="الرئيسية"
         subtitle={<DateDisplay date={new Date()} format="full" />}
+        actions={statusPills}
       />
+
+      {/* ══ QUICK ACTIONS ════════════════════════════════════════════════════ */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: "ملف +",        icon: Briefcase,     path: "/cases/new"      },
+          { label: "جلسة +",       icon: CalendarClock, path: "/calendar"       },
+          { label: "استشارة +",    icon: MessageSquare, path: "/consultations"  },
+          { label: "فاتورة +",     icon: Receipt,       path: "/billing/new"    },
+          { label: "مراسلة +",     icon: FileText,      path: "/correspondances"},
+        ].map(a => (
+          <button key={a.path}
+            onClick={() => navigate(a.path)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted/50 transition-colors font-medium"
+          >
+            <a.icon className="h-3.5 w-3.5 text-muted-foreground" />
+            {a.label}
+          </button>
+        ))}
+      </div>
 
       {/* ══ TODAY ════════════════════════════════════════════════════════════ */}
       <div>
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-          <span className="h-px flex-1 bg-border/50" />
-          اليوم
-          <span className="h-px flex-1 bg-border/50" />
-        </h2>
+        <h2 className="font-semibold mb-3">اليوم</h2>
         <div className="grid gap-4 lg:grid-cols-3">
 
           {/* جلسات اليوم */}
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-l from-primary via-primary/60 to-transparent" />
-            <div className="flex items-center justify-between px-4 pt-3 pb-2">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <CalendarClock className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm font-semibold">جلسات اليوم</span>
-              </div>
+          <Card className="border-border/60 shadow-sm">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold text-primary tabular-nums">{today?.sessions?.length ?? 0}</span>
-                <button onClick={() => navigate("/calendar")} className="p-1 rounded hover:bg-muted transition-colors">
+                <span className="text-lg font-bold text-primary tabular-nums">
+                  {loadingToday ? <Skeleton className="h-6 w-6" /> : today?.sessions?.length ?? 0}
+                </span>
+                <button onClick={() => navigate("/calendar")}
+                  className="p-1 rounded hover:bg-muted transition-colors">
                   <Plus className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">جلسات اليوم</span>
+                <CalendarClock className="h-4 w-4 text-primary" />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -139,7 +188,7 @@ export default function Dashboard() {
                 <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
               ) : today?.sessions?.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground text-xs space-y-1">
-                  <CalendarClock className="h-6 w-6 mx-auto opacity-15 mb-1" />
+                  <CalendarClock className="h-7 w-7 mx-auto opacity-10 mb-2" />
                   <p>لا توجد جلسات اليوم</p>
                 </div>
               ) : (
@@ -149,12 +198,12 @@ export default function Dashboard() {
                       onClick={() => s.caseId ? navigate(`/cases/${s.caseId}`) : navigate("/calendar")}
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
                     >
-                      <div className="flex-1 min-w-0">
+                      <span className="text-xs text-muted-foreground shrink-0 tabular-nums">{s.time || "—"}</span>
+                      <div className="flex-1 min-w-0 text-right">
                         <p className="font-medium text-xs truncate">{s.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{s.caseName ?? "—"}</p>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0 tabular-nums">{s.time || "—"}</span>
-                      <ChevronLeft className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                      <CalendarClock className="h-3.5 w-3.5 text-primary shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -163,28 +212,27 @@ export default function Dashboard() {
           </Card>
 
           {/* آجال قريبة */}
-          <Card className={cn("border-border/60 shadow-sm overflow-hidden", urgentDeadlines.length > 0 && "border-red-500/20")}>
-            <div className={cn("h-1 bg-gradient-to-l", urgentDeadlines.length > 0
-              ? "from-red-500 via-red-500/60 to-transparent"
-              : "from-muted via-muted/60 to-transparent"
-            )} />
-            <div className="flex items-center justify-between px-4 pt-3 pb-2">
-              <div className="flex items-center gap-2">
-                <div className={cn("p-1.5 rounded-lg", urgentDeadlines.length > 0 ? "bg-red-500/10" : "bg-muted/50")}>
-                  <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
-                </div>
-                <span className="text-sm font-semibold">آجال قريبة</span>
+          <Card className="border-border/60 shadow-sm">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className={cn(
+                "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
+                urgentDeadlines.length > 0
+                  ? "bg-red-500/15 text-red-400"
+                  : "bg-muted/50 text-muted-foreground"
+              )}>
+                {loadingExtra ? "…" : deadlines.length}
               </div>
-              <span className={cn("text-lg font-bold tabular-nums", urgentDeadlines.length > 0 ? "text-red-400" : "text-foreground")}>
-                {deadlines.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">آجال قريبة</span>
+                <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
+              </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
               {loadingExtra ? (
                 <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
               ) : deadlines.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground text-xs space-y-1">
-                  <CheckCircle2 className="h-6 w-6 mx-auto text-emerald-400 opacity-30 mb-1" />
+                  <CheckCircle2 className="h-7 w-7 mx-auto text-emerald-400 opacity-20 mb-2" />
                   <p>كل الآجال تحت السيطرة</p>
                 </div>
               ) : (
@@ -197,14 +245,14 @@ export default function Dashboard() {
                         onClick={() => d.caseId ? navigate(`/cases/${d.caseId}`) : undefined}
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
                       >
-                        <div className="flex-1 min-w-0">
+                        <span className={cn("text-xs px-2 py-0.5 rounded-full border shrink-0 font-medium", badge.cls)}>
+                          {badge.label}
+                        </span>
+                        <div className="flex-1 min-w-0 text-right">
                           <p className="font-medium text-xs truncate">{d.title}</p>
                           <p className="text-xs text-muted-foreground truncate">{d.caseName ?? "—"}</p>
                         </div>
-                        <span className={cn("text-xs px-1.5 py-0.5 rounded border shrink-0 font-medium", badge.cls)}>
-                          {badge.label}
-                        </span>
-                        <ChevronLeft className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                        <Timer className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                       </div>
                     );
                   })}
@@ -213,26 +261,20 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* المهام */}
-          <Card className={cn("border-border/60 shadow-sm overflow-hidden", pendingTasks.length > 0 && "border-amber-500/20")}>
-            <div className={cn("h-1 bg-gradient-to-l", pendingTasks.length > 0
-              ? "from-amber-500 via-amber-500/60 to-transparent"
-              : "from-emerald-500 via-emerald-500/60 to-transparent"
-            )} />
-            <div className="flex items-center justify-between px-4 pt-3 pb-2">
-              <div className="flex items-center gap-2">
-                <div className={cn("p-1.5 rounded-lg", pendingTasks.length > 0 ? "bg-amber-500/10" : "bg-emerald-500/10")}>
-                  <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-amber-400" : "text-emerald-400")} />
-                </div>
-                <span className="text-sm font-semibold">المهام العاجلة</span>
+          {/* المهام العاجلة */}
+          <Card className="border-border/60 shadow-sm">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className={cn(
+                "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
+                pendingTasks.length > 0
+                  ? "bg-amber-500/15 text-amber-400"
+                  : "bg-emerald-500/10 text-emerald-400"
+              )}>
+                {loadingToday ? "…" : pendingTasks.length}
               </div>
               <div className="flex items-center gap-2">
-                {doneTasks.length > 0 && (
-                  <span className="text-xs text-emerald-400 font-medium">{doneTasks.length} ✓</span>
-                )}
-                <span className={cn("text-lg font-bold tabular-nums", pendingTasks.length > 0 ? "text-amber-400" : "text-foreground")}>
-                  {pendingTasks.length}
-                </span>
+                <span className="text-sm font-semibold">المهام العاجلة</span>
+                <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-amber-400" : "text-emerald-400")} />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -258,9 +300,9 @@ export default function Dashboard() {
                         >
                           {t.done
                             ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                            : <Circle className="h-4 w-4 text-muted-foreground/40" />}
+                            : <Circle className="h-4 w-4 text-muted-foreground/30" />}
                         </button>
-                        <div className="flex-1 min-w-0 cursor-pointer"
+                        <div className="flex-1 min-w-0 cursor-pointer text-right"
                           onClick={() => t.caseId ? navigate(`/cases/${t.caseId}`) : undefined}>
                           <p className={cn("text-xs font-medium truncate", t.done && "line-through text-muted-foreground")}>
                             {t.title}
@@ -274,19 +316,15 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
         </div>
       </div>
 
       {/* ══ ALERTS ═══════════════════════════════════════════════════════════ */}
       {(loadingAlerts || (alerts && alerts.length > 0)) && (
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-            <span className="h-px flex-1 bg-border/50" />
-            تنبيهات مهمة
-            <span className="h-px flex-1 bg-border/50" />
-          </h2>
-          <Card className="border-red-500/20 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-l from-red-500 via-red-500/60 to-transparent" />
+          <h2 className="font-semibold mb-3">تنبيهات مهمة</h2>
+          <Card className="border-border/60 shadow-sm">
             <CardContent className="px-0 pb-0 pt-0">
               {loadingAlerts ? (
                 <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
@@ -294,18 +332,18 @@ export default function Dashboard() {
                 <div className="divide-y divide-border/40">
                   {alerts?.map(a => (
                     <div key={a.id}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/5 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
                       onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
                     >
-                      <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{a.message}</p>
-                        {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
-                      </div>
-                      <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded shrink-0">
+                      <span className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded shrink-0 tabular-nums">
                         {formatDateTN(a.dueDate)}
                       </span>
                       <ChevronLeft className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                      <div className="flex-1 min-w-0 text-right">
+                        <p className="text-sm font-semibold leading-tight truncate text-foreground">{a.message}</p>
+                        {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
+                      </div>
+                      <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -321,14 +359,13 @@ export default function Dashboard() {
         {/* آخر الملفات */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">آخر الملفات</h2>
             <button onClick={() => navigate("/cases")}
               className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
-              عرض الكل <ArrowLeft className="h-3 w-3" />
+              <ArrowLeft className="h-3 w-3" /> عرض الكل
             </button>
+            <h2 className="font-semibold">آخر الملفات</h2>
           </div>
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-l from-blue-500 via-blue-500/60 to-transparent" />
+          <Card className="border-border/60 shadow-sm">
             <CardContent className="px-0 pb-0 pt-0">
               {loadingExtra ? (
                 <div className="p-4 space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
@@ -346,18 +383,16 @@ export default function Dashboard() {
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
                         onClick={() => navigate(`/cases/${c.id}`)}
                       >
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg shrink-0">
-                          <Scale className="h-3.5 w-3.5 text-blue-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
+                        <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
+                        <div className="flex-1 min-w-0 text-right">
                           <p className="font-medium text-sm truncate">{c.title}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Users className="h-3 w-3" /> {c.clientName ?? "—"}
-                            {c.caseNumber && <span className="opacity-50">· {c.caseNumber}</span>}
+                          <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
+                            {c.caseNumber && <span className="opacity-50">{c.caseNumber} ·</span>}
+                            {c.clientName ?? "—"} <Users className="h-3 w-3" />
                           </p>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
-                        <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+                        <Scale className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                       </div>
                     );
                   })}
@@ -369,52 +404,55 @@ export default function Dashboard() {
 
         {/* ملخص مالي */}
         <div>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">ملخص مالي</h2>
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <div className="h-1 bg-gradient-to-l from-emerald-500 via-emerald-500/60 to-transparent" />
-            <CardContent className="p-4 space-y-0">
+          <h2 className="font-semibold mb-3 text-right">ملخص مالي</h2>
+          <Card className="border-border/60 shadow-sm">
+            <CardContent className="px-0 pb-0 pt-0">
               {loadingSummary ? (
-                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+                <div className="p-4 space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                      المداخيل هذا الشهر
-                    </div>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                     <span className="text-sm font-bold text-emerald-400 tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
-                  </div>
-                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5 text-amber-400" />
-                      فواتير معلقة
+                      المداخيل هذا الشهر
+                      <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                     <span className={cn("text-sm font-bold tabular-nums",
                       (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
-                  </div>
-                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Briefcase className="h-3.5 w-3.5 text-primary" />
-                      الملفات الجارية
+                      فواتير معلقة
+                      <Clock className="h-3.5 w-3.5 text-amber-400" />
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                     <span className="text-sm font-bold text-primary tabular-nums">
                       {summary?.activeCases ?? 0}
                     </span>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      الملفات الجارية
+                      <Briefcase className="h-3.5 w-3.5 text-primary" />
+                    </div>
                   </div>
-                  <div className="pt-3">
-                    <Button size="sm" className="w-full text-xs gap-1.5" onClick={() => navigate("/billing")}>
+                  <div className="px-4 py-3">
+                    <button
+                      onClick={() => navigate("/billing")}
+                      className="w-full flex items-center justify-center gap-1.5 text-xs text-primary hover:underline font-medium py-0.5"
+                    >
                       <Receipt className="h-3.5 w-3.5" /> عرض الفوترة الكاملة
-                    </Button>
+                    </button>
                   </div>
                 </>
               )}
             </CardContent>
           </Card>
         </div>
+
       </div>
 
     </div>
