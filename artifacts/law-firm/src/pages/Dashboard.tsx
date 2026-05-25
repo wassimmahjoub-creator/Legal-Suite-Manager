@@ -106,15 +106,6 @@ export default function Dashboard() {
         <CalendarClock className="h-3 w-3" />
         {loadingToday ? "…" : today?.sessions?.length ?? 0} جلسة
       </span>
-      <span className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-medium",
-        urgentDeadlines.length > 0
-          ? "bg-destructive/10 border-destructive/25 text-destructive"
-          : "bg-muted/40 border-border text-muted-foreground"
-      )}>
-        <Timer className="h-3 w-3" />
-        {loadingExtra ? "…" : urgentDeadlines.length} آجال حرجة
-      </span>
     </div>
   );
 
