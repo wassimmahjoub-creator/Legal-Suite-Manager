@@ -448,7 +448,7 @@ export default function Dashboard() {
                 <div className="divide-y divide-border/50">
                   {alerts?.map(a => (
                     <div key={a.id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-red-500/5 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/8 active:bg-red-500/15 transition-colors cursor-pointer"
                       onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
                     >
                       <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
@@ -459,7 +459,6 @@ export default function Dashboard() {
                       <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded shrink-0">
                         {formatDateTN(a.dueDate)}
                       </span>
-                      <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     </div>
                   ))}
                 </div>
