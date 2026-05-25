@@ -100,15 +100,6 @@ export default function Dashboard() {
     );
   }
 
-  const statusPills = (
-    <div className="flex flex-wrap gap-2 text-xs">
-      <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-primary/8 border-primary/20 text-primary font-medium">
-        <CalendarClock className="h-3 w-3" />
-        {loadingToday ? "…" : today?.sessions?.length ?? 0} جلسة
-      </span>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
 
@@ -116,7 +107,6 @@ export default function Dashboard() {
       <PageHeader
         title="الرئيسية"
         subtitle={<DateDisplay date={new Date()} format="full" />}
-        actions={statusPills}
       />
 
       {/* ══ QUICK ACTIONS ════════════════════════════════════════════════════ */}
