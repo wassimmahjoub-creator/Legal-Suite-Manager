@@ -16,6 +16,7 @@ import { STATUS_LABELS, STATUS_COLORS } from "@/services/invoiceCalculator";
 import { Money, TNDAmount } from "@/components/Money";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EmptyInvoicesIllustration } from "@/components/illustrations/EmptyInvoices";
+import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -46,16 +47,23 @@ export default function Billing() {
   const [statusFilter, setStatusFilter] = useState("");
   const [, navigate] = useLocation();
   const debouncedSearch = useDebounce(search, 300);
+  const isClientFilter = statusFilter === "overdue" || statusFilter === "balance";
   const { data: invoices = [], isLoading: loading } = useInvoices({
     search: debouncedSearch || undefined,
-    status: statusFilter   || undefined,
+    status: (!isClientFilter && statusFilter) ? statusFilter : undefined,
   });
   const invalidateInvoices = useInvalidateInvoices();
 
-  const filtered = invoices as any[];
+  const filtered = (invoices as any[]).filter(i => {
+    if (statusFilter === "overdue")
+      return i.dueDate && i.status !== "paid" && i.status !== "cancelled" && i.lockedAt && new Date(i.dueDate) < new Date();
+    if (statusFilter === "balance")
+      return i.balanceDue > 0;
+    return true;
+  });
 
-  const totalNet = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.netToPay, 0);
-  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
+  const totalNet     = invoices.filter(i => i.status !== "draft" && i.status !== "cancelled").reduce((s, i) => s + i.netToPay, 0);
+  const totalPaid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.netToPay, 0);
   const totalBalance = invoices.reduce((s, i) => s + i.balanceDue, 0);
   const overdueCount = invoices.filter(i =>
     i.dueDate && i.status !== "paid" && i.status !== "cancelled" && i.lockedAt &&
@@ -79,13 +87,17 @@ export default function Billing() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<CreditCard className="h-5 w-5 text-info" />}
-          bg="bg-info/10" label="إجمالي الفواتير" value={<TNDAmount amount={totalNet} />} />
+          bg="bg-info/10" label="إجمالي الفواتير" value={<TNDAmount amount={totalNet} />}
+          active={statusFilter === ""} onClick={() => setStatusFilter("")} />
         <KpiCard icon={<CheckCircle className="h-5 w-5 text-success" />}
-          bg="bg-success/10" label="المدفوع" value={<TNDAmount amount={totalPaid} />} />
+          bg="bg-success/10" label="المدفوع" value={<TNDAmount amount={totalPaid} />}
+          active={statusFilter === "paid"} onClick={() => setStatusFilter("paid")} />
         <KpiCard icon={<Clock className="h-5 w-5 text-warning" />}
-          bg="bg-warning/10" label="الرصيد المتبقي" value={<TNDAmount amount={totalBalance} />} />
+          bg="bg-warning/10" label="الرصيد المتبقي" value={<TNDAmount amount={totalBalance} />}
+          active={statusFilter === "balance"} onClick={() => setStatusFilter("balance")} />
         <KpiCard icon={<AlertCircle className="h-5 w-5 text-destructive" />}
-          bg="bg-destructive/10" label="متأخرة السداد" value={String(overdueCount)} unit="" />
+          bg="bg-destructive/10" label="متأخرة السداد" value={String(overdueCount)} unit=""
+          active={statusFilter === "overdue"} onClick={() => setStatusFilter("overdue")} />
       </div>
 
       {/* Filters */}
@@ -193,11 +205,19 @@ export default function Billing() {
   );
 }
 
-function KpiCard({ icon, bg, label, value, unit = "" }: {
+function KpiCard({ icon, bg, label, value, unit = "", onClick, active = false }: {
   icon: React.ReactNode; bg: string; label: string; value: React.ReactNode; unit?: string;
+  onClick?: () => void; active?: boolean;
 }) {
   return (
-    <Card className="border-none shadow-sm bg-card">
+    <Card
+      onClick={onClick}
+      className={cn(
+        "border shadow-sm bg-card transition-colors",
+        onClick && "cursor-pointer hover:bg-muted/40",
+        active ? "border-primary/40 ring-1 ring-primary/20" : "border-none"
+      )}
+    >
       <CardContent className="p-4 flex items-center gap-4">
         <div className={`p-3 ${bg} rounded-xl shrink-0`}>{icon}</div>
         <div className="min-w-0">
