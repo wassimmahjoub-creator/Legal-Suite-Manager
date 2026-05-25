@@ -21,6 +21,7 @@ const Pricing          = lazy(() => import("@/pages/Pricing"));
 // ── Pages authentifiées ───────────────────────────────────────────────────────
 const Today              = lazy(() => import("@/pages/Today"));
 const Dashboard          = lazy(() => import("@/pages/Dashboard"));
+const MorningBrief       = lazy(() => import("@/pages/MorningBrief"));
 const Cases              = lazy(() => import("@/pages/Cases"));
 const NewCasePage        = lazy(() => import("@/pages/NewCasePage"));
 const CaseDetail         = lazy(() => import("@/pages/CaseDetail"));
@@ -173,6 +174,7 @@ function Router() {
             <Suspense fallback={<PageContentSkeleton />}>
             <Switch>
                   <Route path="/today"                  component={Today} />
+                  <Route path="/brief"                 component={MorningBrief} />
                   <Route path="/"                      component={Dashboard} />
                   <Route path="/cases"                 component={Cases} />
                   <Route path="/cases/new"             component={NewCasePage} />

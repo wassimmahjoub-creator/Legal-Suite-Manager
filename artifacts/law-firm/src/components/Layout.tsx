@@ -7,7 +7,7 @@ import {
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X, Crown, AlertTriangle, Download,
+  MoreHorizontal, X, Crown, AlertTriangle, Download, Sunrise,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -29,11 +29,12 @@ interface OrgTrial {
 /* ─────────────────────── nav data ─────────────────────── */
 
 const NAV_PRIMARY = [
-  { href: "/",                label: "الرئيسية",   icon: Home         },
-  { href: "/cases",           label: "الملفات",    icon: Briefcase    },
-  { href: "/clients",         label: "الموكّلون",  icon: Users        },
-  { href: "/calendar",        label: "الرزنامة",   icon: CalendarIcon },
-  { href: "/correspondances", label: "المراسلات",  icon: MailOpen     },
+  { href: "/",                label: "الرئيسية",      icon: Home         },
+  { href: "/brief",           label: "إحاطة الصباح",  icon: Sunrise      },
+  { href: "/cases",           label: "الملفات",       icon: Briefcase    },
+  { href: "/clients",         label: "الموكّلون",     icon: Users        },
+  { href: "/calendar",        label: "الرزنامة",      icon: CalendarIcon },
+  { href: "/correspondances", label: "المراسلات",     icon: MailOpen     },
 ];
 
 const NAV_FINANCE = [
