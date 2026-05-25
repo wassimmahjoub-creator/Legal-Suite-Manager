@@ -407,32 +407,32 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <TrendingUp className="h-3.5 w-3.5 text-success" />
+                      المداخيل هذا الشهر
+                    </div>
                     <span className="text-sm font-bold text-success tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      المداخيل هذا الشهر
-                      <TrendingUp className="h-3.5 w-3.5 text-success" />
-                    </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5 text-warning" />
+                      فواتير معلقة
+                    </div>
                     <span className={cn("text-sm font-bold tabular-nums",
                       (summary?.pendingInvoices ?? 0) > 0 ? "text-warning" : "text-foreground")}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      فواتير معلقة
-                      <Clock className="h-3.5 w-3.5 text-warning" />
-                    </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Briefcase className="h-3.5 w-3.5 text-primary" />
+                      الملفات الجارية
+                    </div>
                     <span className="text-sm font-bold text-primary tabular-nums">
                       {summary?.activeCases ?? 0}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      الملفات الجارية
-                      <Briefcase className="h-3.5 w-3.5 text-primary" />
-                    </div>
                   </div>
                   <div className="px-4 py-3">
                     <button
