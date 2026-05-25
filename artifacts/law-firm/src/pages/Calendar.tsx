@@ -371,13 +371,16 @@ export default function CalendarView() {
         </div>
       )}
 
-      {/* ── Compact combined header ── */}
+      {/* ── Title row ── */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">الرزنامة</h1>
+        <Button onClick={() => openNew()} className="rounded-lg gap-2 px-5">
+          <Plus className="h-4 w-4" /> حدث جديد
+        </Button>
+      </div>
+
+      {/* ── Compact toolbar ── */}
       <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-3 py-2">
-        {/* Title */}
-        <h1 className="text-base font-bold shrink-0">الرزنامة</h1>
-
-        <div className="w-px h-5 bg-border mx-1 shrink-0 hidden sm:block" />
-
         {/* Navigation */}
         <div className="flex items-center gap-1 shrink-0">
           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => navigate("prev")}>
