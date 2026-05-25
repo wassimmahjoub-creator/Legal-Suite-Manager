@@ -152,11 +152,10 @@ export default function Dashboard() {
           { label: "فاتورة +",     icon: Receipt,       path: "/billing/new"    },
           { label: "مراسلة +",     icon: FileText,      path: "/correspondances"},
         ].map(a => (
-          <Button key={a.path} size="sm"
+          <Button key={a.path}
             onClick={() => navigate(a.path)}
-            className="gap-1.5 text-xs"
+            className="rounded-lg px-5"
           >
-            <a.icon className="h-3.5 w-3.5" />
             {a.label}
           </Button>
         ))}
