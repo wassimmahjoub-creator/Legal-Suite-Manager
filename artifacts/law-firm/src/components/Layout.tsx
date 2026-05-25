@@ -7,7 +7,7 @@ import {
   FilePen, LogOut, Building2, PhoneCall, ShieldCheck, Landmark,
   Settings2, ClipboardList, Trash2, MailOpen, Sun, Moon,
   Plus, Star, ChevronDown, ChevronLeft,
-  MoreHorizontal, X, Crown, AlertTriangle, Download, Sunrise,
+  MoreHorizontal, X, Crown, AlertTriangle, Download,
 } from "lucide-react";
 import { NumericKeypad, MobileNumericKeypad } from "@/components/NumericKeypad";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -30,7 +30,6 @@ interface OrgTrial {
 
 const NAV_PRIMARY = [
   { href: "/",                label: "الرئيسية",      icon: Home         },
-  { href: "/brief",           label: "إحاطة الصباح",  icon: Sunrise      },
   { href: "/cases",           label: "الملفات",       icon: Briefcase    },
   { href: "/clients",         label: "الموكّلون",     icon: Users        },
   { href: "/calendar",        label: "الرزنامة",      icon: CalendarIcon },
