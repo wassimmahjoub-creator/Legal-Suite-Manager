@@ -448,13 +448,14 @@ export default function ClientPage() {
               >
                 <Download className="h-3.5 w-3.5" /> تصدير
               </Button>
-              <button
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={deleteClient}
-                className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                title="حذف الموكّل"
+                className="gap-1.5"
               >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </button>
+                <Trash2 className="h-3.5 w-3.5" /> حذف
+              </Button>
             </div>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
