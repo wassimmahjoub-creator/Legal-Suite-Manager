@@ -169,6 +169,10 @@ export default function Dashboard() {
           {/* جلسات اليوم */}
           <Card className="border-border/60 shadow-sm">
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">جلسات اليوم</span>
+              </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-bold text-primary tabular-nums">
                   {loadingToday ? <Skeleton className="h-6 w-6" /> : today?.sessions?.length ?? 0}
@@ -177,10 +181,6 @@ export default function Dashboard() {
                   className="p-1 rounded hover:bg-muted transition-colors">
                   <Plus className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">جلسات اليوم</span>
-                <CalendarClock className="h-4 w-4 text-primary" />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -214,6 +214,10 @@ export default function Dashboard() {
           {/* آجال قريبة */}
           <Card className="border-border/60 shadow-sm">
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-destructive" : "text-muted-foreground")} />
+                <span className="text-sm font-semibold">آجال قريبة</span>
+              </div>
               <div className={cn(
                 "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
                 urgentDeadlines.length > 0
@@ -221,10 +225,6 @@ export default function Dashboard() {
                   : "bg-muted/50 text-muted-foreground"
               )}>
                 {loadingExtra ? "…" : deadlines.length}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">آجال قريبة</span>
-                <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-destructive" : "text-muted-foreground")} />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
@@ -264,6 +264,10 @@ export default function Dashboard() {
           {/* المهام العاجلة */}
           <Card className="border-border/60 shadow-sm">
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-warning" : "text-success")} />
+                <span className="text-sm font-semibold">المهام العاجلة</span>
+              </div>
               <div className={cn(
                 "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold tabular-nums",
                 pendingTasks.length > 0
@@ -271,10 +275,6 @@ export default function Dashboard() {
                   : "bg-success/10 text-success"
               )}>
                 {loadingToday ? "…" : pendingTasks.length}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">المهام العاجلة</span>
-                <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-warning" : "text-success")} />
               </div>
             </div>
             <CardContent className="px-0 pb-0 pt-0">
