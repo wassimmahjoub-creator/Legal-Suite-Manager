@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { PageHeader } from "@/components/PageHeader";
 import { useLocation } from "wouter";
 import { TNDAmount } from "@/components/Money";
 import { formatDateTN } from "@/lib/date";
@@ -9,21 +8,20 @@ import {
   useGetDashboardSummary, useGetDashboardToday, useGetDashboardAlerts,
   useUpdateTask, getGetDashboardTodayQueryKey,
 } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   Briefcase, Clock, AlertTriangle, CheckCircle2,
   TrendingUp, Scale, Users, ArrowLeft, Circle, CalendarClock,
   Plus, FileText, Receipt, MessageSquare, Timer,
-  ChevronLeft,
+  ChevronLeft, Sparkles, ArrowUpRight,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authFetch } from "@/lib/authFetch";
+import { useAuth } from "@/context/AuthContext";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
-// ── Types ────────────────────────────────────────────────────────────────────
 type RecentCase = {
   id: number; title: string; status: string;
   clientName?: string | null; caseNumber?: string | null;
@@ -35,7 +33,6 @@ type Deadline = {
   urgency: string; completedAt: string | null;
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 function daysLeft(dueDate: string): number {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const due   = new Date(dueDate); due.setHours(0, 0, 0, 0);
@@ -43,23 +40,30 @@ function daysLeft(dueDate: string): number {
 }
 
 function deadlineBadge(days: number) {
-  if (days < 0)  return { label: `متأخر ${Math.abs(days)} يوم`, cls: "bg-destructive/10 text-destructive border-destructive/20" };
-  if (days === 0) return { label: "اليوم",        cls: "bg-destructive/10 text-destructive border-destructive/20" };
-  if (days <= 3)  return { label: `${days} أيام`,  cls: "bg-destructive/10 text-destructive border-destructive/20" };
-  if (days <= 7)  return { label: `${days} أيام`,  cls: "bg-warning/10 text-warning border-warning/20" };
+  if (days < 0)  return { label: `متأخر ${Math.abs(days)} يوم`, cls: "bg-red-500/15 text-red-400 border-red-500/20" };
+  if (days === 0) return { label: "اليوم",        cls: "bg-red-500/15 text-red-400 border-red-500/20" };
+  if (days <= 3)  return { label: `${days} أيام`,  cls: "bg-red-500/15 text-red-400 border-red-500/20" };
+  if (days <= 7)  return { label: `${days} أيام`,  cls: "bg-amber-500/15 text-amber-400 border-amber-500/20" };
   return              { label: `${days} يوم`,     cls: "bg-muted text-muted-foreground border-border" };
 }
 
-
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active:    { label: "نشطة",   color: "text-success bg-success/10"        },
-  pending:   { label: "انتظار", color: "text-warning bg-warning/10"        },
-  suspended: { label: "موقوفة", color: "text-warning bg-warning/10"        },
-  closed:    { label: "مغلقة",  color: "text-muted-foreground bg-muted/50" },
+  active:    { label: "نشطة",   color: "text-emerald-400 bg-emerald-500/10" },
+  pending:   { label: "انتظار", color: "text-amber-400 bg-amber-500/10"    },
+  suspended: { label: "موقوفة", color: "text-amber-400 bg-amber-500/10"    },
+  closed:    { label: "مغلقة",  color: "text-muted-foreground bg-muted/50"  },
 };
 
-// ── Component ────────────────────────────────────────────────────────────────
+const ROLE_GREET: Record<string, string> = {
+  admin:      "مدير المكتب",
+  lawyer:     "محامي",
+  secretary:  "سكرتيرة",
+  trainee:    "متربص",
+  accountant: "محاسب",
+};
+
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({ query: { staleTime: 0 } });
   const { data: today,   isLoading: loadingToday   } = useGetDashboardToday({ query: { staleTime: 0 } });
   const { data: alerts,  isLoading: loadingAlerts  } = useGetDashboardAlerts({ query: { staleTime: 0 } });
@@ -92,6 +96,8 @@ export default function Dashboard() {
     }).catch(() => {}).finally(() => setLoadingExtra(false));
   }, []);
 
+  const urgentDeadlines = deadlines.filter(d => daysLeft(d.dueDate) <= 3);
+
   function toggleTask(taskId: number, currentDone: boolean, title: string) {
     setTogglingIds(prev => new Set(prev).add(taskId));
     updateTask.mutate(
@@ -104,77 +110,185 @@ export default function Dashboard() {
     );
   }
 
-  // ── Compact header summary counts ─────────────────────────────────────────
-  const urgentDeadlines = deadlines.filter(d => daysLeft(d.dueDate) <= 3);
-  const overdueTasks    = pendingTasks.filter(t => {
-    if (!("dueDate" in t) || !(t as { dueDate?: string }).dueDate) return false;
-    return new Date((t as { dueDate: string }).dueDate) < new Date();
-  });
+  const firstName = user?.name?.split(" ")[0] ?? "بالمكتب";
+  const roleLabel = ROLE_GREET[user?.role ?? ""] ?? "";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      <PageHeader
-        title="الرئيسية"
-        subtitle={<DateDisplay date={new Date()} format="full" />}
-        actions={
-          loadingToday || loadingExtra ? (
-            <Skeleton className="h-6 w-48" />
-          ) : (
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-full border font-medium",
-                (today?.sessions?.length ?? 0) > 0
-                  ? "bg-primary/10 text-primary border-primary/20"
-                  : "bg-muted text-muted-foreground border-border"
-              )}>
-                <CalendarClock className="h-3 w-3" />
-                {today?.sessions?.length ?? 0} جلسة
-              </span>
-              <span className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-full border font-medium",
-                urgentDeadlines.length > 0
-                  ? "bg-destructive/10 text-destructive border-destructive/20"
-                  : "bg-muted text-muted-foreground border-border"
-              )}>
-                <Timer className="h-3 w-3" />
-                {urgentDeadlines.length} آجال حرجة
-              </span>
-              <span className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-full border font-medium",
-                pendingTasks.length > 0
-                  ? "bg-warning/10 text-warning border-warning/20"
-                  : "bg-muted text-muted-foreground border-border"
-              )}>
-                <CheckCircle2 className="h-3 w-3" />
-                {pendingTasks.length} مهمة
-              </span>
-              <span className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-full border font-medium",
-                (summary?.pendingInvoices ?? 0) > 0
-                  ? "bg-warning/10 text-warning border-warning/20"
-                  : "bg-muted text-muted-foreground border-border"
-              )}>
-                <Receipt className="h-3 w-3" />
-                {loadingSummary ? "…" : (summary?.pendingInvoices ?? 0)} فاتورة معلقة
-              </span>
+      {/* ══ HERO BANNER ══════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-bl from-[#0f2044] via-[#162d5a] to-[#1a1f35] border border-white/5 p-6 sm:p-8">
+        {/* Decorative glow blobs */}
+        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          {/* Left: greeting */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-xs text-primary font-medium uppercase tracking-widest">{roleLabel}</span>
             </div>
-          )
-        }
-      />
+            <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+              مرحباً، {firstName}
+            </h1>
+            <p className="text-sm text-white/50 mt-1">
+              <DateDisplay date={new Date()} format="full" />
+            </p>
+          </div>
 
-      {/* ══ 2. QUICK ACTIONS ═════════════════════════════════════════════════ */}
+          {/* Right: mini KPI row */}
+          <div className="flex flex-wrap gap-3 text-sm">
+            {loadingToday || loadingExtra || loadingSummary ? (
+              <Skeleton className="h-14 w-48 rounded-xl" />
+            ) : (
+              <>
+                <div className="flex flex-col items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 min-w-[72px]">
+                  <span className="text-xl font-extrabold text-primary tabular-nums">{summary?.activeCases ?? 0}</span>
+                  <span className="text-[11px] text-white/50 mt-0.5">ملف نشط</span>
+                </div>
+                <div className="flex flex-col items-center px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 min-w-[72px]">
+                  <span className="text-xl font-extrabold text-emerald-400 tabular-nums">{today?.sessions?.length ?? 0}</span>
+                  <span className="text-[11px] text-white/50 mt-0.5">جلسة اليوم</span>
+                </div>
+                <div className={cn(
+                  "flex flex-col items-center px-4 py-2.5 rounded-xl border min-w-[72px]",
+                  urgentDeadlines.length > 0
+                    ? "bg-red-500/10 border-red-500/20"
+                    : "bg-white/5 border-white/10"
+                )}>
+                  <span className={cn("text-xl font-extrabold tabular-nums", urgentDeadlines.length > 0 ? "text-red-400" : "text-white/70")}>
+                    {urgentDeadlines.length}
+                  </span>
+                  <span className="text-[11px] text-white/50 mt-0.5">آجال حرجة</span>
+                </div>
+                <div className={cn(
+                  "flex flex-col items-center px-4 py-2.5 rounded-xl border min-w-[72px]",
+                  (summary?.pendingInvoices ?? 0) > 0
+                    ? "bg-amber-500/10 border-amber-500/20"
+                    : "bg-white/5 border-white/10"
+                )}>
+                  <span className={cn("text-xl font-extrabold tabular-nums", (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-white/70")}>
+                    {summary?.pendingInvoices ?? 0}
+                  </span>
+                  <span className="text-[11px] text-white/50 mt-0.5">فاتورة معلقة</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ══ KPI CARDS ════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Revenus du mois */}
+        <div
+          onClick={() => navigate("/billing")}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 p-5 cursor-pointer hover:border-emerald-500/40 transition-all"
+        >
+          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-emerald-400/10 blur-2xl" />
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2 rounded-xl bg-emerald-500/15">
+              <TrendingUp className="h-4 w-4 text-emerald-400" />
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500/40 group-hover:text-emerald-400 transition-colors" />
+          </div>
+          {loadingSummary ? <Skeleton className="h-7 w-24 mb-1" /> : (
+            <p className="text-2xl font-extrabold text-emerald-400 tabular-nums leading-none mb-1">
+              <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">المداخيل — هذا الشهر</p>
+        </div>
+
+        {/* ملفات نشطة */}
+        <div
+          onClick={() => navigate("/cases")}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/20 p-5 cursor-pointer hover:border-blue-500/40 transition-all"
+        >
+          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-blue-400/10 blur-2xl" />
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2 rounded-xl bg-blue-500/15">
+              <Briefcase className="h-4 w-4 text-blue-400" />
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-blue-500/40 group-hover:text-blue-400 transition-colors" />
+          </div>
+          {loadingSummary ? <Skeleton className="h-7 w-16 mb-1" /> : (
+            <p className="text-2xl font-extrabold text-blue-400 tabular-nums leading-none mb-1">
+              {summary?.activeCases ?? 0}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">ملفات نشطة</p>
+        </div>
+
+        {/* Fواتير معلقة */}
+        <div
+          onClick={() => navigate("/billing")}
+          className={cn(
+            "group relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all",
+            (summary?.pendingInvoices ?? 0) > 0
+              ? "bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-amber-500/20 hover:border-amber-500/40"
+              : "bg-gradient-to-br from-muted/30 to-muted/10 border-border hover:border-border/80"
+          )}
+        >
+          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-amber-400/10 blur-2xl" />
+          <div className="flex items-start justify-between mb-3">
+            <div className={cn("p-2 rounded-xl", (summary?.pendingInvoices ?? 0) > 0 ? "bg-amber-500/15" : "bg-muted/50")}>
+              <Receipt className={cn("h-4 w-4", (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-muted-foreground")} />
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+          </div>
+          {loadingSummary ? <Skeleton className="h-7 w-16 mb-1" /> : (
+            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mb-1",
+              (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
+              {summary?.pendingInvoices ?? 0}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">فواتير معلقة</p>
+        </div>
+
+        {/* آجال حرجة */}
+        <div
+          onClick={() => navigate("/cases")}
+          className={cn(
+            "group relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all",
+            urgentDeadlines.length > 0
+              ? "bg-gradient-to-br from-red-500/20 to-red-500/5 border-red-500/20 hover:border-red-500/40"
+              : "bg-gradient-to-br from-muted/30 to-muted/10 border-border hover:border-border/80"
+          )}
+        >
+          <div className="pointer-events-none absolute -top-4 -right-4 h-20 w-20 rounded-full bg-red-400/10 blur-2xl" />
+          <div className="flex items-start justify-between mb-3">
+            <div className={cn("p-2 rounded-xl", urgentDeadlines.length > 0 ? "bg-red-500/15" : "bg-muted/50")}>
+              <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+          </div>
+          {loadingExtra ? <Skeleton className="h-7 w-16 mb-1" /> : (
+            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mb-1",
+              urgentDeadlines.length > 0 ? "text-red-400" : "text-foreground")}>
+              {urgentDeadlines.length}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">آجال حرجة (≤ 3 أيام)</p>
+        </div>
+      </div>
+
+      {/* ══ QUICK ACTIONS ════════════════════════════════════════════════════ */}
       <div className="flex flex-wrap gap-2">
         {[
-          { label: "+ ملف",        icon: Briefcase,    path: "/cases/new"    },
-          { label: "+ جلسة",       icon: CalendarClock, path: "/calendar"    },
-          { label: "+ استشارة",    icon: MessageSquare, path: "/consultations" },
-          { label: "+ فاتورة",     icon: Receipt,       path: "/billing/new" },
-          { label: "+ مراسلة",     icon: FileText,      path: "/correspondances" },
+          { label: "ملف جديد",       icon: Briefcase,     path: "/cases/new",          color: "from-blue-500/20 to-blue-500/5 border-blue-500/25 text-blue-400 hover:border-blue-500/50"    },
+          { label: "إضافة جلسة",     icon: CalendarClock, path: "/calendar",            color: "from-primary/20 to-primary/5 border-primary/25 text-primary hover:border-primary/50"         },
+          { label: "استشارة جديدة",  icon: MessageSquare, path: "/consultations",       color: "from-violet-500/20 to-violet-500/5 border-violet-500/25 text-violet-400 hover:border-violet-500/50" },
+          { label: "فاتورة جديدة",   icon: Receipt,       path: "/billing/new",         color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/25 text-emerald-400 hover:border-emerald-500/50" },
+          { label: "مراسلة جديدة",   icon: FileText,      path: "/correspondances",     color: "from-cyan-500/20 to-cyan-500/5 border-cyan-500/25 text-cyan-400 hover:border-cyan-500/50"   },
         ].map(a => (
           <button key={a.path}
             onClick={() => navigate(a.path)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl border bg-gradient-to-br transition-all",
+              a.color
+            )}
           >
             <a.icon className="h-3.5 w-3.5" />
             {a.label}
@@ -182,35 +296,38 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ══ 3. TODAY SECTION ═════════════════════════════════════════════════ */}
+      {/* ══ TODAY SECTION ════════════════════════════════════════════════════ */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+          <span className="h-px flex-1 bg-border/50" />
           اليوم
+          <span className="h-px flex-1 bg-border/50" />
         </h2>
         <div className="grid gap-4 lg:grid-cols-3">
 
-          {/* 3A — جلسات اليوم */}
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4 text-primary" /> جلسات اليوم
-                </span>
-                <div className="flex items-center gap-1">
-                  <Badge variant="primary">{today?.sessions?.length ?? 0}</Badge>
-                  <button onClick={() => navigate("/calendar")}
-                    className="p-1 rounded hover:bg-muted transition-colors" title="الرزنامة">
-                    <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
+          {/* جلسات اليوم */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-l from-primary via-primary/60 to-transparent" />
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <CalendarClock className="h-4 w-4 text-primary" />
                 </div>
-              </CardTitle>
-            </CardHeader>
+                <span className="text-sm font-semibold">جلسات اليوم</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-bold text-primary tabular-nums">{today?.sessions?.length ?? 0}</span>
+                <button onClick={() => navigate("/calendar")} className="p-1 rounded hover:bg-muted transition-colors">
+                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
             <CardContent className="px-4 pb-4 pt-0">
               {loadingToday ? (
                 <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : today?.sessions?.length === 0 ? (
-                <div className="py-4 text-center text-muted-foreground text-xs space-y-1">
-                  <CalendarClock className="h-6 w-6 mx-auto opacity-20 mb-1" />
+                <div className="py-5 text-center text-muted-foreground text-xs space-y-1">
+                  <CalendarClock className="h-7 w-7 mx-auto opacity-15 mb-2" />
                   <p>لا توجد جلسات اليوم</p>
                 </div>
               ) : (
@@ -218,7 +335,7 @@ export default function Dashboard() {
                   {today?.sessions?.map(s => (
                     <div key={s.id}
                       onClick={() => s.caseId ? navigate(`/cases/${s.caseId}`) : navigate("/calendar")}
-                      className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-border/50"
+                      className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer border border-border/40"
                     >
                       <div className="bg-primary/10 text-primary p-1.5 rounded shrink-0 mt-0.5">
                         <CalendarClock className="h-3.5 w-3.5" />
@@ -235,26 +352,30 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* 3B — آجال قريبة */}
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-destructive" /> آجال قريبة
-                </span>
-                <Badge variant={urgentDeadlines.length > 0 ? "destructive" : "neutral"}>
-                  {deadlines.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
+          {/* آجال قريبة */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className={cn("h-1 bg-gradient-to-l", urgentDeadlines.length > 0
+              ? "from-red-500 via-red-500/60 to-transparent"
+              : "from-muted via-muted/60 to-transparent"
+            )} />
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <div className={cn("p-1.5 rounded-lg", urgentDeadlines.length > 0 ? "bg-red-500/10" : "bg-muted/50")}>
+                  <Timer className={cn("h-4 w-4", urgentDeadlines.length > 0 ? "text-red-400" : "text-muted-foreground")} />
+                </div>
+                <span className="text-sm font-semibold">آجال قريبة</span>
+              </div>
+              <span className={cn("text-lg font-bold tabular-nums", urgentDeadlines.length > 0 ? "text-red-400" : "text-foreground")}>
+                {deadlines.length}
+              </span>
+            </div>
             <CardContent className="px-4 pb-4 pt-0">
               {loadingExtra ? (
                 <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : deadlines.length === 0 ? (
-                <div className="py-4 text-center text-muted-foreground text-xs space-y-1">
-                  <CheckCircle2 className="h-6 w-6 mx-auto text-success opacity-40 mb-1" />
-                  <p>لا توجد آجال قريبة</p>
-                  <p className="opacity-60">كل الآجال تحت السيطرة</p>
+                <div className="py-5 text-center text-muted-foreground text-xs space-y-1">
+                  <CheckCircle2 className="h-7 w-7 mx-auto text-emerald-400 opacity-30 mb-2" />
+                  <p>كل الآجال تحت السيطرة</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -264,7 +385,7 @@ export default function Dashboard() {
                     return (
                       <div key={d.id}
                         onClick={() => d.caseId ? navigate(`/cases/${d.caseId}`) : undefined}
-                        className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-secondary transition-colors cursor-pointer border border-border/50"
+                        className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer border border-border/40"
                       >
                         <div className={cn("p-1.5 rounded shrink-0 mt-0.5 border", badge.cls)}>
                           <Timer className="h-3.5 w-3.5" />
@@ -284,25 +405,34 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* 3C — المهام العاجلة */}
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-semibold flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> المهام العاجلة
-                </span>
-                <div className="flex items-center gap-1">
-                  {doneTasks.length > 0 && <Badge variant="success">{doneTasks.length} ✓</Badge>}
-                  <Badge variant={pendingTasks.length > 0 ? "warning" : "neutral"}>{pendingTasks.length}</Badge>
+          {/* المهام العاجلة */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className={cn("h-1 bg-gradient-to-l", pendingTasks.length > 0
+              ? "from-amber-500 via-amber-500/60 to-transparent"
+              : "from-emerald-500 via-emerald-500/60 to-transparent"
+            )} />
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <div className={cn("p-1.5 rounded-lg", pendingTasks.length > 0 ? "bg-amber-500/10" : "bg-emerald-500/10")}>
+                  <CheckCircle2 className={cn("h-4 w-4", pendingTasks.length > 0 ? "text-amber-400" : "text-emerald-400")} />
                 </div>
-              </CardTitle>
-            </CardHeader>
+                <span className="text-sm font-semibold">المهام العاجلة</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {doneTasks.length > 0 && (
+                  <span className="text-xs text-emerald-400 font-medium">{doneTasks.length} ✓</span>
+                )}
+                <span className={cn("text-lg font-bold tabular-nums", pendingTasks.length > 0 ? "text-amber-400" : "text-foreground")}>
+                  {pendingTasks.length}
+                </span>
+              </div>
+            </div>
             <CardContent className="px-4 pb-4 pt-0">
               {loadingToday ? (
                 <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : today?.tasks?.length === 0 ? (
-                <div className="py-4 text-center text-muted-foreground text-xs space-y-1">
-                  <CheckCircle2 className="h-6 w-6 mx-auto text-success opacity-40 mb-1" />
+                <div className="py-5 text-center text-muted-foreground text-xs space-y-1">
+                  <CheckCircle2 className="h-7 w-7 mx-auto text-emerald-400 opacity-30 mb-2" />
                   <p>لا توجد مهام اليوم</p>
                 </div>
               ) : (
@@ -313,7 +443,7 @@ export default function Dashboard() {
                       <div key={t.id}
                         className={cn(
                           "flex items-center gap-2.5 p-2.5 rounded-lg border transition-all",
-                          t.done ? "border-border/30 bg-muted/30 opacity-55" : "border-border/50 hover:bg-secondary"
+                          t.done ? "border-border/30 bg-muted/20 opacity-50" : "border-border/40 hover:bg-muted/50"
                         )}
                       >
                         <button
@@ -322,8 +452,8 @@ export default function Dashboard() {
                           disabled={toggling}
                         >
                           {t.done
-                            ? <CheckCircle2 className="h-4.5 w-4.5 text-success h-[18px] w-[18px]" />
-                            : <Circle className="h-[18px] w-[18px] text-muted-foreground/50" />}
+                            ? <CheckCircle2 className="h-[18px] w-[18px] text-emerald-400" />
+                            : <Circle className="h-[18px] w-[18px] text-muted-foreground/40" />}
                         </button>
                         <div className="flex-1 min-w-0 cursor-pointer"
                           onClick={() => t.caseId ? navigate(`/cases/${t.caseId}`) : undefined}>
@@ -342,78 +472,77 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ══ 4. ALERTS ════════════════════════════════════════════════════════ */}
-      <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-          تنبيهات مهمة
-        </h2>
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-0">
-            {loadingAlerts ? (
-              <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
-            ) : alerts?.length === 0 ? (
-              <div className="py-5 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success opacity-60" />
-                لا توجد تنبيهات — كل شيء على ما يرام
-              </div>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {alerts?.map(a => (
-                  <div key={a.id}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 transition-colors cursor-pointer"
-                    onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
-                  >
-                    <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight truncate">{a.message}</p>
-                      {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
+      {/* ══ ALERTS ═══════════════════════════════════════════════════════════ */}
+      {(loadingAlerts || (alerts && alerts.length > 0)) && (
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span className="h-px flex-1 bg-border/50" />
+            تنبيهات مهمة
+            <span className="h-px flex-1 bg-border/50" />
+          </h2>
+          <Card className="border-red-500/20 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-l from-red-500 via-red-500/60 to-transparent" />
+            <CardContent className="p-0">
+              {loadingAlerts ? (
+                <div className="p-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {alerts?.map(a => (
+                    <div key={a.id}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-red-500/5 transition-colors cursor-pointer"
+                      onClick={() => a.caseId ? navigate(`/cases/${a.caseId}`) : navigate("/billing")}
+                    >
+                      <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate">{a.message}</p>
+                        {a.caseName && <p className="text-xs text-muted-foreground">{a.caseName}</p>}
+                      </div>
+                      <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded shrink-0">
+                        {formatDateTN(a.dueDate)}
+                      </span>
+                      <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     </div>
-                    <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded shrink-0">
-                      {formatDateTN(a.dueDate)}
-                    </span>
-                    <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* ══ 6 + 7. RECENT CASES + FINANCIAL SUMMARY ═════════════════════════ */}
+      {/* ══ RECENT CASES + FINANCIAL ═════════════════════════════════════════ */}
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* آخر الملفات */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              آخر الملفات
-            </h2>
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">آخر الملفات</h2>
             <button onClick={() => navigate("/cases")}
-              className="text-xs text-primary hover:underline flex items-center gap-1">
+              className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
               عرض الكل <ArrowLeft className="h-3 w-3" />
             </button>
           </div>
-          <Card className="border-none shadow-sm">
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-l from-blue-500 via-blue-500/60 to-transparent" />
             <CardContent className="p-0">
               {loadingExtra ? (
                 <div className="p-4 space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : recentCases.length === 0 ? (
-                <div className="py-6 text-center text-muted-foreground text-sm">
-                  <Briefcase className="h-6 w-6 mx-auto mb-1 opacity-20" />
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                  <Briefcase className="h-7 w-7 mx-auto mb-2 opacity-15" />
                   لا توجد ملفات بعد
                 </div>
               ) : (
-                <div className="divide-y divide-border/50">
+                <div className="divide-y divide-border/40">
                   {recentCases.map(c => {
                     const s = STATUS_LABELS[c.status] || STATUS_LABELS.active;
                     return (
                       <div key={c.id}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 transition-colors cursor-pointer"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => navigate(`/cases/${c.id}`)}
                       >
-                        <div className="p-1.5 bg-muted/50 rounded shrink-0">
-                          <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg shrink-0">
+                          <Scale className="h-3.5 w-3.5 text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{c.title}</p>
@@ -435,45 +564,45 @@ export default function Dashboard() {
 
         {/* ملخص مالي */}
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            ملخص مالي
-          </h2>
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-4 space-y-3">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">ملخص مالي</h2>
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-l from-emerald-500 via-emerald-500/60 to-transparent" />
+            <CardContent className="p-4 space-y-1">
               {loadingSummary ? (
-                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <TrendingUp className="h-3.5 w-3.5 text-success" />
+                      <div className="p-1 rounded bg-emerald-500/10"><TrendingUp className="h-3 w-3 text-emerald-400" /></div>
                       المداخيل هذا الشهر
                     </div>
-                    <span className="text-sm font-bold text-success tabular-nums">
+                    <span className="text-sm font-bold text-emerald-400 tabular-nums">
                       <TNDAmount amount={Number(summary?.monthlyIncome ?? 0)} />
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <div className="flex items-center justify-between py-2.5 border-b border-border/40">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5 text-warning" />
+                      <div className="p-1 rounded bg-amber-500/10"><Clock className="h-3 w-3 text-amber-400" /></div>
                       فواتير معلقة
                     </div>
-                    <span className="text-sm font-bold text-warning tabular-nums">
+                    <span className={cn("text-sm font-bold tabular-nums",
+                      (summary?.pendingInvoices ?? 0) > 0 ? "text-amber-400" : "text-foreground")}>
                       {summary?.pendingInvoices ?? 0}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2.5">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Briefcase className="h-3.5 w-3.5 text-primary" />
+                      <div className="p-1 rounded bg-blue-500/10"><Briefcase className="h-3 w-3 text-blue-400" /></div>
                       الملفات الجارية
                     </div>
-                    <span className="text-sm font-bold text-primary tabular-nums">
+                    <span className="text-sm font-bold text-blue-400 tabular-nums">
                       {summary?.activeCases ?? 0}
                     </span>
                   </div>
                   <button
                     onClick={() => navigate("/billing")}
-                    className="w-full text-xs text-center text-primary hover:underline pt-1"
+                    className="w-full mt-2 text-xs text-center text-primary hover:underline pt-2 border-t border-border/40 flex items-center justify-center gap-1 font-medium"
                   >
                     عرض الفوترة الكاملة <ArrowLeft className="inline h-3 w-3" />
                   </button>
