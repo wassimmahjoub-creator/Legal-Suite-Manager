@@ -146,6 +146,7 @@ export default function Correspondances() {
       <PageHeader
         title="المراسلات"
         subtitle={`المراسلات الرسمية مع الموكّلين (${filtered.length})`}
+        back
         actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> مراسلة جديدة</Button>}
       />
 

@@ -51,6 +51,7 @@ export default function BankAccounts() {
       <PageHeader
         title="الحسابات البنكية"
         subtitle={`إجمالي TND: ${totalTND.toFixed(3)}`}
+        back
         actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> حساب جديد</Button>}
       />
       {loading ? (

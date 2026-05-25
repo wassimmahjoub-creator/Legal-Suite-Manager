@@ -51,7 +51,7 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="سجل التعديلات" subtitle="تاريخ كل العمليات على النظام" />
+      <PageHeader title="سجل التعديلات" subtitle="تاريخ كل العمليات على النظام" back />
 
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">

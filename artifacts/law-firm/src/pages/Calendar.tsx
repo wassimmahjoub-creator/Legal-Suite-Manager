@@ -375,6 +375,7 @@ export default function CalendarView() {
       <PageHeader
         title="الرزنامة"
         subtitle="مواعيد الجلسات، الاجتماعات والآجال القانونية"
+        back
         actions={<Button onClick={() => openNew()} className="rounded-lg gap-2 px-5"><Plus className="h-4 w-4" /> حدث جديد</Button>}
       />
 

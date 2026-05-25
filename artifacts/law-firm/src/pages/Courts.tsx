@@ -191,6 +191,7 @@ export default function Courts() {
       <PageHeader
         title="المحاكم"
         subtitle={loading ? "..." : `${data.length} محكمة مسجلة`}
+        back
         actions={<>
           <Button variant="outline" size="sm" onClick={runSeed} disabled={seeding} className="gap-2 text-xs">
             <DatabaseZap className="h-3.5 w-3.5" />

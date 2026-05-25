@@ -73,7 +73,7 @@ export default function Trash() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="سلة المحذوفات" subtitle={`${total} عنصر محذوف`} />
+      <PageHeader title="سلة المحذوفات" subtitle={`${total} عنصر محذوف`} back />
 
       {!isAdmin && (
         <div className="flex items-center gap-3 p-4 bg-orange-500/10 text-orange-400 rounded-xl border border-orange-500/20 text-sm">

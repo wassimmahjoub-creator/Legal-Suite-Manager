@@ -69,6 +69,7 @@ export default function Communications() {
       <PageHeader
         title="سجل الاتصالات"
         subtitle={`${data.length} اتصال مسجل`}
+        back
         actions={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> اتصال جديد</Button>}
       />
       <div className="flex gap-3 flex-wrap items-center">

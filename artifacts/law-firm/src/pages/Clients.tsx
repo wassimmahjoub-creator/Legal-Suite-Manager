@@ -151,6 +151,7 @@ export default function Clients() {
       <PageHeader
         title="الموكّلون"
         subtitle="إدارة معلومات وبيانات الموكّلين"
+        back
         actions={<>
           <ExportDropdown endpoint="clients" params={{ search }} />
           <Button onClick={openNew} className="rounded-lg gap-2 px-5">
