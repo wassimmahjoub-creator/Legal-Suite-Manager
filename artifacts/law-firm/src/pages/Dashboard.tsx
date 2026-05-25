@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { useLocation } from "wouter";
 import { TNDAmount } from "@/components/Money";
 import { formatDateTN } from "@/lib/date";
@@ -113,20 +114,14 @@ export default function Dashboard() {
   return (
     <div className="space-y-5">
 
-      {/* ══ 1. COMPACT DAILY HEADER ══════════════════════════════════════════ */}
-      <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">الرئيسية</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            <DateDisplay date={new Date()} format="full" />
-          </p>
-        </div>
-        {/* Summary pills */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          {loadingToday || loadingExtra ? (
+      <PageHeader
+        title="الرئيسية"
+        subtitle={<DateDisplay date={new Date()} format="full" />}
+        actions={
+          loadingToday || loadingExtra ? (
             <Skeleton className="h-6 w-48" />
           ) : (
-            <>
+            <div className="flex flex-wrap gap-2 text-xs">
               <span className={cn(
                 "flex items-center gap-1 px-2.5 py-1 rounded-full border font-medium",
                 (today?.sessions?.length ?? 0) > 0
@@ -163,10 +158,10 @@ export default function Dashboard() {
                 <Receipt className="h-3 w-3" />
                 {loadingSummary ? "…" : (summary?.pendingInvoices ?? 0)} فاتورة معلقة
               </span>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          )
+        }
+      />
 
       {/* ══ 2. QUICK ACTIONS ═════════════════════════════════════════════════ */}
       <div className="flex flex-wrap gap-2">
