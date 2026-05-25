@@ -386,11 +386,15 @@ export default function Dashboard() {
                         <Scale className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         <div className="flex-1 min-w-0 text-right">
                           <p className="font-medium text-sm truncate">{c.title}</p>
-                          <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-                            {c.caseNumber && <span className="opacity-50">{c.caseNumber} ·</span>}
-                            {c.clientName ?? "—"} <Users className="h-3 w-3" />
-                          </p>
+                          {c.clientName && (
+                            <p className="text-xs text-muted-foreground flex items-center justify-end gap-1 truncate">
+                              {c.clientName} <Users className="h-3 w-3 shrink-0" />
+                            </p>
+                          )}
                         </div>
+                        {c.caseNumber && (
+                          <span className="text-xs text-muted-foreground/60 font-mono tabular-nums shrink-0">{c.caseNumber}</span>
+                        )}
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${s.color}`}>{s.label}</span>
                         <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
                       </div>
