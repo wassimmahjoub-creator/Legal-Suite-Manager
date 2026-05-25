@@ -822,7 +822,11 @@ export default function Reports() {
   return (
     <div className="space-y-3 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div>
+        <button onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-1 transition-colors">
+          <ArrowRight className="h-3.5 w-3.5" /> رجوع
+        </button>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
             <BarChart3 className="w-4 h-4 text-primary" />
@@ -832,10 +836,6 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground">تحليل شامل للنشاط المالي والقانوني للمكتب</p>
           </div>
         </div>
-        <button onClick={() => window.history.back()}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm transition-colors shrink-0">
-          <ArrowRight className="h-3.5 w-3.5" /> رجوع
-        </button>
       </div>
 
       {/* Tab bar */}
